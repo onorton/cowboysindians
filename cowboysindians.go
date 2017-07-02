@@ -5,19 +5,29 @@ import (
 )
 
 const width = 100
-const height = 50
+const height = 25
 
+func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
+	for _, c := range msg {
+		termbox.SetCell(x, y, c, fg, bg)
+		x++
+	}
+}
 func main() {
 	err := termbox.Init()
 	if err != nil {
 		panic(err)
 	}
+	defer termbox.Close()
+
 	x := 0
 	y := 0
 	for {
 		quit := false
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-
+		termbox.SetCell(x, y, '@', termbox.ColorWhite, termbox.ColorDefault)
+		print_tb(0, height+1, termbox.ColorWhite, termbox.ColorDefault, "Hello")
+		termbox.Flush()
 		e := termbox.PollEvent()
 		if e.Type == termbox.EventKey {
 			switch e.Key {
@@ -34,7 +44,7 @@ func main() {
 					y--
 				}
 			case termbox.KeyArrowDown:
-				if x < height {
+				if y < height {
 					y++
 				}
 			default:
@@ -85,12 +95,11 @@ func main() {
 			}
 
 		}
-		termbox.SetCell(x, y, '@', termbox.ColorWhite, termbox.ColorDefault)
+
 		if quit {
 			break
 		}
-		termbox.Flush()
+
 	}
-	defer termbox.Close()
 
 }
