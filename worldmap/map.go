@@ -2,27 +2,19 @@ package worldmap
 
 import (
 	termbox "github.com/nsf/termbox-go"
+	"github.com/onorton/cowboysindians/icon"
 )
 
-func (i Icon) render(x, y int) {
-	termbox.SetCell(x, y, i.icon, i.colour, termbox.ColorDefault)
-}
-
-type Icon struct {
-	icon   rune
-	colour termbox.Attribute
-}
-
-func NewTile(icon rune, colour termbox.Attribute, x, y int) Tile {
-	return Tile{Icon{icon, colour}, x, y}
+func NewTile(c rune, colour termbox.Attribute, x, y int) Tile {
+	return Tile{icon.NewIcon(c, colour), x, y}
 }
 
 func (t Tile) render() {
-	t.terrain.render(t.x, t.y)
+	t.terrain.Render(t.x, t.y)
 }
 
 type Tile struct {
-	terrain Icon
+	terrain icon.Icon
 	x       int
 	y       int
 }
