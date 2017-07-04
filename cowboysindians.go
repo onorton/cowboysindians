@@ -1,8 +1,10 @@
 package main
 
 import (
+	//"fmt"
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/structs"
+	"github.com/onorton/cowboysindians/worldmap"
 )
 
 const width = 100
@@ -20,13 +22,15 @@ func print_message(messages *structs.Queue) {
 		termbox.SetCell(i, height+1, ' ', termbox.ColorDefault, termbox.ColorDefault)
 	}
 	m := messages.Dequeue().(string)
+
 	if !messages.IsEmpty() {
 		m += " --MORE--"
 
 	}
-	print_tb(width/2-len(m)/2, height+1, termbox.ColorWhite, termbox.ColorDefault, m)
+	print_tb(0, height, termbox.ColorWhite, termbox.ColorDefault, m)
 	termbox.Flush()
 }
+
 func main() {
 	err := termbox.Init()
 	if err != nil {
@@ -36,11 +40,15 @@ func main() {
 	messages := new(structs.Queue)
 	x := 0
 	y := 0
+	worldMap := worldmap.NewMap(width, height)
+
 	for {
 		quit := false
 		endTurn := false
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+		worldMap.Render()
 		termbox.SetCell(x, y, '@', termbox.ColorWhite, termbox.ColorDefault)
+		//messages.Enqueue(fmt.Sprintf("%d %d", x, y))
 		print_message(messages)
 		for {
 			e := termbox.PollEvent()
@@ -51,7 +59,7 @@ func main() {
 						x--
 					}
 				case termbox.KeyArrowRight:
-					if x < width {
+					if x < width-1 {
 						x++
 					}
 				case termbox.KeyArrowUp:
@@ -59,7 +67,7 @@ func main() {
 						y--
 					}
 				case termbox.KeyArrowDown:
-					if y < height {
+					if y < height-1 {
 						y++
 					}
 				case termbox.KeySpace:
@@ -71,16 +79,16 @@ func main() {
 
 						switch e.Ch {
 						case '1':
-							if x != 0 && y < height {
+							if x != 0 && y < height-1 {
 								x--
 								y++
 							}
 						case '2':
-							if y < height {
+							if y < height-1 {
 								y++
 							}
 						case '3':
-							if x < width && y < height {
+							if x < width-1 && y < height-1 {
 								x++
 								y++
 							}
@@ -91,7 +99,7 @@ func main() {
 							}
 						case '5':
 						case '6':
-							if x < width {
+							if x < width-1 {
 								x++
 							}
 						case '7':
@@ -104,7 +112,7 @@ func main() {
 								y--
 							}
 						case '9':
-							if y != 0 && x < width {
+							if y != 0 && x < width-1 {
 								y--
 								x++
 							}
