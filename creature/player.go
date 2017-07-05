@@ -4,16 +4,16 @@ import (
 	"github.com/onorton/cowboysindians/icon"
 )
 
-type Creature interface {
+func NewPlayer() Player {
+	return Player{0, 0, icon.CreatePlayerIcon()}
 }
 
-func NewPlayer() Player {
-	return Player{Creature{}, 0, 0, icon.CreatePlayerIcon}
+func (p *Player) Render() {
+	p.icon.Render(p.X, p.Y)
 }
 
 type Player struct {
-	creature Creature
-	x        int
-	y        int
-	icon.Icon
+	X    int
+	Y    int
+	icon icon.Icon
 }

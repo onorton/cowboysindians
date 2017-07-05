@@ -8,6 +8,10 @@ func (i Icon) Render(x, y int) {
 	termbox.SetCell(x, y, i.icon, i.colour, termbox.ColorDefault)
 }
 
+func CreatePlayerIcon() Icon {
+	return Icon{'@', termbox.ColorWhite}
+}
+
 func NewIcon(icon rune, colour termbox.Attribute) Icon {
 	return Icon{icon, colour}
 }

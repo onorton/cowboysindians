@@ -1,8 +1,8 @@
 package main
 
 import (
-	//"fmt"
 	termbox "github.com/nsf/termbox-go"
+	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/structs"
 	"github.com/onorton/cowboysindians/worldmap"
 )
@@ -38,16 +38,16 @@ func main() {
 	}
 	defer termbox.Close()
 	messages := new(structs.Queue)
-	x := 0
-	y := 0
+
 	worldMap := worldmap.NewMap(width, height)
+	player := creature.NewPlayer()
 
 	for {
+		worldMap.MoveCreature(&player)
 		quit := false
 		endTurn := false
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 		worldMap.Render()
-		termbox.SetCell(x, y, '@', termbox.ColorWhite, termbox.ColorDefault)
 		//messages.Enqueue(fmt.Sprintf("%d %d", x, y))
 		print_message(messages)
 		for {
@@ -55,20 +55,20 @@ func main() {
 			if e.Type == termbox.EventKey {
 				switch e.Key {
 				case termbox.KeyArrowLeft:
-					if x != 0 {
-						x--
+					if player.X != 0 {
+						player.X--
 					}
 				case termbox.KeyArrowRight:
-					if x < width-1 {
-						x++
+					if player.X < width-1 {
+						player.X++
 					}
 				case termbox.KeyArrowUp:
-					if y != 0 {
-						y--
+					if player.Y != 0 {
+						player.Y--
 					}
 				case termbox.KeyArrowDown:
-					if y < height-1 {
-						y++
+					if player.Y < height-1 {
+						player.Y++
 					}
 				case termbox.KeySpace:
 					{
@@ -79,42 +79,42 @@ func main() {
 
 						switch e.Ch {
 						case '1':
-							if x != 0 && y < height-1 {
-								x--
-								y++
+							if player.X != 0 && player.Y < height-1 {
+								player.X--
+								player.Y++
 							}
 						case '2':
-							if y < height-1 {
-								y++
+							if player.Y < height-1 {
+								player.Y++
 							}
 						case '3':
-							if x < width-1 && y < height-1 {
-								x++
-								y++
+							if player.X < width-1 && player.Y < height-1 {
+								player.X++
+								player.Y++
 							}
 
 						case '4':
-							if x != 0 {
-								x--
+							if player.X != 0 {
+								player.X--
 							}
 						case '5':
 						case '6':
-							if x < width-1 {
-								x++
+							if player.X < width-1 {
+								player.X++
 							}
 						case '7':
-							if x != 0 && y != 0 {
-								x--
-								y--
+							if player.X != 0 && player.X != 0 {
+								player.X--
+								player.Y--
 							}
 						case '8':
-							if y != 0 {
-								y--
+							if player.Y != 0 {
+								player.Y--
 							}
 						case '9':
-							if y != 0 && x < width-1 {
-								y--
-								x++
+							if player.Y != 0 && player.X < width-1 {
+								player.Y--
+								player.X++
 							}
 						default:
 							quit = true
