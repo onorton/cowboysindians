@@ -8,8 +8,8 @@ func NewPlayer() Player {
 	return Player{0, 0, icon.CreatePlayerIcon()}
 }
 
-func (p *Player) Render() {
-	p.icon.Render(p.X, p.Y)
+func (p *Player) Render(x, y int) {
+	p.icon.Render(x, y)
 }
 
 type Player struct {

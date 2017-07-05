@@ -1,14 +1,17 @@
 package main
 
 import (
+	"fmt"
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/structs"
 	"github.com/onorton/cowboysindians/worldmap"
 )
 
-const width = 100
-const height = 25
+const windowWidth = 100
+const windowHeight = 25
+const width = 400
+const height = 100
 
 func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
 	for _, c := range msg {
@@ -19,15 +22,14 @@ func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
 
 func print_message(messages *structs.Queue) {
 	for i := 0; i < width; i++ {
-		termbox.SetCell(i, height+1, ' ', termbox.ColorDefault, termbox.ColorDefault)
+		termbox.SetCell(i, windowWidth+1, ' ', termbox.ColorDefault, termbox.ColorDefault)
 	}
 	m := messages.Dequeue().(string)
-
 	if !messages.IsEmpty() {
 		m += " --MORE--"
 
 	}
-	print_tb(0, height, termbox.ColorWhite, termbox.ColorDefault, m)
+	print_tb(0, windowHeight, termbox.ColorWhite, termbox.ColorDefault, m)
 	termbox.Flush()
 }
 
@@ -39,7 +41,7 @@ func main() {
 	defer termbox.Close()
 	messages := new(structs.Queue)
 
-	worldMap := worldmap.NewMap(width, height)
+	worldMap := worldmap.NewMap(width, height, windowWidth, windowHeight)
 	player := creature.NewPlayer()
 
 	for {
@@ -48,7 +50,7 @@ func main() {
 		endTurn := false
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 		worldMap.Render()
-		//messages.Enqueue(fmt.Sprintf("%d %d", x, y))
+		messages.Enqueue(fmt.Sprintf("%d %d", player.X, player.Y))
 		print_message(messages)
 		for {
 			e := termbox.PollEvent()
