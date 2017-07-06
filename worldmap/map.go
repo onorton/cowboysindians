@@ -4,6 +4,7 @@ import (
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/icon"
+	"github.com/onorton/cowboysindians/message"
 )
 
 const padding = 5
@@ -75,169 +76,108 @@ type Map struct {
 	v    *Viewer
 }
 
-func (m Map) CloseDoor(x, y int) bool {
-	e := termbox.PollEvent()
+func (m Map) ToggleDoor(x, y int, open bool) bool {
+	message.PrintMessage("Which direction?")
 	height := len(m.grid)
 	width := len(m.grid[0])
-	if e.Type == termbox.EventKey {
-		switch e.Key {
-		case termbox.KeyArrowLeft:
-			if x != 0 {
-				x--
-			}
-		case termbox.KeyArrowRight:
-			if x < width-1 {
-				x++
-			}
-		case termbox.KeyArrowUp:
-			if y != 0 {
-				y--
-			}
-		case termbox.KeyArrowDown:
-			if y < height-1 {
-				y++
-			}
-		default:
-			{
-
-				switch e.Ch {
-				case '1':
-					if x != 0 && y < height-1 {
-						x--
-						y++
-					}
-				case '2':
-					if y < height-1 {
-						y++
-					}
-				case '3':
-					if x < width-1 && y < height-1 {
-						x++
-						y++
-					}
-
-				case '4':
-					if x != 0 {
-						x--
-					}
-				case '6':
-					if x < width-1 {
-						x++
-					}
-				case '7':
-					if x != 0 && x != 0 {
-						x--
-						y--
-					}
-				case '8':
-					if y != 0 {
-						y--
-					}
-				case '9':
-					if y != 0 && x < width-1 {
-						y--
-						x++
-					}
-				default:
-					return false
-
+	for {
+		validMove := true
+		e := termbox.PollEvent()
+		if e.Type == termbox.EventKey {
+			switch e.Key {
+			case termbox.KeyArrowLeft:
+				if x != 0 {
+					x--
 				}
+			case termbox.KeyArrowRight:
+				if x < width-1 {
+					x++
+				}
+			case termbox.KeyArrowUp:
+				if y != 0 {
+					y--
+				}
+			case termbox.KeyArrowDown:
+				if y < height-1 {
+					y++
+				}
+			case termbox.KeyEnter:
+				message.PrintMessage("Never mind...")
+				return false
+			default:
+				{
+
+					switch e.Ch {
+					case '1':
+						if x != 0 && y < height-1 {
+							x--
+							y++
+						}
+					case '2':
+						if y < height-1 {
+							y++
+						}
+					case '3':
+						if x < width-1 && y < height-1 {
+							x++
+							y++
+						}
+
+					case '4':
+						if x != 0 {
+							x--
+						}
+					case '6':
+						if x < width-1 {
+							x++
+						}
+					case '7':
+						if x != 0 && x != 0 {
+							x--
+							y--
+						}
+					case '8':
+						if y != 0 {
+							y--
+						}
+					case '9':
+						if y != 0 && x < width-1 {
+							y--
+							x++
+						}
+					default:
+						message.PrintMessage("Invalid direction.")
+						validMove = false
+
+					}
+				}
+
 			}
 
+		}
+
+		if validMove {
+			break
 		}
 	}
-
 	if m.grid[y][x].door {
-		if m.grid[y][x].passable {
-			m.grid[y][x].passable = false
+		if m.grid[y][x].passable != open {
+			m.grid[y][x].passable = open
 			return true
+		} else {
+			if open {
+				message.PrintMessage("The door is already open.")
+			} else {
+				message.PrintMessage("The door is already closed.")
+			}
 		}
+	} else {
+		message.PrintMessage("You see no door there.")
 	}
 	return false
 
 }
 
-func (m Map) OpenDoor(x, y int) bool {
-	e := termbox.PollEvent()
-	height := len(m.grid)
-	width := len(m.grid[0])
-	if e.Type == termbox.EventKey {
-		switch e.Key {
-		case termbox.KeyArrowLeft:
-			if x != 0 {
-				x--
-			}
-		case termbox.KeyArrowRight:
-			if x < width-1 {
-				x++
-			}
-		case termbox.KeyArrowUp:
-			if y != 0 {
-				y--
-			}
-		case termbox.KeyArrowDown:
-			if y < height-1 {
-				y++
-			}
-		default:
-			{
-
-				switch e.Ch {
-				case '1':
-					if x != 0 && y < height-1 {
-						x--
-						y++
-					}
-				case '2':
-					if y < height-1 {
-						y++
-					}
-				case '3':
-					if x < width-1 && y < height-1 {
-						x++
-						y++
-					}
-
-				case '4':
-					if x != 0 {
-						x--
-					}
-				case '6':
-					if x < width-1 {
-						x++
-					}
-				case '7':
-					if x != 0 && x != 0 {
-						x--
-						y--
-					}
-				case '8':
-					if y != 0 {
-						y--
-					}
-				case '9':
-					if y != 0 && x < width-1 {
-						y--
-						x++
-					}
-				default:
-					return false
-
-				}
-			}
-
-		}
-	}
-
-	if m.grid[y][x].door {
-		if !m.grid[y][x].passable {
-			m.grid[y][x].passable = true
-			return true
-		}
-	}
-	return false
-
-}
 func (m Map) MoveCreature(c *creature.Player, x, y int) {
 
 	if !m.grid[y][x].passable {

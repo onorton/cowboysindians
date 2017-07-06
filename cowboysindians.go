@@ -101,34 +101,15 @@ func main() {
 								x++
 							}
 						case 'c':
-							message.Enqueue("Which direction?")
-							message.PrintMessages()
-							closed := worldMap.CloseDoor(x, y)
-							if closed {
-								message.Enqueue("You closed the door.")
-
-							} else {
-
-								message.Enqueue("There's no open door here.")
-
-							}
+							endTurn = worldMap.ToggleDoor(x, y, false)
 						case 'o':
-							message.Enqueue("Which direction?")
-							message.PrintMessages()
-							opened := worldMap.OpenDoor(x, y)
-							if opened {
-								message.Enqueue("You opened the door.")
-
-							} else {
-								message.Enqueue("There's no closed door here.")
-							}
+							endTurn = worldMap.ToggleDoor(x, y, true)
 						default:
 							quit = true
 						}
 					}
 				}
-
-				endTurn = e.Key != termbox.KeySpace
+				endTurn = endTurn || (e.Key != termbox.KeySpace && e.Ch != 'c' && e.Ch != 'o')
 				if endTurn || quit {
 					break
 				}

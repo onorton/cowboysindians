@@ -20,10 +20,15 @@ func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
 	}
 }
 
-func PrintMessages() {
+func clearMessageBar() {
+
 	for i := 0; i < Mq.windowWidth; i++ {
 		termbox.SetCell(i, Mq.windowHeight, ' ', termbox.ColorDefault, termbox.ColorDefault)
 	}
+
+}
+func PrintMessages() {
+	clearMessageBar()
 	m := Mq.queue.Dequeue().(string)
 	if !Mq.queue.IsEmpty() {
 		m += " --MORE--"
@@ -32,6 +37,14 @@ func PrintMessages() {
 	print_tb(0, Mq.windowHeight, termbox.ColorWhite, termbox.ColorDefault, m)
 	termbox.Flush()
 }
+
+func PrintMessage(m string) {
+
+	clearMessageBar()
+	print_tb(0, Mq.windowHeight, termbox.ColorWhite, termbox.ColorDefault, m)
+	termbox.Flush()
+}
+
 func SetWindowSize(windowWidth, windowHeight int) {
 	Mq.windowWidth = windowWidth
 	Mq.windowHeight = windowHeight
