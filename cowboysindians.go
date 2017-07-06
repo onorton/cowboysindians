@@ -4,7 +4,7 @@ import (
 	"fmt"
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/creature"
-	"github.com/onorton/cowboysindians/structs"
+	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/worldmap"
 )
 
@@ -13,34 +13,13 @@ const windowHeight = 25
 const width = 400
 const height = 100
 
-func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
-	for _, c := range msg {
-		termbox.SetCell(x, y, c, fg, bg)
-		x++
-	}
-}
-
-func print_message(messages *structs.Queue) {
-	for i := 0; i < windowWidth; i++ {
-		termbox.SetCell(i, windowHeight, ' ', termbox.ColorDefault, termbox.ColorDefault)
-	}
-	m := messages.Dequeue().(string)
-	if !messages.IsEmpty() {
-		m += " --MORE--"
-
-	}
-	print_tb(0, windowHeight, termbox.ColorWhite, termbox.ColorDefault, m)
-	termbox.Flush()
-}
-
 func main() {
 	err := termbox.Init()
 	if err != nil {
 		panic(err)
 	}
 	defer termbox.Close()
-	messages := new(structs.Queue)
-
+	message.SetWindowSize(windowWidth, windowHeight)
 	worldMap := worldmap.NewMap(width, height, windowWidth, windowHeight)
 	player := creature.NewPlayer()
 
@@ -52,8 +31,8 @@ func main() {
 		worldMap.Render()
 		x := player.X
 		y := player.Y
-		messages.Enqueue(fmt.Sprintf("%d %d", x, y))
-		print_message(messages)
+		message.Enqueue(fmt.Sprintf("%d %d", x, y))
+		message.PrintMessages()
 
 		for {
 			e := termbox.PollEvent()
@@ -77,7 +56,7 @@ func main() {
 					}
 				case termbox.KeySpace:
 					{
-						print_message(messages)
+						message.PrintMessages()
 					}
 				default:
 					{
@@ -122,26 +101,26 @@ func main() {
 								x++
 							}
 						case 'c':
-							messages.Enqueue("Which direction?")
-							print_message(messages)
+							message.Enqueue("Which direction?")
+							message.PrintMessages()
 							closed := worldMap.CloseDoor(x, y)
 							if closed {
-								messages.Enqueue("You closed the door.")
+								message.Enqueue("You closed the door.")
 
 							} else {
 
-								messages.Enqueue("There's no open door here.")
+								message.Enqueue("There's no open door here.")
 
 							}
 						case 'o':
-							messages.Enqueue("Which direction?")
-							print_message(messages)
+							message.Enqueue("Which direction?")
+							message.PrintMessages()
 							opened := worldMap.OpenDoor(x, y)
 							if opened {
-								messages.Enqueue("You opened the door.")
+								message.Enqueue("You opened the door.")
 
 							} else {
-								messages.Enqueue("There's no closed door here.")
+								message.Enqueue("There's no closed door here.")
 							}
 						default:
 							quit = true
