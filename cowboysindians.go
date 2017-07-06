@@ -45,32 +45,35 @@ func main() {
 	player := creature.NewPlayer()
 
 	for {
-		worldMap.MoveCreature(&player)
+
 		quit := false
 		endTurn := false
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 		worldMap.Render()
-		messages.Enqueue(fmt.Sprintf("%d %d", player.X, player.Y))
+		x := player.X
+		y := player.Y
+		messages.Enqueue(fmt.Sprintf("%d %d", x, y))
 		print_message(messages)
+
 		for {
 			e := termbox.PollEvent()
 			if e.Type == termbox.EventKey {
 				switch e.Key {
 				case termbox.KeyArrowLeft:
-					if player.X != 0 {
-						player.X--
+					if x != 0 {
+						x--
 					}
 				case termbox.KeyArrowRight:
-					if player.X < width-1 {
-						player.X++
+					if x < width-1 {
+						x++
 					}
 				case termbox.KeyArrowUp:
-					if player.Y != 0 {
-						player.Y--
+					if y != 0 {
+						y--
 					}
 				case termbox.KeyArrowDown:
-					if player.Y < height-1 {
-						player.Y++
+					if y < height-1 {
+						y++
 					}
 				case termbox.KeySpace:
 					{
@@ -81,42 +84,42 @@ func main() {
 
 						switch e.Ch {
 						case '1':
-							if player.X != 0 && player.Y < height-1 {
-								player.X--
-								player.Y++
+							if x != 0 && y < height-1 {
+								x--
+								y++
 							}
 						case '2':
-							if player.Y < height-1 {
-								player.Y++
+							if y < height-1 {
+								y++
 							}
 						case '3':
-							if player.X < width-1 && player.Y < height-1 {
-								player.X++
-								player.Y++
+							if x < width-1 && y < height-1 {
+								x++
+								y++
 							}
 
 						case '4':
-							if player.X != 0 {
-								player.X--
+							if x != 0 {
+								x--
 							}
 						case '5':
 						case '6':
-							if player.X < width-1 {
-								player.X++
+							if x < width-1 {
+								x++
 							}
 						case '7':
-							if player.X != 0 && player.X != 0 {
-								player.X--
-								player.Y--
+							if x != 0 && x != 0 {
+								x--
+								y--
 							}
 						case '8':
-							if player.Y != 0 {
-								player.Y--
+							if y != 0 {
+								y--
 							}
 						case '9':
-							if player.Y != 0 && player.X < width-1 {
-								player.Y--
-								player.X++
+							if y != 0 && x < width-1 {
+								y--
+								x++
 							}
 						default:
 							quit = true
@@ -136,6 +139,7 @@ func main() {
 		if quit {
 			break
 		}
+		worldMap.MoveCreature(&player, x, y)
 
 	}
 
