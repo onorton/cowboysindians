@@ -8,6 +8,14 @@ func (i Icon) Render(x, y int) {
 	termbox.SetCell(x, y, i.icon, i.colour, termbox.ColorDefault)
 }
 
+func (i Icon) RenderDoor(x, y int, passable bool) {
+	if passable {
+		termbox.SetCell(x, y, ' ', i.colour, termbox.ColorDefault)
+	} else {
+		i.Render(x, y)
+	}
+}
+
 func CreatePlayerIcon() Icon {
 	return Icon{'@', termbox.ColorWhite}
 }

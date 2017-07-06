@@ -21,8 +21,8 @@ func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
 }
 
 func print_message(messages *structs.Queue) {
-	for i := 0; i < width; i++ {
-		termbox.SetCell(i, windowWidth+1, ' ', termbox.ColorDefault, termbox.ColorDefault)
+	for i := 0; i < windowWidth; i++ {
+		termbox.SetCell(i, windowHeight, ' ', termbox.ColorDefault, termbox.ColorDefault)
 	}
 	m := messages.Dequeue().(string)
 	if !messages.IsEmpty() {
@@ -120,6 +120,28 @@ func main() {
 							if y != 0 && x < width-1 {
 								y--
 								x++
+							}
+						case 'c':
+							messages.Enqueue("Which direction?")
+							print_message(messages)
+							closed := worldMap.CloseDoor(x, y)
+							if closed {
+								messages.Enqueue("You closed the door.")
+
+							} else {
+
+								messages.Enqueue("There's no open door here.")
+
+							}
+						case 'o':
+							messages.Enqueue("Which direction?")
+							print_message(messages)
+							opened := worldMap.OpenDoor(x, y)
+							if opened {
+								messages.Enqueue("You opened the door.")
+
+							} else {
+								messages.Enqueue("There's no closed door here.")
 							}
 						default:
 							quit = true
