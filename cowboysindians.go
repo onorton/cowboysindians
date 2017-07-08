@@ -6,12 +6,33 @@ import (
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/worldmap"
+	"io/ioutil"
 )
 
 const windowWidth = 100
 const windowHeight = 25
 const width = 400
 const height = 100
+const filename = "cowboysIndiansSave.dat"
+
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+func save(m worldmap.Map) {
+
+	err := ioutil.WriteFile(filename, []byte("Hello World!"), 0644)
+	check(err)
+}
+
+func load() worldmap.Map {
+
+	dat, err := ioutil.ReadFile(filename)
+	check(err)
+	fmt.Println(string(dat))
+	return worldmap.NewMap(width, height, windowWidth, windowHeight)
+}
 
 func main() {
 	err := termbox.Init()
@@ -20,9 +41,13 @@ func main() {
 	}
 	defer termbox.Close()
 	message.SetWindowSize(windowWidth, windowHeight)
+	message.PrintMessage("Do you wish to load the last save? [yn]")
+	l := termbox.PollEvent()
 	worldMap := worldmap.NewMap(width, height, windowWidth, windowHeight)
 	player := creature.NewPlayer()
-
+	if l.Type == termbox.EventKey && l.Ch == 'y' {
+		worldMap = load()
+	}
 	for {
 
 		quit := false
@@ -104,12 +129,20 @@ func main() {
 							endTurn = worldMap.ToggleDoor(x, y, false)
 						case 'o':
 							endTurn = worldMap.ToggleDoor(x, y, true)
+						case 'q':
+
+							message.PrintMessage("Do you wish to save? [yn]")
+							quitEvent := termbox.PollEvent()
+							if quitEvent.Type == termbox.EventKey && quitEvent.Ch == 'y' {
+								save(worldMap)
+							}
+							quit = true
 						default:
 							quit = true
 						}
 					}
 				}
-				endTurn = endTurn || (e.Key != termbox.KeySpace && e.Ch != 'c' && e.Ch != 'o')
+				endTurn = endTurn || (e.Key != termbox.KeySpace && e.Ch != 'c' && e.Ch != 'o' && e.Ch != 'q')
 				if endTurn || quit {
 					break
 				}
