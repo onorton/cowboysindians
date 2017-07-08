@@ -7,13 +7,14 @@ import (
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/worldmap"
 	"io/ioutil"
+	"os"
 )
 
 const windowWidth = 100
 const windowHeight = 25
 const width = 400
 const height = 100
-const filename = "cowboysIndiansSave.dat"
+const saveFilename = "game.dat"
 
 func check(e error) {
 	if e != nil {
@@ -22,13 +23,13 @@ func check(e error) {
 }
 func save(m worldmap.Map) {
 
-	err := ioutil.WriteFile(filename, []byte("Hello World!"), 0644)
+	err := ioutil.WriteFile(saveFilename, []byte("Hello World!"), 0644)
 	check(err)
 }
 
 func load() worldmap.Map {
 
-	dat, err := ioutil.ReadFile(filename)
+	dat, err := ioutil.ReadFile(saveFilename)
 	check(err)
 	fmt.Println(string(dat))
 	return worldmap.NewMap(width, height, windowWidth, windowHeight)
@@ -41,12 +42,15 @@ func main() {
 	}
 	defer termbox.Close()
 	message.SetWindowSize(windowWidth, windowHeight)
-	message.PrintMessage("Do you wish to load the last save? [yn]")
-	l := termbox.PollEvent()
 	worldMap := worldmap.NewMap(width, height, windowWidth, windowHeight)
 	player := creature.NewPlayer()
-	if l.Type == termbox.EventKey && l.Ch == 'y' {
-		worldMap = load()
+	if _, err := os.Stat(saveFilename); !os.IsNotExist(err) {
+		message.PrintMessage("Do you wish to load the last save? [yn]")
+		l := termbox.PollEvent()
+		if l.Type == termbox.EventKey && l.Ch == 'y' {
+			worldMap = load()
+		}
+
 	}
 	for {
 
