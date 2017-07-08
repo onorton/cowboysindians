@@ -1,6 +1,7 @@
 package worldmap
 
 import (
+	"fmt"
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/icon"
@@ -15,6 +16,10 @@ func NewTile(c rune, colour termbox.Attribute, x, y int, passable bool) Tile {
 
 func NewDoor(x, y int, open bool) Tile {
 	return Tile{icon.NewIcon('+', termbox.ColorWhite), x, y, open, true, nil}
+}
+
+func (t Tile) Serialize() string {
+	return fmt.Sprintf("Tile{%s %d %d %v %v %v}", t.terrain.Serialize(), t.x, t.y, t.passable, t.door, t.c)
 }
 func (t Tile) render(x, y int) {
 
@@ -74,6 +79,19 @@ type Viewer struct {
 type Map struct {
 	grid [][]Tile
 	v    *Viewer
+}
+
+func (m Map) Serialize() string {
+	result := fmt.Sprintf("%d %d\n", len(m.grid[0]), len(m.grid))
+	for _, row := range m.grid {
+		for _, tile := range row {
+			result += tile.Serialize()
+		}
+		result += "\n"
+
+	}
+
+	return result
 }
 
 func (m Map) ToggleDoor(x, y int, open bool) bool {

@@ -12,8 +12,8 @@ import (
 
 const windowWidth = 100
 const windowHeight = 25
-const width = 400
-const height = 100
+const width = 10
+const height = 10
 const saveFilename = "game.dat"
 
 func check(e error) {
@@ -22,8 +22,8 @@ func check(e error) {
 	}
 }
 func save(m worldmap.Map) {
-
-	err := ioutil.WriteFile(saveFilename, []byte("Hello World!"), 0644)
+	dat := m.Serialize()
+	err := ioutil.WriteFile(saveFilename, []byte(dat), 0644)
 	check(err)
 }
 
