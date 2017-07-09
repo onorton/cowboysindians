@@ -31,8 +31,8 @@ func load() worldmap.Map {
 
 	dat, err := ioutil.ReadFile(saveFilename)
 	check(err)
-	fmt.Println(string(dat))
-	return worldmap.NewMap(width, height, windowWidth, windowHeight)
+	return worldmap.DeserializeMap(string(dat))
+
 }
 
 func main() {

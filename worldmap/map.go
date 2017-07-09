@@ -6,6 +6,8 @@ import (
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/message"
+	"strconv"
+	"strings"
 )
 
 const padding = 5
@@ -19,7 +21,44 @@ func NewDoor(x, y int, open bool) Tile {
 }
 
 func (t Tile) Serialize() string {
-	return fmt.Sprintf("Tile{%s %d %d %v %v %v}", t.terrain.Serialize(), t.x, t.y, t.passable, t.door, t.c)
+	return fmt.Sprintf("Tile{%s %d %d %v %v %v}", t.terrain.Serialize(), t.x, t.y, t.passable, t.door, t.c.Serialize())
+}
+
+func DeserializeTile(t string) Tile {
+	if len(t) == 0 || t[0] != '{' {
+
+		return Tile{}
+	}
+
+	b := 0
+	e := len(t)
+	for i, c := range t {
+		if c == 'I' && b == 0 {
+			b = i
+		}
+		if c == '}' && e == len(t) {
+			e = i
+		}
+	}
+
+	e++
+	tile := Tile{}
+
+	tile.terrain = icon.Deserialize(t[b:e])
+
+	t = t[(e + 1):]
+	restCreature := strings.Split(t, "Player")
+	if len(restCreature) == 2 {
+		tile.c = creature.DeserializeCreature(restCreature[1])
+	}
+	t = restCreature[0]
+	fields := strings.Split(t, " ")
+	tile.x, _ = strconv.Atoi(fields[0])
+	tile.y, _ = strconv.Atoi(fields[1])
+	tile.passable, _ = strconv.ParseBool(fields[2])
+	tile.door, _ = strconv.ParseBool(fields[3])
+
+	return tile
 }
 func (t Tile) render(x, y int) {
 
@@ -81,6 +120,25 @@ type Map struct {
 	v    *Viewer
 }
 
+func DeserializeMap(m string) Map {
+	dimensionEntries := strings.Split(m, "\n")
+	dimensions := strings.Split(dimensionEntries[0], " ")
+	dimensionEntries = dimensionEntries[1:len(dimensionEntries)]
+	height, _ := strconv.Atoi(dimensions[1])
+	width, _ := strconv.Atoi(dimensions[0])
+	grid := make([][]Tile, height)
+	for i := 0; i < height; i++ {
+		row := make([]Tile, width)
+		tiles := strings.Split(dimensionEntries[i], "Tile")
+		for j := 0; j < width; j++ {
+			row[j] = DeserializeTile(tiles[j])
+
+		}
+		grid[i] = row
+	}
+
+	return Map{grid, new(Viewer)}
+}
 func (m Map) Serialize() string {
 	result := fmt.Sprintf("%d %d\n", len(m.grid[0]), len(m.grid))
 	for _, row := range m.grid {
@@ -90,7 +148,6 @@ func (m Map) Serialize() string {
 		result += "\n"
 
 	}
-
 	return result
 }
 
