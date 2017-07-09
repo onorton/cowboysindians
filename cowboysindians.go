@@ -21,9 +21,10 @@ func check(e error) {
 		panic(e)
 	}
 }
-func save(m worldmap.Map) {
-	dat := m.Serialize()
-	err := ioutil.WriteFile(saveFilename, []byte(dat), 0644)
+func save(m worldmap.Map, p *creature.Player) {
+	data := m.Serialize()
+	data += "\n\n" + p.Serialize()
+	err := ioutil.WriteFile(saveFilename, []byte(data), 0644)
 	check(err)
 }
 

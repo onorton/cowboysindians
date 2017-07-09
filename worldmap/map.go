@@ -53,6 +53,7 @@ func DeserializeTile(t string) Tile {
 	}
 	t = restCreature[0]
 	fields := strings.Split(t, " ")
+
 	tile.x, _ = strconv.Atoi(fields[0])
 	tile.y, _ = strconv.Atoi(fields[1])
 	tile.passable, _ = strconv.ParseBool(fields[2])
@@ -108,6 +109,17 @@ func NewMap(width, height, viewerWidth, viewerHeight int) Map {
 	return Map{grid, viewer}
 }
 
+func DeserializeViewer(v string) *Viewer {
+	v = v[1 : len(v)-1]
+	fields := strings.Split(v, " ")
+	viewer := new(Viewer)
+	viewer.x, _ = strconv.Atoi(fields[0])
+	viewer.y, _ = strconv.Atoi(fields[1])
+	viewer.width, _ = strconv.Atoi(fields[2])
+	viewer.height, _ = strconv.Atoi(fields[3])
+
+	return viewer
+}
 func (v *Viewer) Serialize() string {
 	return fmt.Sprintf("Viewer{%d %d %d %d}", v.x, v.y, v.width, v.height)
 }
@@ -140,7 +152,7 @@ func DeserializeMap(m string) Map {
 		}
 		grid[i] = row
 	}
-	return Map{grid, new(Viewer)}
+	return Map{grid, DeserializeViewer(dimensionEntries[len(dimensionEntries)-1])}
 }
 func (m Map) Serialize() string {
 	result := fmt.Sprintf("%d %d\n", len(m.grid[0]), len(m.grid))
