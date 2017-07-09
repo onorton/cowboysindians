@@ -8,6 +8,7 @@ import (
 	"github.com/onorton/cowboysindians/worldmap"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 const windowWidth = 100
@@ -28,11 +29,12 @@ func save(m worldmap.Map, p *creature.Player) {
 	check(err)
 }
 
-func load() worldmap.Map {
+func load() (worldmap.Map, *creature.Player) {
 
-	dat, err := ioutil.ReadFile(saveFilename)
+	data, err := ioutil.ReadFile(saveFilename)
 	check(err)
-	return worldmap.DeserializeMap(string(dat))
+	items := strings.Split(string(data), "\n\n")
+	return worldmap.DeserializeMap(items[0]), creature.Deserialize(items[1])
 
 }
 
@@ -49,10 +51,11 @@ func main() {
 		message.PrintMessage("Do you wish to load the last save? [yn]")
 		l := termbox.PollEvent()
 		if l.Type == termbox.EventKey && l.Ch == 'y' {
-			worldMap = load()
+			worldMap, player = load()
 		}
 
 	}
+	worldMap.MoveCreature(player, player.X, player.Y)
 	for {
 
 		quit := false
@@ -139,7 +142,7 @@ func main() {
 							message.PrintMessage("Do you wish to save? [yn]")
 							quitEvent := termbox.PollEvent()
 							if quitEvent.Type == termbox.EventKey && quitEvent.Ch == 'y' {
-								save(worldMap)
+								save(worldMap, player)
 							}
 							quit = true
 						default:
@@ -159,7 +162,7 @@ func main() {
 		if quit {
 			break
 		}
-		worldMap.MoveCreature(&player, x, y)
+		worldMap.MoveCreature(player, x, y)
 
 	}
 

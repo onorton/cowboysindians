@@ -49,7 +49,7 @@ func DeserializeTile(t string) Tile {
 	t = t[(e + 1):]
 	restCreature := strings.Split(t, "Player")
 	if len(restCreature) == 2 {
-		tile.c = creature.DeserializeCreature(restCreature[1])
+		tile.c = creature.Deserialize(restCreature[1])
 	}
 	t = restCreature[0]
 	fields := strings.Split(t, " ")
@@ -110,14 +110,13 @@ func NewMap(width, height, viewerWidth, viewerHeight int) Map {
 }
 
 func DeserializeViewer(v string) *Viewer {
-	v = v[1 : len(v)-1]
+	v = v[6 : len(v)-1]
 	fields := strings.Split(v, " ")
 	viewer := new(Viewer)
 	viewer.x, _ = strconv.Atoi(fields[0])
 	viewer.y, _ = strconv.Atoi(fields[1])
 	viewer.width, _ = strconv.Atoi(fields[2])
 	viewer.height, _ = strconv.Atoi(fields[3])
-
 	return viewer
 }
 func (v *Viewer) Serialize() string {
@@ -146,11 +145,13 @@ func DeserializeMap(m string) Map {
 	for i := 0; i < height; i++ {
 		row := make([]Tile, width)
 		tiles := strings.Split(dimensionEntries[i], "Tile")
+		tiles = tiles[1:len(tiles)]
 		for j := 0; j < width; j++ {
 			row[j] = DeserializeTile(tiles[j])
 
 		}
 		grid[i] = row
+
 	}
 	return Map{grid, DeserializeViewer(dimensionEntries[len(dimensionEntries)-1])}
 }
