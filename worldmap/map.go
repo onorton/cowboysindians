@@ -108,6 +108,10 @@ func NewMap(width, height, viewerWidth, viewerHeight int) Map {
 	return Map{grid, viewer}
 }
 
+func (v *Viewer) Serialize() string {
+	return fmt.Sprintf("Viewer{%d %d %d %d}", v.x, v.y, v.width, v.height)
+}
+
 type Viewer struct {
 	x      int
 	y      int
@@ -136,7 +140,6 @@ func DeserializeMap(m string) Map {
 		}
 		grid[i] = row
 	}
-
 	return Map{grid, new(Viewer)}
 }
 func (m Map) Serialize() string {
@@ -148,6 +151,7 @@ func (m Map) Serialize() string {
 		result += "\n"
 
 	}
+	result += m.v.Serialize() + "\n"
 	return result
 }
 
