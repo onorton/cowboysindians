@@ -34,7 +34,9 @@ func load() (worldmap.Map, *creature.Player) {
 	data, err := ioutil.ReadFile(saveFilename)
 	check(err)
 	items := strings.Split(string(data), "\n\n")
-	return worldmap.DeserializeMap(items[0]), creature.Deserialize(items[1])
+	player := (*creature.Deserialize(items[1])).(*creature.Player)
+
+	return worldmap.DeserializeMap(items[0]), player
 
 }
 
@@ -56,7 +58,7 @@ func main() {
 
 	}
 	x, y := player.GetCoordinates()
-	worldMap.MoveCreature(player, x, y)
+	worldMap.MovePlayer(player, x, y)
 	for {
 
 		quit := false
@@ -162,7 +164,7 @@ func main() {
 		if quit {
 			break
 		}
-		worldMap.MoveCreature(player, x, y)
+		worldMap.MovePlayer(player, x, y)
 
 	}
 

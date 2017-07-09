@@ -15,7 +15,7 @@ func (p *Player) Render(x, y int) {
 	p.icon.Render(x, y)
 }
 
-func Deserialize(c string) *Player {
+func Deserialize(c string) *Creature {
 	p := new(Player)
 	c = c[strings.Index(c, "{")+1 : len(c)-1]
 	coordinatesIcon := strings.Split(c, "Icon")
@@ -24,7 +24,8 @@ func Deserialize(c string) *Player {
 	coordinates := strings.Split(coordinatesIcon[0], " ")
 	p.x, _ = strconv.Atoi(coordinates[0])
 	p.y, _ = strconv.Atoi(coordinates[1])
-	return p
+	var creature Creature = p
+	return &creature
 
 }
 
@@ -43,6 +44,13 @@ func (p *Player) GetCoordinates() (int, int) {
 func (p *Player) SetCoordinates(x int, y int) {
 	p.x = x
 	p.y = y
+}
+
+type Creature interface {
+	GetCoordinates() (int, int)
+	SetCoordinates(int, int)
+	Serialize() string
+	Render(int, int)
 }
 
 type Player struct {

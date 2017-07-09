@@ -21,10 +21,11 @@ func NewDoor(x, y int, open bool) Tile {
 }
 
 func (t Tile) Serialize() string {
-	return fmt.Sprintf("Tile{%s %d %d %v %v %v}", t.terrain.Serialize(), t.x, t.y, t.passable, t.door, t.c.Serialize())
+	return fmt.Sprintf("Tile{%s %d %d %v %v %v}", t.terrain.Serialize(), t.x, t.y, t.passable, t.door, (*t.c).Serialize())
 }
 
 func DeserializeTile(t string) Tile {
+
 	if len(t) == 0 || t[0] != '{' {
 
 		return Tile{}
@@ -64,7 +65,7 @@ func DeserializeTile(t string) Tile {
 func (t Tile) render(x, y int) {
 
 	if t.c != nil {
-		t.c.Render(x, y)
+		(*t.c).Render(x, y)
 	} else if t.door {
 		t.terrain.RenderDoor(x, y, t.passable)
 	} else {
@@ -78,7 +79,7 @@ type Tile struct {
 	y        int
 	passable bool
 	door     bool
-	c        *creature.Player
+	c        *creature.Creature
 }
 
 func NewMap(width, height, viewerWidth, viewerHeight int) Map {
@@ -270,18 +271,9 @@ func (m Map) ToggleDoor(x, y int, open bool) bool {
 
 }
 
-func (m Map) MoveCreature(c *creature.Player, x, y int) {
-
-	if !m.grid[y][x].passable {
-		return
-	}
-
+func (m Map) MovePlayer(c *creature.Player, x, y int) {
+	m.MoveCreature(c, x, y)
 	cX, cY := c.GetCoordinates()
-	m.grid[cY][cX].c = nil
-	cX = x
-	cY = y
-	c.SetCoordinates(cX, cY)
-	m.grid[cY][cX].c = c
 	rX := cX - m.v.x
 	rY := cY - m.v.y
 
@@ -297,6 +289,20 @@ func (m Map) MoveCreature(c *creature.Player, x, y int) {
 	if rY > m.v.height-padding && cY <= len(m.grid)-padding {
 		m.v.y++
 	}
+}
+func (m Map) MoveCreature(c creature.Creature, x, y int) {
+
+	if !m.grid[y][x].passable {
+		return
+	}
+
+	cX, cY := c.GetCoordinates()
+	m.grid[cY][cX].c = nil
+	cX = x
+	cY = y
+	c.SetCoordinates(cX, cY)
+	m.grid[cY][cX].c = &c
+
 }
 
 func (m Map) Render() {
