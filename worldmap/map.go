@@ -276,30 +276,25 @@ func (m Map) MoveCreature(c *creature.Player, x, y int) {
 		return
 	}
 
-	for y, row := range m.grid {
-		for x, tile := range row {
+	cX, cY := c.GetCoordinates()
+	m.grid[cY][cX].c = nil
+	cX = x
+	cY = y
+	c.SetCoordinates(cX, cY)
+	m.grid[cY][cX].c = c
+	rX := cX - m.v.x
+	rY := cY - m.v.y
 
-			if tile.c == c {
-				m.grid[y][x].c = nil
-			}
-		}
-	}
-	c.Y = y
-	c.X = x
-	m.grid[c.Y][c.X].c = c
-	rX := c.X - m.v.x
-	rY := c.Y - m.v.y
-
-	if rX < padding && c.X >= padding {
+	if rX < padding && cX >= padding {
 		m.v.x--
 	}
-	if rX > m.v.width-padding && c.X <= len(m.grid[0])-padding {
+	if rX > m.v.width-padding && cX <= len(m.grid[0])-padding {
 		m.v.x++
 	}
-	if rY < padding && c.Y >= padding {
+	if rY < padding && cY >= padding {
 		m.v.y--
 	}
-	if rY > m.v.height-padding && c.Y <= len(m.grid)-padding {
+	if rY > m.v.height-padding && cY <= len(m.grid)-padding {
 		m.v.y++
 	}
 }

@@ -55,15 +55,15 @@ func main() {
 		}
 
 	}
-	worldMap.MoveCreature(player, player.X, player.Y)
+	x, y := player.GetCoordinates()
+	worldMap.MoveCreature(player, x, y)
 	for {
 
 		quit := false
 		endTurn := false
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 		worldMap.Render()
-		x := player.X
-		y := player.Y
+		x, y = player.GetCoordinates()
 		message.Enqueue(fmt.Sprintf("%d %d", x, y))
 		message.PrintMessages()
 
