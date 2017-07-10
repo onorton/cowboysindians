@@ -4,6 +4,7 @@ import (
 	"fmt"
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/creature"
+	"github.com/onorton/cowboysindians/enemy"
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/worldmap"
 	"io/ioutil"
@@ -23,7 +24,7 @@ func check(e error) {
 		panic(e)
 	}
 }
-func save(m worldmap.Map, p *creature.Player, enemies []*creature.Enemy) {
+func save(m worldmap.Map, p *creature.Player, enemies []*enemy.Enemy) {
 	data := m.Serialize()
 	data += "\n\n" + p.Serialize()
 	data += "\n\n"
@@ -34,7 +35,7 @@ func save(m worldmap.Map, p *creature.Player, enemies []*creature.Enemy) {
 	check(err)
 }
 
-func load() (worldmap.Map, *creature.Player, []*creature.Enemy) {
+func load() (worldmap.Map, *creature.Player, []*enemy.Enemy) {
 
 	data, err := ioutil.ReadFile(saveFilename)
 	check(err)
@@ -42,18 +43,18 @@ func load() (worldmap.Map, *creature.Player, []*creature.Enemy) {
 	player := (*creature.Deserialize(items[1])).(*creature.Player)
 	enemyStrings := strings.Split(items[2], "\n")
 	enemyStrings = enemyStrings[0 : len(enemyStrings)-1]
-	enemies := make([]*creature.Enemy, len(enemyStrings))
+	enemies := make([]*enemy.Enemy, len(enemyStrings))
 
-	for i, enemy := range enemyStrings {
+	for i, e := range enemyStrings {
 		//fmt.Println(enemy, i)
-		enemies[i] = (*creature.DeserializeEnemy(enemy)).(*creature.Enemy)
+		enemies[i] = (*enemy.Deserialize(e)).(*enemy.Enemy)
 	}
 	return worldmap.DeserializeMap(items[0]), player, enemies
 
 }
 
-func generateEnemies(m worldmap.Map, p *creature.Player, n int) []*creature.Enemy {
-	enemies := make([]*creature.Enemy, n)
+func generateEnemies(m worldmap.Map, p *creature.Player, n int) []*enemy.Enemy {
+	enemies := make([]*enemy.Enemy, n)
 	for i := 0; i < n; i++ {
 		x := rand.Intn(width)
 		y := rand.Intn(height)
@@ -62,7 +63,7 @@ func generateEnemies(m worldmap.Map, p *creature.Player, n int) []*creature.Enem
 			i--
 			continue
 		}
-		enemies[i] = creature.NewEnemy(x, y, 'b', termbox.ColorBlue)
+		enemies[i] = enemy.NewEnemy(x, y, 'b', termbox.ColorBlue)
 	}
 	return enemies
 }
@@ -198,7 +199,7 @@ func main() {
 		}
 		worldMap.MovePlayer(player, x, y)
 		for _, enemy := range enemies {
-			eX, eY := enemy.GetCoordinates()
+			eX, eY := enemy.Update(worldMap)
 			worldMap.MoveCreature(enemy, eX, eY)
 		}
 	}

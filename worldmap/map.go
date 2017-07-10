@@ -281,6 +281,13 @@ func (m Map) ToggleDoor(x, y int, open bool) bool {
 
 }
 
+func (m Map) GetWidth() int {
+	return len(m.grid[0])
+}
+
+func (m Map) GetHeight() int {
+	return len(m.grid)
+}
 func (m Map) MovePlayer(c *creature.Player, x, y int) {
 	m.MoveCreature(c, x, y)
 	cX, cY := c.GetCoordinates()
@@ -300,6 +307,7 @@ func (m Map) MovePlayer(c *creature.Player, x, y int) {
 		m.v.y++
 	}
 }
+
 func (m Map) MoveCreature(c creature.Creature, x, y int) {
 
 	if !m.grid[y][x].passable || m.grid[y][x].c != nil {
