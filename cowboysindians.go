@@ -7,6 +7,7 @@ import (
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/worldmap"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"strings"
 )
@@ -40,6 +41,20 @@ func load() (worldmap.Map, *creature.Player) {
 
 }
 
+func generateEnemies(m worldmap.Map, p *creature.Player, n int) []*creature.Enemy {
+	enemies := make([]*creature.Enemy, n)
+	for i := 0; i < n; i++ {
+		x := rand.Intn(width)
+		y := rand.Intn(height)
+		pX, pY := p.GetCoordinates()
+		if !m.IsPassable(x, y) || (x == pX && y == pY) || m.IsOccupied(x, y) {
+			i--
+			continue
+		}
+		enemies[i] = creature.NewEnemy(x, y, 'b', termbox.ColorBlue)
+	}
+	return enemies
+}
 func main() {
 	err := termbox.Init()
 	if err != nil {
@@ -49,6 +64,7 @@ func main() {
 	message.SetWindowSize(windowWidth, windowHeight)
 	worldMap := worldmap.NewMap(width, height, windowWidth, windowHeight)
 	player := creature.NewPlayer()
+	enemies := generateEnemies(worldMap, player, 2)
 	if _, err := os.Stat(saveFilename); !os.IsNotExist(err) {
 		message.PrintMessage("Do you wish to load the last save? [yn]")
 		l := termbox.PollEvent()
@@ -59,6 +75,10 @@ func main() {
 	}
 	x, y := player.GetCoordinates()
 	worldMap.MovePlayer(player, x, y)
+	for _, e := range enemies {
+		x, y = e.GetCoordinates()
+		worldMap.MoveCreature(e, x, y)
+	}
 	for {
 
 		quit := false
@@ -165,7 +185,10 @@ func main() {
 			break
 		}
 		worldMap.MovePlayer(player, x, y)
-
+		for _, enemy := range enemies {
+			eX, eY := enemy.GetCoordinates()
+			worldMap.MoveCreature(enemy, eX, eY)
+		}
 	}
 
 }

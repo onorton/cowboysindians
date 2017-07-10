@@ -169,6 +169,13 @@ func (m Map) Serialize() string {
 	return result
 }
 
+func (m Map) IsPassable(x, y int) bool {
+	return m.grid[y][x].passable
+}
+
+func (m Map) IsOccupied(x, y int) bool {
+	return m.grid[y][x].c != nil
+}
 func (m Map) ToggleDoor(x, y int, open bool) bool {
 	message.PrintMessage("Which direction?")
 	height := len(m.grid)
@@ -292,7 +299,7 @@ func (m Map) MovePlayer(c *creature.Player, x, y int) {
 }
 func (m Map) MoveCreature(c creature.Creature, x, y int) {
 
-	if !m.grid[y][x].passable {
+	if !m.grid[y][x].passable || m.grid[y][x].c != nil {
 		return
 	}
 
