@@ -21,6 +21,9 @@ func NewDoor(x, y int, open bool) Tile {
 }
 
 func (t Tile) Serialize() string {
+	if t.c == nil {
+		return fmt.Sprintf("Tile{%s %d %d %v %v %v}", t.terrain.Serialize(), t.x, t.y, t.passable, t.door, "")
+	}
 	return fmt.Sprintf("Tile{%s %d %d %v %v %v}", t.terrain.Serialize(), t.x, t.y, t.passable, t.door, (*t.c).Serialize())
 }
 

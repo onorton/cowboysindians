@@ -23,21 +23,32 @@ func check(e error) {
 		panic(e)
 	}
 }
-func save(m worldmap.Map, p *creature.Player) {
+func save(m worldmap.Map, p *creature.Player, enemies []*creature.Enemy) {
 	data := m.Serialize()
 	data += "\n\n" + p.Serialize()
+	data += "\n\n"
+	for _, e := range enemies {
+		data += e.Serialize() + "\n"
+	}
 	err := ioutil.WriteFile(saveFilename, []byte(data), 0644)
 	check(err)
 }
 
-func load() (worldmap.Map, *creature.Player) {
+func load() (worldmap.Map, *creature.Player, []*creature.Enemy) {
 
 	data, err := ioutil.ReadFile(saveFilename)
 	check(err)
 	items := strings.Split(string(data), "\n\n")
 	player := (*creature.Deserialize(items[1])).(*creature.Player)
+	enemyStrings := strings.Split(items[2], "\n")
+	enemyStrings = enemyStrings[0 : len(enemyStrings)-1]
+	enemies := make([]*creature.Enemy, len(enemyStrings))
 
-	return worldmap.DeserializeMap(items[0]), player
+	for i, enemy := range enemyStrings {
+		//fmt.Println(enemy, i)
+		enemies[i] = (*creature.DeserializeEnemy(enemy)).(*creature.Enemy)
+	}
+	return worldmap.DeserializeMap(items[0]), player, enemies
 
 }
 
@@ -69,10 +80,11 @@ func main() {
 		message.PrintMessage("Do you wish to load the last save? [yn]")
 		l := termbox.PollEvent()
 		if l.Type == termbox.EventKey && l.Ch == 'y' {
-			worldMap, player = load()
+			worldMap, player, enemies = load()
 		}
 
 	}
+	enemies = generateEnemies(worldMap, player, 2)
 	x, y := player.GetCoordinates()
 	worldMap.MovePlayer(player, x, y)
 	for _, e := range enemies {
@@ -164,7 +176,7 @@ func main() {
 							message.PrintMessage("Do you wish to save? [yn]")
 							quitEvent := termbox.PollEvent()
 							if quitEvent.Type == termbox.EventKey && quitEvent.Ch == 'y' {
-								save(worldMap, player)
+								save(worldMap, player, enemies)
 							}
 							quit = true
 						default:

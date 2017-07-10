@@ -30,9 +30,6 @@ func DeserializeEnemy(c string) *Creature {
 }
 
 func (e *Enemy) Serialize() string {
-	if e == nil {
-		return ""
-	}
 	return fmt.Sprintf("Enemy{%d %d %s}", e.x, e.y, e.icon.Serialize())
 }
 
