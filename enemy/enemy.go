@@ -6,6 +6,7 @@ import (
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/worldmap"
+	"math/rand"
 	"strconv"
 	"strings"
 )
@@ -78,7 +79,7 @@ func (e *Enemy) GetAIMap(m worldmap.Map) [][]int {
 							min = aiMap[nY][nX]
 						}
 					}
-					if aiMap[y][x] > min+1 {
+					if aiMap[y][x] > min {
 						aiMap[y][x] = min + 1
 					}
 				}
@@ -100,18 +101,31 @@ func compareMaps(m, o [][]int) bool {
 	return true
 
 }
+
+type Coordinate struct {
+	x int
+	y int
+}
+
 func (e *Enemy) Update(m worldmap.Map) (int, int) {
-	y := e.y
-	if e.direction {
-		y++
-	} else {
-		y--
+	aiMap := e.GetAIMap(m)
+	current := aiMap[e.y][e.x]
+	possibleLocations := make([]Coordinate, 0)
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			nX := e.x + i
+			nY := e.y + j
+			if nX >= 0 && nX < len(aiMap[0]) && nY >= 0 && nY < len(aiMap) && aiMap[nY][nX] < current {
+				possibleLocations = append(possibleLocations, Coordinate{nX, nY})
+			}
+		}
 	}
-	if y >= m.GetHeight() || y < 0 || m.IsOccupied(e.x, y) || !m.IsPassable(e.x, y) {
-		e.direction = !e.direction
-		y = e.y
+	if len(possibleLocations) == 0 {
+		return e.x, e.y
 	}
-	return e.x, y
+	l := possibleLocations[rand.Intn(len(possibleLocations))]
+
+	return l.x, l.y
 }
 
 type Enemy struct {
