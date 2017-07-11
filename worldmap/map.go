@@ -172,6 +172,14 @@ func (m Map) Serialize() string {
 	return result
 }
 
+func (m Map) HasPlayer(x, y int) bool {
+	if m.IsOccupied(x, y) {
+		_, ok := (*m.grid[y][x].c).(*creature.Player)
+		return ok
+	}
+	return false
+}
+
 func (m Map) IsPassable(x, y int) bool {
 	return m.grid[y][x].passable
 }
