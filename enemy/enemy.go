@@ -12,7 +12,7 @@ import (
 )
 
 func NewEnemy(x, y int, c rune, i termbox.Attribute) *Enemy {
-	return &Enemy{x, y, true, icon.NewIcon(c, i), 2}
+	return &Enemy{x, y, true, icon.NewIcon(c, i), 1}
 }
 func (e *Enemy) Render(x, y int) {
 	e.icon.Render(x, y)

@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -122,9 +123,13 @@ func main() {
 		x, y = player.GetCoordinates()
 		message.Enqueue(fmt.Sprintf("%d %d", x, y))
 		message.PrintMessages()
+		sort.Slice(all, func(i, j int) bool {
+			return all[i].GetInitiative() > all[j].GetInitiative()
 
+		})
 		printTime(t)
-		for i, c := range all {
+
+		for _, c := range all {
 			if p, ok := c.(*creature.Player); ok {
 				for {
 					e := termbox.PollEvent()

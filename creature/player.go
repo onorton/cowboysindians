@@ -8,7 +8,7 @@ import (
 )
 
 func NewPlayer() *Player {
-	return &Player{0, 0, icon.CreatePlayerIcon(), 0}
+	return &Player{0, 0, icon.CreatePlayerIcon(), 2}
 }
 
 func (p *Player) Render(x, y int) {
