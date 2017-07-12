@@ -67,6 +67,14 @@ func generateEnemies(m worldmap.Map, p *creature.Player, n int) []*enemy.Enemy {
 	}
 	return enemies
 }
+
+func printTime(t int) {
+	time := fmt.Sprintf("T:%d", t)
+	for i, c := range time {
+		termbox.SetCell(i, windowHeight+1, c, termbox.ColorWhite, termbox.ColorDefault)
+	}
+	termbox.Flush()
+}
 func main() {
 	err := termbox.Init()
 	if err != nil {
@@ -77,6 +85,7 @@ func main() {
 	worldMap := worldmap.NewMap(width, height, windowWidth, windowHeight)
 	player := creature.NewPlayer()
 	enemies := generateEnemies(worldMap, player, 2)
+	t := 1
 	if _, err := os.Stat(saveFilename); !os.IsNotExist(err) {
 		message.PrintMessage("Do you wish to load the last save? [yn]")
 		l := termbox.PollEvent()
@@ -93,7 +102,6 @@ func main() {
 		worldMap.MoveCreature(e, x, y)
 	}
 	for {
-
 		quit := false
 		endTurn := false
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
@@ -101,6 +109,8 @@ func main() {
 		x, y = player.GetCoordinates()
 		message.Enqueue(fmt.Sprintf("%d %d", x, y))
 		message.PrintMessages()
+
+		printTime(t)
 
 		for {
 			e := termbox.PollEvent()
@@ -202,6 +212,7 @@ func main() {
 			eX, eY := enemy.Update(worldMap)
 			worldMap.MoveCreature(enemy, eX, eY)
 		}
+		t++
 	}
 
 }
