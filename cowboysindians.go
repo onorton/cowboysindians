@@ -47,7 +47,6 @@ func load() (worldmap.Map, *creature.Player, []*enemy.Enemy, int) {
 	enemies := make([]*enemy.Enemy, len(enemyStrings))
 
 	for i, e := range enemyStrings {
-		//fmt.Println(enemy, i)
 		enemies[i] = (*enemy.Deserialize(e)).(*enemy.Enemy)
 	}
 	timeMap := strings.SplitN(items[0], "\n", 2)
@@ -70,6 +69,15 @@ func generateEnemies(m worldmap.Map, p *creature.Player, n int) []*enemy.Enemy {
 		enemies[i] = enemy.NewEnemy(x, y, 'b', termbox.ColorBlue)
 	}
 	return enemies
+}
+
+func allCreatures(enemies []*enemy.Enemy, p *creature.Player) []creature.Creature {
+	all := make([]creature.Creature, len(enemies)+1)
+	for i, e := range enemies {
+		all[i] = e
+	}
+	all[len(enemies)] = p
+	return all
 }
 
 func printTime(t int) {
@@ -98,14 +106,15 @@ func main() {
 		}
 
 	}
-	enemies = generateEnemies(worldMap, player, 2)
 	x, y := player.GetCoordinates()
 	worldMap.MovePlayer(player, x, y)
 	for _, e := range enemies {
 		x, y = e.GetCoordinates()
 		worldMap.MoveCreature(e, x, y)
 	}
+	all := allCreatures(enemies, player)
 	for {
+
 		quit := false
 		endTurn := false
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
@@ -115,106 +124,111 @@ func main() {
 		message.PrintMessages()
 
 		printTime(t)
-
-		for {
-			e := termbox.PollEvent()
-			if e.Type == termbox.EventKey {
-				switch e.Key {
-				case termbox.KeyArrowLeft:
-					if x != 0 {
-						x--
-					}
-				case termbox.KeyArrowRight:
-					if x < width-1 {
-						x++
-					}
-				case termbox.KeyArrowUp:
-					if y != 0 {
-						y--
-					}
-				case termbox.KeyArrowDown:
-					if y < height-1 {
-						y++
-					}
-				case termbox.KeySpace:
-					{
-						message.PrintMessages()
-					}
-				default:
-					{
-
-						switch e.Ch {
-						case '1':
-							if x != 0 && y < height-1 {
-								x--
-								y++
-							}
-						case '2':
-							if y < height-1 {
-								y++
-							}
-						case '3':
-							if x < width-1 && y < height-1 {
-								x++
-								y++
-							}
-
-						case '4':
+		for i, c := range all {
+			if p, ok := c.(*creature.Player); ok {
+				for {
+					e := termbox.PollEvent()
+					if e.Type == termbox.EventKey {
+						switch e.Key {
+						case termbox.KeyArrowLeft:
 							if x != 0 {
 								x--
 							}
-						case '5':
-						case '6':
+						case termbox.KeyArrowRight:
 							if x < width-1 {
 								x++
 							}
-						case '7':
-							if x != 0 && x != 0 {
-								x--
-								y--
-							}
-						case '8':
+						case termbox.KeyArrowUp:
 							if y != 0 {
 								y--
 							}
-						case '9':
-							if y != 0 && x < width-1 {
-								y--
-								x++
+						case termbox.KeyArrowDown:
+							if y < height-1 {
+								y++
 							}
-						case 'c':
-							endTurn = worldMap.ToggleDoor(x, y, false)
-						case 'o':
-							endTurn = worldMap.ToggleDoor(x, y, true)
-						case 'q':
-
-							message.PrintMessage("Do you wish to save? [yn]")
-							quitEvent := termbox.PollEvent()
-							if quitEvent.Type == termbox.EventKey && quitEvent.Ch == 'y' {
-								save(worldMap, player, enemies, t)
+						case termbox.KeySpace:
+							{
+								message.PrintMessages()
 							}
-							quit = true
 						default:
-							quit = true
+							{
+
+								switch e.Ch {
+								case '1':
+									if x != 0 && y < height-1 {
+										x--
+										y++
+									}
+								case '2':
+									if y < height-1 {
+										y++
+									}
+								case '3':
+									if x < width-1 && y < height-1 {
+										x++
+										y++
+									}
+
+								case '4':
+									if x != 0 {
+										x--
+									}
+								case '5':
+								case '6':
+									if x < width-1 {
+										x++
+									}
+								case '7':
+									if x != 0 && x != 0 {
+										x--
+										y--
+									}
+								case '8':
+									if y != 0 {
+										y--
+									}
+								case '9':
+									if y != 0 && x < width-1 {
+										y--
+										x++
+									}
+								case 'c':
+									endTurn = worldMap.ToggleDoor(x, y, false)
+								case 'o':
+									endTurn = worldMap.ToggleDoor(x, y, true)
+								case 'q':
+
+									message.PrintMessage("Do you wish to save? [yn]")
+									quitEvent := termbox.PollEvent()
+									if quitEvent.Type == termbox.EventKey && quitEvent.Ch == 'y' {
+										save(worldMap, player, enemies, t)
+									}
+									quit = true
+								default:
+									quit = true
+								}
+							}
 						}
+						endTurn = endTurn || (e.Key != termbox.KeySpace && e.Ch != 'c' && e.Ch != 'o' && e.Ch != 'q')
+						if endTurn || quit {
+							break
+						}
+					} else {
+						break
 					}
 				}
-				endTurn = endTurn || (e.Key != termbox.KeySpace && e.Ch != 'c' && e.Ch != 'o' && e.Ch != 'q')
-				if endTurn || quit {
-					break
-				}
+
+				worldMap.MovePlayer(p, x, y)
+
 			} else {
-				break
+				e := c.(*enemy.Enemy)
+				eX, eY := e.Update(worldMap)
+				worldMap.MoveCreature(e, eX, eY)
 			}
 		}
 
 		if quit {
 			break
-		}
-		worldMap.MovePlayer(player, x, y)
-		for _, enemy := range enemies {
-			eX, eY := enemy.Update(worldMap)
-			worldMap.MoveCreature(enemy, eX, eY)
 		}
 		t++
 	}

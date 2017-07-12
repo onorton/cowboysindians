@@ -12,7 +12,7 @@ import (
 )
 
 func NewEnemy(x, y int, c rune, i termbox.Attribute) *Enemy {
-	return &Enemy{x, y, true, icon.NewIcon(c, i)}
+	return &Enemy{x, y, true, icon.NewIcon(c, i), 2}
 }
 func (e *Enemy) Render(x, y int) {
 	e.icon.Render(x, y)
@@ -90,6 +90,10 @@ func (e *Enemy) GetAIMap(m worldmap.Map) [][]int {
 	return aiMap
 }
 
+func (e *Enemy) GetInitiative() int {
+	return e.initiative
+}
+
 func compareMaps(m, o [][]int) bool {
 	for i := 0; i < len(m); i++ {
 		for j := 0; j < len(m[0]); j++ {
@@ -129,8 +133,9 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 }
 
 type Enemy struct {
-	x         int
-	y         int
-	direction bool
-	icon      icon.Icon
+	x          int
+	y          int
+	direction  bool
+	icon       icon.Icon
+	initiative int
 }

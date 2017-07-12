@@ -8,7 +8,7 @@ import (
 )
 
 func NewPlayer() *Player {
-	return &Player{0, 0, icon.CreatePlayerIcon()}
+	return &Player{0, 0, icon.CreatePlayerIcon(), 0}
 }
 
 func (p *Player) Render(x, y int) {
@@ -46,15 +46,21 @@ func (p *Player) SetCoordinates(x int, y int) {
 	p.y = y
 }
 
+func (p *Player) GetInitiative() int {
+	return p.initiative
+}
+
 type Creature interface {
 	GetCoordinates() (int, int)
 	SetCoordinates(int, int)
 	Serialize() string
 	Render(int, int)
+	GetInitiative() int
 }
 
 type Player struct {
-	x    int
-	y    int
-	icon icon.Icon
+	x          int
+	y          int
+	icon       icon.Icon
+	initiative int
 }
