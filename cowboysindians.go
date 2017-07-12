@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -24,10 +25,10 @@ func check(e error) {
 		panic(e)
 	}
 }
-func save(m worldmap.Map, p *creature.Player, enemies []*enemy.Enemy) {
-	data := m.Serialize()
-	data += "\n\n" + p.Serialize()
-	data += "\n\n"
+func save(m worldmap.Map, p *creature.Player, enemies []*enemy.Enemy, t int) {
+	data := fmt.Sprintf("%d\n", t)
+	data += m.Serialize() + "\n\n"
+	data += p.Serialize() + "\n\n"
 	for _, e := range enemies {
 		data += e.Serialize() + "\n"
 	}
@@ -35,7 +36,7 @@ func save(m worldmap.Map, p *creature.Player, enemies []*enemy.Enemy) {
 	check(err)
 }
 
-func load() (worldmap.Map, *creature.Player, []*enemy.Enemy) {
+func load() (worldmap.Map, *creature.Player, []*enemy.Enemy, int) {
 
 	data, err := ioutil.ReadFile(saveFilename)
 	check(err)
@@ -49,7 +50,10 @@ func load() (worldmap.Map, *creature.Player, []*enemy.Enemy) {
 		//fmt.Println(enemy, i)
 		enemies[i] = (*enemy.Deserialize(e)).(*enemy.Enemy)
 	}
-	return worldmap.DeserializeMap(items[0]), player, enemies
+	timeMap := strings.SplitN(items[0], "\n", 2)
+	t, _ := strconv.Atoi(timeMap[0])
+
+	return worldmap.DeserializeMap(timeMap[1]), player, enemies, t
 
 }
 
@@ -90,7 +94,7 @@ func main() {
 		message.PrintMessage("Do you wish to load the last save? [yn]")
 		l := termbox.PollEvent()
 		if l.Type == termbox.EventKey && l.Ch == 'y' {
-			worldMap, player, enemies = load()
+			worldMap, player, enemies, t = load()
 		}
 
 	}
@@ -187,7 +191,7 @@ func main() {
 							message.PrintMessage("Do you wish to save? [yn]")
 							quitEvent := termbox.PollEvent()
 							if quitEvent.Type == termbox.EventKey && quitEvent.Ch == 'y' {
-								save(worldMap, player, enemies)
+								save(worldMap, player, enemies, t)
 							}
 							quit = true
 						default:
