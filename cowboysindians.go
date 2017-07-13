@@ -26,8 +26,8 @@ func check(e error) {
 		panic(e)
 	}
 }
-func save(m worldmap.Map, p *creature.Player, enemies []*enemy.Enemy, t int) {
-	data := fmt.Sprintf("%d\n", t)
+func save(m worldmap.Map, p *creature.Player, enemies []*enemy.Enemy, t, playerIndex int) {
+	data := fmt.Sprintf("%d %d\n", t, playerIndex)
 	data += m.Serialize() + "\n\n"
 	data += p.Serialize() + "\n\n"
 	for _, e := range enemies {
@@ -37,7 +37,7 @@ func save(m worldmap.Map, p *creature.Player, enemies []*enemy.Enemy, t int) {
 	check(err)
 }
 
-func load() (worldmap.Map, *creature.Player, []*enemy.Enemy, int) {
+func load() (worldmap.Map, *creature.Player, []*enemy.Enemy, int, int) {
 
 	data, err := ioutil.ReadFile(saveFilename)
 	check(err)
@@ -51,9 +51,12 @@ func load() (worldmap.Map, *creature.Player, []*enemy.Enemy, int) {
 		enemies[i] = (*enemy.Deserialize(e)).(*enemy.Enemy)
 	}
 	timeMap := strings.SplitN(items[0], "\n", 2)
-	t, _ := strconv.Atoi(timeMap[0])
+	status := strings.Split(timeMap[0], " ")
 
-	return worldmap.DeserializeMap(timeMap[1]), player, enemies, t
+	t, _ := strconv.Atoi(status[0])
+	playerIndex, _ := strconv.Atoi(status[1])
+
+	return worldmap.DeserializeMap(timeMap[1]), player, enemies, t, playerIndex
 
 }
 
@@ -99,11 +102,12 @@ func main() {
 	player := creature.NewPlayer()
 	enemies := generateEnemies(worldMap, player, 2)
 	t := 1
+	playerIndex := 0
 	if _, err := os.Stat(saveFilename); !os.IsNotExist(err) {
 		message.PrintMessage("Do you wish to load the last save? [yn]")
 		l := termbox.PollEvent()
 		if l.Type == termbox.EventKey && l.Ch == 'y' {
-			worldMap, player, enemies, t = load()
+			worldMap, player, enemies, t, playerIndex = load()
 		}
 
 	}
@@ -115,11 +119,9 @@ func main() {
 	}
 	all := allCreatures(enemies, player)
 	for {
-
 		quit := false
 		endTurn := false
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-		worldMap.Render()
 		x, y = player.GetCoordinates()
 		message.Enqueue(fmt.Sprintf("%d %d", x, y))
 		message.PrintMessages()
@@ -127,10 +129,17 @@ func main() {
 			return all[i].GetInitiative() > all[j].GetInitiative()
 
 		})
+
 		printTime(t)
 
-		for _, c := range all {
+		for i, c := range all {
+			if i < playerIndex {
+				continue
+			} else {
+				playerIndex = 0
+			}
 			if p, ok := c.(*creature.Player); ok {
+				worldMap.Render()
 				for {
 					e := termbox.PollEvent()
 					if e.Type == termbox.EventKey {
@@ -206,7 +215,7 @@ func main() {
 									message.PrintMessage("Do you wish to save? [yn]")
 									quitEvent := termbox.PollEvent()
 									if quitEvent.Type == termbox.EventKey && quitEvent.Ch == 'y' {
-										save(worldMap, player, enemies, t)
+										save(worldMap, player, enemies, t, i)
 									}
 									quit = true
 								default:
