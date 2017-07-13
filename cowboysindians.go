@@ -114,18 +114,16 @@ func main() {
 		}
 
 	}
-	x, y := player.GetCoordinates()
-	worldMap.MovePlayer(player, x, y)
-	for _, e := range enemies {
-		x, y = e.GetCoordinates()
-		worldMap.MoveCreature(e, x, y)
-	}
 	all := allCreatures(enemies, player)
+	for _, c := range all {
+		x, y := c.GetCoordinates()
+		worldMap.MoveCreature(c, x, y)
+	}
 	for {
 		quit := false
 		endTurn := false
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-		x, y = player.GetCoordinates()
+		x, y := player.GetCoordinates()
 
 		sort.Slice(all, func(i, j int) bool {
 			return all[i].GetInitiative() > all[j].GetInitiative()

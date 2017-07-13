@@ -21,12 +21,10 @@ func NewDoor(x, y int, open bool) Tile {
 }
 
 func (t Tile) Serialize() string {
-	if t.c == nil {
-		return fmt.Sprintf("Tile{%s %d %d %v %v %v}", t.terrain.Serialize(), t.x, t.y, t.passable, t.door, "")
-	}
-	return fmt.Sprintf("Tile{%s %d %d %v %v %v}", t.terrain.Serialize(), t.x, t.y, t.passable, t.door, (*t.c).Serialize())
-}
 
+	return fmt.Sprintf("Tile{%s %d %d %v %v}", t.terrain.Serialize(), t.x, t.y, t.passable, t.door)
+
+}
 func DeserializeTile(t string) Tile {
 
 	if len(t) == 0 || t[0] != '{' {
@@ -51,11 +49,6 @@ func DeserializeTile(t string) Tile {
 	tile.terrain = icon.Deserialize(t[b:e])
 
 	t = t[(e + 1):]
-	restCreature := strings.Split(t, "Player")
-	if len(restCreature) == 2 {
-		tile.c = creature.Deserialize(restCreature[1])
-	}
-	t = restCreature[0]
 	fields := strings.Split(t, " ")
 
 	tile.x, _ = strconv.Atoi(fields[0])
@@ -187,6 +180,7 @@ func (m Map) IsPassable(x, y int) bool {
 func (m Map) IsOccupied(x, y int) bool {
 	return m.grid[y][x].c != nil
 }
+
 func (m Map) ToggleDoor(x, y int, open bool) bool {
 	message.PrintMessage("Which direction?")
 	height := len(m.grid)
@@ -322,7 +316,7 @@ func (m Map) MoveCreature(c creature.Creature, x, y int) {
 		return
 	}
 	if m.grid[y][x].c != nil {
-		if (*m.grid[y][x].c) != c {
+		if *m.grid[y][x].c != c {
 			c.Attack(*m.grid[y][x].c)
 		}
 		return

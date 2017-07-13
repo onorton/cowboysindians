@@ -21,25 +21,25 @@ func (e *Enemy) Render(x, y int) {
 func Deserialize(e string) *creature.Creature {
 	enemy := new(Enemy)
 	e = e[strings.Index(e, "{")+1 : len(e)-1]
-	coordinatesIcon := strings.Split(e, "Icon")
-	enemy.icon = icon.Deserialize(coordinatesIcon[1])
+	restIcon := strings.Split(e, "Icon")
+	enemy.icon = icon.Deserialize(restIcon[1])
 
-	coordinates := strings.Split(coordinatesIcon[0], " ")
-	enemy.x, _ = strconv.Atoi(coordinates[0])
-	enemy.y, _ = strconv.Atoi(coordinates[1])
+	rest := strings.Split(restIcon[0], " ")
+	enemy.x, _ = strconv.Atoi(rest[0])
+	enemy.y, _ = strconv.Atoi(rest[1])
+	enemy.hp, _ = strconv.Atoi(rest[2])
 	var c creature.Creature = enemy
 	return &c
 
 }
 
 func (e *Enemy) Serialize() string {
-	return fmt.Sprintf("Enemy{%d %d %s}", e.x, e.y, e.icon.Serialize())
+	return fmt.Sprintf("Enemy{%d %d %d %s}", e.x, e.y, e.hp, e.icon.Serialize())
 }
 
 func (e *Enemy) GetCoordinates() (int, int) {
 	return e.x, e.y
 }
-
 func (e *Enemy) SetCoordinates(x int, y int) {
 
 	e.x = x

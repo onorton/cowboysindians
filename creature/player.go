@@ -19,12 +19,13 @@ func (p *Player) Render(x, y int) {
 func Deserialize(c string) *Creature {
 	p := new(Player)
 	c = c[strings.Index(c, "{")+1 : len(c)-1]
-	coordinatesIcon := strings.Split(c, "Icon")
-	p.icon = icon.Deserialize(coordinatesIcon[1])
+	restIcon := strings.Split(c, "Icon")
+	p.icon = icon.Deserialize(restIcon[1])
 
-	coordinates := strings.Split(coordinatesIcon[0], " ")
-	p.x, _ = strconv.Atoi(coordinates[0])
-	p.y, _ = strconv.Atoi(coordinates[1])
+	rest := strings.Split(restIcon[0], " ")
+	p.x, _ = strconv.Atoi(rest[0])
+	p.y, _ = strconv.Atoi(rest[1])
+	p.hp, _ = strconv.Atoi(rest[2])
 	var creature Creature = p
 	return &creature
 
@@ -34,7 +35,7 @@ func (p *Player) Serialize() string {
 	if p == nil {
 		return ""
 	}
-	return fmt.Sprintf("Player{%d %d %s}", p.x, p.y, p.icon.Serialize())
+	return fmt.Sprintf("Player{%d %d %d %s}", p.x, p.y, p.hp, p.icon.Serialize())
 }
 
 func (p *Player) GetCoordinates() (int, int) {
