@@ -84,10 +84,13 @@ func allCreatures(enemies []*enemy.Enemy, p *creature.Player) []creature.Creatur
 	return all
 }
 
-func printTime(t int) {
-	time := fmt.Sprintf("T:%d", t)
-	for i, c := range time {
-		termbox.SetCell(i, windowHeight+1, c, termbox.ColorWhite, termbox.ColorDefault)
+func printStatus(status []string) {
+	length := 0
+	for _, stat := range status {
+		for i, c := range stat {
+			termbox.SetCell(length+i, windowHeight+1, c, termbox.ColorWhite, termbox.ColorDefault)
+		}
+		length += len(stat) + 1
 	}
 	termbox.Flush()
 }
@@ -129,8 +132,6 @@ func main() {
 
 		})
 
-		printTime(t)
-
 		for i, c := range all {
 			if i < playerIndex {
 				continue
@@ -140,6 +141,10 @@ func main() {
 			if p, ok := c.(*creature.Player); ok {
 				worldMap.Render()
 				message.PrintMessages()
+				status := make([]string, 2)
+				status[0] = fmt.Sprintf("T:%d", t)
+				status[1] = fmt.Sprintf("HP:%d", p.GetHP())
+				printStatus(status)
 				for {
 					e := termbox.PollEvent()
 					if e.Type == termbox.EventKey {

@@ -57,8 +57,11 @@ func (p *Player) Attack(c Creature) {
 }
 
 func (p *Player) TakeDamage(damage int) {
-	p.hp--
+	p.hp -= damage
 	message.Enqueue("You took damage.")
+}
+func (p *Player) GetHP() int {
+	return p.hp
 }
 
 type Creature interface {
