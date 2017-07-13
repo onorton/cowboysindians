@@ -3,12 +3,13 @@ package creature
 import (
 	"fmt"
 	"github.com/onorton/cowboysindians/icon"
+	"github.com/onorton/cowboysindians/message"
 	"strconv"
 	"strings"
 )
 
 func NewPlayer() *Player {
-	return &Player{0, 0, icon.CreatePlayerIcon(), 1}
+	return &Player{0, 0, icon.CreatePlayerIcon(), 1, 10}
 }
 
 func (p *Player) Render(x, y int) {
@@ -50,12 +51,24 @@ func (p *Player) GetInitiative() int {
 	return p.initiative
 }
 
+func (p *Player) Attack(c Creature) {
+	c.TakeDamage(1)
+	message.Enqueue("You hit the enemy.")
+}
+
+func (p *Player) TakeDamage(damage int) {
+	p.hp--
+	message.Enqueue("You took damage.")
+}
+
 type Creature interface {
 	GetCoordinates() (int, int)
 	SetCoordinates(int, int)
 	Serialize() string
 	Render(int, int)
 	GetInitiative() int
+	Attack(Creature)
+	TakeDamage(int)
 }
 
 type Player struct {
@@ -63,4 +76,5 @@ type Player struct {
 	y          int
 	icon       icon.Icon
 	initiative int
+	hp         int
 }

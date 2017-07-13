@@ -12,7 +12,7 @@ import (
 )
 
 func NewEnemy(x, y int, c rune, i termbox.Attribute) *Enemy {
-	return &Enemy{x, y, true, icon.NewIcon(c, i), 1}
+	return &Enemy{x, y, true, icon.NewIcon(c, i), 1, 5}
 }
 func (e *Enemy) Render(x, y int) {
 	e.icon.Render(x, y)
@@ -94,6 +94,13 @@ func (e *Enemy) GetInitiative() int {
 	return e.initiative
 }
 
+func (e *Enemy) Attack(c creature.Creature) {
+	c.TakeDamage(1)
+}
+
+func (e *Enemy) TakeDamage(damage int) {
+	e.hp -= damage
+}
 func compareMaps(m, o [][]int) bool {
 	for i := 0; i < len(m); i++ {
 		for j := 0; j < len(m[0]); j++ {
@@ -138,4 +145,5 @@ type Enemy struct {
 	direction  bool
 	icon       icon.Icon
 	initiative int
+	hp         int
 }

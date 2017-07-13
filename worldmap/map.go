@@ -318,7 +318,13 @@ func (m Map) MovePlayer(c *creature.Player, x, y int) {
 
 func (m Map) MoveCreature(c creature.Creature, x, y int) {
 
-	if !m.grid[y][x].passable || m.grid[y][x].c != nil {
+	if !m.grid[y][x].passable {
+		return
+	}
+	if m.grid[y][x].c != nil {
+		if (*m.grid[y][x].c) != c {
+			c.Attack(*m.grid[y][x].c)
+		}
 		return
 	}
 

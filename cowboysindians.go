@@ -123,8 +123,7 @@ func main() {
 		endTurn := false
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 		x, y = player.GetCoordinates()
-		message.Enqueue(fmt.Sprintf("%d %d", x, y))
-		message.PrintMessages()
+
 		sort.Slice(all, func(i, j int) bool {
 			return all[i].GetInitiative() > all[j].GetInitiative()
 
@@ -140,6 +139,7 @@ func main() {
 			}
 			if p, ok := c.(*creature.Player); ok {
 				worldMap.Render()
+				message.PrintMessages()
 				for {
 					e := termbox.PollEvent()
 					if e.Type == termbox.EventKey {
