@@ -29,13 +29,14 @@ func Deserialize(e string) *creature.Creature {
 	enemy.x, _ = strconv.Atoi(rest[0])
 	enemy.y, _ = strconv.Atoi(rest[1])
 	enemy.hp, _ = strconv.Atoi(rest[2])
+	enemy.ac, _ = strconv.Atoi(rest[3])
 	var c creature.Creature = enemy
 	return &c
 
 }
 
 func (e *Enemy) Serialize() string {
-	return fmt.Sprintf("Enemy{%d %d %d %s}", e.x, e.y, e.hp, e.icon.Serialize())
+	return fmt.Sprintf("Enemy{%d %d %d %d %s}", e.x, e.y, e.hp, e.ac, e.icon.Serialize())
 }
 
 func (e *Enemy) GetCoordinates() (int, int) {
@@ -112,7 +113,7 @@ func (e *Enemy) Attack(c creature.Creature) {
 }
 
 func (e *Enemy) AttackHits(roll int) bool {
-	return roll >= e.ac
+	return roll > e.ac
 }
 func (e *Enemy) TakeDamage(damage int) {
 	e.hp -= damage
