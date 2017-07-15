@@ -242,12 +242,20 @@ func main() {
 				worldMap.MovePlayer(p, x, y)
 
 			} else {
-				e := c.(*enemy.Enemy)
-				eX, eY := e.Update(worldMap)
-				worldMap.MoveCreature(e, eX, eY)
 				if c.IsDead() {
 					continue
 				}
+				e := c.(*enemy.Enemy)
+				eX, eY := e.Update(worldMap)
+				worldMap.MoveCreature(e, eX, eY)
+			}
+
+		}
+
+		for i, c := range all {
+			if c.IsDead() {
+				worldMap.DeleteCreature(c)
+				all = append(all[:i], all[i+1:]...)
 			}
 		}
 		if player.IsDead() {

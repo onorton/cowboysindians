@@ -331,6 +331,11 @@ func (m Map) MoveCreature(c creature.Creature, x, y int) {
 
 }
 
+func (m Map) DeleteCreature(c creature.Creature) {
+	x, y := c.GetCoordinates()
+	m.grid[y][x].c = nil
+}
+
 func (m Map) Render() {
 	for y, row := range m.grid {
 		for x, tile := range row {
