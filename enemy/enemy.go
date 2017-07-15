@@ -101,6 +101,10 @@ func (e *Enemy) Attack(c creature.Creature) {
 func (e *Enemy) TakeDamage(damage int) {
 	e.hp -= damage
 }
+
+func (e *Enemy) IsDead() bool {
+	return e.hp <= 0
+}
 func compareMaps(m, o [][]int) bool {
 	for i := 0; i < len(m); i++ {
 		for j := 0; j < len(m[0]); j++ {

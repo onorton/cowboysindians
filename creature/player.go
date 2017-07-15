@@ -55,6 +55,9 @@ func (p *Player) GetInitiative() int {
 func (p *Player) Attack(c Creature) {
 	c.TakeDamage(1)
 	message.Enqueue("You hit the enemy.")
+	if c.IsDead() {
+		message.Enqueue("The enemy died")
+	}
 }
 
 func (p *Player) TakeDamage(damage int) {
@@ -65,6 +68,10 @@ func (p *Player) GetHP() int {
 	return p.hp
 }
 
+func (p *Player) IsDead() bool {
+	return p.hp <= 0
+}
+
 type Creature interface {
 	GetCoordinates() (int, int)
 	SetCoordinates(int, int)
@@ -73,6 +80,7 @@ type Creature interface {
 	GetInitiative() int
 	Attack(Creature)
 	TakeDamage(int)
+	IsDead() bool
 }
 
 type Player struct {

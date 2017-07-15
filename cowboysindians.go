@@ -136,6 +136,7 @@ func main() {
 			} else {
 				playerIndex = 0
 			}
+
 			if p, ok := c.(*creature.Player); ok {
 				worldMap.Render()
 				message.PrintMessages()
@@ -143,6 +144,9 @@ func main() {
 				status[0] = fmt.Sprintf("T:%d", t)
 				status[1] = fmt.Sprintf("HP:%d", p.GetHP())
 				printStatus(status)
+				if p.IsDead() {
+					continue
+				}
 				for {
 					e := termbox.PollEvent()
 					if e.Type == termbox.EventKey {
@@ -241,10 +245,18 @@ func main() {
 				e := c.(*enemy.Enemy)
 				eX, eY := e.Update(worldMap)
 				worldMap.MoveCreature(e, eX, eY)
+				if c.IsDead() {
+					continue
+				}
 			}
 		}
-
+		if player.IsDead() {
+			message.PrintMessage("You died.")
+			termbox.PollEvent()
+			break
+		}
 		if quit {
+
 			break
 		}
 		t++
