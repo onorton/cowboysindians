@@ -5,6 +5,7 @@ import (
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/icon"
+	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/worldmap"
 	"math/rand"
 	"strconv"
@@ -12,7 +13,7 @@ import (
 )
 
 func NewEnemy(x, y int, c rune, i termbox.Attribute) *Enemy {
-	return &Enemy{x, y, true, icon.NewIcon(c, i), 1, 2}
+	return &Enemy{x, y, true, icon.NewIcon(c, i), 1, 5, 10}
 }
 func (e *Enemy) Render(x, y int) {
 	e.icon.Render(x, y)
@@ -95,9 +96,24 @@ func (e *Enemy) GetInitiative() int {
 }
 
 func (e *Enemy) Attack(c creature.Creature) {
-	c.TakeDamage(1)
+
+	hits := c.AttackHits(rand.Intn(20) + 1)
+	if hits {
+		c.TakeDamage(1)
+	}
+	if _, ok := c.(*creature.Player); ok {
+		if hits {
+			message.Enqueue("The enemy hit you.")
+		} else {
+			message.Enqueue("The enemy missed you.")
+		}
+	}
+
 }
 
+func (e *Enemy) AttackHits(roll int) bool {
+	return roll >= e.ac
+}
 func (e *Enemy) TakeDamage(damage int) {
 	e.hp -= damage
 }
@@ -150,4 +166,5 @@ type Enemy struct {
 	icon       icon.Icon
 	initiative int
 	hp         int
+	ac         int
 }

@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/message"
+	"math/rand"
 	"strconv"
 	"strings"
 )
 
 func NewPlayer() *Player {
-	return &Player{0, 0, icon.CreatePlayerIcon(), 1, 10}
+	return &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 15}
 }
 
 func (p *Player) Render(x, y int) {
@@ -53,8 +54,12 @@ func (p *Player) GetInitiative() int {
 }
 
 func (p *Player) Attack(c Creature) {
-	c.TakeDamage(1)
-	message.Enqueue("You hit the enemy.")
+	if c.AttackHits(rand.Intn(20) + 1) {
+		message.Enqueue("You hit the enemy.")
+		c.TakeDamage(1)
+	} else {
+		message.Enqueue("You miss the enemy.")
+	}
 	if c.IsDead() {
 		message.Enqueue("The enemy died")
 	}
@@ -62,7 +67,6 @@ func (p *Player) Attack(c Creature) {
 
 func (p *Player) TakeDamage(damage int) {
 	p.hp -= damage
-	message.Enqueue("You took damage.")
 }
 func (p *Player) GetHP() int {
 	return p.hp
@@ -70,6 +74,10 @@ func (p *Player) GetHP() int {
 
 func (p *Player) IsDead() bool {
 	return p.hp <= 0
+}
+
+func (p *Player) AttackHits(roll int) bool {
+	return roll >= p.ac
 }
 
 type Creature interface {
@@ -81,6 +89,7 @@ type Creature interface {
 	Attack(Creature)
 	TakeDamage(int)
 	IsDead() bool
+	AttackHits(int) bool
 }
 
 type Player struct {
@@ -89,4 +98,5 @@ type Player struct {
 	icon       icon.Icon
 	initiative int
 	hp         int
+	ac         int
 }
