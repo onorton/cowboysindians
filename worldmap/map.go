@@ -422,6 +422,21 @@ func (m Map) MoveCreature(c creature.Creature, x, y int) {
 
 }
 
+func (m Map) GetPlayer() *creature.Player {
+	for _, row := range m.grid {
+		for _, tile := range row {
+			if tile.c == nil {
+				continue
+			}
+			player, ok := (*tile.c).(*creature.Player)
+			if ok {
+				return player
+			}
+		}
+	}
+	return nil
+}
+
 func (m Map) DeleteCreature(c creature.Creature) {
 	x, y := c.GetCoordinates()
 	m.grid[y][x].c = nil

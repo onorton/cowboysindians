@@ -7,6 +7,7 @@ import (
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/worldmap"
+	"math"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -152,12 +153,17 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 			}
 		}
 	}
-	if len(possibleLocations) == 0 {
-		return e.x, e.y
+	target := m.GetPlayer()
+	tX, tY := target.GetCoordinates()
+	if distance := math.Sqrt(math.Pow(float64(e.x-tX), 2) + math.Pow(float64(e.y-tY), 2)); distance < 10 {
+		e.Attack(target)
+	} else if len(possibleLocations) > 0 {
+		l := possibleLocations[rand.Intn(len(possibleLocations))]
+		return l.x, l.y
 	}
-	l := possibleLocations[rand.Intn(len(possibleLocations))]
 
-	return l.x, l.y
+	return e.x, e.y
+
 }
 
 type Enemy struct {
