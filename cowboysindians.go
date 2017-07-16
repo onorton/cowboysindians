@@ -225,7 +225,12 @@ func main() {
 									endTurn = worldMap.ToggleDoor(x, y, false)
 								case 'o':
 									endTurn = worldMap.ToggleDoor(x, y, true)
-
+								case 't':
+									target := worldMap.FindTarget(player)
+									if target != nil {
+										player.RangedAttack(target)
+										endTurn = true
+									}
 								default:
 									quit = true
 								}

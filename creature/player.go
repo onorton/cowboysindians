@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/message"
+	"math"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -79,6 +80,17 @@ func (p *Player) IsDead() bool {
 
 func (p *Player) AttackHits(roll int) bool {
 	return roll > p.ac
+}
+
+func (p *Player) RangedAttack(target Creature) {
+	tX, tY := target.GetCoordinates()
+	distance := math.Sqrt(math.Pow(float64(p.x-tX), 2) + math.Pow(float64(p.y-tY), 2))
+	if distance < 10 {
+		p.Attack(target)
+	} else {
+		message.Enqueue("Your target was too far away.")
+	}
+
 }
 
 type Creature interface {

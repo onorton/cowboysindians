@@ -237,7 +237,7 @@ func (m Map) ToggleDoor(x, y int, open bool) bool {
 							x++
 						}
 					case '7':
-						if x != 0 && x != 0 {
+						if x != 0 && y != 0 {
 							x--
 							y--
 						}
@@ -280,6 +280,97 @@ func (m Map) ToggleDoor(x, y int, open bool) bool {
 		message.PrintMessage("You see no door there.")
 	}
 	return false
+
+}
+
+func (m Map) FindTarget(p *creature.Player) creature.Creature {
+	x, y := p.GetCoordinates()
+	rX, rY := x-m.v.x, y-m.v.y
+	width, height := len(m.grid[0]), len(m.grid)
+	vWidth, vHeight := m.v.width, m.v.height
+	for {
+		message.PrintMessage("Select target")
+		termbox.SetCell(rX, rY, 'X', termbox.ColorYellow, termbox.ColorDefault)
+		termbox.Flush()
+		e := termbox.PollEvent()
+		x, y = m.v.x+rX, m.v.y+rY
+		m.grid[y][x].render(rX, rY)
+		if e.Type == termbox.EventKey {
+			switch e.Key {
+			case termbox.KeyArrowLeft:
+				if rX != 0 && x != 0 {
+					rX--
+				}
+			case termbox.KeyArrowRight:
+				if rX < vWidth-1 && x < width-1 {
+					rX++
+				}
+			case termbox.KeyArrowUp:
+				if rY != 0 && y != 0 {
+					rY--
+				}
+			case termbox.KeyArrowDown:
+				if rY < vHeight-1 && y < height-1 {
+					rY++
+				}
+			case termbox.KeyEnter:
+				if m.IsOccupied(x, y) {
+					return *m.grid[y][x].c
+				} else {
+					message.PrintMessage("Never mind...")
+					return nil
+				}
+
+			default:
+				{
+
+					switch e.Ch {
+					case '1':
+						if rX != 0 && rY < vHeight-1 && x != 0 && y < height-1 {
+							rX--
+							rY++
+						}
+					case '2':
+						if rY < vHeight-1 && y < height-1 {
+							rY++
+						}
+					case '3':
+						if rX < vWidth-1 && rY < vHeight-1 && x < width-1 && y < height-1 {
+							rX++
+							rX++
+						}
+
+					case '4':
+						if rX != 0 && y != 0 {
+							rX--
+						}
+					case '6':
+						if rX < vWidth-1 && x < width-1 {
+							rX++
+						}
+					case '7':
+						if rX != 0 && rY != 0 && x != 0 && y != 0 {
+							rX--
+							rY--
+						}
+					case '8':
+						if rY != 0 && y != 0 {
+							rY--
+						}
+					case '9':
+						if rY != 0 && rX < vWidth-1 && x != 0 && y < width-1 {
+							rY--
+							rX++
+						}
+					default:
+
+					}
+
+				}
+
+			}
+		}
+	}
 
 }
 
