@@ -61,7 +61,7 @@ func DeserializeTile(t string) Tile {
 func (t Tile) render(x, y int) {
 
 	if t.c != nil {
-		(*t.c).Render(x, y)
+		t.c.Render(x, y)
 	} else if t.door {
 		t.terrain.RenderDoor(x, y, t.passable)
 	} else {
@@ -75,7 +75,7 @@ type Tile struct {
 	y        int
 	passable bool
 	door     bool
-	c        *creature.Creature
+	c        creature.Creature
 }
 
 func NewMap(width, height, viewerWidth, viewerHeight int) Map {
@@ -167,7 +167,7 @@ func (m Map) Serialize() string {
 
 func (m Map) HasPlayer(x, y int) bool {
 	if m.IsOccupied(x, y) {
-		_, ok := (*m.grid[y][x].c).(*creature.Player)
+		_, ok := m.grid[y][x].c.(*creature.Player)
 		return ok
 	}
 	return false
@@ -315,7 +315,7 @@ func (m Map) FindTarget(p *creature.Player) creature.Creature {
 				}
 			case termbox.KeyEnter:
 				if m.IsOccupied(x, y) {
-					return *m.grid[y][x].c
+					return m.grid[y][x].c
 				} else {
 					message.PrintMessage("Never mind...")
 					return nil
@@ -407,8 +407,8 @@ func (m Map) MoveCreature(c creature.Creature, x, y int) {
 		return
 	}
 	if m.grid[y][x].c != nil {
-		if *m.grid[y][x].c != c {
-			c.Attack(*m.grid[y][x].c)
+		if m.grid[y][x].c != c {
+			c.Attack(m.grid[y][x].c)
 		}
 		return
 	}
@@ -418,7 +418,7 @@ func (m Map) MoveCreature(c creature.Creature, x, y int) {
 	cX = x
 	cY = y
 	c.SetCoordinates(cX, cY)
-	m.grid[cY][cX].c = &c
+	m.grid[cY][cX].c = c
 
 }
 
@@ -428,7 +428,7 @@ func (m Map) GetPlayer() *creature.Player {
 			if tile.c == nil {
 				continue
 			}
-			player, ok := (*tile.c).(*creature.Player)
+			player, ok := tile.c.(*creature.Player)
 			if ok {
 				return player
 			}

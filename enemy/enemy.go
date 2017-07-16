@@ -20,7 +20,7 @@ func (e *Enemy) Render(x, y int) {
 	e.icon.Render(x, y)
 }
 
-func Deserialize(e string) *creature.Creature {
+func Deserialize(e string) creature.Creature {
 	enemy := new(Enemy)
 	e = e[strings.Index(e, "{")+1 : len(e)-1]
 	restIcon := strings.Split(e, "Icon")
@@ -32,7 +32,7 @@ func Deserialize(e string) *creature.Creature {
 	enemy.hp, _ = strconv.Atoi(rest[2])
 	enemy.ac, _ = strconv.Atoi(rest[3])
 	var c creature.Creature = enemy
-	return &c
+	return c
 
 }
 

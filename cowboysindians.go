@@ -48,7 +48,7 @@ func load() (worldmap.Map, *creature.Player, []*enemy.Enemy, int, int) {
 	enemies := make([]*enemy.Enemy, len(enemyStrings))
 
 	for i, e := range enemyStrings {
-		enemies[i] = (*enemy.Deserialize(e)).(*enemy.Enemy)
+		enemies[i] = enemy.Deserialize(e).(*enemy.Enemy)
 	}
 	timeMap := strings.SplitN(items[0], "\n", 2)
 	status := strings.Split(timeMap[0], " ")
