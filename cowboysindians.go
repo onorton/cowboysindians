@@ -171,6 +171,14 @@ func main() {
 							{
 								message.PrintMessages()
 							}
+						case termbox.KeyEsc:
+							message.PrintMessage("Do you wish to save? [yn]")
+							quitEvent := termbox.PollEvent()
+							if quitEvent.Type == termbox.EventKey && quitEvent.Ch == 'y' {
+								save(worldMap, player, enemies, t, i)
+							}
+							quit = true
+
 						default:
 							{
 
@@ -217,14 +225,7 @@ func main() {
 									endTurn = worldMap.ToggleDoor(x, y, false)
 								case 'o':
 									endTurn = worldMap.ToggleDoor(x, y, true)
-								case 'q':
 
-									message.PrintMessage("Do you wish to save? [yn]")
-									quitEvent := termbox.PollEvent()
-									if quitEvent.Type == termbox.EventKey && quitEvent.Ch == 'y' {
-										save(worldMap, player, enemies, t, i)
-									}
-									quit = true
 								default:
 									quit = true
 								}
