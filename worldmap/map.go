@@ -228,7 +228,7 @@ func (m Map) IsVisible(c creature.Creature, x1, y1 int) bool {
 					}
 				}
 			}
-			if m.IsValid(x, y) && !(x == x1 || y == y1 || m.IsPassable(x, y)) {
+			if m.IsValid(x, y) && !(x == x1 && y == y1) && !m.IsPassable(x, y) {
 				return false
 			}
 			errorPrev = e
