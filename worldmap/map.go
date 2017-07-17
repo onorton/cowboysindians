@@ -196,13 +196,13 @@ func (m Map) IsVisible(c creature.Creature, x1, y1 int) bool {
 	if dy < 0 {
 		yStep = -1
 		dy *= -1
-	} else {
+	} else if dy > 0 {
 		yStep = 1
 	}
 	if dx < 0 {
 		xStep = -1
 		dx *= -1
-	} else {
+	} else if dx > 0 {
 		xStep = 1
 	}
 
