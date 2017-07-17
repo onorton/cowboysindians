@@ -189,10 +189,9 @@ func (m Map) IsOccupied(x, y int) bool {
 func (m Map) IsVisible(c creature.Creature, x1, y1 int) bool {
 	x0, y0 := c.GetCoordinates()
 	var xStep, yStep int
-	var e, errorPrev int
 	x, y := x0, y0
-	dx := x1 - x0
-	dy := y1 - y0
+	dx := float64(x1 - x0)
+	dy := float64(y1 - y0)
 	if dy < 0 {
 		yStep = -1
 		dy *= -1
@@ -206,57 +205,36 @@ func (m Map) IsVisible(c creature.Creature, x1, y1 int) bool {
 		xStep = 1
 	}
 
-	ddy := 2 * dy
-	ddx := 2 * dx
-	if ddx >= ddy {
-		errorPrev = dx
-		e = dx
-		for i := 0; i < dx; i++ {
+	if dx >= dy {
+		dErr := dy / dx
+		e := dErr - 0.5
+		for i := 0; i < int(dx); i++ {
 			x += xStep
-			e += ddy
-			if e > ddx {
-				y += yStep
-				e -= ddx
-				if e+errorPrev < ddx {
-					if m.IsValid(x, y-yStep) && !m.IsPassable(x, y-yStep) {
-						return false
-					}
-				} else if e+errorPrev > ddx {
+			e += dErr
 
-					if m.IsValid(x-xStep, y) && !m.IsPassable(x-xStep, y) {
-						return false
-					}
-				}
+			if e >= 0.5 {
+				y += yStep
+				e -= 1
+			}
+
+			if m.IsValid(x, y) && !(x == x1 && y == y1) && !m.IsPassable(x, y) {
+				return false
+			}
+		}
+	} else {
+		dErr := dx / dy
+		e := dErr - 0.5
+		for i := 0; i < int(dy); i++ {
+			y += yStep
+			e += dErr
+			if e >= 0.5 {
+				x += xStep
+				e -= 1
 			}
 			if m.IsValid(x, y) && !(x == x1 && y == y1) && !m.IsPassable(x, y) {
 				return false
 			}
-			errorPrev = e
-		}
-	} else {
-		errorPrev = dy
-		e = dy
-		for i := 0; i < dy; i++ {
-			y += yStep
-			e += ddx
-			if e < ddy {
-				x += xStep
-				e -= ddy
-				if e+errorPrev < ddy {
-					if m.IsValid(x-xStep, y) && !m.IsPassable(x-xStep, y) {
-						return false
-					}
-				} else if e+errorPrev > ddy {
-					if m.IsValid(x, y-yStep) && !m.IsPassable(x, y-yStep) {
-						return false
-					}
-				}
-			}
 
-			if m.IsValid(x, y) && !(x == x1 || y == y1 || m.IsPassable(x, y)) {
-				return false
-			}
-			errorPrev = e
 		}
 	}
 
