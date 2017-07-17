@@ -173,12 +173,94 @@ func (m Map) HasPlayer(x, y int) bool {
 	return false
 }
 
+func (m Map) IsValid(x, y int) bool {
+	return x >= 0 && x < len(m.grid[0]) && y >= 0 && y < len(m.grid)
+
+}
+
 func (m Map) IsPassable(x, y int) bool {
 	return m.grid[y][x].passable
 }
 
 func (m Map) IsOccupied(x, y int) bool {
 	return m.grid[y][x].c != nil
+}
+
+func (m Map) IsVisible(c creature.Creature, x1, y1 int) bool {
+	x0, y0 := c.GetCoordinates()
+	var xStep, yStep int
+	var e, errorPrev int
+	x, y := x0, y0
+	dx := x1 - x0
+	dy := y1 - y0
+	if dy < 0 {
+		yStep = -1
+		dy *= -1
+	} else {
+		yStep = 1
+	}
+	if dx < 0 {
+		xStep = -1
+		dx *= -1
+	} else {
+		xStep = 1
+	}
+
+	ddy := 2 * dy
+	ddx := 2 * dx
+	if ddx >= ddy {
+		errorPrev = dx
+		e = dx
+		for i := 0; i < dx; i++ {
+			x += xStep
+			e += ddy
+			if e > ddx {
+				y += yStep
+				e -= ddx
+				if e+errorPrev < ddx {
+					if m.IsValid(x, y-yStep) && !m.IsPassable(x, y-yStep) {
+						return false
+					}
+				} else if e+errorPrev > ddx {
+
+					if m.IsValid(x-xStep, y) && !m.IsPassable(x-xStep, y) {
+						return false
+					}
+				}
+			}
+			if m.IsValid(x, y) && !(x == x1 || y == y1 || m.IsPassable(x, y)) {
+				return false
+			}
+			errorPrev = e
+		}
+	} else {
+		errorPrev = dy
+		e = dy
+		for i := 0; i < dy; i++ {
+			y += yStep
+			e += ddx
+			if e < ddy {
+				x += xStep
+				e -= ddy
+				if e+errorPrev < ddy {
+					if m.IsValid(x-xStep, y) && !m.IsPassable(x-xStep, y) {
+						return false
+					}
+				} else if e+errorPrev > ddy {
+					if m.IsValid(x, y-yStep) && !m.IsPassable(x, y-yStep) {
+						return false
+					}
+				}
+			}
+
+			if m.IsValid(x, y) && !(x == x1 || y == y1 || m.IsPassable(x, y)) {
+				return false
+			}
+			errorPrev = e
+		}
+	}
+
+	return true
 }
 
 func (m Map) ToggleDoor(x, y int, open bool) bool {
@@ -443,12 +525,17 @@ func (m Map) DeleteCreature(c creature.Creature) {
 }
 
 func (m Map) Render() {
+	player := m.GetPlayer()
 	for y, row := range m.grid {
 		for x, tile := range row {
 			rX := x - m.v.x
 			rY := y - m.v.y
 			if rX >= 0 && rX < m.v.width && rY >= 0 && rY < m.v.height {
-				tile.render(rX, rY)
+				if m.IsVisible(player, x, y) {
+					tile.render(rX, rY)
+				} else {
+					termbox.SetCell(rX, rY, ' ', termbox.ColorDefault, termbox.ColorDefault)
+				}
 			}
 		}
 	}
