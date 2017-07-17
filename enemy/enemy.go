@@ -55,7 +55,7 @@ func (e *Enemy) GetAIMap(m worldmap.Map) [][]int {
 	for y := 0; y < height; y++ {
 		aiMap[y] = make([]int, width)
 		for x := 0; x < width; x++ {
-			if m.HasPlayer(x, y) {
+			if m.IsVisible(e, x, y) && m.HasPlayer(x, y) {
 				aiMap[y][x] = 0
 			} else {
 				aiMap[y][x] = height * width
@@ -155,7 +155,7 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 	}
 	target := m.GetPlayer()
 	tX, tY := target.GetCoordinates()
-	if distance := math.Sqrt(math.Pow(float64(e.x-tX), 2) + math.Pow(float64(e.y-tY), 2)); distance < 10 {
+	if distance := math.Sqrt(math.Pow(float64(e.x-tX), 2) + math.Pow(float64(e.y-tY), 2)); distance < 10 && m.IsVisible(e, tX, tY) {
 		e.Attack(target)
 	} else if len(possibleLocations) > 0 {
 		l := possibleLocations[rand.Intn(len(possibleLocations))]
