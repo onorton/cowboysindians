@@ -334,6 +334,11 @@ func (m Map) ToggleDoor(x, y int, open bool) bool {
 	if m.grid[y][x].door {
 		if m.grid[y][x].passable != open {
 			m.grid[y][x].passable = open
+			if open {
+				message.Enqueue("The door opens.")
+			} else {
+				message.Enqueue("The door closes.")
+			}
 			return true
 		} else {
 			if open {
