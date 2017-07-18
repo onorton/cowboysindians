@@ -173,6 +173,7 @@ func (m Map) HasPlayer(x, y int) bool {
 	return false
 }
 
+// Coordinates within confines of the map
 func (m Map) IsValid(x, y int) bool {
 	return x >= 0 && x < len(m.grid[0]) && y >= 0 && y < len(m.grid)
 
@@ -186,6 +187,7 @@ func (m Map) IsOccupied(x, y int) bool {
 	return m.grid[y][x].c != nil
 }
 
+// Bresenham algorithm to check if creature c can see square x1, y1.
 func (m Map) IsVisible(c creature.Creature, x1, y1 int) bool {
 	x0, y0 := c.GetCoordinates()
 	var xStep, yStep int
@@ -205,6 +207,7 @@ func (m Map) IsVisible(c creature.Creature, x1, y1 int) bool {
 		xStep = 1
 	}
 
+	// Go down longest delta
 	if dx >= dy {
 		dErr := dy / dx
 		e := dErr - 0.5
@@ -216,7 +219,7 @@ func (m Map) IsVisible(c creature.Creature, x1, y1 int) bool {
 				y += yStep
 				e -= 1
 			}
-
+			// If any square along path is impassable, x1, y1 is invisible
 			if m.IsValid(x, y) && !(x == x1 && y == y1) && !m.IsPassable(x, y) {
 				return false
 			}
@@ -231,6 +234,7 @@ func (m Map) IsVisible(c creature.Creature, x1, y1 int) bool {
 				x += xStep
 				e -= 1
 			}
+			// If any square along path is impassable, x1, y1 is invisible
 			if m.IsValid(x, y) && !(x == x1 && y == y1) && !m.IsPassable(x, y) {
 				return false
 			}
@@ -245,6 +249,7 @@ func (m Map) ToggleDoor(x, y int, open bool) bool {
 	message.PrintMessage("Which direction?")
 	height := len(m.grid)
 	width := len(m.grid[0])
+	// Select direction
 	for {
 		validMove := true
 		e := termbox.PollEvent()
@@ -325,6 +330,7 @@ func (m Map) ToggleDoor(x, y int, open bool) bool {
 			break
 		}
 	}
+	// If there is a door, toggle its position if it's not already there
 	if m.grid[y][x].door {
 		if m.grid[y][x].passable != open {
 			m.grid[y][x].passable = open
@@ -343,8 +349,10 @@ func (m Map) ToggleDoor(x, y int, open bool) bool {
 
 }
 
+// Interface for player to find a ranged target.
 func (m Map) FindTarget(p *creature.Player) creature.Creature {
 	x, y := p.GetCoordinates()
+	// In terms of viewer space rather than world space
 	rX, rY := x-m.v.x, y-m.v.y
 	width, height := len(m.grid[0]), len(m.grid)
 	vWidth, vHeight := m.v.width, m.v.height
@@ -374,6 +382,7 @@ func (m Map) FindTarget(p *creature.Player) creature.Creature {
 					rY++
 				}
 			case termbox.KeyEnter:
+				// If a creature is there, return it.
 				if m.IsOccupied(x, y) {
 					return m.grid[y][x].c
 				} else {
@@ -441,12 +450,14 @@ func (m Map) GetWidth() int {
 func (m Map) GetHeight() int {
 	return len(m.grid)
 }
+
+// Same as MoveCreature but viewer is adjusted as well.
 func (m Map) MovePlayer(c *creature.Player, x, y int) {
 	m.MoveCreature(c, x, y)
 	cX, cY := c.GetCoordinates()
 	rX := cX - m.v.x
 	rY := cY - m.v.y
-
+	//Adjust viewer
 	if rX < padding && cX >= padding {
 		m.v.x--
 	}
@@ -466,6 +477,7 @@ func (m Map) MoveCreature(c creature.Creature, x, y int) {
 	if !m.grid[y][x].passable {
 		return
 	}
+	// If occupied by another creature, melee attack
 	if m.grid[y][x].c != nil {
 		if m.grid[y][x].c != c {
 			c.Attack(m.grid[y][x].c)

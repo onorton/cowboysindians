@@ -52,6 +52,9 @@ func (e *Enemy) SetCoordinates(x int, y int) {
 func (e *Enemy) GetAIMap(m worldmap.Map) [][]int {
 	height, width := m.GetHeight(), m.GetWidth()
 	aiMap := make([][]int, height)
+
+	// Initialise Dijkstra map with goals.
+	// Max is size of grid.
 	for y := 0; y < height; y++ {
 		aiMap[y] = make([]int, width)
 		for x := 0; x < width; x++ {
@@ -66,6 +69,7 @@ func (e *Enemy) GetAIMap(m worldmap.Map) [][]int {
 	for i, _ := range prev {
 		prev[i] = make([]int, width)
 	}
+	// While map changes, update
 	for !compareMaps(aiMap, prev) {
 		prev = aiMap
 		for y := 0; y < height; y++ {
@@ -82,6 +86,7 @@ func (e *Enemy) GetAIMap(m worldmap.Map) [][]int {
 							min = aiMap[nY][nX]
 						}
 					}
+
 					if aiMap[y][x] > min {
 						aiMap[y][x] = min + 1
 					}
@@ -144,6 +149,7 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 	aiMap := e.GetAIMap(m)
 	current := aiMap[e.y][e.x]
 	possibleLocations := make([]Coordinate, 0)
+	// Find adjacent locations closer to the goal
 	for i := -1; i <= 1; i++ {
 		for j := -1; j <= 1; j++ {
 			nX := e.x + i
@@ -155,6 +161,7 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 	}
 	target := m.GetPlayer()
 	tX, tY := target.GetCoordinates()
+	// If close enough and can see target, use ranged attack
 	if distance := math.Sqrt(math.Pow(float64(e.x-tX), 2) + math.Pow(float64(e.y-tY), 2)); distance < 10 && m.IsVisible(e, tX, tY) {
 		e.Attack(target)
 	} else if len(possibleLocations) > 0 {

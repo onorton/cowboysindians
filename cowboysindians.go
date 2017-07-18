@@ -75,6 +75,7 @@ func generateEnemies(m worldmap.Map, p *creature.Player, n int) []*enemy.Enemy {
 	return enemies
 }
 
+// Combine enemies and player into same slice
 func allCreatures(enemies []*enemy.Enemy, p *creature.Player) []creature.Creature {
 	all := make([]creature.Creature, len(enemies)+1)
 	for i, e := range enemies {
@@ -109,6 +110,7 @@ func main() {
 	if _, err := os.Stat(saveFilename); !os.IsNotExist(err) {
 		message.PrintMessage("Do you wish to load the last save? [yn]")
 		l := termbox.PollEvent()
+		// Load from save file if player wants to
 		if l.Type == termbox.EventKey && l.Ch == 'y' {
 			worldMap, player, enemies, t, playerIndex = load()
 		}
@@ -125,12 +127,15 @@ func main() {
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 		x, y := player.GetCoordinates()
 
+		// Sort by initiative order
 		sort.Slice(all, func(i, j int) bool {
 			return all[i].GetInitiative() > all[j].GetInitiative()
 
 		})
 
 		for i, c := range all {
+
+			// Used when initially loading, to make sure faster enemies do not move twice
 			if i < playerIndex {
 				continue
 			} else {
@@ -138,14 +143,16 @@ func main() {
 			}
 
 			if p, ok := c.(*creature.Player); ok {
+				// Only render when it is the player's turn
 				worldMap.Render()
 				message.PrintMessages()
 				status := make([]string, 2)
 				status[0] = fmt.Sprintf("T:%d", t)
 				status[1] = fmt.Sprintf("HP:%d", p.GetHP())
 				printStatus(status)
+				// Game over, skip other enemies
 				if p.IsDead() {
-					continue
+					break
 				}
 				for {
 					e := termbox.PollEvent()
@@ -236,6 +243,7 @@ func main() {
 								}
 							}
 						}
+						// End turn if player selects action that takes a turn
 						endTurn = endTurn || (e.Key != termbox.KeySpace && e.Ch != 'c' && e.Ch != 'o' && e.Ch != 'q')
 						if endTurn || quit {
 							break
@@ -258,12 +266,14 @@ func main() {
 
 		}
 
+		// Remove dead enemies
 		for i, c := range all {
 			if c.IsDead() {
 				worldMap.DeleteCreature(c)
 				all = append(all[:i], all[i+1:]...)
 			}
 		}
+		// End game if player is dead
 		if player.IsDead() {
 			message.PrintMessage("You died.")
 			termbox.PollEvent()

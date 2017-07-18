@@ -93,6 +93,7 @@ func (p *Player) RangedAttack(target Creature) {
 
 }
 
+// Interface shared by Player and Enemy
 type Creature interface {
 	GetCoordinates() (int, int)
 	SetCoordinates(int, int)

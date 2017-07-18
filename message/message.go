@@ -5,6 +5,7 @@ import (
 	"github.com/onorton/cowboysindians/structs"
 )
 
+// Singleton message queue
 var Mq = MessageQueue{new(structs.Queue), 0, 0}
 
 type MessageQueue struct {
@@ -27,6 +28,8 @@ func clearMessageBar() {
 	}
 
 }
+
+// Prints first message in queue and prompts if there are any more
 func PrintMessages() {
 	clearMessageBar()
 	m := Mq.queue.Dequeue().(string)
@@ -38,6 +41,7 @@ func PrintMessages() {
 	termbox.Flush()
 }
 
+// Prints single message immediately to message bar
 func PrintMessage(m string) {
 
 	clearMessageBar()
