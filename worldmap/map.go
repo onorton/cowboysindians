@@ -153,7 +153,7 @@ func DeserializeMap(m string) Map {
 	return Map{grid, DeserializeViewer(dimensionEntries[len(dimensionEntries)-1])}
 }
 func (m Map) Serialize() string {
-	result := fmt.Sprintf("%d %d\n", len(m.grid[0]), len(m.grid))
+	result := fmt.Sprintf("%d %d\n", m.GetWidth(), m.GetHeight())
 	for _, row := range m.grid {
 		for _, tile := range row {
 			result += tile.Serialize()
@@ -175,7 +175,7 @@ func (m Map) HasPlayer(x, y int) bool {
 
 // Coordinates within confines of the map
 func (m Map) IsValid(x, y int) bool {
-	return x >= 0 && x < len(m.grid[0]) && y >= 0 && y < len(m.grid)
+	return x >= 0 && x < m.GetWidth() && y >= 0 && y < m.GetHeight()
 
 }
 
@@ -247,8 +247,8 @@ func (m Map) IsVisible(c creature.Creature, x1, y1 int) bool {
 
 func (m Map) ToggleDoor(x, y int, open bool) bool {
 	message.PrintMessage("Which direction?")
-	height := len(m.grid)
-	width := len(m.grid[0])
+	height := m.GetHeight()
+	width := m.GetWidth()
 	// Select direction
 	for {
 		validMove := true
@@ -359,7 +359,7 @@ func (m Map) FindTarget(p *creature.Player) creature.Creature {
 	x, y := p.GetCoordinates()
 	// In terms of viewer space rather than world space
 	rX, rY := x-m.v.x, y-m.v.y
-	width, height := len(m.grid[0]), len(m.grid)
+	width, height := m.GetWidth(), m.GetHeight()
 	vWidth, vHeight := m.v.width, m.v.height
 	for {
 		message.PrintMessage("Select target")
@@ -466,13 +466,13 @@ func (m Map) MovePlayer(c *creature.Player, x, y int) {
 	if rX < padding && cX >= padding {
 		m.v.x--
 	}
-	if rX > m.v.width-padding && cX <= len(m.grid[0])-padding {
+	if rX > m.v.width-padding && cX <= m.GetWidth()-padding {
 		m.v.x++
 	}
 	if rY < padding && cY >= padding {
 		m.v.y--
 	}
-	if rY > m.v.height-padding && cY <= len(m.grid)-padding {
+	if rY > m.v.height-padding && cY <= m.GetHeight()-padding {
 		m.v.y++
 	}
 }
@@ -483,10 +483,8 @@ func (m Map) MoveCreature(c creature.Creature, x, y int) {
 		return
 	}
 	// If occupied by another creature, melee attack
-	if m.grid[y][x].c != nil {
-		if m.grid[y][x].c != c {
-			c.Attack(m.grid[y][x].c)
-		}
+	if m.grid[y][x].c != nil && m.grid[y][x].c != c {
+		c.Attack(m.grid[y][x].c)
 		return
 	}
 
