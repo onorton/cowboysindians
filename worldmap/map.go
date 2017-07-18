@@ -411,7 +411,7 @@ func (m Map) FindTarget(p *creature.Player) creature.Creature {
 					case '3':
 						if rX < vWidth-1 && rY < vHeight-1 && x < width-1 && y < height-1 {
 							rX++
-							rX++
+							rY++
 						}
 
 					case '4':
@@ -432,7 +432,7 @@ func (m Map) FindTarget(p *creature.Player) creature.Creature {
 							rY--
 						}
 					case '9':
-						if rY != 0 && rX < vWidth-1 && x != 0 && y < width-1 {
+						if rY != 0 && rX < vWidth-1 && y != 0 && x < width-1 {
 							rY--
 							rX++
 						}
