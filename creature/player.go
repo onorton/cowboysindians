@@ -76,8 +76,12 @@ func (p *Player) MeleeAttack(c Creature) {
 func (p *Player) TakeDamage(damage int) {
 	p.hp -= damage
 }
-func (p *Player) GetHP() int {
-	return p.hp
+func (p *Player) GetStats() []string {
+	stats := make([]string, 3)
+	stats[0] = fmt.Sprintf("HP:%d", p.hp)
+	stats[1] = fmt.Sprintf("STR:%d(%+d)", p.str, (p.str-10)/2)
+	stats[2] = fmt.Sprintf("DEX:%d(%+d)", p.dex, (p.dex-10)/2)
+	return stats
 }
 
 func (p *Player) IsDead() bool {

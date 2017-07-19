@@ -144,10 +144,9 @@ func main() {
 				// Only render when it is the player's turn
 				worldMap.Render()
 				message.PrintMessages()
-				status := make([]string, 2)
-				status[0] = fmt.Sprintf("T:%d", t)
-				status[1] = fmt.Sprintf("HP:%d", p.GetHP())
-				printStatus(status)
+				stats := p.GetStats()
+				stats = append([]string{fmt.Sprintf("T:%d", t)}, stats...)
+				printStatus(stats)
 				// Game over, skip other enemies
 				if p.IsDead() {
 					break
