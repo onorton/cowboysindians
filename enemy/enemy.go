@@ -14,7 +14,7 @@ import (
 )
 
 func NewEnemy(x, y int, c rune, i termbox.Attribute) *Enemy {
-	return &Enemy{x, y, true, icon.NewIcon(c, i), 1, 5, 10, 10}
+	return &Enemy{x, y, true, icon.NewIcon(c, i), 1, 5, 10, 10, 13}
 }
 func (e *Enemy) Render(x, y int) {
 	e.icon.Render(x, y)
@@ -103,13 +103,13 @@ func (e *Enemy) GetInitiative() int {
 }
 
 func (e *Enemy) MeleeAttack(c creature.Creature) {
-	e.attack(c, (e.str-10)/2)
+	e.attack(c, (e.str-10)/2, (e.str-10)/2)
 }
-func (e *Enemy) attack(c creature.Creature, hitBonus int) {
+func (e *Enemy) attack(c creature.Creature, hitBonus, damageBonus int) {
 
 	hits := c.AttackHits(rand.Intn(20) + hitBonus + 1)
 	if hits {
-		c.TakeDamage(1 + (e.str-10)/2)
+		c.TakeDamage(1 + damageBonus)
 	}
 	if _, ok := c.(*creature.Player); ok {
 		if hits {
@@ -166,7 +166,7 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 	tX, tY := target.GetCoordinates()
 	// If close enough and can see target, use ranged attack
 	if distance := math.Sqrt(math.Pow(float64(e.x-tX), 2) + math.Pow(float64(e.y-tY), 2)); distance < 10 && m.IsVisible(e, tX, tY) {
-		e.attack(target, 0)
+		e.attack(target, (e.dex-10)/2, 0)
 	} else if len(possibleLocations) > 0 {
 		l := possibleLocations[rand.Intn(len(possibleLocations))]
 		return l.x, l.y
@@ -185,4 +185,5 @@ type Enemy struct {
 	hp         int
 	ac         int
 	str        int
+	dex        int
 }
