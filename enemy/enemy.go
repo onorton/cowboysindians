@@ -31,13 +31,15 @@ func Deserialize(e string) creature.Creature {
 	enemy.y, _ = strconv.Atoi(rest[1])
 	enemy.hp, _ = strconv.Atoi(rest[2])
 	enemy.ac, _ = strconv.Atoi(rest[3])
+	enemy.str, _ = strconv.Atoi(rest[4])
+	enemy.dex, _ = strconv.Atoi(rest[5])
 	var c creature.Creature = enemy
 	return c
 
 }
 
 func (e *Enemy) Serialize() string {
-	return fmt.Sprintf("Enemy{%d %d %d %d %s}", e.x, e.y, e.hp, e.ac, e.icon.Serialize())
+	return fmt.Sprintf("Enemy{%d %d %d %d %d %d %s}", e.x, e.y, e.hp, e.ac, e.str, e.dex, e.icon.Serialize())
 }
 
 func (e *Enemy) GetCoordinates() (int, int) {

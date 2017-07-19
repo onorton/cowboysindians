@@ -29,6 +29,8 @@ func Deserialize(c string) *Creature {
 	p.y, _ = strconv.Atoi(rest[1])
 	p.hp, _ = strconv.Atoi(rest[2])
 	p.ac, _ = strconv.Atoi(rest[3])
+	p.str, _ = strconv.Atoi(rest[4])
+	p.dex, _ = strconv.Atoi(rest[5])
 	var creature Creature = p
 	return &creature
 
@@ -38,7 +40,7 @@ func (p *Player) Serialize() string {
 	if p == nil {
 		return ""
 	}
-	return fmt.Sprintf("Player{%d %d %d %d %s}", p.x, p.y, p.hp, p.ac, p.icon.Serialize())
+	return fmt.Sprintf("Player{%d %d %d %d %d %d %s}", p.x, p.y, p.hp, p.ac, p.str, p.dex, p.icon.Serialize())
 }
 
 func (p *Player) GetCoordinates() (int, int) {
