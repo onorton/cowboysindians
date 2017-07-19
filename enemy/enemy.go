@@ -105,7 +105,7 @@ func (e *Enemy) GetInitiative() int {
 }
 
 func (e *Enemy) MeleeAttack(c creature.Creature) {
-	e.attack(c, (e.str-10)/2, (e.str-10)/2)
+	e.attack(c, creature.GetBonus(e.str), creature.GetBonus(e.str))
 }
 func (e *Enemy) attack(c creature.Creature, hitBonus, damageBonus int) {
 
@@ -168,7 +168,7 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 	tX, tY := target.GetCoordinates()
 	// If close enough and can see target, use ranged attack
 	if distance := math.Sqrt(math.Pow(float64(e.x-tX), 2) + math.Pow(float64(e.y-tY), 2)); distance < 10 && m.IsVisible(e, tX, tY) {
-		e.attack(target, (e.dex-10)/2, 0)
+		e.attack(target, creature.GetBonus(e.dex), 0)
 	} else if len(possibleLocations) > 0 {
 		l := possibleLocations[rand.Intn(len(possibleLocations))]
 		return l.x, l.y

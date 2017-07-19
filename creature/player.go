@@ -70,7 +70,7 @@ func (p *Player) attack(c Creature, hitBonus, damageBonus int) {
 }
 
 func (p *Player) MeleeAttack(c Creature) {
-	p.attack(c, (p.str-10)/2, (p.str-10)/2)
+	p.attack(c, GetBonus(p.str), GetBonus(p.str))
 }
 
 func (p *Player) TakeDamage(damage int) {
@@ -79,8 +79,8 @@ func (p *Player) TakeDamage(damage int) {
 func (p *Player) GetStats() []string {
 	stats := make([]string, 3)
 	stats[0] = fmt.Sprintf("HP:%d", p.hp)
-	stats[1] = fmt.Sprintf("STR:%d(%+d)", p.str, (p.str-10)/2)
-	stats[2] = fmt.Sprintf("DEX:%d(%+d)", p.dex, (p.dex-10)/2)
+	stats[1] = fmt.Sprintf("STR:%d(%+d)", p.str, GetBonus(p.str))
+	stats[2] = fmt.Sprintf("DEX:%d(%+d)", p.dex, GetBonus(p.dex))
 	return stats
 }
 
@@ -96,11 +96,15 @@ func (p *Player) RangedAttack(target Creature) {
 	tX, tY := target.GetCoordinates()
 	distance := math.Sqrt(math.Pow(float64(p.x-tX), 2) + math.Pow(float64(p.y-tY), 2))
 	if distance < 10 {
-		p.attack(target, (p.str-10)/2, 0)
+		p.attack(target, GetBonus(p.str), 0)
 	} else {
 		message.Enqueue("Your target was too far away.")
 	}
 
+}
+
+func GetBonus(score int) int {
+	return (score - 10) / 2
 }
 
 // Interface shared by Player and Enemy
