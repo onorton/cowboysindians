@@ -97,9 +97,7 @@ func printStatus(status []string) {
 }
 func main() {
 	err := termbox.Init()
-	if err != nil {
-		panic(err)
-	}
+	check(err)
 	defer termbox.Close()
 	message.SetWindowSize(windowWidth, windowHeight)
 	worldMap := worldmap.NewMap(width, height, windowWidth, windowHeight)

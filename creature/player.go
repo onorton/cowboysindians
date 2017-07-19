@@ -55,7 +55,7 @@ func (p *Player) GetInitiative() int {
 	return p.initiative
 }
 
-func (p *Player) Attack(c Creature) {
+func (p *Player) attack(c Creature) {
 	if c.AttackHits(rand.Intn(20) + 1) {
 		message.Enqueue("You hit the enemy.")
 		c.TakeDamage(1)
@@ -65,6 +65,10 @@ func (p *Player) Attack(c Creature) {
 	if c.IsDead() {
 		message.Enqueue("The enemy died")
 	}
+}
+
+func (p *Player) MeleeAttack(c Creature) {
+	p.attack(c)
 }
 
 func (p *Player) TakeDamage(damage int) {
@@ -86,7 +90,7 @@ func (p *Player) RangedAttack(target Creature) {
 	tX, tY := target.GetCoordinates()
 	distance := math.Sqrt(math.Pow(float64(p.x-tX), 2) + math.Pow(float64(p.y-tY), 2))
 	if distance < 10 {
-		p.Attack(target)
+		p.attack(target)
 	} else {
 		message.Enqueue("Your target was too far away.")
 	}
@@ -100,7 +104,7 @@ type Creature interface {
 	Serialize() string
 	Render(int, int)
 	GetInitiative() int
-	Attack(Creature)
+	MeleeAttack(Creature)
 	TakeDamage(int)
 	IsDead() bool
 	AttackHits(int) bool

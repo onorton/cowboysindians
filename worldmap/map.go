@@ -484,7 +484,7 @@ func (m Map) MoveCreature(c creature.Creature, x, y int) {
 	}
 	// If occupied by another creature, melee attack
 	if m.grid[y][x].c != nil && m.grid[y][x].c != c {
-		c.Attack(m.grid[y][x].c)
+		c.MeleeAttack(m.grid[y][x].c)
 		return
 	}
 
