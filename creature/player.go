@@ -11,7 +11,7 @@ import (
 )
 
 func NewPlayer() *Player {
-	return &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 15}
+	return &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 15, 12}
 }
 
 func (p *Player) Render(x, y int) {
@@ -55,10 +55,10 @@ func (p *Player) GetInitiative() int {
 	return p.initiative
 }
 
-func (p *Player) attack(c Creature) {
-	if c.AttackHits(rand.Intn(20) + 1) {
+func (p *Player) attack(c Creature, hitBonus int) {
+	if c.AttackHits(rand.Intn(20) + hitBonus + 1) {
 		message.Enqueue("You hit the enemy.")
-		c.TakeDamage(1)
+		c.TakeDamage(1 + (p.str-10)/2)
 	} else {
 		message.Enqueue("You miss the enemy.")
 	}
@@ -68,7 +68,7 @@ func (p *Player) attack(c Creature) {
 }
 
 func (p *Player) MeleeAttack(c Creature) {
-	p.attack(c)
+	p.attack(c, (p.str-10)/2)
 }
 
 func (p *Player) TakeDamage(damage int) {
@@ -90,7 +90,7 @@ func (p *Player) RangedAttack(target Creature) {
 	tX, tY := target.GetCoordinates()
 	distance := math.Sqrt(math.Pow(float64(p.x-tX), 2) + math.Pow(float64(p.y-tY), 2))
 	if distance < 10 {
-		p.attack(target)
+		p.attack(target, 0)
 	} else {
 		message.Enqueue("Your target was too far away.")
 	}
@@ -117,4 +117,5 @@ type Player struct {
 	initiative int
 	hp         int
 	ac         int
+	str        int
 }
