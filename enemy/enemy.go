@@ -1,20 +1,45 @@
 package enemy
 
 import (
+	"encoding/json"
 	"fmt"
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/worldmap"
+	"io/ioutil"
 	"math"
 	"math/rand"
 	"strconv"
 	"strings"
 )
 
-func NewEnemy(x, y int, c rune, i termbox.Attribute) *Enemy {
-	return &Enemy{x, y, true, icon.NewIcon(c, i), 1, 5, 10, 10, 13}
+type EnemyAttributes struct {
+	Icon       rune
+	Colour     termbox.Attribute
+	Initiative int
+	Hp         int
+	Ac         int
+	Str        int
+	Dex        int
+}
+
+var enemyData map[string]EnemyAttributes = fetchEnemyData()
+
+func fetchEnemyData() map[string]EnemyAttributes {
+	data, err := ioutil.ReadFile("data/enemy.json")
+	if err != nil {
+		panic(err)
+	}
+	var eD map[string]EnemyAttributes
+	json.Unmarshal(data, &eD)
+	return eD
+}
+
+func NewEnemy(name string, x, y int) *Enemy {
+	enemy := enemyData[name]
+	return &Enemy{x, y, true, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex}
 }
 func (e *Enemy) Render(x, y int) {
 	e.icon.Render(x, y)

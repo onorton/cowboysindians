@@ -40,7 +40,6 @@ func newTile(name string, x, y int) Tile {
 	colour := terrain.Colour
 	passable := terrain.Passable
 	door := terrain.Door
-	message.Enqueue("Sup")
 	return Tile{icon.NewIcon(c, colour), x, y, passable, door, nil}
 }
 

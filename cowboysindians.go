@@ -70,7 +70,7 @@ func generateEnemies(m worldmap.Map, p *creature.Player, n int) []*enemy.Enemy {
 			i--
 			continue
 		}
-		enemies[i] = enemy.NewEnemy(x, y, 'b', termbox.ColorBlue)
+		enemies[i] = enemy.NewEnemy("bandit", x, y)
 	}
 	return enemies
 }
