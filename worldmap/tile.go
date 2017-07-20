@@ -11,6 +11,12 @@ import (
 	"strings"
 )
 
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
 type TileAttributes struct {
 	Icon     rune
 	Colour   termbox.Attribute
@@ -22,11 +28,10 @@ var terrainData map[string]TileAttributes = fetchTerrainData()
 
 func fetchTerrainData() map[string]TileAttributes {
 	data, err := ioutil.ReadFile("data/terrain.json")
-	if err != nil {
-		panic(err)
-	}
+	check(err)
 	var tD map[string]TileAttributes
-	json.Unmarshal(data, &tD)
+	err = json.Unmarshal(data, &tD)
+	check(err)
 	return tD
 }
 

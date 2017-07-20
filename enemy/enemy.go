@@ -15,6 +15,12 @@ import (
 	"strings"
 )
 
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
 type EnemyAttributes struct {
 	Icon       rune
 	Colour     termbox.Attribute
@@ -29,11 +35,10 @@ var enemyData map[string]EnemyAttributes = fetchEnemyData()
 
 func fetchEnemyData() map[string]EnemyAttributes {
 	data, err := ioutil.ReadFile("data/enemy.json")
-	if err != nil {
-		panic(err)
-	}
+	check(err)
 	var eD map[string]EnemyAttributes
-	json.Unmarshal(data, &eD)
+	err = json.Unmarshal(data, &eD)
+	check(err)
 	return eD
 }
 
