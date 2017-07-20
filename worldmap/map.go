@@ -1,23 +1,47 @@
 package worldmap
 
 import (
+	"encoding/json"
 	"fmt"
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/message"
+	"io/ioutil"
 	"strconv"
 	"strings"
 )
 
 const padding = 5
 
-func NewTile(c rune, colour termbox.Attribute, x, y int, passable bool) Tile {
-	return Tile{icon.NewIcon(c, colour), x, y, passable, false, nil}
+type TileAttributes struct {
+	Icon     rune
+	Colour   termbox.Attribute
+	Passable bool
+	Door     bool
 }
 
-func NewDoor(x, y int, open bool) Tile {
-	return Tile{icon.NewIcon('+', termbox.ColorWhite), x, y, open, true, nil}
+var terrainData map[string]TileAttributes = fetchTerrainData()
+
+func fetchTerrainData() map[string]TileAttributes {
+	data, err := ioutil.ReadFile("data/terrain.json")
+	if err != nil {
+		panic(err)
+	}
+	var tD map[string]TileAttributes
+	json.Unmarshal(data, &tD)
+	return tD
+}
+
+func newTile(name string, x, y int) Tile {
+
+	terrain := terrainData[name]
+	c := terrain.Icon
+	colour := terrain.Colour
+	passable := terrain.Passable
+	door := terrain.Door
+	message.Enqueue("Sup")
+	return Tile{icon.NewIcon(c, colour), x, y, passable, door, nil}
 }
 
 func (t Tile) Serialize() string {
@@ -83,20 +107,20 @@ func NewMap(width, height, viewerWidth, viewerHeight int) Map {
 	for i := 0; i < height; i++ {
 		row := make([]Tile, width)
 		for j := 0; j < width; j++ {
-			row[j] = NewTile('.', termbox.ColorWhite, j, i, true)
+			row[j] = newTile("ground", j, i)
 
 		}
 		grid[i] = row
 	}
 
-	grid[0][4] = NewTile('|', termbox.ColorWhite, 4, 0, false)
-	grid[0][5] = NewTile('-', termbox.ColorWhite, 5, 0, false)
-	grid[0][6] = NewTile('|', termbox.ColorWhite, 6, 0, false)
-	grid[1][4] = NewDoor(4, 1, false)
-	grid[2][4] = NewTile('|', termbox.ColorWhite, 4, 2, false)
-	grid[2][5] = NewTile('-', termbox.ColorWhite, 5, 2, false)
-	grid[2][6] = NewTile('|', termbox.ColorWhite, 6, 2, false)
-	grid[1][6] = NewTile('|', termbox.ColorWhite, 6, 1, false)
+	grid[0][4] = newTile("wall", 4, 0)
+	grid[0][5] = newTile("wall", 5, 0)
+	grid[0][6] = newTile("wall", 6, 0)
+	grid[1][4] = newTile("door", 4, 1)
+	grid[2][4] = newTile("wall", 4, 2)
+	grid[2][5] = newTile("wall", 5, 2)
+	grid[2][6] = newTile("wall", 6, 2)
+	grid[1][6] = newTile("wall", 6, 1)
 
 	viewer := new(Viewer)
 	viewer.x = 0
