@@ -39,7 +39,7 @@ func fetchEnemyData() map[string]EnemyAttributes {
 
 func NewEnemy(name string, x, y int) *Enemy {
 	enemy := enemyData[name]
-	return &Enemy{x, y, true, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex}
+	return &Enemy{x, y, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex}
 }
 func (e *Enemy) Render(x, y int) {
 	e.icon.Render(x, y)
@@ -206,7 +206,6 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 type Enemy struct {
 	x          int
 	y          int
-	direction  bool
 	icon       icon.Icon
 	initiative int
 	hp         int
