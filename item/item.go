@@ -5,6 +5,7 @@ import (
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/icon"
 	"hash/fnv"
+	"strings"
 )
 
 type Item struct {
@@ -28,6 +29,15 @@ func (item *Item) Serialize() string {
 
 func Deserialize(itemString string) *Item {
 
+	if len(itemString) == 1 {
+		return nil
+	}
+	itemString = itemString[5 : len(itemString)-2]
+	item := new(Item)
+	itemAttributes := strings.SplitN(itemString, " ", 2)
+	item.name = itemAttributes[0]
+	item.ic = icon.Deserialize(itemAttributes[1])
+	return item
 }
 
 func (item *Item) GetName() string {

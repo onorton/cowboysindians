@@ -77,13 +77,13 @@ func DeserializeTile(t string) Tile {
 	tile.terrain = icon.Deserialize(t[b:e])
 
 	t = t[(e + 1):]
-	fields := strings.Split(t, " ")
+	fields := strings.SplitN(t, " ", 5)
 
 	tile.x, _ = strconv.Atoi(fields[0])
 	tile.y, _ = strconv.Atoi(fields[1])
 	tile.passable, _ = strconv.ParseBool(fields[2])
 	tile.door, _ = strconv.ParseBool(fields[3])
-
+	tile.item = item.Deserialize(fields[4])
 	return tile
 }
 func (t Tile) render(x, y int) {

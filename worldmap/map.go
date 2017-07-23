@@ -465,6 +465,7 @@ func (m Map) DropItem() bool {
 					}
 					position++
 				}
+				continue
 			}
 			if e.Key == termbox.KeyEnter {
 				message.PrintMessage("Never mind.")

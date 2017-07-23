@@ -22,7 +22,9 @@ func (p *Player) Render(x, y int) {
 func Deserialize(c string) *Creature {
 	p := new(Player)
 	c = c[strings.Index(c, "{")+1 : len(c)-1]
-	restIcon := strings.Split(c, "Icon")
+	restInventory := strings.Split(c, "[")
+	restIcon := strings.Split(restInventory[0], "Icon")
+	inventory := restInventory[1][:len(restInventory[1])-1]
 	p.icon = icon.Deserialize(restIcon[1])
 
 	rest := strings.Split(restIcon[0], " ")
@@ -32,6 +34,14 @@ func Deserialize(c string) *Creature {
 	p.ac, _ = strconv.Atoi(rest[3])
 	p.str, _ = strconv.Atoi(rest[4])
 	p.dex, _ = strconv.Atoi(rest[5])
+	p.inventory = make(map[rune]*item.Item)
+	items := strings.Split(inventory, "Item{")
+	items = items[1:]
+	for _, itemString := range items {
+		itemString = fmt.Sprintf("Item{%s", itemString)
+		itm := item.Deserialize(itemString)
+		p.PickupItem(itm)
+	}
 	var creature Creature = p
 	return &creature
 
