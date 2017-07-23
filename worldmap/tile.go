@@ -6,6 +6,8 @@ import (
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/icon"
+	"github.com/onorton/cowboysindians/item"
+
 	"io/ioutil"
 	"strconv"
 	"strings"
@@ -42,7 +44,7 @@ func newTile(name string, x, y int) Tile {
 	colour := terrain.Colour
 	passable := terrain.Passable
 	door := terrain.Door
-	return Tile{icon.NewIcon(c, colour), x, y, passable, door, nil}
+	return Tile{icon.NewIcon(c, colour), x, y, passable, door, nil, nil}
 }
 
 func (t Tile) Serialize() string {
@@ -90,6 +92,8 @@ func (t Tile) render(x, y int) {
 		t.c.Render(x, y)
 	} else if t.door {
 		t.terrain.RenderDoor(x, y, t.passable)
+	} else if t.item != nil {
+		t.item.Render(x, y)
 	} else {
 		t.terrain.Render(x, y)
 	}
@@ -102,4 +106,5 @@ type Tile struct {
 	passable bool
 	door     bool
 	c        creature.Creature
+	item     *item.Item
 }
