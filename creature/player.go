@@ -3,6 +3,7 @@ package creature
 import (
 	"fmt"
 	"github.com/onorton/cowboysindians/icon"
+	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
 	"math"
 	"math/rand"
@@ -11,7 +12,7 @@ import (
 )
 
 func NewPlayer() *Player {
-	return &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 15, 12, 10}
+	return &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 15, 12, 10, make(map[rune]*item.Item)}
 }
 
 func (p *Player) Render(x, y int) {
@@ -103,6 +104,10 @@ func (p *Player) RangedAttack(target Creature) {
 
 }
 
+func (p *Player) PickupItem(item *item.Item) {
+	p.inventory[item.GetKey()] = item
+}
+
 func GetBonus(score int) int {
 	return (score - 10) / 2
 }
@@ -129,4 +134,5 @@ type Player struct {
 	ac         int
 	str        int
 	dex        int
+	inventory  map[rune]*item.Item
 }

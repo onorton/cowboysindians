@@ -235,6 +235,8 @@ func main() {
 										player.RangedAttack(target)
 										endTurn = true
 									}
+								case ',':
+									endTurn = worldMap.PickupItem()
 								default:
 									quit = true
 								}

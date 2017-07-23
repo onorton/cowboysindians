@@ -433,6 +433,19 @@ func (m Map) MoveCreature(c creature.Creature, x, y int) {
 
 }
 
+func (m Map) PickupItem() bool {
+	player := m.GetPlayer()
+	x, y := player.GetCoordinates()
+	if m.grid[y][x].item == nil {
+		message.PrintMessage("There is no item here")
+		return false
+	}
+	item := m.grid[y][x].item
+	player.PickupItem(item)
+	message.Enqueue(fmt.Sprintf("You pick up a %s.", item.GetName()))
+	m.grid[y][x].item = nil
+	return true
+}
 func (m Map) GetPlayer() *creature.Player {
 	for _, row := range m.grid {
 		for _, tile := range row {
