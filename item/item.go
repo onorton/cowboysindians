@@ -29,5 +29,9 @@ func (item *Item) Render(x, y int) {
 func (item *Item) GetKey() rune {
 	h := fnv.New32()
 	h.Write([]byte(item.name))
-	return rune(33 + h.Sum32()%93)
+	key := rune(33 + h.Sum32()%93)
+	if key == '*' {
+		key++
+	}
+	return key
 }

@@ -135,6 +135,10 @@ func (p *Player) GetItem(key rune) *item.Item {
 	delete(p.inventory, key)
 	return item
 }
+
+func (p *Player) GetInventory() map[rune]*item.Item {
+	return p.inventory
+}
 func GetBonus(score int) int {
 	return (score - 10) / 2
 }

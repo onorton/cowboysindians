@@ -451,10 +451,21 @@ func (m Map) DropItem() bool {
 	player := m.GetPlayer()
 	x, y := player.GetCoordinates()
 	for {
-		message.PrintMessage(fmt.Sprintf("What do you want to drop? [%s]", player.GetInventoryKeys()))
+		message.PrintMessage(fmt.Sprintf("What do you want to drop? [%s or *]", player.GetInventoryKeys()))
 		e := termbox.PollEvent()
 
 		if e.Type == termbox.EventKey {
+			if e.Ch == '*' {
+				inventory := player.GetInventory()
+				position := 0
+				for k, item := range inventory {
+					itemString := fmt.Sprintf("%s - %s", string(k), item.GetName())
+					for i, c := range itemString {
+						termbox.SetCell(i, position, c, termbox.ColorWhite, termbox.ColorDefault)
+					}
+					position++
+				}
+			}
 			if e.Key == termbox.KeyEnter {
 				message.PrintMessage("Never mind.")
 				return false
