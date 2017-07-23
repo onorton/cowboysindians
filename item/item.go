@@ -1,6 +1,7 @@
 package item
 
 import (
+	"fmt"
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/icon"
 	"hash/fnv"
@@ -16,6 +17,17 @@ func NewItem(name string) *Item {
 	item.name = name
 	item.ic = icon.NewIcon('*', termbox.ColorYellow)
 	return item
+}
+
+func (item *Item) Serialize() string {
+	if item == nil {
+		return ""
+	}
+	return fmt.Sprintf("Item{%s %s}", item.name, item.ic.Serialize())
+}
+
+func Deserialize(itemString string) *Item {
+
 }
 
 func (item *Item) GetName() string {

@@ -49,7 +49,7 @@ func newTile(name string, x, y int) Tile {
 
 func (t Tile) Serialize() string {
 
-	return fmt.Sprintf("Tile{%s %d %d %v %v}", t.terrain.Serialize(), t.x, t.y, t.passable, t.door)
+	return fmt.Sprintf("Tile{%s %d %d %v %v %s}", t.terrain.Serialize(), t.x, t.y, t.passable, t.door, t.item.Serialize())
 
 }
 

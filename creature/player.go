@@ -41,7 +41,12 @@ func (p *Player) Serialize() string {
 	if p == nil {
 		return ""
 	}
-	return fmt.Sprintf("Player{%d %d %d %d %d %d %s}", p.x, p.y, p.hp, p.ac, p.str, p.dex, p.icon.Serialize())
+	items := "["
+	for _, item := range p.inventory {
+		items += fmt.Sprintf("%s ", item.Serialize())
+	}
+	items += "]"
+	return fmt.Sprintf("Player{%d %d %d %d %d %d %s %s}", p.x, p.y, p.hp, p.ac, p.str, p.dex, p.icon.Serialize(), items)
 }
 
 func (p *Player) GetCoordinates() (int, int) {
