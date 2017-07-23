@@ -108,6 +108,33 @@ func (p *Player) PickupItem(item *item.Item) {
 	p.inventory[item.GetKey()] = item
 }
 
+func (p *Player) GetInventoryKeys() string {
+	keysSet := make([]bool, 128)
+	for k := range p.inventory {
+		keysSet[k] = true
+	}
+	keys := ""
+	for i, _ := range keysSet {
+		if i < 33 || i == 127 || !keysSet[i] {
+			continue
+		}
+
+		if keysSet[i-1] && !keysSet[i+1] {
+			keys += string(rune(i))
+		} else if !keysSet[i-1] {
+			keys += string(rune(i))
+		} else if keysSet[i-1] && !keysSet[i-2] && keysSet[i+1] {
+			keys += "-"
+		}
+	}
+	return keys
+}
+
+func (p *Player) GetItem(key rune) *item.Item {
+	item := p.inventory[key]
+	delete(p.inventory, key)
+	return item
+}
 func GetBonus(score int) int {
 	return (score - 10) / 2
 }

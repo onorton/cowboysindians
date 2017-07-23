@@ -446,6 +446,31 @@ func (m Map) PickupItem() bool {
 	m.grid[y][x].item = nil
 	return true
 }
+
+func (m Map) DropItem() bool {
+	player := m.GetPlayer()
+	x, y := player.GetCoordinates()
+	for {
+		message.PrintMessage(fmt.Sprintf("What do you want to drop? [%s]", player.GetInventoryKeys()))
+		e := termbox.PollEvent()
+
+		if e.Type == termbox.EventKey {
+			if e.Key == termbox.KeyEnter {
+				message.PrintMessage("Never mind.")
+				return false
+			}
+			item := player.GetItem(e.Ch)
+			if item == nil {
+				message.PrintMessage("You don't have that item.")
+				termbox.PollEvent()
+			} else {
+				m.grid[y][x].item = item
+				return true
+			}
+		}
+	}
+	return false
+}
 func (m Map) GetPlayer() *creature.Player {
 	for _, row := range m.grid {
 		for _, tile := range row {
