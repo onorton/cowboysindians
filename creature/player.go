@@ -52,8 +52,11 @@ func (p *Player) Serialize() string {
 		return ""
 	}
 	items := "["
-	for _, item := range p.inventory {
-		items += fmt.Sprintf("%s ", item[0].Serialize())
+	for k, _ := range p.inventory {
+		for _, item := range p.inventory[k] {
+			items += fmt.Sprintf("%s ", item.Serialize())
+
+		}
 	}
 	items += "]"
 	return fmt.Sprintf("Player{%d %d %d %d %d %d %s %s}", p.x, p.y, p.hp, p.ac, p.str, p.dex, p.icon.Serialize(), items)

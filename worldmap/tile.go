@@ -48,12 +48,13 @@ func newTile(name string, x, y int) Tile {
 }
 
 func (t Tile) Serialize() string {
-	item := (*item.Item)(nil)
-	if len(t.items) != 0 {
-		item = t.items[0]
+	items := "["
+	for _, item := range t.items {
+		items += fmt.Sprintf("%s ", item.Serialize())
 	}
+	items += "]"
 
-	return fmt.Sprintf("Tile{%s %d %d %v %v %s}", t.terrain.Serialize(), t.x, t.y, t.passable, t.door, item.Serialize())
+	return fmt.Sprintf("Tile{%s %d %d %v %v %s}", t.terrain.Serialize(), t.x, t.y, t.passable, t.door, items)
 
 }
 
@@ -88,7 +89,13 @@ func DeserializeTile(t string) Tile {
 	tile.passable, _ = strconv.ParseBool(fields[2])
 	tile.door, _ = strconv.ParseBool(fields[3])
 	tile.items = make([]*item.Item, 0)
-	//= item.Deserialize(fields[4])
+	items := strings.Split(fields[4][1:len(fields[4])-2], "Item{")
+	items = items[1:]
+	for _, itemString := range items {
+		itemString = fmt.Sprintf("Item{%s", itemString)
+		itm := item.Deserialize(itemString)
+		tile.items = append(tile.items, itm)
+	}
 	return tile
 }
 
