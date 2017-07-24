@@ -44,12 +44,16 @@ func newTile(name string, x, y int) Tile {
 	colour := terrain.Colour
 	passable := terrain.Passable
 	door := terrain.Door
-	return Tile{icon.NewIcon(c, colour), x, y, passable, door, nil, nil}
+	return Tile{icon.NewIcon(c, colour), x, y, passable, door, nil, make([]*item.Item, 0)}
 }
 
 func (t Tile) Serialize() string {
+	item := (*item.Item)(nil)
+	if len(t.items) != 0 {
+		item = t.items[0]
+	}
 
-	return fmt.Sprintf("Tile{%s %d %d %v %v %s}", t.terrain.Serialize(), t.x, t.y, t.passable, t.door, t.item.Serialize())
+	return fmt.Sprintf("Tile{%s %d %d %v %v %s}", t.terrain.Serialize(), t.x, t.y, t.passable, t.door, item.Serialize())
 
 }
 
@@ -83,17 +87,21 @@ func DeserializeTile(t string) Tile {
 	tile.y, _ = strconv.Atoi(fields[1])
 	tile.passable, _ = strconv.ParseBool(fields[2])
 	tile.door, _ = strconv.ParseBool(fields[3])
-	tile.item = item.Deserialize(fields[4])
+	tile.items = make([]*item.Item, 0)
+	//= item.Deserialize(fields[4])
 	return tile
 }
-func (t Tile) render(x, y int) {
 
+func (t *Tile) PlaceItem(itm *item.Item) {
+	t.items = append([]*item.Item{itm}, t.items...)
+}
+func (t Tile) render(x, y int) {
 	if t.c != nil {
 		t.c.Render(x, y)
 	} else if t.door {
 		t.terrain.RenderDoor(x, y, t.passable)
-	} else if t.item != nil {
-		t.item.Render(x, y)
+	} else if len(t.items) != 0 {
+		t.items[0].Render(x, y)
 	} else {
 		t.terrain.Render(x, y)
 	}
@@ -106,5 +114,5 @@ type Tile struct {
 	passable bool
 	door     bool
 	c        creature.Creature
-	item     *item.Item
+	items    []*item.Item
 }

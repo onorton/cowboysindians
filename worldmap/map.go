@@ -31,9 +31,9 @@ func NewMap(width, height, viewerWidth, viewerHeight int) Map {
 	grid[2][5] = newTile("wall", 5, 2)
 	grid[2][6] = newTile("wall", 6, 2)
 	grid[1][6] = newTile("wall", 6, 1)
-	grid[2][2].item = item.NewItem("gem")
-	grid[2][3].item = item.NewItem("gem")
-	grid[3][3].item = item.NewItem("gem")
+	grid[2][2].PlaceItem(item.NewItem("gem"))
+	grid[2][3].PlaceItem(item.NewItem("gem"))
+	grid[3][3].PlaceItem(item.NewItem("gem"))
 	viewer := new(Viewer)
 	viewer.x = 0
 	viewer.y = 0
@@ -436,14 +436,28 @@ func (m Map) MoveCreature(c creature.Creature, x, y int) {
 func (m Map) PickupItem() bool {
 	player := m.GetPlayer()
 	x, y := player.GetCoordinates()
-	if m.grid[y][x].item == nil {
-		message.PrintMessage("There is no item here")
+	if m.grid[y][x].items == nil {
+		message.PrintMessage("There is no item here.")
 		return false
 	}
-	item := m.grid[y][x].item
-	player.PickupItem(item)
-	message.Enqueue(fmt.Sprintf("You pick up a %s.", item.GetName()))
-	m.grid[y][x].item = nil
+
+	items := make(map[rune]([]*item.Item))
+	for _, itm := range m.grid[y][x].items {
+		existing := items[itm.GetKey()]
+		if existing == nil {
+			existing = make([]*item.Item, 0)
+		}
+		existing = append(existing, itm)
+		items[itm.GetKey()] = existing
+	}
+	for k, _ := range items {
+		for _, item := range items[k] {
+			player.PickupItem(item)
+		}
+		message.Enqueue(fmt.Sprintf("You pick up %d %ss.", len(items[k]), items[k][0].GetName()))
+
+	}
+	m.grid[y][x].items = make([]*item.Item, 0)
 	return true
 }
 
@@ -480,7 +494,7 @@ func (m Map) DropItem() bool {
 				message.PrintMessage("You don't have that item.")
 				termbox.PollEvent()
 			} else {
-				m.grid[y][x].item = item
+				m.grid[y][x].PlaceItem(item)
 				message.Enqueue(fmt.Sprintf("You dropped a %s.", item.GetName()))
 				return true
 			}
