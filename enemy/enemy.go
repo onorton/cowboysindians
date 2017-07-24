@@ -6,6 +6,7 @@ import (
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/icon"
+	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/worldmap"
 	"io/ioutil"
@@ -44,7 +45,7 @@ func fetchEnemyData() map[string]EnemyAttributes {
 
 func NewEnemy(name string, x, y int) *Enemy {
 	enemy := enemyData[name]
-	return &Enemy{x, y, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex}
+	return &Enemy{x, y, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, make([]*item.Item, 0)}
 }
 func (e *Enemy) Render(x, y int) {
 	e.icon.Render(x, y)
@@ -53,7 +54,9 @@ func (e *Enemy) Render(x, y int) {
 func Deserialize(e string) creature.Creature {
 	enemy := new(Enemy)
 	e = e[strings.Index(e, "{")+1 : len(e)-1]
-	restIcon := strings.Split(e, "Icon")
+	restInventory := strings.Split(e, "[")
+	restIcon := strings.Split(restInventory[0], "Icon")
+	inventory := restInventory[1][:len(restInventory[1])-1]
 	enemy.icon = icon.Deserialize(restIcon[1])
 
 	rest := strings.Split(restIcon[0], " ")
@@ -63,13 +66,25 @@ func Deserialize(e string) creature.Creature {
 	enemy.ac, _ = strconv.Atoi(rest[3])
 	enemy.str, _ = strconv.Atoi(rest[4])
 	enemy.dex, _ = strconv.Atoi(rest[5])
-	var c creature.Creature = enemy
-	return c
-
+	enemy.inventory = make([]*item.Item, 0)
+	items := strings.Split(inventory, "Item{")
+	items = items[1:]
+	for _, itemString := range items {
+		itemString = fmt.Sprintf("Item{%s", itemString)
+		itm := item.Deserialize(itemString)
+		enemy.PickupItem(itm)
+	}
+	var creature creature.Creature = enemy
+	return creature
 }
 
 func (e *Enemy) Serialize() string {
-	return fmt.Sprintf("Enemy{%d %d %d %d %d %d %s}", e.x, e.y, e.hp, e.ac, e.str, e.dex, e.icon.Serialize())
+	items := "["
+	for _, item := range e.inventory {
+		items += fmt.Sprintf("%s ", item.Serialize())
+	}
+	items += "]"
+	return fmt.Sprintf("Enemy{%d %d %d %d %d %d %s}", e.x, e.y, e.hp, e.ac, e.str, e.dex, e.icon.Serialize(), items)
 }
 
 func (e *Enemy) GetCoordinates() (int, int) {
@@ -208,6 +223,10 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 
 }
 
+func (e *Enemy) PickupItem(item *item.Item) {
+	e.inventory = append(e.inventory, item)
+}
+
 type Enemy struct {
 	x          int
 	y          int
@@ -217,4 +236,5 @@ type Enemy struct {
 	ac         int
 	str        int
 	dex        int
+	inventory  []*item.Item
 }

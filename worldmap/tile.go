@@ -102,6 +102,7 @@ func DeserializeTile(t string) Tile {
 func (t *Tile) PlaceItem(itm *item.Item) {
 	t.items = append([]*item.Item{itm}, t.items...)
 }
+
 func (t Tile) render(x, y int) {
 	if t.c != nil {
 		t.c.Render(x, y)

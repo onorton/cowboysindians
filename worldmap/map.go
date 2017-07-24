@@ -442,7 +442,7 @@ func (m Map) PickupItem() bool {
 	}
 
 	items := make(map[rune]([]*item.Item))
-	for _, itm := range m.grid[y][x].items {
+	for _, itm := range m.GetItems(x, y) {
 		existing := items[itm.GetKey()]
 		if existing == nil {
 			existing = make([]*item.Item, 0)
@@ -457,10 +457,14 @@ func (m Map) PickupItem() bool {
 		message.Enqueue(fmt.Sprintf("You pick up %d %ss.", len(items[k]), items[k][0].GetName()))
 
 	}
-	m.grid[y][x].items = make([]*item.Item, 0)
 	return true
 }
 
+func (m Map) GetItems(x, y int) []*item.Item {
+	items := m.grid[y][x].items
+	m.grid[y][x].items = make([]*item.Item, 0)
+	return items
+}
 func (m Map) DropItem() bool {
 	player := m.GetPlayer()
 	x, y := player.GetCoordinates()
