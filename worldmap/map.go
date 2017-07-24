@@ -458,8 +458,12 @@ func (m Map) DropItem() bool {
 			if e.Ch == '*' {
 				inventory := player.GetInventory()
 				position := 0
-				for k, item := range inventory {
-					itemString := fmt.Sprintf("%s - %s", string(k), item.GetName())
+				for k, items := range inventory {
+
+					itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
+					if len(items) > 1 {
+						itemString += fmt.Sprintf(" x%d", len(items))
+					}
 					for i, c := range itemString {
 						termbox.SetCell(i, position, c, termbox.ColorWhite, termbox.ColorDefault)
 					}
@@ -477,6 +481,7 @@ func (m Map) DropItem() bool {
 				termbox.PollEvent()
 			} else {
 				m.grid[y][x].item = item
+				message.Enqueue(fmt.Sprintf("You dropped a %s.", item.GetName()))
 				return true
 			}
 		}

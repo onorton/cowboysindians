@@ -12,7 +12,7 @@ import (
 )
 
 func NewPlayer() *Player {
-	return &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 15, 12, 10, make(map[rune]*item.Item)}
+	return &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 15, 12, 10, make(map[rune]([]*item.Item))}
 }
 
 func (p *Player) Render(x, y int) {
@@ -34,7 +34,7 @@ func Deserialize(c string) *Creature {
 	p.ac, _ = strconv.Atoi(rest[3])
 	p.str, _ = strconv.Atoi(rest[4])
 	p.dex, _ = strconv.Atoi(rest[5])
-	p.inventory = make(map[rune]*item.Item)
+	p.inventory = make(map[rune]([]*item.Item))
 	items := strings.Split(inventory, "Item{")
 	items = items[1:]
 	for _, itemString := range items {
@@ -53,7 +53,7 @@ func (p *Player) Serialize() string {
 	}
 	items := "["
 	for _, item := range p.inventory {
-		items += fmt.Sprintf("%s ", item.Serialize())
+		items += fmt.Sprintf("%s ", item[0].Serialize())
 	}
 	items += "]"
 	return fmt.Sprintf("Player{%d %d %d %d %d %d %s %s}", p.x, p.y, p.hp, p.ac, p.str, p.dex, p.icon.Serialize(), items)
@@ -119,8 +119,13 @@ func (p *Player) RangedAttack(target Creature) {
 
 }
 
-func (p *Player) PickupItem(item *item.Item) {
-	p.inventory[item.GetKey()] = item
+func (p *Player) PickupItem(itm *item.Item) {
+	existing := p.inventory[itm.GetKey()]
+	if existing == nil {
+		existing = make([]*item.Item, 0)
+	}
+	existing = append(existing, itm)
+	p.inventory[itm.GetKey()] = existing
 }
 
 func (p *Player) GetInventoryKeys() string {
@@ -146,12 +151,18 @@ func (p *Player) GetInventoryKeys() string {
 }
 
 func (p *Player) GetItem(key rune) *item.Item {
-	item := p.inventory[key]
-	delete(p.inventory, key)
+	items := p.inventory[key]
+	item := items[0]
+	items = items[1:]
+	if len(items) == 0 {
+		delete(p.inventory, key)
+	} else {
+		p.inventory[key] = items
+	}
 	return item
 }
 
-func (p *Player) GetInventory() map[rune]*item.Item {
+func (p *Player) GetInventory() map[rune]([]*item.Item) {
 	return p.inventory
 }
 func GetBonus(score int) int {
@@ -180,5 +191,5 @@ type Player struct {
 	ac         int
 	str        int
 	dex        int
-	inventory  map[rune]*item.Item
+	inventory  map[rune]([]*item.Item)
 }
