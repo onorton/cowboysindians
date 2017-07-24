@@ -1,12 +1,36 @@
 package item
 
 import (
+	"encoding/json"
 	"fmt"
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/icon"
 	"hash/fnv"
+	"io/ioutil"
 	"strings"
 )
+
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+type ItemAttributes struct {
+	Colour termbox.Attribute
+	Icon   rune
+}
+
+var itemData map[string]ItemAttributes = fetchItemData()
+
+func fetchItemData() map[string]ItemAttributes {
+	data, err := ioutil.ReadFile("data/item.json")
+	check(err)
+	var eD map[string]ItemAttributes
+	err = json.Unmarshal(data, &eD)
+	check(err)
+	return eD
+}
 
 type Item struct {
 	name string
@@ -14,10 +38,8 @@ type Item struct {
 }
 
 func NewItem(name string) *Item {
-	item := new(Item)
-	item.name = name
-	item.ic = icon.NewIcon('*', termbox.ColorYellow)
-	return item
+	item := itemData[name]
+	return &Item{name, icon.NewIcon(item.Icon, item.Colour)}
 }
 
 func (item *Item) Serialize() string {

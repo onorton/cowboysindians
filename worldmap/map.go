@@ -31,9 +31,9 @@ func NewMap(width, height, viewerWidth, viewerHeight int) Map {
 	grid[2][5] = newTile("wall", 5, 2)
 	grid[2][6] = newTile("wall", 6, 2)
 	grid[1][6] = newTile("wall", 6, 1)
-	grid[2][2].item = item.NewItem("item")
-	grid[2][3].item = item.NewItem("anotherItem")
-	grid[3][3].item = item.NewItem("thirdItem")
+	grid[2][2].item = item.NewItem("gem")
+	grid[2][3].item = item.NewItem("gem")
+	grid[3][3].item = item.NewItem("gem")
 	viewer := new(Viewer)
 	viewer.x = 0
 	viewer.y = 0
