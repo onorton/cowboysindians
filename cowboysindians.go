@@ -259,12 +259,7 @@ func main() {
 			} else {
 				e := c.(*enemy.Enemy)
 				if e.IsDead() {
-					eX, eY := e.GetCoordinates()
-					inventory := e.GetInventory()
-					fmt.Println(inventory)
-					for _, item := range inventory {
-						worldMap.PlaceItem(eX, eY, item)
-					}
+
 					continue
 				}
 				eX, eY := e.Update(worldMap)
@@ -275,7 +270,12 @@ func main() {
 
 		// Remove dead enemies
 		for i, c := range all {
-			if c.IsDead() {
+			if e, ok := c.(*enemy.Enemy); c.IsDead() && ok {
+				eX, eY := e.GetCoordinates()
+				inventory := e.GetInventory()
+				for _, item := range inventory {
+					worldMap.PlaceItem(eX, eY, item)
+				}
 				worldMap.DeleteCreature(c)
 				all = append(all[:i], all[i+1:]...)
 			}

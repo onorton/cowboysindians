@@ -84,7 +84,7 @@ func (e *Enemy) Serialize() string {
 		items += fmt.Sprintf("%s ", item.Serialize())
 	}
 	items += "]"
-	return fmt.Sprintf("Enemy{%d %d %d %d %d %d %s}", e.x, e.y, e.hp, e.ac, e.str, e.dex, e.icon.Serialize(), items)
+	return fmt.Sprintf("Enemy{%d %d %d %d %d %d %s %s}", e.x, e.y, e.hp, e.ac, e.str, e.dex, e.icon.Serialize(), items)
 }
 
 func (e *Enemy) GetCoordinates() (int, int) {
