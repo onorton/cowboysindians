@@ -96,7 +96,7 @@ func (e *Enemy) SetCoordinates(x int, y int) {
 	e.y = y
 }
 
-func (e *Enemy) GetAIMap(m worldmap.Map) [][]int {
+func (e *Enemy) getChaseMap(m worldmap.Map) [][]int {
 	height, width := m.GetHeight(), m.GetWidth()
 	aiMap := make([][]int, height)
 
@@ -145,6 +145,54 @@ func (e *Enemy) GetAIMap(m worldmap.Map) [][]int {
 	return aiMap
 }
 
+func (e *Enemy) getItemMap(m worldmap.Map) [][]int {
+	height, width := m.GetHeight(), m.GetWidth()
+	aiMap := make([][]int, height)
+
+	// Initialise Dijkstra map with goals.
+	// Max is size of grid.
+	for y := 0; y < height; y++ {
+		aiMap[y] = make([]int, width)
+		for x := 0; x < width; x++ {
+			if m.IsVisible(e, x, y) && m.HasItems(x, y) {
+				aiMap[y][x] = 0
+			} else {
+				aiMap[y][x] = height * width
+			}
+		}
+	}
+	prev := make([][]int, height)
+	for i, _ := range prev {
+		prev[i] = make([]int, width)
+	}
+	// While map changes, update
+	for !compareMaps(aiMap, prev) {
+		prev = aiMap
+		for y := 0; y < height; y++ {
+			for x := 0; x < width; x++ {
+				if !m.IsPassable(x, y) {
+					continue
+				}
+				min := 100
+				for i := -1; i <= 1; i++ {
+					for j := -1; j <= 1; j++ {
+						nX := x + i
+						nY := y + j
+						if nX >= 0 && nX < width && nY >= 0 && nY < height && aiMap[nY][nX] < min {
+							min = aiMap[nY][nX]
+						}
+					}
+
+					if aiMap[y][x] > min {
+						aiMap[y][x] = min + 1
+					}
+				}
+
+			}
+		}
+	}
+	return aiMap
+}
 func (e *Enemy) GetInitiative() int {
 	return e.initiative
 }
@@ -190,13 +238,26 @@ func compareMaps(m, o [][]int) bool {
 
 }
 
+func addMaps(maps [][][]int, weights []float64) [][]float64 {
+	result := make([][]float64, len(maps[0]))
+	for i, _ := range maps {
+		for y, row := range maps[i] {
+			result[y] = make([]float64, len(row))
+			for x, location := range row {
+				result[y][x] += weights[i] * float64(location)
+			}
+		}
+	}
+	return result
+}
+
 type Coordinate struct {
 	x int
 	y int
 }
 
 func (e *Enemy) Update(m worldmap.Map) (int, int) {
-	aiMap := e.GetAIMap(m)
+	aiMap := addMaps([][][]int{e.getChaseMap(m), e.getItemMap(m)}, []float64{0.8, 0.2})
 	current := aiMap[e.y][e.x]
 	possibleLocations := make([]Coordinate, 0)
 	// Find adjacent locations closer to the goal

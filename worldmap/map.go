@@ -124,6 +124,10 @@ func (m Map) IsOccupied(x, y int) bool {
 	return m.grid[y][x].c != nil
 }
 
+func (m Map) HasItems(x, y int) bool {
+	return len(m.grid[y][x].items) > 0
+}
+
 // Bresenham algorithm to check if creature c can see square x1, y1.
 func (m Map) IsVisible(c creature.Creature, x1, y1 int) bool {
 	x0, y0 := c.GetCoordinates()
