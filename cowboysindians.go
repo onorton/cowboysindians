@@ -257,10 +257,16 @@ func main() {
 				worldMap.MovePlayer(p, x, y)
 
 			} else {
-				if c.IsDead() {
+				e := c.(*enemy.Enemy)
+				if e.IsDead() {
+					eX, eY := e.GetCoordinates()
+					inventory := e.GetInventory()
+					fmt.Println(inventory)
+					for _, item := range inventory {
+						worldMap.PlaceItem(eX, eY, item)
+					}
 					continue
 				}
-				e := c.(*enemy.Enemy)
 				eX, eY := e.Update(worldMap)
 				worldMap.MoveCreature(e, eX, eY)
 			}

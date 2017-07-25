@@ -34,6 +34,7 @@ func NewMap(width, height, viewerWidth, viewerHeight int) Map {
 	grid[2][2].PlaceItem(item.NewItem("gem"))
 	grid[2][3].PlaceItem(item.NewItem("gem"))
 	grid[3][3].PlaceItem(item.NewItem("gem"))
+	grid[7][1].PlaceItem(item.NewItem("gem"))
 	viewer := new(Viewer)
 	viewer.x = 0
 	viewer.y = 0
@@ -288,6 +289,10 @@ func (m Map) ToggleDoor(x, y int, open bool) bool {
 	}
 	return false
 
+}
+
+func (m Map) PlaceItem(x, y int, item *item.Item) {
+	m.grid[y][x].PlaceItem(item)
 }
 
 // Interface for player to find a ranged target.

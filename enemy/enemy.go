@@ -217,6 +217,11 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 	} else if len(possibleLocations) > 0 {
 		l := possibleLocations[rand.Intn(len(possibleLocations))]
 		return l.x, l.y
+	} else {
+		items := m.GetItems(e.x, e.y)
+		for _, item := range items {
+			e.PickupItem(item)
+		}
 	}
 
 	return e.x, e.y
@@ -225,6 +230,10 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 
 func (e *Enemy) PickupItem(item *item.Item) {
 	e.inventory = append(e.inventory, item)
+}
+
+func (e *Enemy) GetInventory() []*item.Item {
+	return e.inventory
 }
 
 type Enemy struct {
