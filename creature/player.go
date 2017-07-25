@@ -2,6 +2,7 @@ package creature
 
 import (
 	"fmt"
+	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
@@ -103,6 +104,20 @@ func (p *Player) GetStats() []string {
 	return stats
 }
 
+func (p *Player) PrintInventory() {
+	position := 0
+	for k, items := range p.inventory {
+		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
+		if len(items) > 1 {
+			itemString += fmt.Sprintf(" x%d", len(items))
+		}
+		for i, c := range itemString {
+			termbox.SetCell(i, position, c, termbox.ColorWhite, termbox.ColorDefault)
+		}
+		position++
+	}
+	termbox.Flush()
+}
 func (p *Player) IsDead() bool {
 	return p.hp <= 0
 }

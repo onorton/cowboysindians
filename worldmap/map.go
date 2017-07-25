@@ -483,19 +483,7 @@ func (m Map) DropItem() bool {
 
 		if e.Type == termbox.EventKey {
 			if e.Ch == '*' {
-				inventory := player.GetInventory()
-				position := 0
-				for k, items := range inventory {
-
-					itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
-					if len(items) > 1 {
-						itemString += fmt.Sprintf(" x%d", len(items))
-					}
-					for i, c := range itemString {
-						termbox.SetCell(i, position, c, termbox.ColorWhite, termbox.ColorDefault)
-					}
-					position++
-				}
+				player.PrintInventory()
 				continue
 			}
 			if e.Key == termbox.KeyEnter {

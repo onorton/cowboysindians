@@ -119,6 +119,7 @@ func main() {
 		x, y := c.GetCoordinates()
 		worldMap.MoveCreature(c, x, y)
 	}
+	inventory := false
 	for {
 		quit := false
 		endTurn := false
@@ -140,18 +141,21 @@ func main() {
 				playerIndex = 0
 			}
 
-			if p, ok := c.(*creature.Player); ok {
+			if _, ok := c.(*creature.Player); ok {
 				// Only render when it is the player's turn
 				worldMap.Render()
 				message.PrintMessages()
-				stats := p.GetStats()
+				stats := player.GetStats()
 				stats = append([]string{fmt.Sprintf("T:%d", t)}, stats...)
 				printStatus(stats)
 				// Game over, skip other enemies
-				if p.IsDead() {
+				if player.IsDead() {
 					break
 				}
 				for {
+					if inventory {
+						player.PrintInventory()
+					}
 					e := termbox.PollEvent()
 					if e.Type == termbox.EventKey {
 						switch e.Key {
@@ -239,13 +243,19 @@ func main() {
 									endTurn = worldMap.PickupItem()
 								case 'd':
 									endTurn = worldMap.DropItem()
+								case 'i':
+									if inventory {
+										worldMap.Render()
+									}
+									inventory = !inventory
+
 								default:
 									quit = true
 								}
 							}
 						}
 						// End turn if player selects action that takes a turn
-						endTurn = endTurn || (e.Key != termbox.KeySpace && e.Ch != 'c' && e.Ch != 'o' && e.Ch != 'q' && e.Ch != 'd' && e.Ch != ',')
+						endTurn = endTurn || (e.Key != termbox.KeySpace && e.Ch != 'i' && e.Ch != 'c' && e.Ch != 'o' && e.Ch != 'q' && e.Ch != 'd' && e.Ch != ',')
 						if endTurn || quit {
 							break
 						}
@@ -254,7 +264,7 @@ func main() {
 					}
 				}
 
-				worldMap.MovePlayer(p, x, y)
+				worldMap.MovePlayer(player, x, y)
 
 			} else {
 				e := c.(*enemy.Enemy)
