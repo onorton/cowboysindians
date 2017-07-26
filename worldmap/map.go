@@ -295,7 +295,7 @@ func (m Map) ToggleDoor(x, y int, open bool) bool {
 
 }
 
-func (m Map) PlaceItem(x, y int, item *item.Item) {
+func (m Map) PlaceItem(x, y int, item item.Item) {
 	m.grid[y][x].PlaceItem(item)
 }
 
@@ -450,11 +450,11 @@ func (m Map) PickupItem() bool {
 		return false
 	}
 
-	items := make(map[rune]([]*item.Item))
+	items := make(map[rune]([]item.Item))
 	for _, itm := range m.GetItems(x, y) {
 		existing := items[itm.GetKey()]
 		if existing == nil {
-			existing = make([]*item.Item, 0)
+			existing = make([]item.Item, 0)
 		}
 		existing = append(existing, itm)
 		items[itm.GetKey()] = existing
@@ -469,9 +469,9 @@ func (m Map) PickupItem() bool {
 	return true
 }
 
-func (m Map) GetItems(x, y int) []*item.Item {
+func (m Map) GetItems(x, y int) []item.Item {
 	items := m.grid[y][x].items
-	m.grid[y][x].items = make([]*item.Item, 0)
+	m.grid[y][x].items = make([]item.Item, 0)
 	return items
 }
 func (m Map) DropItem() bool {

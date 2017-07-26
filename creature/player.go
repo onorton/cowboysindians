@@ -13,7 +13,7 @@ import (
 )
 
 func NewPlayer() *Player {
-	return &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 15, 12, 10, item.NewWeapon("shotgun"), make(map[rune]([]*item.Item))}
+	return &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 15, 12, 10, item.NewWeapon("shotgun"), make(map[rune]([]item.Item))}
 }
 
 func (p *Player) Render(x, y int) {
@@ -35,7 +35,7 @@ func Deserialize(c string) *Creature {
 	p.ac, _ = strconv.Atoi(rest[3])
 	p.str, _ = strconv.Atoi(rest[4])
 	p.dex, _ = strconv.Atoi(rest[5])
-	p.inventory = make(map[rune]([]*item.Item))
+	p.inventory = make(map[rune]([]item.Item))
 	items := strings.Split(inventory, "Item{")
 	items = items[1:]
 	for _, itemString := range items {
@@ -141,10 +141,10 @@ func (p *Player) RangedAttack(target Creature) {
 
 }
 
-func (p *Player) PickupItem(itm *item.Item) {
+func (p *Player) PickupItem(itm item.Item) {
 	existing := p.inventory[itm.GetKey()]
 	if existing == nil {
-		existing = make([]*item.Item, 0)
+		existing = make([]item.Item, 0)
 	}
 	existing = append(existing, itm)
 	p.inventory[itm.GetKey()] = existing
@@ -172,7 +172,7 @@ func (p *Player) GetInventoryKeys() string {
 	return keys
 }
 
-func (p *Player) GetItem(key rune) *item.Item {
+func (p *Player) GetItem(key rune) item.Item {
 	items := p.inventory[key]
 	item := items[0]
 	items = items[1:]
@@ -184,7 +184,7 @@ func (p *Player) GetItem(key rune) *item.Item {
 	return item
 }
 
-func (p *Player) GetInventory() map[rune]([]*item.Item) {
+func (p *Player) GetInventory() map[rune]([]item.Item) {
 	return p.inventory
 }
 func GetBonus(score int) int {
@@ -214,5 +214,5 @@ type Player struct {
 	str        int
 	dex        int
 	weapon     *item.Weapon
-	inventory  map[rune]([]*item.Item)
+	inventory  map[rune]([]item.Item)
 }

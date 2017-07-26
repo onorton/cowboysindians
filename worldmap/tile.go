@@ -44,7 +44,7 @@ func newTile(name string, x, y int) Tile {
 	colour := terrain.Colour
 	passable := terrain.Passable
 	door := terrain.Door
-	return Tile{icon.NewIcon(c, colour), x, y, passable, door, nil, make([]*item.Item, 0)}
+	return Tile{icon.NewIcon(c, colour), x, y, passable, door, nil, make([]item.Item, 0)}
 }
 
 func (t Tile) Serialize() string {
@@ -88,7 +88,7 @@ func DeserializeTile(t string) Tile {
 	tile.y, _ = strconv.Atoi(fields[1])
 	tile.passable, _ = strconv.ParseBool(fields[2])
 	tile.door, _ = strconv.ParseBool(fields[3])
-	tile.items = make([]*item.Item, 0)
+	tile.items = make([]item.Item, 0)
 	items := strings.Split(fields[4][1:len(fields[4])-2], "Item{")
 	items = items[1:]
 	for _, itemString := range items {
@@ -99,8 +99,8 @@ func DeserializeTile(t string) Tile {
 	return tile
 }
 
-func (t *Tile) PlaceItem(itm *item.Item) {
-	t.items = append([]*item.Item{itm}, t.items...)
+func (t *Tile) PlaceItem(itm item.Item) {
+	t.items = append([]item.Item{itm}, t.items...)
 }
 
 func (t Tile) render(x, y int) {
@@ -122,5 +122,5 @@ type Tile struct {
 	passable bool
 	door     bool
 	c        creature.Creature
-	items    []*item.Item
+	items    []item.Item
 }

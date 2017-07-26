@@ -32,45 +32,47 @@ func fetchItemData() map[string]ItemAttributes {
 	return eD
 }
 
-type Item struct {
+type NormalItem struct {
 	name string
 	ic   icon.Icon
 }
 
-func NewItem(name string) *Item {
+func NewItem(name string) Item {
 	item := itemData[name]
-	return &Item{name, icon.NewIcon(item.Icon, item.Colour)}
+	var itm Item = &NormalItem{name, icon.NewIcon(item.Icon, item.Colour)}
+	return itm
 }
 
-func (item *Item) Serialize() string {
+func (item *NormalItem) Serialize() string {
 	if item == nil {
 		return ""
 	}
 	return fmt.Sprintf("Item{%s %s}", item.name, item.ic.Serialize())
 }
 
-func Deserialize(itemString string) *Item {
+func Deserialize(itemString string) Item {
 
 	if len(itemString) == 1 {
 		return nil
 	}
 	itemString = itemString[5 : len(itemString)-2]
-	item := new(Item)
+	item := new(NormalItem)
 	itemAttributes := strings.SplitN(itemString, " ", 2)
 	item.name = itemAttributes[0]
 	item.ic = icon.Deserialize(itemAttributes[1])
-	return item
+	var itm Item = item
+	return itm
 }
 
-func (item *Item) GetName() string {
+func (item *NormalItem) GetName() string {
 	return item.name
 }
-func (item *Item) Render(x, y int) {
+func (item *NormalItem) Render(x, y int) {
 
 	item.ic.Render(x, y)
 }
 
-func (item *Item) GetKey() rune {
+func (item *NormalItem) GetKey() rune {
 	h := fnv.New32()
 	h.Write([]byte(item.name))
 	key := rune(33 + h.Sum32()%93)
@@ -78,4 +80,11 @@ func (item *Item) GetKey() rune {
 		key++
 	}
 	return key
+}
+
+type Item interface {
+	GetKey() rune
+	GetName() string
+	Render(int, int)
+	Serialize() string
 }
