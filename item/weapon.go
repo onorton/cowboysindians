@@ -7,14 +7,20 @@ import (
 	"github.com/onorton/cowboysindians/icon"
 	"hash/fnv"
 	"io/ioutil"
-	"strconv"
+	"math/rand"
 	"strings"
 )
 
 type WeaponAttributes struct {
 	Colour termbox.Attribute
 	Icon   rune
-	Damage int
+	Damage DamageAttributes
+}
+
+type DamageAttributes struct {
+	Dice   int
+	Number int
+	Bonus  int
 }
 
 var weaponData map[string]WeaponAttributes = fetchWeaponData()
@@ -31,12 +37,18 @@ func fetchWeaponData() map[string]WeaponAttributes {
 type Weapon struct {
 	name   string
 	ic     icon.Icon
-	damage int
+	damage Damage
+}
+
+type Damage struct {
+	dice   int
+	number int
+	bonus  int
 }
 
 func NewWeapon(name string) *Weapon {
 	weapon := weaponData[name]
-	return &Weapon{name, icon.NewIcon(weapon.Icon, weapon.Colour), weapon.Damage}
+	return &Weapon{name, icon.NewIcon(weapon.Icon, weapon.Colour), Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
 }
 
 func (weapon *Weapon) Serialize() string {
@@ -56,7 +68,7 @@ func DeserializeWeapon(weaponString string) *Weapon {
 	weaponAttributes := strings.SplitN(weaponString, " ", 3)
 	weapon.name = weaponAttributes[0]
 	weapon.ic = icon.Deserialize(weaponAttributes[1])
-	weapon.damage, _ = strconv.Atoi(weaponAttributes[2])
+
 	return weapon
 }
 
@@ -69,7 +81,13 @@ func (weapon *Weapon) Render(x, y int) {
 }
 
 func (weapon *Weapon) GetDamage() int {
-	return weapon.damage
+	result := 0
+	for i := 0; i < weapon.damage.number; i++ {
+		result += rand.Intn(weapon.damage.dice) + 1
+	}
+
+	result += weapon.damage.bonus
+	return result
 }
 
 func (weapon *Weapon) GetKey() rune {

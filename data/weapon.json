@@ -1,8 +1,13 @@
 {
 	"shotgun" : {
-		"Icon":50,
+		"Icon":120,
 		"Colour":3,
-	       	"Damage":4	
+	       	"Damage": {
+			"Dice": 4,
+			"Number": 1,
+			"Bonus": 0
+			
+		}	
 	}
 
 
