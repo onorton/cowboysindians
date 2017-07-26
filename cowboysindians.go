@@ -256,7 +256,11 @@ func main() {
 							}
 						}
 						// End turn if player selects action that takes a turn
-						endTurn = endTurn || (e.Key != termbox.KeySpace && e.Ch != 'w' && e.Ch != 'i' && e.Ch != 'c' && e.Ch != 'o' && e.Ch != 'q' && e.Ch != 'd' && e.Ch != ',')
+
+						playerMoved := e.Key == termbox.KeyArrowUp || e.Key == termbox.KeyArrowDown || e.Key == termbox.KeyArrowLeft || e.Key == termbox.KeyArrowRight || (e.Ch >= '1' && e.Ch <= '9')
+
+						endTurn = (endTurn || playerMoved)
+
 						if endTurn || quit {
 							break
 						}
