@@ -13,7 +13,7 @@ import (
 )
 
 func NewPlayer() *Player {
-	return &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 15, 12, 10, make(map[rune]([]*item.Item))}
+	return &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 15, 12, 10, item.NewWeapon("shotgun"), make(map[rune]([]*item.Item))}
 }
 
 func (p *Player) Render(x, y int) {
@@ -80,7 +80,11 @@ func (p *Player) GetInitiative() int {
 func (p *Player) attack(c Creature, hitBonus, damageBonus int) {
 	if c.AttackHits(rand.Intn(20) + hitBonus + 1) {
 		message.Enqueue("You hit the enemy.")
-		c.TakeDamage(1 + damageBonus)
+		if p.weapon != nil {
+			c.TakeDamage(p.weapon.GetDamage() + damageBonus)
+		} else {
+			c.TakeDamage(damageBonus)
+		}
 	} else {
 		message.Enqueue("You miss the enemy.")
 	}
@@ -209,5 +213,6 @@ type Player struct {
 	ac         int
 	str        int
 	dex        int
+	weapon     *item.Weapon
 	inventory  map[rune]([]*item.Item)
 }
