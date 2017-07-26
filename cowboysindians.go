@@ -248,14 +248,15 @@ func main() {
 										worldMap.Render()
 									}
 									inventory = !inventory
-
+								case 'w':
+									endTurn = player.WieldItem()
 								default:
 									quit = true
 								}
 							}
 						}
 						// End turn if player selects action that takes a turn
-						endTurn = endTurn || (e.Key != termbox.KeySpace && e.Ch != 'i' && e.Ch != 'c' && e.Ch != 'o' && e.Ch != 'q' && e.Ch != 'd' && e.Ch != ',')
+						endTurn = endTurn || (e.Key != termbox.KeySpace && e.Ch != 'w' && e.Ch != 'i' && e.Ch != 'c' && e.Ch != 'o' && e.Ch != 'q' && e.Ch != 'd' && e.Ch != ',')
 						if endTurn || quit {
 							break
 						}

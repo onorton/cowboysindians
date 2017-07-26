@@ -45,7 +45,7 @@ func fetchEnemyData() map[string]EnemyAttributes {
 
 func NewEnemy(name string, x, y int) *Enemy {
 	enemy := enemyData[name]
-	return &Enemy{x, y, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, make([]*item.Item, 0)}
+	return &Enemy{x, y, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, make([]item.Item, 0)}
 }
 func (e *Enemy) Render(x, y int) {
 	e.icon.Render(x, y)
@@ -66,7 +66,7 @@ func Deserialize(e string) creature.Creature {
 	enemy.ac, _ = strconv.Atoi(rest[3])
 	enemy.str, _ = strconv.Atoi(rest[4])
 	enemy.dex, _ = strconv.Atoi(rest[5])
-	enemy.inventory = make([]*item.Item, 0)
+	enemy.inventory = make([]item.Item, 0)
 	items := strings.Split(inventory, "Item{")
 	items = items[1:]
 	for _, itemString := range items {
@@ -265,11 +265,11 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 
 }
 
-func (e *Enemy) PickupItem(item *item.Item) {
+func (e *Enemy) PickupItem(item item.Item) {
 	e.inventory = append(e.inventory, item)
 }
 
-func (e *Enemy) GetInventory() []*item.Item {
+func (e *Enemy) GetInventory() []item.Item {
 	return e.inventory
 }
 
@@ -282,5 +282,5 @@ type Enemy struct {
 	ac         int
 	str        int
 	dex        int
-	inventory  []*item.Item
+	inventory  []item.Item
 }
