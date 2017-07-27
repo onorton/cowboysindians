@@ -27,10 +27,10 @@ func Deserialize(c string) Creature {
 	p := new(Player)
 	c = c[strings.Index(c, "{")+1 : len(c)-1]
 	restInventory := strings.Split(c, "[")
-	restIcon := strings.Split(restInventory[0], "Icon")
+	restWeapon := regexp.MustCompile("Weapon").Split(restInventory[0], -1)
+	restIcon := strings.Split(restWeapon[0], "Icon")
 	inventory := restInventory[1][:len(restInventory[1])-1]
 	p.icon = icon.Deserialize(restIcon[1])
-
 	rest := strings.Split(restIcon[0], " ")
 	p.x, _ = strconv.Atoi(rest[0])
 	p.y, _ = strconv.Atoi(rest[1])
@@ -38,6 +38,9 @@ func Deserialize(c string) Creature {
 	p.ac, _ = strconv.Atoi(rest[3])
 	p.str, _ = strconv.Atoi(rest[4])
 	p.dex, _ = strconv.Atoi(rest[5])
+	if len(restWeapon) == 2 {
+		p.weapon = item.DeserializeWeapon(restWeapon[1])
+	}
 	p.inventory = make(map[rune]([]item.Item))
 	items := regexp.MustCompile("(Item)|(Weapon)").Split(inventory, -1)
 	starter := regexp.MustCompile("(Item)|(Weapon)").FindAllString(inventory, -1)
@@ -67,7 +70,7 @@ func (p *Player) Serialize() string {
 		}
 	}
 	items += "]"
-	return fmt.Sprintf("Player{%d %d %d %d %d %d %s %s %s}", p.x, p.y, p.hp, p.ac, p.str, p.dex, p.weapon.Serialize(), p.icon.Serialize(), items)
+	return fmt.Sprintf("Player{%d %d %d %d %d %d %s %s %s}", p.x, p.y, p.hp, p.ac, p.str, p.dex, p.icon.Serialize(), p.weapon.Serialize(), items)
 }
 
 func (p *Player) GetCoordinates() (int, int) {

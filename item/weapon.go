@@ -67,7 +67,6 @@ func (damage *Damage) Serialize() string {
 func DeserializeDamage(damageString string) *Damage {
 	damageString = damageString[1 : len(damageString)-1]
 	damageAttributes := strings.SplitN(damageString, " ", 3)
-	fmt.Println(damageAttributes)
 	damage := new(Damage)
 	damage.dice, _ = strconv.Atoi(damageAttributes[0])
 	damage.number, _ = strconv.Atoi(damageAttributes[1])
