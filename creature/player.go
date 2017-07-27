@@ -8,6 +8,7 @@ import (
 	"github.com/onorton/cowboysindians/message"
 	"math"
 	"math/rand"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -22,7 +23,7 @@ func (p *Player) Render(x, y int) {
 	p.icon.Render(x, y)
 }
 
-func Deserialize(c string) *Creature {
+func Deserialize(c string) Creature {
 	p := new(Player)
 	c = c[strings.Index(c, "{")+1 : len(c)-1]
 	restInventory := strings.Split(c, "[")
@@ -38,15 +39,14 @@ func Deserialize(c string) *Creature {
 	p.str, _ = strconv.Atoi(rest[4])
 	p.dex, _ = strconv.Atoi(rest[5])
 	p.inventory = make(map[rune]([]item.Item))
-	items := strings.Split(inventory, "Item{")
+	items := regexp.MustCompile("(Item)|(Weapon)").Split(inventory, -1)
 	items = items[1:]
 	for _, itemString := range items {
-		itemString = fmt.Sprintf("Item{%s", itemString)
 		itm := item.Deserialize(itemString)
 		p.PickupItem(itm)
 	}
 	var creature Creature = p
-	return &creature
+	return creature
 
 }
 
@@ -62,7 +62,7 @@ func (p *Player) Serialize() string {
 		}
 	}
 	items += "]"
-	return fmt.Sprintf("Player{%d %d %d %d %d %d %s %s}", p.x, p.y, p.hp, p.ac, p.str, p.dex, p.icon.Serialize(), items)
+	return fmt.Sprintf("Player{%d %d %d %d %d %d %s %s %s}", p.x, p.y, p.hp, p.ac, p.str, p.dex, p.weapon.Serialize(), p.icon.Serialize(), items)
 }
 
 func (p *Player) GetCoordinates() (int, int) {

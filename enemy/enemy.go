@@ -67,15 +67,16 @@ func Deserialize(e string) creature.Creature {
 	enemy.str, _ = strconv.Atoi(rest[4])
 	enemy.dex, _ = strconv.Atoi(rest[5])
 	enemy.inventory = make([]item.Item, 0)
-	items := strings.Split(inventory, "Item{")
+
+	items := regexp.MustCompile("(Item)|(Weapon)").Split(inventory, -1)
 	items = items[1:]
 	for _, itemString := range items {
-		itemString = fmt.Sprintf("Item{%s", itemString)
 		itm := item.Deserialize(itemString)
-		enemy.PickupItem(itm)
+		p.PickupItem(itm)
 	}
 	var creature creature.Creature = enemy
 	return creature
+
 }
 
 func (e *Enemy) Serialize() string {

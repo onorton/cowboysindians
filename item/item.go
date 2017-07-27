@@ -52,13 +52,14 @@ func (item *NormalItem) Serialize() string {
 
 func Deserialize(itemString string) Item {
 
-	if len(itemString) == 1 {
+	if len(itemString) == 0 {
 		return nil
 	}
-	itemString = itemString[5 : len(itemString)-2]
+	itemString = itemString[1 : len(itemString)-2]
 	item := new(NormalItem)
 	itemAttributes := strings.SplitN(itemString, " ", 2)
 	item.name = itemAttributes[0]
+	fmt.Println(itemAttributes[1])
 	item.ic = icon.Deserialize(itemAttributes[1])
 	var itm Item = item
 	return itm

@@ -42,7 +42,7 @@ func load() (worldmap.Map, *creature.Player, []*enemy.Enemy, int, int) {
 	data, err := ioutil.ReadFile(saveFilename)
 	check(err)
 	items := strings.Split(string(data), "\n\n")
-	player := (*creature.Deserialize(items[1])).(*creature.Player)
+	player := (creature.Deserialize(items[1])).(*creature.Player)
 	enemyStrings := strings.Split(items[2], "\n")
 	enemyStrings = enemyStrings[0 : len(enemyStrings)-1]
 	enemies := make([]*enemy.Enemy, len(enemyStrings))
