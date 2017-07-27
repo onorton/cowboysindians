@@ -250,6 +250,8 @@ func main() {
 									inventory = !inventory
 								case 'w':
 									endTurn = player.WieldItem()
+								case 'W':
+									endTurn = player.WearArmour()
 								default:
 									quit = true
 								}
