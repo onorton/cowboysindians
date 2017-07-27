@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"math"
 	"math/rand"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -72,7 +73,7 @@ func Deserialize(e string) creature.Creature {
 	items = items[1:]
 	for _, itemString := range items {
 		itm := item.Deserialize(itemString)
-		p.PickupItem(itm)
+		enemy.PickupItem(itm)
 	}
 	var creature creature.Creature = enemy
 	return creature

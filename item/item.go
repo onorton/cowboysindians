@@ -59,7 +59,6 @@ func Deserialize(itemString string) Item {
 	item := new(NormalItem)
 	itemAttributes := strings.SplitN(itemString, " ", 2)
 	item.name = itemAttributes[0]
-	fmt.Println(itemAttributes[1])
 	item.ic = icon.Deserialize(itemAttributes[1])
 	var itm Item = item
 	return itm

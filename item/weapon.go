@@ -8,6 +8,8 @@ import (
 	"hash/fnv"
 	"io/ioutil"
 	"math/rand"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -37,7 +39,7 @@ func fetchWeaponData() map[string]WeaponAttributes {
 type Weapon struct {
 	name   string
 	ic     icon.Icon
-	damage Damage
+	damage *Damage
 }
 
 type Damage struct {
@@ -48,27 +50,45 @@ type Damage struct {
 
 func NewWeapon(name string) *Weapon {
 	weapon := weaponData[name]
-	return &Weapon{name, icon.NewIcon(weapon.Icon, weapon.Colour), Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
+	return &Weapon{name, icon.NewIcon(weapon.Icon, weapon.Colour), &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
 }
 
 func (weapon *Weapon) Serialize() string {
 	if weapon == nil {
 		return ""
 	}
-	return fmt.Sprintf("Weapon{%s %s %d}", weapon.name, weapon.ic.Serialize(), weapon.damage)
+	return fmt.Sprintf("Weapon{%s %s %s}", weapon.name, weapon.ic.Serialize(), weapon.damage.Serialize())
+}
+
+func (damage *Damage) Serialize() string {
+	return fmt.Sprintf("Damage{%d %d %d}", damage.dice, damage.number, damage.bonus)
+}
+
+func DeserializeDamage(damageString string) *Damage {
+	damageString = damageString[1 : len(damageString)-1]
+	damageAttributes := strings.SplitN(damageString, " ", 3)
+	fmt.Println(damageAttributes)
+	damage := new(Damage)
+	damage.dice, _ = strconv.Atoi(damageAttributes[0])
+	damage.number, _ = strconv.Atoi(damageAttributes[1])
+	damage.bonus, _ = strconv.Atoi(damageAttributes[2])
+	return damage
 }
 
 func DeserializeWeapon(weaponString string) *Weapon {
 
-	if len(weaponString) == 1 {
+	if len(weaponString) == 0 {
 		return nil
 	}
-	weaponString = weaponString[7 : len(weaponString)-2]
+	weaponString = weaponString[1 : len(weaponString)-2]
 	weapon := new(Weapon)
-	weaponAttributes := strings.SplitN(weaponString, " ", 3)
-	weapon.name = weaponAttributes[0]
-	weapon.ic = icon.Deserialize(weaponAttributes[1])
+	nameAttributes := strings.SplitN(weaponString, " ", 2)
 
+	weapon.name = nameAttributes[0]
+	weaponAttributes := regexp.MustCompile("(Icon)|(Damage)").Split(nameAttributes[1], -1)
+	weaponAttributes = weaponAttributes[1:]
+	weapon.ic = icon.Deserialize(weaponAttributes[0])
+	weapon.damage = DeserializeDamage(weaponAttributes[1])
 	return weapon
 }
 

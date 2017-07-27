@@ -40,10 +40,15 @@ func Deserialize(c string) Creature {
 	p.dex, _ = strconv.Atoi(rest[5])
 	p.inventory = make(map[rune]([]item.Item))
 	items := regexp.MustCompile("(Item)|(Weapon)").Split(inventory, -1)
+	starter := regexp.MustCompile("(Item)|(Weapon)").FindAllString(inventory, -1)
 	items = items[1:]
-	for _, itemString := range items {
-		itm := item.Deserialize(itemString)
-		p.PickupItem(itm)
+	for i, itemString := range items {
+		switch starter[i] {
+		case "Item":
+			p.PickupItem(item.Deserialize(itemString))
+		case "Weapon":
+			p.PickupItem(item.DeserializeWeapon(itemString))
+		}
 	}
 	var creature Creature = p
 	return creature
