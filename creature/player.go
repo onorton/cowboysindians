@@ -305,6 +305,9 @@ func (p *Player) GetInventoryKeys() string {
 
 func (p *Player) GetItem(key rune) item.Item {
 	items := p.inventory[key]
+	if items == nil {
+		return nil
+	}
 	item := items[0]
 	items = items[1:]
 	if len(items) == 0 {
