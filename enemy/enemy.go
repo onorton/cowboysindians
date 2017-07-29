@@ -47,7 +47,8 @@ func fetchEnemyData() map[string]EnemyAttributes {
 func NewEnemy(name string, x, y int) *Enemy {
 	enemy := enemyData[name]
 	e := &Enemy{x, y, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, nil, nil, make([]item.Item, 0)}
-	e.PickupItem(item.NewWeapon("shotgun"))
+	e.PickupItem(item.NewWeapon("pistol"))
+	e.PickupItem(item.NewArmour("leather jacket"))
 	return e
 }
 func (e *Enemy) Render(x, y int) {
@@ -231,6 +232,28 @@ func (e *Enemy) WieldItem() bool {
 	}
 	return changed
 }
+
+func (e *Enemy) WearArmour() bool {
+	changed := false
+	for i, itm := range e.inventory {
+		if a, ok := itm.(*item.Armour); ok {
+			if e.armour == nil {
+				e.armour = a
+				e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
+				changed = true
+
+			} else if a.GetACBonus() > e.armour.GetACBonus() {
+				e.inventory[i] = e.weapon
+				e.armour = a
+				changed = true
+			}
+
+		}
+
+	}
+	return changed
+}
+
 func compareMaps(m, o [][]int) bool {
 	for i := 0; i < len(m); i++ {
 		for j := 0; j < len(m[0]); j++ {
@@ -266,7 +289,10 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 	if e.WieldItem() {
 		return e.x, e.y
 	}
-
+	// Try and wear best armour
+	if e.WearArmour() {
+		return e.x, e.y
+	}
 	aiMap := addMaps([][][]int{e.getChaseMap(m), e.getItemMap(m)}, []float64{0.8, 0.2})
 	current := aiMap[e.y][e.x]
 	possibleLocations := make([]Coordinate, 0)
