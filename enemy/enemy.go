@@ -59,7 +59,9 @@ func Deserialize(e string) creature.Creature {
 	enemy := new(Enemy)
 	e = e[strings.Index(e, "{")+1 : len(e)-1]
 	restInventory := strings.Split(e, "[")
-	restIcon := strings.Split(restInventory[0], "Icon")
+	restWearing := regexp.MustCompile("(Weapon)|(Armour)").Split(restInventory[0], -1)
+	wearingTypes := regexp.MustCompile("(Weapon)|(Armour)").FindAllString(restInventory[0], -1)
+	restIcon := strings.Split(restWearing[0], "Icon")
 	inventory := restInventory[1][:len(restInventory[1])-1]
 	enemy.icon = icon.Deserialize(restIcon[1])
 
@@ -70,17 +72,33 @@ func Deserialize(e string) creature.Creature {
 	enemy.ac, _ = strconv.Atoi(rest[3])
 	enemy.str, _ = strconv.Atoi(rest[4])
 	enemy.dex, _ = strconv.Atoi(rest[5])
+	if len(restWearing) > 1 {
+		for i := 1; i < len(restWearing); i++ {
+			switch wearingTypes[i-1] {
+			case "Weapon":
+				enemy.weapon = item.DeserializeWeapon(restWearing[i])
+			case "Armour":
+				enemy.armour = item.DeserializeArmour(restWearing[i])
+			}
+		}
+	}
 	enemy.inventory = make([]item.Item, 0)
 
-	items := regexp.MustCompile("(Item)|(Weapon)").Split(inventory, -1)
+	items := regexp.MustCompile("(Armour)|(Item)|(Weapon)").Split(inventory, -1)
+	starter := regexp.MustCompile("(Armour)|(Item)|(Weapon)").FindAllString(inventory, -1)
 	items = items[1:]
-	for _, itemString := range items {
-		itm := item.Deserialize(itemString)
-		enemy.PickupItem(itm)
+	for i, itemString := range items {
+		switch starter[i] {
+		case "Item":
+			enemy.PickupItem(item.Deserialize(itemString))
+		case "Weapon":
+			enemy.PickupItem(item.DeserializeWeapon(itemString))
+		case "Armour":
+			enemy.PickupItem(item.DeserializeArmour(itemString))
+		}
 	}
 	var creature creature.Creature = enemy
 	return creature
-
 }
 
 func (e *Enemy) Serialize() string {
@@ -89,7 +107,7 @@ func (e *Enemy) Serialize() string {
 		items += fmt.Sprintf("%s ", item.Serialize())
 	}
 	items += "]"
-	return fmt.Sprintf("Enemy{%d %d %d %d %d %d %s %s}", e.x, e.y, e.hp, e.ac, e.str, e.dex, e.icon.Serialize(), items)
+	return fmt.Sprintf("Enemy{%d %d %d %d %d %d %s %s %s %s}", e.x, e.y, e.hp, e.ac, e.str, e.dex, e.icon.Serialize(), e.weapon.Serialize(), e.armour.Serialize(), items)
 }
 
 func (e *Enemy) GetCoordinates() (int, int) {
