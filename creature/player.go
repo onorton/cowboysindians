@@ -131,7 +131,29 @@ func (p *Player) GetStats() []string {
 }
 
 func (p *Player) PrintInventory() {
-	position := 0
+	for i, c := range "Wearing: " {
+		termbox.SetCell(i, 0, c, termbox.ColorWhite, termbox.ColorDefault)
+	}
+
+	position := 2
+	if p.weapon != nil {
+		for i, c := range fmt.Sprintf("%s - %s", string(p.weapon.GetKey()), p.weapon.GetName()) {
+			termbox.SetCell(i, position, c, termbox.ColorWhite, termbox.ColorDefault)
+		}
+		position++
+	}
+	if p.armour != nil {
+		for i, c := range fmt.Sprintf("%s - %s", string(p.armour.GetKey()), p.armour.GetName()) {
+			termbox.SetCell(i, position, c, termbox.ColorWhite, termbox.ColorDefault)
+		}
+		position++
+	}
+	position++
+	for i, c := range "Inventory: " {
+		termbox.SetCell(i, position, c, termbox.ColorWhite, termbox.ColorDefault)
+	}
+	position += 2
+
 	for k, items := range p.inventory {
 		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
 		if len(items) > 1 {
@@ -142,6 +164,7 @@ func (p *Player) PrintInventory() {
 		}
 		position++
 	}
+
 	termbox.Flush()
 }
 
