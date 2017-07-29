@@ -28,8 +28,9 @@ func Deserialize(c string) Creature {
 	p := new(Player)
 	c = c[strings.Index(c, "{")+1 : len(c)-1]
 	restInventory := strings.Split(c, "[")
-	restWeapon := regexp.MustCompile("Weapon").Split(restInventory[0], -1)
-	restIcon := strings.Split(restWeapon[0], "Icon")
+	restWearing := regexp.MustCompile("(Weapon)|(Armour)").Split(restInventory[0], -1)
+	wearingTypes := regexp.MustCompile("(Weapon)|(Armour)").FindAllString(restInventory[0], -1)
+	restIcon := strings.Split(restWearing[0], "Icon")
 	inventory := restInventory[1][:len(restInventory[1])-1]
 	p.icon = icon.Deserialize(restIcon[1])
 	rest := strings.Split(restIcon[0], " ")
@@ -39,8 +40,15 @@ func Deserialize(c string) Creature {
 	p.ac, _ = strconv.Atoi(rest[3])
 	p.str, _ = strconv.Atoi(rest[4])
 	p.dex, _ = strconv.Atoi(rest[5])
-	if len(restWeapon) == 2 {
-		p.weapon = item.DeserializeWeapon(restWeapon[1])
+	if len(restWearing) > 1 {
+		for i := 1; i < len(restWearing); i++ {
+			switch wearingTypes[i-1] {
+			case "Weapon":
+				p.weapon = item.DeserializeWeapon(restWearing[i])
+			case "Armour":
+				p.armour = item.DeserializeArmour(restWearing[i])
+			}
+		}
 	}
 	p.inventory = make(map[rune]([]item.Item))
 	items := regexp.MustCompile("(Armour)|(Item)|(Weapon)").Split(inventory, -1)
