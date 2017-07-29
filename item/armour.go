@@ -7,6 +7,7 @@ import (
 	"github.com/onorton/cowboysindians/icon"
 	"hash/fnv"
 	"io/ioutil"
+	"strconv"
 	"strings"
 )
 
@@ -42,7 +43,7 @@ func (armour *Armour) Serialize() string {
 	if armour == nil {
 		return ""
 	}
-	return fmt.Sprintf("Armour{%s %s %d}", armour.name, armour.ic.Serialize(), armour.bonus)
+	return fmt.Sprintf("Armour{%s %s %d}", strings.Replace(armour.name, " ", "_", -1), armour.ic.Serialize(), armour.bonus)
 }
 
 func DeserializeArmour(armourString string) *Armour {
@@ -50,11 +51,12 @@ func DeserializeArmour(armourString string) *Armour {
 	if len(armourString) == 1 {
 		return nil
 	}
-	armourString = armourString[7 : len(armourString)-2]
+	armourString = armourString[1 : len(armourString)-2]
 	armour := new(Armour)
-	armourAttributes := strings.SplitN(armourString, " ", 3)
-	armour.name = armourAttributes[0]
-	armour.ic = icon.Deserialize(armourAttributes[1])
+	armourAttributes := strings.SplitN(armourString, " ", 4)
+	armour.name = strings.Replace(armourAttributes[0], "_", " ", -1)
+	armour.ic = icon.Deserialize(armourAttributes[1] + " " + armourAttributes[2])
+	armour.bonus, _ = strconv.Atoi(armourAttributes[3])
 
 	return armour
 }
