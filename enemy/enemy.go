@@ -349,7 +349,14 @@ func (e *Enemy) PickupItem(item item.Item) {
 }
 
 func (e *Enemy) GetInventory() []item.Item {
-	return e.inventory
+	inventory := e.inventory
+	if e.weapon != nil {
+		inventory = append(inventory, e.weapon)
+	}
+	if e.armour != nil {
+		inventory = append(inventory, e.armour)
+	}
+	return inventory
 }
 
 type Enemy struct {

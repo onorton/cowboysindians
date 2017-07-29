@@ -297,7 +297,7 @@ func main() {
 				}
 				if worldMap.IsVisible(player, eY, eY) {
 					for name, count := range itemTypes {
-						message.Enqueue(fmt.Sprintf("The bandit dropped %d %ss.", count, name))
+						message.Enqueue(fmt.Sprintf("The enemy dropped %d %ss.", count, name))
 					}
 				}
 				worldMap.DeleteCreature(c)
