@@ -46,7 +46,9 @@ func fetchEnemyData() map[string]EnemyAttributes {
 
 func NewEnemy(name string, x, y int) *Enemy {
 	enemy := enemyData[name]
-	return &Enemy{x, y, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, make([]item.Item, 0)}
+	e := &Enemy{x, y, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, nil, nil, make([]item.Item, 0)}
+	e.PickupItem(item.NewWeapon("shotgun"))
+	return e
 }
 func (e *Enemy) Render(x, y int) {
 	e.icon.Render(x, y)
@@ -182,7 +184,11 @@ func (e *Enemy) attack(c creature.Creature, hitBonus, damageBonus int) {
 
 	hits := c.AttackHits(rand.Intn(20) + hitBonus + 1)
 	if hits {
-		c.TakeDamage(1 + damageBonus)
+		if e.weapon != nil {
+			c.TakeDamage(e.weapon.GetDamage() + damageBonus)
+		} else {
+			c.TakeDamage(damageBonus)
+		}
 	}
 	if _, ok := c.(*creature.Player); ok {
 		if hits {
@@ -203,6 +209,27 @@ func (e *Enemy) TakeDamage(damage int) {
 
 func (e *Enemy) IsDead() bool {
 	return e.hp <= 0
+}
+
+func (e *Enemy) WieldItem() bool {
+	changed := false
+	for i, itm := range e.inventory {
+		if w, ok := itm.(*item.Weapon); ok {
+			if e.weapon == nil {
+				e.weapon = w
+				e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
+				changed = true
+
+			} else if w.GetMaxDamage() > e.weapon.GetMaxDamage() {
+				e.inventory[i] = e.weapon
+				e.weapon = w
+				changed = true
+			}
+
+		}
+
+	}
+	return changed
 }
 func compareMaps(m, o [][]int) bool {
 	for i := 0; i < len(m); i++ {
@@ -235,6 +262,11 @@ type Coordinate struct {
 }
 
 func (e *Enemy) Update(m worldmap.Map) (int, int) {
+	// Try and wield best weapon
+	if e.WieldItem() {
+		return e.x, e.y
+	}
+
 	aiMap := addMaps([][][]int{e.getChaseMap(m), e.getItemMap(m)}, []float64{0.8, 0.2})
 	current := aiMap[e.y][e.x]
 	possibleLocations := make([]Coordinate, 0)
@@ -248,6 +280,7 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 			}
 		}
 	}
+
 	target := m.GetPlayer()
 	tX, tY := target.GetCoordinates()
 	// If close enough and can see target, use ranged attack
@@ -284,5 +317,7 @@ type Enemy struct {
 	ac         int
 	str        int
 	dex        int
+	weapon     *item.Weapon
+	armour     *item.Armour
 	inventory  []item.Item
 }

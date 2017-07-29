@@ -99,6 +99,10 @@ func (weapon *Weapon) Render(x, y int) {
 	weapon.ic.Render(x, y)
 }
 
+// Maximum possible damage
+func (weapon *Weapon) GetMaxDamage() int {
+	return weapon.damage.number*weapon.damage.dice + weapon.damage.bonus
+}
 func (weapon *Weapon) GetDamage() int {
 	result := 0
 	for i := 0; i < weapon.damage.number; i++ {
