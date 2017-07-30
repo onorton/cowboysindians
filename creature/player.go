@@ -214,6 +214,7 @@ func (p *Player) AttackHits(roll int) bool {
 }
 
 func (p *Player) RangedAttack(target Creature) {
+	p.getAmmo()
 	tX, tY := target.GetCoordinates()
 	distance := math.Sqrt(math.Pow(float64(p.x-tX), 2) + math.Pow(float64(p.y-tY), 2))
 	if distance < float64(p.weapon.GetRange()) {
@@ -222,6 +223,15 @@ func (p *Player) RangedAttack(target Creature) {
 		message.Enqueue("Your target was too far away.")
 	}
 
+}
+
+func (p *Player) getAmmo() *item.Ammo {
+	for k, items := range p.inventory {
+		if _, ok := items[0].(*item.Ammo); ok {
+			return p.GetItem(k).(*item.Ammo)
+		}
+	}
+	return nil
 }
 
 func (p *Player) PickupItem(itm item.Item) {
@@ -410,10 +420,20 @@ func (p *Player) GetInventory() map[rune]([]item.Item) {
 	return p.inventory
 }
 
-// Checks whether player can carry out a range attack this turn
+// Check whether player can carry out a range attack this turn
 func (p *Player) Ranged() bool {
 	if p.weapon != nil {
 		return p.weapon.GetRange() > 0
+	}
+	return false
+}
+
+// Check whether player has ammo for particular wielded weapon
+func (p *Player) HasAmmo() bool {
+	for _, items := range p.inventory {
+		if _, ok := items[0].(*item.Ammo); ok {
+			return true
+		}
 	}
 	return false
 }

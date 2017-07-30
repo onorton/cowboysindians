@@ -305,6 +305,11 @@ func (m Map) FindTarget(p *creature.Player) creature.Creature {
 		message.PrintMessage("You are not wielding a ranged weapon.")
 		return nil
 	}
+
+	if !p.HasAmmo() {
+		message.PrintMessage("You have no ammunition for this weapon.")
+		return nil
+	}
 	x, y := p.GetCoordinates()
 	// In terms of viewer space rather than world space
 	rX, rY := x-m.v.x, y-m.v.y
