@@ -328,8 +328,10 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 	target := m.GetPlayer()
 	tX, tY := target.GetCoordinates()
 	// If close enough and can see target, use ranged attack
-	if distance := math.Sqrt(math.Pow(float64(e.x-tX), 2) + math.Pow(float64(e.y-tY), 2)); distance < 10 && m.IsVisible(e, tX, tY) {
-		e.attack(target, creature.GetBonus(e.dex), 0)
+	if e.Ranged() {
+		if distance := math.Sqrt(math.Pow(float64(e.x-tX), 2) + math.Pow(float64(e.y-tY), 2)); distance < float64(e.weapon.GetRange()) && m.IsVisible(e, tX, tY) {
+			e.attack(target, creature.GetBonus(e.dex), 0)
+		}
 	} else if len(possibleLocations) > 0 {
 		l := possibleLocations[rand.Intn(len(possibleLocations))]
 		return l.x, l.y
@@ -346,6 +348,13 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 
 func (e *Enemy) PickupItem(item item.Item) {
 	e.inventory = append(e.inventory, item)
+}
+
+func (e *Enemy) Ranged() bool {
+	if e.weapon != nil {
+		return e.weapon.GetRange() > 0
+	}
+	return false
 }
 
 func (e *Enemy) GetInventory() []item.Item {

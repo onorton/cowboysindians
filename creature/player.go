@@ -430,6 +430,7 @@ type Creature interface {
 	TakeDamage(int)
 	IsDead() bool
 	AttackHits(int) bool
+	Ranged() bool
 }
 
 type Player struct {
