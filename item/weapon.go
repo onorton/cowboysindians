@@ -59,7 +59,7 @@ func (weapon *Weapon) Serialize() string {
 	if weapon == nil {
 		return ""
 	}
-	return fmt.Sprintf("Weapon{%s %d %s %s}", weapon.name, weapon.r, weapon.ic.Serialize(), weapon.damage.Serialize())
+	return fmt.Sprintf("Weapon{%s %d %s %s}", strings.Replace(weapon.name, " ", "_", -1), weapon.r, weapon.ic.Serialize(), weapon.damage.Serialize())
 }
 
 func (damage *Damage) Serialize() string {
@@ -77,7 +77,6 @@ func DeserializeDamage(damageString string) *Damage {
 }
 
 func DeserializeWeapon(weaponString string) *Weapon {
-
 	if len(weaponString) == 0 {
 		return nil
 	}
@@ -85,7 +84,7 @@ func DeserializeWeapon(weaponString string) *Weapon {
 	weapon := new(Weapon)
 	nameAttributes := strings.SplitN(weaponString, " ", 3)
 
-	weapon.name = nameAttributes[0]
+	weapon.name = strings.Replace(nameAttributes[0], "_", " ", -1)
 	weapon.r, _ = strconv.Atoi(nameAttributes[1])
 	weaponAttributes := regexp.MustCompile("(Icon)|(Damage)").Split(nameAttributes[2], -1)
 	weaponAttributes = weaponAttributes[1:]

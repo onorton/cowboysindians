@@ -16,6 +16,7 @@ import (
 func NewPlayer() *Player {
 	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 15, 12, 10, nil, nil, make(map[rune]([]item.Item))}
 	player.PickupItem(item.NewWeapon("shotgun"))
+	player.PickupItem(item.NewWeapon("sawn-off shotgun"))
 	player.PickupItem(item.NewArmour("leather jacket"))
 	return player
 }

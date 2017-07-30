@@ -20,6 +20,17 @@
 			"Number": 1,
 			"Bonus": -1
 		}	
+	},
+	"sawn-off shotgun" : {
+		"Icon":115,
+		"Colour":4,
+		"Range":3,
+	       	"Damage": {
+			"Dice": 6,
+			"Number": 1,
+			"Bonus": 0
+			
+		}	
 	}
 
 
