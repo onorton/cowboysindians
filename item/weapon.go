@@ -17,6 +17,7 @@ type WeaponAttributes struct {
 	Colour termbox.Attribute
 	Icon   rune
 	Damage DamageAttributes
+	Range  int
 }
 
 type DamageAttributes struct {
@@ -39,6 +40,7 @@ func fetchWeaponData() map[string]WeaponAttributes {
 type Weapon struct {
 	name   string
 	ic     icon.Icon
+	r      int
 	damage *Damage
 }
 
@@ -50,14 +52,14 @@ type Damage struct {
 
 func NewWeapon(name string) *Weapon {
 	weapon := weaponData[name]
-	return &Weapon{name, icon.NewIcon(weapon.Icon, weapon.Colour), &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
+	return &Weapon{name, icon.NewIcon(weapon.Icon, weapon.Colour), weapon.Range, &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
 }
 
 func (weapon *Weapon) Serialize() string {
 	if weapon == nil {
 		return ""
 	}
-	return fmt.Sprintf("Weapon{%s %s %s}", weapon.name, weapon.ic.Serialize(), weapon.damage.Serialize())
+	return fmt.Sprintf("Weapon{%s %d %s %s}", weapon.name, weapon.r, weapon.ic.Serialize(), weapon.damage.Serialize())
 }
 
 func (damage *Damage) Serialize() string {
@@ -81,10 +83,11 @@ func DeserializeWeapon(weaponString string) *Weapon {
 	}
 	weaponString = weaponString[1 : len(weaponString)-2]
 	weapon := new(Weapon)
-	nameAttributes := strings.SplitN(weaponString, " ", 2)
+	nameAttributes := strings.SplitN(weaponString, " ", 3)
 
 	weapon.name = nameAttributes[0]
-	weaponAttributes := regexp.MustCompile("(Icon)|(Damage)").Split(nameAttributes[1], -1)
+	weapon.r, _ = strconv.Atoi(nameAttributes[1])
+	weaponAttributes := regexp.MustCompile("(Icon)|(Damage)").Split(nameAttributes[2], -1)
 	weaponAttributes = weaponAttributes[1:]
 	weapon.ic = icon.Deserialize(weaponAttributes[0])
 	weapon.damage = DeserializeDamage(weaponAttributes[1])
@@ -97,6 +100,10 @@ func (weapon *Weapon) GetName() string {
 func (weapon *Weapon) Render(x, y int) {
 
 	weapon.ic.Render(x, y)
+}
+
+func (weapon *Weapon) GetRange() int {
+	return weapon.r
 }
 
 // Maximum possible damage
