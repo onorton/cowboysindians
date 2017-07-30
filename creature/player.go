@@ -18,6 +18,7 @@ func NewPlayer() *Player {
 	player.PickupItem(item.NewWeapon("shotgun"))
 	player.PickupItem(item.NewWeapon("sawn-off shotgun"))
 	player.PickupItem(item.NewArmour("leather jacket"))
+	player.PickupItem(item.NewAmmo("shotgun shell"))
 	return player
 }
 
