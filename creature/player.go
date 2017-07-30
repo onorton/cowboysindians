@@ -214,7 +214,7 @@ func (p *Player) AttackHits(roll int) bool {
 func (p *Player) RangedAttack(target Creature) {
 	tX, tY := target.GetCoordinates()
 	distance := math.Sqrt(math.Pow(float64(p.x-tX), 2) + math.Pow(float64(p.y-tY), 2))
-	if distance < 10 {
+	if distance < float64(p.weapon.GetRange()) {
 		p.attack(target, GetBonus(p.str), 0)
 	} else {
 		message.Enqueue("Your target was too far away.")
@@ -406,6 +406,14 @@ func (p *Player) WearArmour() bool {
 
 func (p *Player) GetInventory() map[rune]([]item.Item) {
 	return p.inventory
+}
+
+// Checks whether player can carry out a range attack this turn
+func (p *Player) Ranged() bool {
+	if p.weapon != nil {
+		return p.weapon.GetRange() > 0
+	}
+	return false
 }
 func GetBonus(score int) int {
 	return (score - 10) / 2

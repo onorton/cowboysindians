@@ -301,6 +301,10 @@ func (m Map) PlaceItem(x, y int, item item.Item) {
 
 // Interface for player to find a ranged target.
 func (m Map) FindTarget(p *creature.Player) creature.Creature {
+	if !p.Ranged() {
+		message.PrintMessage("You are not wielding a ranged weapon.")
+		return nil
+	}
 	x, y := p.GetCoordinates()
 	// In terms of viewer space rather than world space
 	rX, rY := x-m.v.x, y-m.v.y
