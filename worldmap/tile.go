@@ -7,8 +7,8 @@ import (
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
-
 	"io/ioutil"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -88,13 +88,23 @@ func DeserializeTile(t string) Tile {
 	tile.y, _ = strconv.Atoi(fields[1])
 	tile.passable, _ = strconv.ParseBool(fields[2])
 	tile.door, _ = strconv.ParseBool(fields[3])
-	tile.items = make([]item.Item, 0)
-	items := strings.Split(fields[4][1:len(fields[4])-2], "Item{")
+	itemStrings := fields[4][1 : len(fields[4])-2]
+	items := regexp.MustCompile("(Ammo)|(Armour)|(Item)|(Weapon)").Split(itemStrings, -1)
+	starter := regexp.MustCompile("(Ammo)|(Armour)|(Item)|(Weapon)").FindAllString(itemStrings, -1)
 	items = items[1:]
-	for _, itemString := range items {
-		itemString = fmt.Sprintf("Item{%s", itemString)
-		itm := item.Deserialize(itemString)
-		tile.items = append(tile.items, itm)
+	tile.items = make([]item.Item, len(items))
+
+	for i, itemString := range items {
+		switch starter[i] {
+		case "Item":
+			tile.items[i] = item.Deserialize(itemString)
+		case "Weapon":
+			tile.items[i] = item.DeserializeWeapon(itemString)
+		case "Armour":
+			tile.items[i] = item.DeserializeArmour(itemString)
+		case "Ammo":
+			tile.items[i] = item.DeserializeAmmo(itemString)
+		}
 	}
 	return tile
 }
