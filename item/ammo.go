@@ -7,6 +7,7 @@ import (
 	"github.com/onorton/cowboysindians/icon"
 	"hash/fnv"
 	"io/ioutil"
+	"strconv"
 	"strings"
 )
 
@@ -43,7 +44,7 @@ func (ammo *Ammo) Serialize() string {
 	if ammo == nil {
 		return ""
 	}
-	return fmt.Sprintf("Ammo{%s %s}", strings.Replace(ammo.name, " ", "_", -1), ammo.ic.Serialize())
+	return fmt.Sprintf("Ammo{%s %d %s}", strings.Replace(ammo.name, " ", "_", -1), ammo.t, ammo.ic.Serialize())
 }
 
 func DeserializeAmmo(ammoString string) Item {
@@ -53,9 +54,11 @@ func DeserializeAmmo(ammoString string) Item {
 	}
 	ammoString = ammoString[1 : len(ammoString)-2]
 	ammo := new(Ammo)
-	ammoAttributes := strings.SplitN(ammoString, " ", 2)
+	ammoAttributes := strings.SplitN(ammoString, " ", 3)
 	ammo.name = strings.Replace(ammoAttributes[0], "_", " ", -1)
-	ammo.ic = icon.Deserialize(ammoAttributes[1])
+	ammo.ic = icon.Deserialize(ammoAttributes[2])
+	t, _ := strconv.Atoi(ammoAttributes[1])
+	ammo.t = WeaponType(t)
 	var itm Item = ammo
 	return itm
 }

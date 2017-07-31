@@ -53,8 +53,8 @@ func Deserialize(c string) Creature {
 		}
 	}
 	p.inventory = make(map[rune]([]item.Item))
-	items := regexp.MustCompile("(Armour)|(Item)|(Weapon)").Split(inventory, -1)
-	starter := regexp.MustCompile("(Armour)|(Item)|(Weapon)").FindAllString(inventory, -1)
+	items := regexp.MustCompile("(Ammo)|(Armour)|(Item)|(Weapon)").Split(inventory, -1)
+	starter := regexp.MustCompile("(Ammo)|(Armour)|(Item)|(Weapon)").FindAllString(inventory, -1)
 	items = items[1:]
 	for i, itemString := range items {
 		switch starter[i] {
@@ -64,6 +64,8 @@ func Deserialize(c string) Creature {
 			p.PickupItem(item.DeserializeWeapon(itemString))
 		case "Armour":
 			p.PickupItem(item.DeserializeArmour(itemString))
+		case "Ammo":
+			p.PickupItem(item.DeserializeAmmo(itemString))
 		}
 	}
 	var creature Creature = p
