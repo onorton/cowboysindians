@@ -3,6 +3,7 @@
 		"Icon":115,
 		"Colour":3,
 		"Range":4,
+		"Type":1,
 	       	"Damage": {
 			"Dice": 4,
 			"Number": 1,
@@ -15,6 +16,7 @@
 		"Icon": 112,
 		"Colour":1,
 		"Range":10,
+		"Type":0,
 		"Damage": {
 			"Dice": 4,
 			"Number": 1,
@@ -25,6 +27,7 @@
 		"Icon":115,
 		"Colour":4,
 		"Range":3,
+		"Type":1, 
 	       	"Damage": {
 			"Dice": 6,
 			"Number": 1,

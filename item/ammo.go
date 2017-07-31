@@ -13,6 +13,7 @@ import (
 type AmmoAttributes struct {
 	Colour termbox.Attribute
 	Icon   rune
+	Type   WeaponType
 }
 
 var ammoData map[string]AmmoAttributes = fetchAmmoData()
@@ -29,11 +30,12 @@ func fetchAmmoData() map[string]AmmoAttributes {
 type Ammo struct {
 	name string
 	ic   icon.Icon
+	t    WeaponType
 }
 
 func NewAmmo(name string) Item {
 	ammo := ammoData[name]
-	var itm Item = &Ammo{name, icon.NewIcon(ammo.Icon, ammo.Colour)}
+	var itm Item = &Ammo{name, icon.NewIcon(ammo.Icon, ammo.Colour), ammo.Type}
 	return itm
 }
 

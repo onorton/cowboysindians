@@ -227,7 +227,7 @@ func (p *Player) RangedAttack(target Creature) {
 
 func (p *Player) getAmmo() *item.Ammo {
 	for k, items := range p.inventory {
-		if _, ok := items[0].(*item.Ammo); ok {
+		if a, ok := items[0].(*item.Ammo); ok && p.weapon.AmmoTypeMatches(a) {
 			return p.GetItem(k).(*item.Ammo)
 		}
 	}
@@ -431,7 +431,7 @@ func (p *Player) Ranged() bool {
 // Check whether player has ammo for particular wielded weapon
 func (p *Player) HasAmmo() bool {
 	for _, items := range p.inventory {
-		if _, ok := items[0].(*item.Ammo); ok {
+		if a, ok := items[0].(*item.Ammo); ok && p.weapon.AmmoTypeMatches(a) {
 			return true
 		}
 	}

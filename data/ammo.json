@@ -1,6 +1,12 @@
 {
 	"shotgun shell":{
 		"Colour" : 2,
-		"Icon" : 44
+		"Icon" : 44,
+		"Type": 1
+	},
+	"pistol bullet":{
+		"Colour" : 3,
+		"Icon" : 44,
+		"Type": 0
 	}	
 }

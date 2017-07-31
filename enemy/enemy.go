@@ -348,7 +348,7 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 }
 func (e *Enemy) getAmmo() *item.Ammo {
 	for i, itm := range e.inventory {
-		if ammo, ok := itm.(*item.Ammo); ok {
+		if ammo, ok := itm.(*item.Ammo); ok && e.weapon.AmmoTypeMatches(ammo) {
 			e.inventory = append(e.inventory[:i], e.inventory[i:]...)
 			return ammo
 		}
@@ -358,7 +358,7 @@ func (e *Enemy) getAmmo() *item.Ammo {
 
 func (e *Enemy) hasAmmo() bool {
 	for _, itm := range e.inventory {
-		if _, ok := itm.(*item.Ammo); ok {
+		if a, ok := itm.(*item.Ammo); ok && e.weapon.AmmoTypeMatches(a) {
 			return true
 		}
 	}

@@ -18,6 +18,7 @@ type WeaponAttributes struct {
 	Icon   rune
 	Damage DamageAttributes
 	Range  int
+	Type   WeaponType
 }
 
 type DamageAttributes struct {
@@ -25,6 +26,13 @@ type DamageAttributes struct {
 	Number int
 	Bonus  int
 }
+
+type WeaponType int
+
+const (
+	Pistol WeaponType = iota
+	Shotgun
+)
 
 var weaponData map[string]WeaponAttributes = fetchWeaponData()
 
@@ -41,6 +49,7 @@ type Weapon struct {
 	name   string
 	ic     icon.Icon
 	r      int
+	t      WeaponType
 	damage *Damage
 }
 
@@ -52,7 +61,7 @@ type Damage struct {
 
 func NewWeapon(name string) *Weapon {
 	weapon := weaponData[name]
-	return &Weapon{name, icon.NewIcon(weapon.Icon, weapon.Colour), weapon.Range, &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
+	return &Weapon{name, icon.NewIcon(weapon.Icon, weapon.Colour), weapon.Range, weapon.Type, &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
 }
 
 func (weapon *Weapon) Serialize() string {
@@ -117,6 +126,10 @@ func (weapon *Weapon) GetDamage() int {
 
 	result += weapon.damage.bonus
 	return result
+}
+
+func (weapon *Weapon) AmmoTypeMatches(ammo *Ammo) bool {
+	return weapon.t == ammo.t
 }
 
 func (weapon *Weapon) GetKey() rune {
