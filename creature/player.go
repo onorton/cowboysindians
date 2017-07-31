@@ -42,6 +42,7 @@ func Deserialize(c string) Creature {
 	p.ac, _ = strconv.Atoi(rest[3])
 	p.str, _ = strconv.Atoi(rest[4])
 	p.dex, _ = strconv.Atoi(rest[5])
+	p.encumbrance, _ = strconv.Atoi(rest[6])
 	if len(restWearing) > 1 {
 		for i := 1; i < len(restWearing); i++ {
 			switch wearingTypes[i-1] {
@@ -85,7 +86,7 @@ func (p *Player) Serialize() string {
 		}
 	}
 	items += "]"
-	return fmt.Sprintf("Player{%d %d %d %d %d %d %s %s %s}", p.x, p.y, p.hp, p.ac, p.str, p.dex, p.icon.Serialize(), p.weapon.Serialize(), items)
+	return fmt.Sprintf("Player{%d %d %d %d %d %d %d %s %s %s}", p.x, p.y, p.hp, p.ac, p.str, p.dex, p.encumbrance, p.icon.Serialize(), p.weapon.Serialize(), items)
 }
 
 func (p *Player) GetCoordinates() (int, int) {

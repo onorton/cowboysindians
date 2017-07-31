@@ -70,7 +70,7 @@ func (weapon *Weapon) Serialize() string {
 	if weapon == nil {
 		return ""
 	}
-	return fmt.Sprintf("Weapon{%s %d %d %s %s}", strings.Replace(weapon.name, " ", "_", -1), weapon.r, weapon.t, weapon.ic.Serialize(), weapon.damage.Serialize())
+	return fmt.Sprintf("Weapon{%s %d %d %f %s %s}", strings.Replace(weapon.name, " ", "_", -1), weapon.r, weapon.t, weapon.w, weapon.ic.Serialize(), weapon.damage.Serialize())
 }
 
 func (damage *Damage) Serialize() string {
@@ -79,7 +79,7 @@ func (damage *Damage) Serialize() string {
 
 func DeserializeDamage(damageString string) *Damage {
 	damageString = damageString[1 : len(damageString)-1]
-	damageAttributes := strings.SplitN(damageString, " ", 3)
+	damageAttributes := strings.SplitN(damageString, " ", 4)
 	damage := new(Damage)
 	damage.dice, _ = strconv.Atoi(damageAttributes[0])
 	damage.number, _ = strconv.Atoi(damageAttributes[1])
@@ -93,13 +93,14 @@ func DeserializeWeapon(weaponString string) *Weapon {
 	}
 	weaponString = weaponString[1 : len(weaponString)-2]
 	weapon := new(Weapon)
-	nameAttributes := strings.SplitN(weaponString, " ", 4)
+	nameAttributes := strings.SplitN(weaponString, " ", 5)
 
 	weapon.name = strings.Replace(nameAttributes[0], "_", " ", -1)
 	weapon.r, _ = strconv.Atoi(nameAttributes[1])
 	t, _ := strconv.Atoi(nameAttributes[2])
 	weapon.t = WeaponType(t)
-	weaponAttributes := regexp.MustCompile("(Icon)|(Damage)").Split(nameAttributes[3], -1)
+	weapon.w, _ = strconv.ParseFloat(nameAttributes[3], 64)
+	weaponAttributes := regexp.MustCompile("(Icon)|(Damage)").Split(nameAttributes[4], -1)
 	weaponAttributes = weaponAttributes[1:]
 	weapon.ic = icon.Deserialize(weaponAttributes[0])
 	weapon.damage = DeserializeDamage(weaponAttributes[1])

@@ -46,7 +46,7 @@ func (ammo *Ammo) Serialize() string {
 	if ammo == nil {
 		return ""
 	}
-	return fmt.Sprintf("Ammo{%s %d %s}", strings.Replace(ammo.name, " ", "_", -1), ammo.t, ammo.ic.Serialize())
+	return fmt.Sprintf("Ammo{%s %d %f %s}", strings.Replace(ammo.name, " ", "_", -1), ammo.t, ammo.w, ammo.ic.Serialize())
 }
 
 func DeserializeAmmo(ammoString string) Item {
@@ -56,11 +56,12 @@ func DeserializeAmmo(ammoString string) Item {
 	}
 	ammoString = ammoString[1 : len(ammoString)-2]
 	ammo := new(Ammo)
-	ammoAttributes := strings.SplitN(ammoString, " ", 3)
+	ammoAttributes := strings.SplitN(ammoString, " ", 4)
 	ammo.name = strings.Replace(ammoAttributes[0], "_", " ", -1)
-	ammo.ic = icon.Deserialize(ammoAttributes[2])
+	ammo.ic = icon.Deserialize(ammoAttributes[3])
 	t, _ := strconv.Atoi(ammoAttributes[1])
 	ammo.t = WeaponType(t)
+	ammo.w, _ = strconv.ParseFloat(ammoAttributes[2], 64)
 	var itm Item = ammo
 	return itm
 }

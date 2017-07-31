@@ -7,6 +7,7 @@ import (
 	"github.com/onorton/cowboysindians/icon"
 	"hash/fnv"
 	"io/ioutil"
+	"strconv"
 	"strings"
 )
 
@@ -49,7 +50,7 @@ func (item *NormalItem) Serialize() string {
 	if item == nil {
 		return ""
 	}
-	return fmt.Sprintf("Item{%s %s}", item.name, item.ic.Serialize())
+	return fmt.Sprintf("Item{%s %f %s}", item.name, item.w, item.ic.Serialize())
 }
 
 func Deserialize(itemString string) Item {
@@ -59,9 +60,10 @@ func Deserialize(itemString string) Item {
 	}
 	itemString = itemString[1 : len(itemString)-2]
 	item := new(NormalItem)
-	itemAttributes := strings.SplitN(itemString, " ", 2)
+	itemAttributes := strings.SplitN(itemString, " ", 3)
 	item.name = itemAttributes[0]
-	item.ic = icon.Deserialize(itemAttributes[1])
+	item.w, _ = strconv.ParseFloat(itemAttributes[1], 64)
+	item.ic = icon.Deserialize(itemAttributes[2])
 	var itm Item = item
 	return itm
 }

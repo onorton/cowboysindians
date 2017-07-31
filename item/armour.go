@@ -45,7 +45,7 @@ func (armour *Armour) Serialize() string {
 	if armour == nil {
 		return ""
 	}
-	return fmt.Sprintf("Armour{%s %s %d}", strings.Replace(armour.name, " ", "_", -1), armour.ic.Serialize(), armour.bonus)
+	return fmt.Sprintf("Armour{%s %s %d %f}", strings.Replace(armour.name, " ", "_", -1), armour.ic.Serialize(), armour.bonus, armour.w)
 }
 
 func DeserializeArmour(armourString string) *Armour {
@@ -55,10 +55,11 @@ func DeserializeArmour(armourString string) *Armour {
 	}
 	armourString = armourString[1 : len(armourString)-2]
 	armour := new(Armour)
-	armourAttributes := strings.SplitN(armourString, " ", 4)
+	armourAttributes := strings.SplitN(armourString, " ", 5)
 	armour.name = strings.Replace(armourAttributes[0], "_", " ", -1)
 	armour.ic = icon.Deserialize(armourAttributes[1] + " " + armourAttributes[2])
 	armour.bonus, _ = strconv.Atoi(armourAttributes[3])
+	armour.w, _ = strconv.ParseFloat(armourAttributes[4], 64)
 
 	return armour
 }
