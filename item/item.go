@@ -19,6 +19,7 @@ func check(err error) {
 type ItemAttributes struct {
 	Colour termbox.Attribute
 	Icon   rune
+	Weight float64
 }
 
 var itemData map[string]ItemAttributes = fetchItemData()
@@ -35,11 +36,12 @@ func fetchItemData() map[string]ItemAttributes {
 type NormalItem struct {
 	name string
 	ic   icon.Icon
+	w    float64
 }
 
 func NewItem(name string) Item {
 	item := itemData[name]
-	var itm Item = &NormalItem{name, icon.NewIcon(item.Icon, item.Colour)}
+	var itm Item = &NormalItem{name, icon.NewIcon(item.Icon, item.Colour), item.Weight}
 	return itm
 }
 
@@ -82,9 +84,14 @@ func (item *NormalItem) GetKey() rune {
 	return key
 }
 
+func (item *NormalItem) GetWeight() float64 {
+	return item.w
+}
+
 type Item interface {
 	GetKey() rune
 	GetName() string
 	Render(int, int)
 	Serialize() string
+	GetWeight() float64
 }

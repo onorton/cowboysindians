@@ -15,6 +15,7 @@ type ArmourAttributes struct {
 	Colour termbox.Attribute
 	Icon   rune
 	Bonus  int
+	Weight float64
 }
 
 var armourData map[string]ArmourAttributes = fetchArmourData()
@@ -32,11 +33,12 @@ type Armour struct {
 	name  string
 	ic    icon.Icon
 	bonus int
+	w     float64
 }
 
 func NewArmour(name string) *Armour {
 	armour := armourData[name]
-	return &Armour{name, icon.NewIcon(armour.Icon, armour.Colour), armour.Bonus}
+	return &Armour{name, icon.NewIcon(armour.Icon, armour.Colour), armour.Bonus, armour.Weight}
 }
 
 func (armour *Armour) Serialize() string {
@@ -81,4 +83,8 @@ func (armour *Armour) GetKey() rune {
 		key++
 	}
 	return key
+}
+
+func (armour *Armour) GetWeight() float64 {
+	return armour.w
 }

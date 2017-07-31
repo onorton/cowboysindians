@@ -19,6 +19,7 @@ type WeaponAttributes struct {
 	Damage DamageAttributes
 	Range  int
 	Type   WeaponType
+	Weight float64
 }
 
 type DamageAttributes struct {
@@ -50,6 +51,7 @@ type Weapon struct {
 	ic     icon.Icon
 	r      int
 	t      WeaponType
+	w      float64
 	damage *Damage
 }
 
@@ -61,7 +63,7 @@ type Damage struct {
 
 func NewWeapon(name string) *Weapon {
 	weapon := weaponData[name]
-	return &Weapon{name, icon.NewIcon(weapon.Icon, weapon.Colour), weapon.Range, weapon.Type, &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
+	return &Weapon{name, icon.NewIcon(weapon.Icon, weapon.Colour), weapon.Range, weapon.Type, weapon.Weight, &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
 }
 
 func (weapon *Weapon) Serialize() string {
@@ -142,4 +144,8 @@ func (weapon *Weapon) GetKey() rune {
 		key++
 	}
 	return key
+}
+
+func (weapon *Weapon) GetWeight() float64 {
+	return weapon.w
 }

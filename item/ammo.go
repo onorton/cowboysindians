@@ -15,6 +15,7 @@ type AmmoAttributes struct {
 	Colour termbox.Attribute
 	Icon   rune
 	Type   WeaponType
+	Weight float64
 }
 
 var ammoData map[string]AmmoAttributes = fetchAmmoData()
@@ -32,11 +33,12 @@ type Ammo struct {
 	name string
 	ic   icon.Icon
 	t    WeaponType
+	w    float64
 }
 
 func NewAmmo(name string) Item {
 	ammo := ammoData[name]
-	var itm Item = &Ammo{name, icon.NewIcon(ammo.Icon, ammo.Colour), ammo.Type}
+	var itm Item = &Ammo{name, icon.NewIcon(ammo.Icon, ammo.Colour), ammo.Type, ammo.Weight}
 	return itm
 }
 
@@ -79,4 +81,8 @@ func (ammo *Ammo) GetKey() rune {
 		key++
 	}
 	return key
+}
+
+func (ammo *Ammo) GetWeight() float64 {
+	return ammo.w
 }

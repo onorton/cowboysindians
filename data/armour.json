@@ -2,7 +2,8 @@
 	"leather jacket": {
 		"Icon": 91,
 		"Colour": 100,
-		"Bonus": 1
+		"Bonus": 1,
+		"Weight": 101
 	}
 	
 }

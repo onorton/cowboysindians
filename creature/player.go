@@ -14,7 +14,7 @@ import (
 )
 
 func NewPlayer() *Player {
-	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 15, 12, 10, nil, nil, make(map[rune]([]item.Item))}
+	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 15, 12, 10, 100, nil, nil, make(map[rune]([]item.Item))}
 	player.PickupItem(item.NewWeapon("shotgun"))
 	player.PickupItem(item.NewWeapon("sawn-off shotgun"))
 	player.PickupItem(item.NewArmour("leather jacket"))
@@ -443,6 +443,22 @@ func GetBonus(score int) int {
 	return (score - 10) / 2
 }
 
+func (p *Player) OverEncumbered() bool {
+	total := 0.0
+	if p.weapon != nil {
+		total += p.weapon.GetWeight()
+	}
+	if p.armour != nil {
+		total += p.weapon.GetWeight()
+	}
+	for _, items := range p.inventory {
+		for _, item := range items {
+			total += item.GetWeight()
+		}
+	}
+	return total > float64(p.encumbrance)
+}
+
 // Interface shared by Player and Enemy
 type Creature interface {
 	GetCoordinates() (int, int)
@@ -458,15 +474,16 @@ type Creature interface {
 }
 
 type Player struct {
-	x          int
-	y          int
-	icon       icon.Icon
-	initiative int
-	hp         int
-	ac         int
-	str        int
-	dex        int
-	weapon     *item.Weapon
-	armour     *item.Armour
-	inventory  map[rune]([]item.Item)
+	x           int
+	y           int
+	icon        icon.Icon
+	initiative  int
+	hp          int
+	ac          int
+	str         int
+	dex         int
+	encumbrance int
+	weapon      *item.Weapon
+	armour      *item.Armour
+	inventory   map[rune]([]item.Item)
 }
