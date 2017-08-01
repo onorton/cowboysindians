@@ -14,11 +14,12 @@ import (
 )
 
 func NewPlayer() *Player {
-	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 15, 12, 10, 100, nil, nil, make(map[rune]([]item.Item))}
+	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 10, 15, 12, 10, 100, nil, nil, make(map[rune]([]item.Item))}
 	player.PickupItem(item.NewWeapon("shotgun"))
 	player.PickupItem(item.NewWeapon("sawn-off shotgun"))
 	player.PickupItem(item.NewArmour("leather jacket"))
 	player.PickupItem(item.NewAmmo("shotgun shell"))
+	player.PickupItem(item.NewConsumable("stardard ration"))
 	return player
 }
 
@@ -208,6 +209,24 @@ func (p *Player) PrintArmour() {
 	}
 	termbox.Flush()
 }
+
+func (p *Player) PrintConsumables() {
+	position := 0
+	for k, items := range p.inventory {
+		if _, ok := p.inventory[k][0].(*item.Consumable); !ok {
+			continue
+		}
+		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
+		if len(items) > 1 {
+			itemString += fmt.Sprintf(" x%d", len(items))
+		}
+		for i, c := range itemString {
+			termbox.SetCell(i, position, c, termbox.ColorWhite, termbox.ColorDefault)
+		}
+		position++
+	}
+	termbox.Flush()
+}
 func (p *Player) IsDead() bool {
 	return p.hp <= 0
 }
@@ -296,6 +315,30 @@ func (p *Player) GetArmourKeys() string {
 	return keys
 }
 
+func (p *Player) GetConsumableKeys() string {
+	keysSet := make([]bool, 128)
+	for k := range p.inventory {
+
+		if _, ok := p.inventory[k][0].(*item.Consumable); ok {
+			keysSet[k] = true
+		}
+	}
+	keys := ""
+	for i, _ := range keysSet {
+		if i < 33 || i == 127 || !keysSet[i] {
+			continue
+		}
+
+		if keysSet[i-1] && !keysSet[i+1] {
+			keys += string(rune(i))
+		} else if !keysSet[i-1] {
+			keys += string(rune(i))
+		} else if keysSet[i-1] && !keysSet[i-2] && keysSet[i+1] {
+			keys += "-"
+		}
+	}
+	return keys
+}
 func (p *Player) GetInventoryKeys() string {
 	keysSet := make([]bool, 128)
 	for k := range p.inventory {
@@ -419,6 +462,46 @@ func (p *Player) WearArmour() bool {
 	}
 }
 
+func (p *Player) ConsumeItem() bool {
+
+	for {
+		message.PrintMessage(fmt.Sprintf("What item do you want to eat? [%s or ?*]", p.GetConsumableKeys()))
+		e := termbox.PollEvent()
+
+		if e.Type == termbox.EventKey {
+			if e.Ch == '*' {
+				p.PrintInventory()
+				continue
+			}
+			if e.Ch == '?' {
+				p.PrintConsumables()
+				continue
+			}
+			if e.Key == termbox.KeyEnter {
+				message.PrintMessage("Never mind.")
+				return false
+			}
+			itm := p.GetItem(e.Ch)
+			if itm == nil {
+				message.PrintMessage("You don't have that thing to eat.")
+				termbox.PollEvent()
+			} else {
+				if c, ok := itm.(*item.Consumable); ok {
+					message.Enqueue(fmt.Sprintf("You ate a %s.", c.GetName()))
+					p.heal(c.GetAmount())
+
+					return true
+				} else {
+					message.PrintMessage("That is not something you can eat.")
+					p.PickupItem(itm)
+					termbox.PollEvent()
+					return false
+				}
+			}
+		}
+	}
+}
+
 func (p *Player) GetInventory() map[rune]([]item.Item) {
 	return p.inventory
 }
@@ -442,6 +525,12 @@ func (p *Player) HasAmmo() bool {
 }
 func GetBonus(score int) int {
 	return (score - 10) / 2
+}
+
+func (p *Player) heal(amount int) {
+	originalHp := p.hp
+	p.hp = int(math.Max(float64(originalHp+amount), float64(p.maxHp)))
+	message.Enqueue(fmt.Sprintf("You healed for %d hit points.", p.hp-originalHp))
 }
 
 func (p *Player) OverEncumbered() bool {
@@ -479,6 +568,7 @@ type Player struct {
 	y           int
 	icon        icon.Icon
 	initiative  int
+	maxHp       int
 	hp          int
 	ac          int
 	str         int

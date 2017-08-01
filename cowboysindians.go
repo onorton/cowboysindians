@@ -258,6 +258,8 @@ func main() {
 									endTurn = player.WieldItem()
 								case 'W':
 									endTurn = player.WearArmour()
+								case 'e':
+									endTurn = player.ConsumeItem()
 								default:
 									quit = true
 								}

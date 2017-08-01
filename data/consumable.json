@@ -1,0 +1,8 @@
+{
+	"standard ration":{
+		"Colour" : 4,
+		"Icon" : 42,
+		"Weight" : 0.1,
+		"Amount": 10
+	}	
+}
