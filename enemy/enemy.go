@@ -373,6 +373,31 @@ func (e *Enemy) DropItem(item item.Item, m worldmap.Map) {
 	}
 
 }
+
+func (e *Enemy) EmptyInventory(m worldmap.Map) {
+	itemTypes := make(map[string]int)
+	for _, item := range e.inventory {
+		m.PlaceItem(e.x, e.y, item)
+		itemTypes[item.GetName()]++
+	}
+	if e.weapon != nil {
+		m.PlaceItem(e.x, e.y, e.weapon)
+		itemTypes[e.weapon.GetName()]++
+		e.weapon = nil
+	}
+	if e.armour != nil {
+		m.PlaceItem(e.x, e.y, e.armour)
+		itemTypes[e.armour.GetName()]++
+		e.armour = nil
+	}
+
+	if m.IsVisible(m.GetPlayer(), e.x, e.y) {
+		for name, count := range itemTypes {
+			message.Enqueue(fmt.Sprintf("The enemy dropped %d %ss.", count, name))
+		}
+	}
+
+}
 func (e *Enemy) getAmmo() *item.Ammo {
 	for i, itm := range e.inventory {
 		if ammo, ok := itm.(*item.Ammo); ok && e.weapon.AmmoTypeMatches(ammo) {

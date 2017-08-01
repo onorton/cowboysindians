@@ -292,18 +292,7 @@ func main() {
 		// Remove dead enemies
 		for i, c := range all {
 			if e, ok := c.(*enemy.Enemy); c.IsDead() && ok {
-				eX, eY := e.GetCoordinates()
-				inventory := e.GetInventory()
-				itemTypes := make(map[string]int)
-				for _, item := range inventory {
-					worldMap.PlaceItem(eX, eY, item)
-					itemTypes[item.GetName()]++
-				}
-				if worldMap.IsVisible(player, eY, eY) {
-					for name, count := range itemTypes {
-						message.Enqueue(fmt.Sprintf("The enemy dropped %d %ss.", count, name))
-					}
-				}
+				e.EmptyInventory(worldMap)
 				worldMap.DeleteCreature(c)
 				all = append(all[:i], all[i+1:]...)
 			}
