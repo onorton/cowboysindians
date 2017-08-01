@@ -89,8 +89,8 @@ func DeserializeTile(t string) Tile {
 	tile.passable, _ = strconv.ParseBool(fields[2])
 	tile.door, _ = strconv.ParseBool(fields[3])
 	itemStrings := fields[4][1 : len(fields[4])-2]
-	items := regexp.MustCompile("(Ammo)|(Armour)|(Item)|(Weapon)").Split(itemStrings, -1)
-	starter := regexp.MustCompile("(Ammo)|(Armour)|(Item)|(Weapon)").FindAllString(itemStrings, -1)
+	items := regexp.MustCompile("(Ammo)|(Armour)|(Consumable)|(Item)|(Weapon)").Split(itemStrings, -1)
+	starter := regexp.MustCompile("(Ammo)|(Armour)|(Consumable)|(Item)|(Weapon)").FindAllString(itemStrings, -1)
 	items = items[1:]
 	tile.items = make([]item.Item, len(items))
 
@@ -104,6 +104,8 @@ func DeserializeTile(t string) Tile {
 			tile.items[i] = item.DeserializeArmour(itemString)
 		case "Ammo":
 			tile.items[i] = item.DeserializeAmmo(itemString)
+		case "Consumable":
+			tile.items[i] = item.DeserializeConsumable(itemString)
 		}
 	}
 	return tile

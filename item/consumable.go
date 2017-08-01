@@ -46,7 +46,7 @@ func (consumable *Consumable) Serialize() string {
 	if consumable == nil {
 		return ""
 	}
-	return fmt.Sprintf("Consumable{%s %f %s}", consumable.name, consumable.w, consumable.ic.Serialize())
+	return fmt.Sprintf("Consumable{%s %f %d %s}", strings.Replace(consumable.name, " ", "_", -1), consumable.w, consumable.amount, consumable.ic.Serialize())
 }
 
 func DeserializeConsumable(consumableString string) Item {
@@ -56,10 +56,11 @@ func DeserializeConsumable(consumableString string) Item {
 	}
 	consumableString = consumableString[1 : len(consumableString)-2]
 	consumable := new(Consumable)
-	consumableAttributes := strings.SplitN(consumableString, " ", 3)
-	consumable.name = consumableAttributes[0]
+	consumableAttributes := strings.SplitN(consumableString, " ", 4)
+	consumable.name = strings.Replace(consumableAttributes[0], "_", " ", -1)
 	consumable.w, _ = strconv.ParseFloat(consumableAttributes[1], 64)
-	consumable.ic = icon.Deserialize(consumableAttributes[2])
+	consumable.amount, _ = strconv.Atoi(consumableAttributes[2])
+	consumable.ic = icon.Deserialize(consumableAttributes[3])
 	var itm Item = consumable
 	return itm
 }

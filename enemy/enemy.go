@@ -100,6 +100,8 @@ func Deserialize(e string) creature.Creature {
 			enemy.PickupItem(item.DeserializeArmour(itemString))
 		case "Ammo":
 			enemy.PickupItem(item.DeserializeAmmo(itemString))
+		case "Consumable":
+			enemy.PickupItem(item.DeserializeConsumable(itemString))
 		}
 	}
 	var creature creature.Creature = enemy

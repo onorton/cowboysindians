@@ -19,7 +19,7 @@ func NewPlayer() *Player {
 	player.PickupItem(item.NewWeapon("sawn-off shotgun"))
 	player.PickupItem(item.NewArmour("leather jacket"))
 	player.PickupItem(item.NewAmmo("shotgun shell"))
-	player.PickupItem(item.NewConsumable("stardard ration"))
+	player.PickupItem(item.NewConsumable("standard ration"))
 	return player
 }
 
@@ -55,8 +55,8 @@ func Deserialize(c string) Creature {
 		}
 	}
 	p.inventory = make(map[rune]([]item.Item))
-	items := regexp.MustCompile("(Ammo)|(Armour)|(Item)|(Weapon)").Split(inventory, -1)
-	starter := regexp.MustCompile("(Ammo)|(Armour)|(Item)|(Weapon)").FindAllString(inventory, -1)
+	items := regexp.MustCompile("(Ammo)|(Armour)|(Consumable)|(Item)|(Weapon)").Split(inventory, -1)
+	starter := regexp.MustCompile("(Ammo)|(Armour)|(Consumable)|(Item)|(Weapon)").FindAllString(inventory, -1)
 	items = items[1:]
 	for i, itemString := range items {
 		switch starter[i] {
@@ -68,6 +68,8 @@ func Deserialize(c string) Creature {
 			p.PickupItem(item.DeserializeArmour(itemString))
 		case "Ammo":
 			p.PickupItem(item.DeserializeAmmo(itemString))
+		case "Consumable":
+			p.PickupItem(item.DeserializeConsumable(itemString))
 		}
 	}
 	var creature Creature = p
@@ -529,7 +531,7 @@ func GetBonus(score int) int {
 
 func (p *Player) heal(amount int) {
 	originalHp := p.hp
-	p.hp = int(math.Max(float64(originalHp+amount), float64(p.maxHp)))
+	p.hp = int(math.Min(float64(originalHp+amount), float64(p.maxHp)))
 	message.Enqueue(fmt.Sprintf("You healed for %d hit points.", p.hp-originalHp))
 }
 
