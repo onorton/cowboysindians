@@ -24,13 +24,14 @@ func check(err error) {
 }
 
 type EnemyAttributes struct {
-	Icon       rune
-	Colour     termbox.Attribute
-	Initiative int
-	Hp         int
-	Ac         int
-	Str        int
-	Dex        int
+	Icon        rune
+	Colour      termbox.Attribute
+	Initiative  int
+	Hp          int
+	Ac          int
+	Str         int
+	Dex         int
+	Encumbrance int
 }
 
 var enemyData map[string]EnemyAttributes = fetchEnemyData()
@@ -46,7 +47,7 @@ func fetchEnemyData() map[string]EnemyAttributes {
 
 func NewEnemy(name string, x, y int) *Enemy {
 	enemy := enemyData[name]
-	e := &Enemy{x, y, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, nil, nil, make([]item.Item, 0)}
+	e := &Enemy{x, y, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, nil, nil, make([]item.Item, 0)}
 	e.PickupItem(item.NewWeapon("pistol"))
 	e.PickupItem(item.NewArmour("leather jacket"))
 	return e
@@ -336,8 +337,16 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 			e.attack(target, creature.GetBonus(e.dex), 0)
 		}
 	} else if len(possibleLocations) > 0 {
-		l := possibleLocations[rand.Intn(len(possibleLocations))]
-		return l.x, l.y
+		if e.overEncumbered() {
+			for _, itm := range e.inventory {
+				if itm.GetWeight() > 1 {
+					e.DropItem(itm, m)
+				}
+			}
+		} else {
+			l := possibleLocations[rand.Intn(len(possibleLocations))]
+			return l.x, l.y
+		}
 	} else {
 		items := m.GetItems(e.x, e.y)
 		for _, item := range items {
@@ -346,6 +355,21 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 	}
 
 	return e.x, e.y
+
+}
+
+func (e *Enemy) overEncumbered() bool {
+	weight := 0.0
+	for _, item := range e.inventory {
+		weight += item.GetWeight()
+	}
+	return weight > float64(e.encumbrance)
+}
+func (e *Enemy) DropItem(item item.Item, m worldmap.Map) {
+	m.PlaceItem(e.x, e.y, item)
+	if m.IsVisible(m.GetPlayer(), e.x, e.y) {
+		message.Enqueue(fmt.Sprintf("The enemy dropped a %s.", item.GetName()))
+	}
 
 }
 func (e *Enemy) getAmmo() *item.Ammo {
@@ -389,15 +413,16 @@ func (e *Enemy) GetInventory() []item.Item {
 }
 
 type Enemy struct {
-	x          int
-	y          int
-	icon       icon.Icon
-	initiative int
-	hp         int
-	ac         int
-	str        int
-	dex        int
-	weapon     *item.Weapon
-	armour     *item.Armour
-	inventory  []item.Item
+	x           int
+	y           int
+	icon        icon.Icon
+	initiative  int
+	hp          int
+	ac          int
+	str         int
+	dex         int
+	encumbrance int
+	weapon      *item.Weapon
+	armour      *item.Armour
+	inventory   []item.Item
 }
