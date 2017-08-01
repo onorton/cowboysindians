@@ -6,7 +6,8 @@
 		"Hp": 5,
 		"Initiative": 10,
 		"Str": 10,
-		"Dex": 13
+		"Dex": 13,
+		"Encumbrance": 100
 	}
 
 
