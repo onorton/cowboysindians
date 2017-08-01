@@ -50,6 +50,7 @@ func NewEnemy(name string, x, y int) *Enemy {
 	e := &Enemy{x, y, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, nil, nil, make([]item.Item, 0)}
 	e.PickupItem(item.NewWeapon("pistol"))
 	e.PickupItem(item.NewArmour("leather jacket"))
+	e.PickupItem(item.NewAmmo("pistol bullet"))
 	return e
 }
 func (e *Enemy) Render(x, y int) {
@@ -401,7 +402,7 @@ func (e *Enemy) EmptyInventory(m worldmap.Map) {
 func (e *Enemy) getAmmo() *item.Ammo {
 	for i, itm := range e.inventory {
 		if ammo, ok := itm.(*item.Ammo); ok && e.weapon.AmmoTypeMatches(ammo) {
-			e.inventory = append(e.inventory[:i], e.inventory[i:]...)
+			e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
 			return ammo
 		}
 	}
