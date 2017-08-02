@@ -23,6 +23,12 @@ type ItemAttributes struct {
 	Weight float64
 }
 
+type ItemDefinition struct {
+	Category string
+	Name     string
+	Amount   int
+}
+
 var itemData map[string]ItemAttributes = fetchItemData()
 
 func fetchItemData() map[string]ItemAttributes {

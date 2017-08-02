@@ -32,6 +32,7 @@ type EnemyAttributes struct {
 	Str         int
 	Dex         int
 	Encumbrance int
+	Inventory   []item.ItemDefinition
 }
 
 var enemyData map[string]EnemyAttributes = fetchEnemyData()
@@ -48,10 +49,24 @@ func fetchEnemyData() map[string]EnemyAttributes {
 func NewEnemy(name string, x, y int) *Enemy {
 	enemy := enemyData[name]
 	e := &Enemy{x, y, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, nil, nil, make([]item.Item, 0)}
-	e.PickupItem(item.NewWeapon("pistol"))
-	e.PickupItem(item.NewArmour("leather jacket"))
-	e.PickupItem(item.NewAmmo("pistol bullet"))
-	e.PickupItem(item.NewConsumable("standard ration"))
+	for _, itemDefinition := range enemy.Inventory {
+		for i := 0; i < itemDefinition.Amount; i++ {
+			var itm item.Item = nil
+			switch itemDefinition.Category {
+			case "Ammo":
+				itm = item.NewAmmo(itemDefinition.Name)
+			case "Armour":
+				itm = item.NewArmour(itemDefinition.Name)
+			case "Consumable":
+				itm = item.NewConsumable(itemDefinition.Name)
+			case "Item":
+				itm = item.NewItem(itemDefinition.Name)
+			case "Weapon":
+				itm = item.NewWeapon(itemDefinition.Name)
+			}
+			e.PickupItem(itm)
+		}
+	}
 	return e
 }
 func (e *Enemy) Render(x, y int) {
