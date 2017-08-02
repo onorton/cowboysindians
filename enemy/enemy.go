@@ -459,17 +459,6 @@ func (e *Enemy) Ranged() bool {
 	return false
 }
 
-func (e *Enemy) GetInventory() []item.Item {
-	inventory := e.inventory
-	if e.weapon != nil {
-		inventory = append(inventory, e.weapon)
-	}
-	if e.armour != nil {
-		inventory = append(inventory, e.armour)
-	}
-	return inventory
-}
-
 func (e *Enemy) heal(amount int) {
 	originalHp := e.hp
 	e.hp = int(math.Min(float64(originalHp+amount), float64(e.maxHp)))

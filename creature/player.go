@@ -504,10 +504,6 @@ func (p *Player) ConsumeItem() bool {
 	}
 }
 
-func (p *Player) GetInventory() map[rune]([]item.Item) {
-	return p.inventory
-}
-
 // Check whether player can carry out a range attack this turn
 func (p *Player) Ranged() bool {
 	if p.weapon != nil {
