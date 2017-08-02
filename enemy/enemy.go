@@ -64,7 +64,7 @@ func NewEnemy(name string, x, y int) *Enemy {
 			case "Weapon":
 				itm = item.NewWeapon(itemDefinition.Name)
 			}
-			e.PickupItem(itm)
+			e.pickupItem(itm)
 		}
 	}
 	return e
@@ -111,15 +111,15 @@ func Deserialize(e string) creature.Creature {
 	for i, itemString := range items {
 		switch starter[i] {
 		case "Item":
-			enemy.PickupItem(item.Deserialize(itemString))
+			enemy.pickupItem(item.Deserialize(itemString))
 		case "Weapon":
-			enemy.PickupItem(item.DeserializeWeapon(itemString))
+			enemy.pickupItem(item.DeserializeWeapon(itemString))
 		case "Armour":
-			enemy.PickupItem(item.DeserializeArmour(itemString))
+			enemy.pickupItem(item.DeserializeArmour(itemString))
 		case "Ammo":
-			enemy.PickupItem(item.DeserializeAmmo(itemString))
+			enemy.pickupItem(item.DeserializeAmmo(itemString))
 		case "Consumable":
-			enemy.PickupItem(item.DeserializeConsumable(itemString))
+			enemy.pickupItem(item.DeserializeConsumable(itemString))
 		}
 	}
 	var creature creature.Creature = enemy
@@ -373,7 +373,7 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 		if e.overEncumbered() {
 			for _, itm := range e.inventory {
 				if itm.GetWeight() > 1 {
-					e.DropItem(itm, m)
+					e.dropItem(itm, m)
 				}
 			}
 		} else {
@@ -383,7 +383,7 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 	} else {
 		items := m.GetItems(e.x, e.y)
 		for _, item := range items {
-			e.PickupItem(item)
+			e.pickupItem(item)
 		}
 	}
 
@@ -398,7 +398,7 @@ func (e *Enemy) overEncumbered() bool {
 	}
 	return weight > float64(e.encumbrance)
 }
-func (e *Enemy) DropItem(item item.Item, m worldmap.Map) {
+func (e *Enemy) dropItem(item item.Item, m worldmap.Map) {
 	m.PlaceItem(e.x, e.y, item)
 	if m.IsVisible(m.GetPlayer(), e.x, e.y) {
 		message.Enqueue(fmt.Sprintf("The %s dropped a %s.", e.name, item.GetName()))
@@ -448,7 +448,7 @@ func (e *Enemy) hasAmmo() bool {
 	}
 	return false
 }
-func (e *Enemy) PickupItem(item item.Item) {
+func (e *Enemy) pickupItem(item item.Item) {
 	e.inventory = append(e.inventory, item)
 }
 
