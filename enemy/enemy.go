@@ -47,10 +47,11 @@ func fetchEnemyData() map[string]EnemyAttributes {
 
 func NewEnemy(name string, x, y int) *Enemy {
 	enemy := enemyData[name]
-	e := &Enemy{x, y, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, nil, nil, make([]item.Item, 0)}
+	e := &Enemy{x, y, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, nil, nil, make([]item.Item, 0)}
 	e.PickupItem(item.NewWeapon("pistol"))
 	e.PickupItem(item.NewArmour("leather jacket"))
 	e.PickupItem(item.NewAmmo("pistol bullet"))
+	e.PickupItem(item.NewConsumable("standard ration"))
 	return e
 }
 func (e *Enemy) Render(x, y int) {
@@ -310,6 +311,17 @@ type Coordinate struct {
 }
 
 func (e *Enemy) Update(m worldmap.Map) (int, int) {
+	// If at half health heal up
+	if e.hp <= e.maxHp/2 {
+		for i, itm := range e.inventory {
+			if con, ok := itm.(*item.Consumable); ok {
+				e.heal(con.GetAmount())
+				e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
+				return e.x, e.y
+			}
+		}
+	}
+
 	// Try and wield best weapon
 	if e.WieldItem() {
 		return e.x, e.y
@@ -441,12 +453,18 @@ func (e *Enemy) GetInventory() []item.Item {
 	return inventory
 }
 
+func (e *Enemy) heal(amount int) {
+	originalHp := e.hp
+	e.hp = int(math.Min(float64(originalHp+amount), float64(e.maxHp)))
+}
+
 type Enemy struct {
 	x           int
 	y           int
 	icon        icon.Icon
 	initiative  int
 	hp          int
+	maxHp       int
 	ac          int
 	str         int
 	dex         int
