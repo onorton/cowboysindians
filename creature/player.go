@@ -108,17 +108,17 @@ func (p *Player) GetInitiative() int {
 
 func (p *Player) attack(c Creature, hitBonus, damageBonus int) {
 	if c.AttackHits(rand.Intn(20) + hitBonus + 1) {
-		message.Enqueue("You hit the enemy.")
+		message.Enqueue(fmt.Sprintf("You hit the %s.", c.GetName()))
 		if p.weapon != nil {
 			c.TakeDamage(p.weapon.GetDamage() + damageBonus)
 		} else {
 			c.TakeDamage(damageBonus)
 		}
 	} else {
-		message.Enqueue("You miss the enemy.")
+		message.Enqueue(fmt.Sprintf("You miss the %s.", c.GetName()))
 	}
 	if c.IsDead() {
-		message.Enqueue("The enemy died")
+		message.Enqueue(fmt.Sprintf("The %s died.", c.GetName()))
 	}
 }
 
@@ -551,6 +551,10 @@ func (p *Player) OverEncumbered() bool {
 	return total > float64(p.encumbrance)
 }
 
+func (p *Player) GetName() string {
+	return "you"
+}
+
 // Interface shared by Player and Enemy
 type Creature interface {
 	GetCoordinates() (int, int)
@@ -563,6 +567,7 @@ type Creature interface {
 	IsDead() bool
 	AttackHits(int) bool
 	Ranged() bool
+	GetName() string
 }
 
 type Player struct {

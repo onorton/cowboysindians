@@ -161,7 +161,7 @@ func main() {
 						playerMoved := e.Key == termbox.KeyArrowUp || e.Key == termbox.KeyArrowDown || e.Key == termbox.KeyArrowLeft || e.Key == termbox.KeyArrowRight || (e.Ch >= '1' && e.Ch <= '9')
 
 						if player.OverEncumbered() && playerMoved {
-							message.PrintMessage("You are too over encumbered to move.")
+							message.PrintMessage("You are too encumbered to move.")
 							continue
 						}
 						switch e.Key {

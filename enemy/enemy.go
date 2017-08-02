@@ -48,7 +48,7 @@ func fetchEnemyData() map[string]EnemyAttributes {
 
 func NewEnemy(name string, x, y int) *Enemy {
 	enemy := enemyData[name]
-	e := &Enemy{x, y, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, nil, nil, make([]item.Item, 0)}
+	e := &Enemy{name, x, y, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, nil, nil, make([]item.Item, 0)}
 	for _, itemDefinition := range enemy.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm item.Item = nil
@@ -235,9 +235,9 @@ func (e *Enemy) attack(c creature.Creature, hitBonus, damageBonus int) {
 	}
 	if _, ok := c.(*creature.Player); ok {
 		if hits {
-			message.Enqueue("The enemy hit you.")
+			message.Enqueue(fmt.Sprintf("The %s hit you.", e.name))
 		} else {
-			message.Enqueue("The enemy missed you.")
+			message.Enqueue(fmt.Sprintf("The %s missed you.", e.name))
 		}
 	}
 
@@ -400,7 +400,7 @@ func (e *Enemy) overEncumbered() bool {
 func (e *Enemy) DropItem(item item.Item, m worldmap.Map) {
 	m.PlaceItem(e.x, e.y, item)
 	if m.IsVisible(m.GetPlayer(), e.x, e.y) {
-		message.Enqueue(fmt.Sprintf("The enemy dropped a %s.", item.GetName()))
+		message.Enqueue(fmt.Sprintf("The %s dropped a %s.", e.name, item.GetName()))
 	}
 
 }
@@ -424,7 +424,7 @@ func (e *Enemy) EmptyInventory(m worldmap.Map) {
 
 	if m.IsVisible(m.GetPlayer(), e.x, e.y) {
 		for name, count := range itemTypes {
-			message.Enqueue(fmt.Sprintf("The enemy dropped %d %ss.", count, name))
+			message.Enqueue(fmt.Sprintf("The %s dropped %d %ss.", e.name, count, name))
 		}
 	}
 
@@ -474,7 +474,12 @@ func (e *Enemy) heal(amount int) {
 	e.hp = int(math.Min(float64(originalHp+amount), float64(e.maxHp)))
 }
 
+func (e *Enemy) GetName() string {
+	return e.name
+}
+
 type Enemy struct {
+	name        string
 	x           int
 	y           int
 	icon        icon.Icon
