@@ -105,8 +105,8 @@ func Deserialize(e string) creature.Creature {
 	}
 	enemy.inventory = make([]item.Item, 0)
 
-	items := regexp.MustCompile("(Ammo)|(Armour)|(Item)|(Weapon)").Split(inventory, -1)
-	starter := regexp.MustCompile("(Ammo)|(Armour)|(Item)|(Weapon)").FindAllString(inventory, -1)
+	items := regexp.MustCompile("(Ammo)|(Armour)|(Consumable)|(Item)|(Weapon)").Split(inventory, -1)
+	starter := regexp.MustCompile("(Ammo)|(Armour)|(Consumable)|(Item)|(Weapon)").FindAllString(inventory, -1)
 	items = items[1:]
 	for i, itemString := range items {
 		switch starter[i] {
