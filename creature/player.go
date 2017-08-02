@@ -131,7 +131,7 @@ func (p *Player) TakeDamage(damage int) {
 }
 func (p *Player) GetStats() []string {
 	stats := make([]string, 4)
-	stats[0] = fmt.Sprintf("HP:%d", p.hp)
+	stats[0] = fmt.Sprintf("HP:%d/%d", p.hp, p.maxHp)
 	stats[1] = fmt.Sprintf("STR:%d(%+d)", p.str, GetBonus(p.str))
 	stats[2] = fmt.Sprintf("DEX:%d(%+d)", p.dex, GetBonus(p.dex))
 	stats[3] = fmt.Sprintf("AC:%d", p.ac)
