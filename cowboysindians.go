@@ -148,6 +148,7 @@ func main() {
 				stats := player.GetStats()
 				stats = append([]string{fmt.Sprintf("T:%d", t)}, stats...)
 				printStatus(stats)
+				player.Update()
 				// Game over, skip other enemies
 				if player.IsDead() {
 					break

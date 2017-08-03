@@ -14,7 +14,7 @@ import (
 )
 
 func NewPlayer() *Player {
-	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 10, 15, 12, 10, 100, nil, nil, make(map[rune]([]item.Item))}
+	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 10, 0, 100, 15, 12, 10, 100, nil, nil, make(map[rune]([]item.Item))}
 	player.PickupItem(item.NewWeapon("shotgun"))
 	player.PickupItem(item.NewWeapon("sawn-off shotgun"))
 	player.PickupItem(item.NewArmour("leather jacket"))
@@ -230,7 +230,7 @@ func (p *Player) PrintConsumables() {
 	termbox.Flush()
 }
 func (p *Player) IsDead() bool {
-	return p.hp <= 0
+	return p.hp <= 0 || p.hunger > p.maxHunger
 }
 
 func (p *Player) AttackHits(roll int) bool {
@@ -551,6 +551,10 @@ func (p *Player) GetName() string {
 	return "you"
 }
 
+func (p *Player) Update() {
+	p.hunger++
+}
+
 // Interface shared by Player and Enemy
 type Creature interface {
 	GetCoordinates() (int, int)
@@ -573,6 +577,8 @@ type Player struct {
 	initiative  int
 	maxHp       int
 	hp          int
+	hunger      int
+	maxHunger   int
 	ac          int
 	str         int
 	dex         int
