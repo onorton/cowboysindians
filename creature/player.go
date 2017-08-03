@@ -44,10 +44,13 @@ func Deserialize(c string) Creature {
 	p.hunger, _ = strconv.Atoi(rest[4])
 	p.hunger--
 	p.maxHunger, _ = strconv.Atoi(rest[5])
-	p.ac, _ = strconv.Atoi(rest[6])
-	p.str, _ = strconv.Atoi(rest[7])
-	p.dex, _ = strconv.Atoi(rest[8])
-	p.encumbrance, _ = strconv.Atoi(rest[9])
+	p.thirst, _ = strconv.Atoi(rest[6])
+	p.thirst--
+	p.maxThirst, _ = strconv.Atoi(rest[7])
+	p.ac, _ = strconv.Atoi(rest[8])
+	p.str, _ = strconv.Atoi(rest[9])
+	p.dex, _ = strconv.Atoi(rest[10])
+	p.encumbrance, _ = strconv.Atoi(rest[11])
 	if len(restWearing) > 1 {
 		for i := 1; i < len(restWearing); i++ {
 			switch wearingTypes[i-1] {
@@ -95,7 +98,7 @@ func (p *Player) Serialize() string {
 		}
 	}
 	items += "]"
-	return fmt.Sprintf("Player{%d %d %d %d %d %d %d %d %d %d %s %s %s %s}", p.x, p.y, p.hp, p.maxHp, p.hunger, p.maxHunger, p.ac, p.str, p.dex, p.encumbrance, p.icon.Serialize(), p.weapon.Serialize(), p.armour.Serialize(), items)
+	return fmt.Sprintf("Player{%d %d %d %d %d %d %d %d %d %d %d %d %s %s %s %s}", p.x, p.y, p.hp, p.maxHp, p.hunger, p.maxHunger, p.thirst, p.maxThirst, p.ac, p.str, p.dex, p.encumbrance, p.icon.Serialize(), p.weapon.Serialize(), p.armour.Serialize(), items)
 }
 
 func (p *Player) GetCoordinates() (int, int) {
@@ -143,6 +146,9 @@ func (p *Player) GetStats() []string {
 	stats[3] = fmt.Sprintf("AC:%d", p.ac)
 	if p.hunger > p.maxHunger/2 {
 		stats = append(stats, "Hungry")
+	}
+	if p.thirst > p.maxThirst/2 {
+		stats = append(stats, "Thirsty")
 	}
 	return stats
 }
