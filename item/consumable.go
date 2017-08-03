@@ -12,10 +12,10 @@ import (
 )
 
 type ConsumableAttributes struct {
-	Colour termbox.Attribute
-	Icon   rune
-	Weight float64
-	Amount int
+	Colour  termbox.Attribute
+	Icon    rune
+	Weight  float64
+	Effects map[string]int
 }
 
 var consumableData map[string]ConsumableAttributes = fetchConsumableData()
@@ -30,15 +30,15 @@ func fetchConsumableData() map[string]ConsumableAttributes {
 }
 
 type Consumable struct {
-	name   string
-	ic     icon.Icon
-	w      float64
-	amount int
+	name    string
+	ic      icon.Icon
+	w       float64
+	effects map[string]int
 }
 
 func NewConsumable(name string) Item {
 	consumable := consumableData[name]
-	var itm Item = &Consumable{name, icon.NewIcon(consumable.Icon, consumable.Colour), consumable.Weight, consumable.Amount}
+	var itm Item = &Consumable{name, icon.NewIcon(consumable.Icon, consumable.Colour), consumable.Weight, consumable.Effects}
 	return itm
 }
 
@@ -46,7 +46,7 @@ func (consumable *Consumable) Serialize() string {
 	if consumable == nil {
 		return ""
 	}
-	return fmt.Sprintf("Consumable{%s %f %d %s}", strings.Replace(consumable.name, " ", "_", -1), consumable.w, consumable.amount, consumable.ic.Serialize())
+	return fmt.Sprintf("Consumable{%s %f %s %s}", strings.Replace(consumable.name, " ", "_", -1), consumable.w, consumable.effects, consumable.ic.Serialize())
 }
 
 func DeserializeConsumable(consumableString string) Item {
@@ -59,7 +59,7 @@ func DeserializeConsumable(consumableString string) Item {
 	consumableAttributes := strings.SplitN(consumableString, " ", 4)
 	consumable.name = strings.Replace(consumableAttributes[0], "_", " ", -1)
 	consumable.w, _ = strconv.ParseFloat(consumableAttributes[1], 64)
-	consumable.amount, _ = strconv.Atoi(consumableAttributes[2])
+	//consumable.amount, _ = strconv.Atoi(consumableAttributes[2])
 	consumable.ic = icon.Deserialize(consumableAttributes[3])
 	var itm Item = consumable
 	return itm
@@ -87,6 +87,6 @@ func (consumable *Consumable) GetWeight() float64 {
 	return consumable.w
 }
 
-func (consumable *Consumable) GetAmount() int {
-	return consumable.amount
+func (consumable *Consumable) GetEffect(e string) int {
+	return consumable.effects[e]
 }

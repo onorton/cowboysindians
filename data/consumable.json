@@ -3,6 +3,9 @@
 		"Colour" : 4,
 		"Icon" : 42,
 		"Weight" : 0.1,
-		"Amount": 10
+		"Effects": {
+			"hp" : 10,
+			"hunger" : 10 	
+		}
 	}	
 }

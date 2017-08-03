@@ -331,8 +331,8 @@ func (e *Enemy) Update(m worldmap.Map) (int, int) {
 	// If at half health heal up
 	if e.hp <= e.maxHp/2 {
 		for i, itm := range e.inventory {
-			if con, ok := itm.(*item.Consumable); ok {
-				e.heal(con.GetAmount())
+			if con, ok := itm.(*item.Consumable); ok && con.GetEffect("hp") > 0 {
+				e.heal(con.GetEffect("hp"))
 				e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
 				return e.x, e.y
 			}

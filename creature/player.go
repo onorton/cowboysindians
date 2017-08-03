@@ -41,7 +41,8 @@ func Deserialize(c string) Creature {
 	p.y, _ = strconv.Atoi(rest[1])
 	p.hp, _ = strconv.Atoi(rest[2])
 	p.maxHp, _ = strconv.Atoi(rest[3])
-	p.hunger, _ = strconv.Atoi(rest[4]) - 1
+	p.hunger, _ = strconv.Atoi(rest[4])
+	p.hunger--
 	p.maxHunger, _ = strconv.Atoi(rest[5])
 	p.ac, _ = strconv.Atoi(rest[6])
 	p.str, _ = strconv.Atoi(rest[7])
@@ -138,6 +139,9 @@ func (p *Player) GetStats() []string {
 	stats[1] = fmt.Sprintf("STR:%d(%+d)", p.str, GetBonus(p.str))
 	stats[2] = fmt.Sprintf("DEX:%d(%+d)", p.dex, GetBonus(p.dex))
 	stats[3] = fmt.Sprintf("AC:%d", p.ac)
+	if p.hunger > p.maxHunger/2 {
+		stats = append(stats, "Hungry")
+	}
 	return stats
 }
 
@@ -493,7 +497,13 @@ func (p *Player) ConsumeItem() bool {
 			} else {
 				if c, ok := itm.(*item.Consumable); ok {
 					message.Enqueue(fmt.Sprintf("You ate a %s.", c.GetName()))
-					p.heal(c.GetAmount())
+
+					if c.GetEffect("hunger") > 0 {
+						p.eat(c.GetEffect("hunger"))
+					}
+					if c.GetEffect("hp") > 0 {
+						p.heal(c.GetEffect("hp"))
+					}
 
 					return true
 				} else {
@@ -532,6 +542,15 @@ func (p *Player) heal(amount int) {
 	originalHp := p.hp
 	p.hp = int(math.Min(float64(originalHp+amount), float64(p.maxHp)))
 	message.Enqueue(fmt.Sprintf("You healed for %d hit points.", p.hp-originalHp))
+}
+
+func (p *Player) eat(amount int) {
+	originalHunger := p.hunger
+	p.hunger = int(math.Max(float64(originalHunger-amount), 0.0))
+	if originalHunger > p.maxHunger/2 && p.hp <= p.maxHunger/2 {
+		message.Enqueue("You are no longer hungry.")
+	}
+
 }
 
 func (p *Player) OverEncumbered() bool {
