@@ -20,6 +20,7 @@ func NewPlayer() *Player {
 	player.PickupItem(item.NewArmour("leather jacket"))
 	player.PickupItem(item.NewAmmo("shotgun shell"))
 	player.PickupItem(item.NewConsumable("standard ration"))
+	player.PickupItem(item.NewConsumable("beer"))
 	return player
 }
 
@@ -512,6 +513,9 @@ func (p *Player) ConsumeItem() bool {
 					if c.GetEffect("hp") > 0 {
 						p.heal(c.GetEffect("hp"))
 					}
+					if c.GetEffect("thirst") > 0 {
+						p.drink(c.GetEffect("thirst"))
+					}
 
 					return true
 				} else {
@@ -557,6 +561,15 @@ func (p *Player) eat(amount int) {
 	p.hunger = int(math.Max(float64(originalHunger-amount), 0.0))
 	if originalHunger > p.maxHunger/2 && p.hp <= p.maxHunger/2 {
 		message.Enqueue("You are no longer hungry.")
+	}
+
+}
+
+func (p *Player) drink(amount int) {
+	originalThirst := p.thirst
+	p.thirst = int(math.Max(float64(originalThirst-amount), 0.0))
+	if originalThirst > p.maxThirst/2 && p.hp <= p.maxThirst/2 {
+		message.Enqueue("You are no longer thirsty.")
 	}
 
 }
