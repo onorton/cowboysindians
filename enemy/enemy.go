@@ -76,7 +76,7 @@ func (e *Enemy) Render(x, y int) {
 func Deserialize(e string) creature.Creature {
 	enemy := new(Enemy)
 	e = e[strings.Index(e, "{")+1 : len(e)-1]
-	restInventory := strings.Split(e, "[")
+	restInventory := strings.SplitN(e, "[", 2)
 	restWearing := regexp.MustCompile("(Weapon)|(Armour)").Split(restInventory[0], -1)
 	wearingTypes := regexp.MustCompile("(Weapon)|(Armour)").FindAllString(restInventory[0], -1)
 	restIcon := strings.Split(restWearing[0], "Icon")

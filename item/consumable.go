@@ -46,7 +46,12 @@ func (consumable *Consumable) Serialize() string {
 	if consumable == nil {
 		return ""
 	}
-	return fmt.Sprintf("Consumable{%s %f %s %s}", strings.Replace(consumable.name, " ", "_", -1), consumable.w, consumable.effects, consumable.ic.Serialize())
+	effects := "["
+	for effect, amount := range consumable.effects {
+		effects += fmt.Sprintf("%s:%d ", effect, amount)
+	}
+	effects += "]"
+	return fmt.Sprintf("Consumable{%s %f %s %s}", strings.Replace(consumable.name, " ", "_", -1), consumable.w, consumable.ic.Serialize(), effects)
 }
 
 func DeserializeConsumable(consumableString string) Item {
@@ -56,11 +61,20 @@ func DeserializeConsumable(consumableString string) Item {
 	}
 	consumableString = consumableString[1 : len(consumableString)-2]
 	consumable := new(Consumable)
-	consumableAttributes := strings.SplitN(consumableString, " ", 4)
+	attributesEffects := strings.SplitN(consumableString, "[", 2)
+	attributesIcon := strings.SplitN(attributesEffects[0], "Icon", 2)
+	consumableAttributes := strings.Split(attributesIcon[0], " ")
 	consumable.name = strings.Replace(consumableAttributes[0], "_", " ", -1)
 	consumable.w, _ = strconv.ParseFloat(consumableAttributes[1], 64)
-	//consumable.amount, _ = strconv.Atoi(consumableAttributes[2])
-	consumable.ic = icon.Deserialize(consumableAttributes[3])
+
+	effects := strings.Split(attributesEffects[1], " ")
+	effects = effects[:len(effects)-1]
+	consumable.effects = make(map[string]int)
+	for _, effect := range effects {
+		nameAmount := strings.Split(effect, ":")
+		consumable.effects[nameAmount[0]], _ = strconv.Atoi(nameAmount[1])
+	}
+	consumable.ic = icon.Deserialize(attributesIcon[1])
 	var itm Item = consumable
 	return itm
 }
