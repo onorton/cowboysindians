@@ -235,9 +235,9 @@ func main() {
 					case ui.DropItem:
 						endTurn = worldMap.DropItem()
 					case ui.ToggleInventory:
-						if inventory {
-							worldMap.Render()
-						}
+						termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+						worldMap.Render()
+
 						inventory = !inventory
 					case ui.WieldItem:
 						endTurn = player.WieldItem()
