@@ -399,22 +399,20 @@ func (p *Player) GetItem(key rune) item.Item {
 func (p *Player) WieldItem() bool {
 	for {
 		message.PrintMessage(fmt.Sprintf("What item do you want to wield? [%s or ?*]", p.GetWeaponKeys()))
-		e := termbox.PollEvent()
+		s, c := ui.GetItemSelection()
 
-		if e.Type == termbox.EventKey {
-			if e.Ch == '*' {
-				p.PrintInventory()
-				continue
-			}
-			if e.Ch == '?' {
-				p.PrintWeapons()
-				continue
-			}
-			if e.Key == termbox.KeyEnter {
-				message.PrintMessage("Never mind.")
-				return false
-			}
-			itm := p.GetItem(e.Ch)
+		switch s {
+		case ui.All:
+			p.PrintInventory()
+			continue
+		case ui.AllRelevant:
+			p.PrintWeapons()
+			continue
+		case ui.Cancel:
+			message.PrintMessage("Never mind.")
+			return false
+		case ui.SpecificItem:
+			itm := p.GetItem(c)
 			if itm == nil {
 				message.PrintMessage("You don't have that weapon.")
 				ui.GetInput()
@@ -434,29 +432,29 @@ func (p *Player) WieldItem() bool {
 					return false
 				}
 			}
+
 		}
+
 	}
 }
 
 func (p *Player) WearArmour() bool {
 	for {
 		message.PrintMessage(fmt.Sprintf("What item do you want to wear? [%s or ?*]", p.GetArmourKeys()))
-		e := termbox.PollEvent()
+		s, c := ui.GetItemSelection()
 
-		if e.Type == termbox.EventKey {
-			if e.Ch == '*' {
-				p.PrintInventory()
-				continue
-			}
-			if e.Ch == '?' {
-				p.PrintArmour()
-				continue
-			}
-			if e.Key == termbox.KeyEnter {
-				message.PrintMessage("Never mind.")
-				return false
-			}
-			itm := p.GetItem(e.Ch)
+		switch s {
+		case ui.All:
+			p.PrintInventory()
+			continue
+		case ui.AllRelevant:
+			p.PrintArmour()
+			continue
+		case ui.Cancel:
+			message.PrintMessage("Never mind.")
+			return false
+		case ui.SpecificItem:
+			itm := p.GetItem(c)
 			if itm == nil {
 				message.PrintMessage("You don't have that piece of armour.")
 				ui.GetInput()
@@ -478,6 +476,7 @@ func (p *Player) WearArmour() bool {
 					return false
 				}
 			}
+
 		}
 	}
 }
@@ -486,22 +485,20 @@ func (p *Player) ConsumeItem() bool {
 
 	for {
 		message.PrintMessage(fmt.Sprintf("What item do you want to eat? [%s or ?*]", p.GetConsumableKeys()))
-		e := termbox.PollEvent()
+		s, c := ui.GetItemSelection()
 
-		if e.Type == termbox.EventKey {
-			if e.Ch == '*' {
-				p.PrintInventory()
-				continue
-			}
-			if e.Ch == '?' {
-				p.PrintConsumables()
-				continue
-			}
-			if e.Key == termbox.KeyEnter {
-				message.PrintMessage("Never mind.")
-				return false
-			}
-			itm := p.GetItem(e.Ch)
+		switch s {
+		case ui.All:
+			p.PrintInventory()
+			continue
+		case ui.AllRelevant:
+			p.PrintConsumables()
+			continue
+		case ui.Cancel:
+			message.PrintMessage("Never mind.")
+			return false
+		case ui.SpecificItem:
+			itm := p.GetItem(c)
 			if itm == nil {
 				message.PrintMessage("You don't have that thing to eat.")
 				ui.GetInput()
@@ -527,6 +524,7 @@ func (p *Player) ConsumeItem() bool {
 					return false
 				}
 			}
+
 		}
 	}
 }

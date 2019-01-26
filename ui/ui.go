@@ -12,6 +12,9 @@ func (a PlayerAction) IsMovementAction() bool {
 	return a < PrintMessages
 }
 
+// ItemSelection is a type that represents what item players have selected
+type ItemSelection int
+
 const (
 	MoveNorth PlayerAction = iota
 	MoveSouth
@@ -34,6 +37,13 @@ const (
 	WieldArmour
 	Consume
 	Confirm
+)
+
+const (
+	All ItemSelection = iota
+	AllRelevant
+	Cancel
+	SpecificItem
 )
 
 // Init initialises the termbox instance
@@ -114,4 +124,19 @@ func GetInput() (action PlayerAction) {
 		}
 	}
 	return action
+}
+
+// GetItemSelection returns a rune corresponding to the item that is selected.
+func GetItemSelection() (ItemSelection, rune) {
+	e := termbox.PollEvent()
+
+	if e.Key == termbox.KeyEnter {
+		return Cancel, 0
+	} else if e.Ch == '*' {
+		return All, 0
+	} else if e.Ch == '?' {
+		return AllRelevant, 0
+	} else {
+		return SpecificItem, e.Ch
+	}
 }
