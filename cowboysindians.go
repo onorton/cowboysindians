@@ -30,6 +30,7 @@ func save(m worldmap.Map, p *creature.Player, enemies []*enemy.Enemy, t, playerI
 	data := fmt.Sprintf("%d %d\n", t, playerIndex)
 	data += m.Serialize() + "\n\n"
 	data += p.Serialize() + "\n\n"
+
 	for _, e := range enemies {
 		data += e.Serialize() + "\n"
 	}
@@ -224,7 +225,7 @@ func main() {
 										x++
 									}
 								case '7':
-									if x != 0 && x != 0 {
+									if x != 0 && y != 0 {
 										x--
 										y--
 									}
