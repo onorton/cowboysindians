@@ -2,12 +2,14 @@ package worldmap
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
-	"strconv"
-	"strings"
+	"github.com/onorton/cowboysindians/ui"
 )
 
 const padding = 5
@@ -502,7 +504,7 @@ func (m Map) DropItem() bool {
 			item := player.GetItem(e.Ch)
 			if item == nil {
 				message.PrintMessage("You don't have that item.")
-				termbox.PollEvent()
+				ui.GetInput()
 			} else {
 				m.grid[y][x].PlaceItem(item)
 				message.Enqueue(fmt.Sprintf("You dropped a %s.", item.GetName()))

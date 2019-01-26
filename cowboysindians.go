@@ -2,11 +2,14 @@ package main
 
 import (
 	"fmt"
+
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/enemy"
 	"github.com/onorton/cowboysindians/message"
+	"github.com/onorton/cowboysindians/ui"
 	"github.com/onorton/cowboysindians/worldmap"
+
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -26,6 +29,7 @@ func check(e error) {
 		panic(e)
 	}
 }
+
 func save(m worldmap.Map, p *creature.Player, enemies []*enemy.Enemy, t, playerIndex int) {
 	data := fmt.Sprintf("%d %d\n", t, playerIndex)
 	data += m.Serialize() + "\n\n"
@@ -97,9 +101,8 @@ func printStatus(status []string) {
 	termbox.Flush()
 }
 func main() {
-	err := termbox.Init()
-	check(err)
-	defer termbox.Close()
+	ui.Init()
+	defer ui.Close()
 	message.SetWindowSize(windowWidth, windowHeight)
 	worldMap := worldmap.NewMap(width, height, windowWidth, windowHeight)
 	player := creature.NewPlayer()
@@ -108,9 +111,8 @@ func main() {
 	playerIndex := 0
 	if _, err := os.Stat(saveFilename); !os.IsNotExist(err) {
 		message.PrintMessage("Do you wish to load the last save? [yn]")
-		l := termbox.PollEvent()
 		// Load from save file if player wants to
-		if l.Type == termbox.EventKey && l.Ch == 'y' {
+		if l := ui.GetInput(); l == ui.Confirm {
 			worldMap, player, enemies, t, playerIndex = load()
 		}
 
@@ -120,6 +122,7 @@ func main() {
 		x, y := c.GetCoordinates()
 		worldMap.MoveCreature(c, x, y)
 	}
+
 	inventory := false
 	for {
 		quit := false
@@ -155,127 +158,102 @@ func main() {
 				if player.IsDead() {
 					break
 				}
+
 				for {
 					if inventory {
 						player.PrintInventory()
 					}
-					e := termbox.PollEvent()
-					if e.Type == termbox.EventKey {
-						playerMoved := e.Key == termbox.KeyArrowUp || e.Key == termbox.KeyArrowDown || e.Key == termbox.KeyArrowLeft || e.Key == termbox.KeyArrowRight || (e.Ch >= '1' && e.Ch <= '9')
+					action := ui.GetInput()
 
-						if player.OverEncumbered() && playerMoved {
-							message.PrintMessage("You are too encumbered to move.")
-							continue
+					playerMoved := action.IsMovementAction()
+					if player.OverEncumbered() && playerMoved {
+						message.PrintMessage("You are too encumbered to move.")
+						continue
+					}
+
+					switch action {
+					case ui.MoveWest:
+						if x != 0 {
+							x--
 						}
-						switch e.Key {
-						case termbox.KeyArrowLeft:
-							if x != 0 {
-								x--
-							}
-						case termbox.KeyArrowRight:
-							if x < width-1 {
-								x++
-							}
-						case termbox.KeyArrowUp:
-							if y != 0 {
-								y--
-							}
-						case termbox.KeyArrowDown:
-							if y < height-1 {
-								y++
-							}
-						case termbox.KeySpace:
-							{
-								message.PrintMessages()
-							}
-						case termbox.KeyEsc:
-							message.PrintMessage("Do you wish to save? [yn]")
-							quitEvent := termbox.PollEvent()
-							if quitEvent.Type == termbox.EventKey && quitEvent.Ch == 'y' {
-								save(worldMap, player, enemies, t, i)
-							}
-							quit = true
-
-						default:
-							{
-
-								switch e.Ch {
-								case '1':
-									if x != 0 && y < height-1 {
-										x--
-										y++
-									}
-								case '2':
-									if y < height-1 {
-										y++
-									}
-								case '3':
-									if x < width-1 && y < height-1 {
-										x++
-										y++
-									}
-
-								case '4':
-									if x != 0 {
-										x--
-									}
-								case '5':
-								case '6':
-									if x < width-1 {
-										x++
-									}
-								case '7':
-									if x != 0 && y != 0 {
-										x--
-										y--
-									}
-								case '8':
-									if y != 0 {
-										y--
-									}
-								case '9':
-									if y != 0 && x < width-1 {
-										y--
-										x++
-									}
-								case 'c':
-									endTurn = worldMap.ToggleDoor(x, y, false)
-								case 'o':
-									endTurn = worldMap.ToggleDoor(x, y, true)
-								case 't':
-									target := worldMap.FindTarget(player)
-									if target != nil {
-										player.RangedAttack(target)
-										endTurn = true
-									}
-								case ',':
-									endTurn = worldMap.PickupItem()
-								case 'd':
-									endTurn = worldMap.DropItem()
-								case 'i':
-									if inventory {
-										worldMap.Render()
-									}
-									inventory = !inventory
-								case 'w':
-									endTurn = player.WieldItem()
-								case 'W':
-									endTurn = player.WearArmour()
-								case 'e':
-									endTurn = player.ConsumeItem()
-								default:
-									quit = true
-								}
-							}
+					case ui.MoveEast:
+						if x < width-1 {
+							x++
 						}
-						// End turn if player selects action that takes a turn
-
-						endTurn = (endTurn || playerMoved)
-
-						if endTurn || quit {
-							break
+					case ui.MoveNorth:
+						if y != 0 {
+							y--
 						}
-					} else {
+					case ui.MoveSouth:
+						if y < height-1 {
+							y++
+						}
+					case ui.PrintMessages:
+						{
+							message.PrintMessages()
+						}
+					case ui.Exit:
+						message.PrintMessage("Do you wish to save? [yn]")
+
+						if quitAction := ui.GetInput(); quitAction == ui.Confirm {
+							save(worldMap, player, enemies, t, i)
+						}
+						quit = true
+
+					case ui.MoveSouthWest:
+						if x != 0 && y < height-1 {
+							x--
+							y++
+						}
+					case ui.MoveSouthEast:
+						if x < width-1 && y < height-1 {
+							x++
+							y++
+						}
+					case ui.MoveNorthWest:
+						if x != 0 && y != 0 {
+							x--
+							y--
+						}
+					case ui.MoveNorthEast:
+						if y != 0 && x < width-1 {
+							y--
+							x++
+						}
+					case ui.CloseDoor:
+						endTurn = worldMap.ToggleDoor(x, y, false)
+					case ui.OpenDoor:
+						endTurn = worldMap.ToggleDoor(x, y, true)
+					case ui.RangedAttack:
+						target := worldMap.FindTarget(player)
+						if target != nil {
+							player.RangedAttack(target)
+							endTurn = true
+						}
+					case ui.PickUpItem:
+						endTurn = worldMap.PickupItem()
+					case ui.DropItem:
+						endTurn = worldMap.DropItem()
+					case ui.ToggleInventory:
+						if inventory {
+							worldMap.Render()
+						}
+						inventory = !inventory
+					case ui.WieldItem:
+						endTurn = player.WieldItem()
+					case ui.WieldArmour:
+						endTurn = player.WearArmour()
+					case ui.Consume:
+						endTurn = player.ConsumeItem()
+					default:
+						quit = true
+					}
+
+					// End turn if player selects action that takes a turn
+
+					endTurn = (endTurn || playerMoved)
+
+					if endTurn || quit {
 						break
 					}
 				}
@@ -305,7 +283,7 @@ func main() {
 		// End game if player is dead
 		if player.IsDead() {
 			message.PrintMessage("You died.")
-			termbox.PollEvent()
+			ui.GetInput()
 			break
 		}
 		if quit {

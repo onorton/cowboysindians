@@ -2,15 +2,17 @@ package creature
 
 import (
 	"fmt"
-	termbox "github.com/nsf/termbox-go"
-	"github.com/onorton/cowboysindians/icon"
-	"github.com/onorton/cowboysindians/item"
-	"github.com/onorton/cowboysindians/message"
 	"math"
 	"math/rand"
 	"regexp"
 	"strconv"
 	"strings"
+
+	termbox "github.com/nsf/termbox-go"
+	"github.com/onorton/cowboysindians/icon"
+	"github.com/onorton/cowboysindians/item"
+	"github.com/onorton/cowboysindians/message"
+	"github.com/onorton/cowboysindians/ui"
 )
 
 func NewPlayer() *Player {
@@ -415,7 +417,7 @@ func (p *Player) WieldItem() bool {
 			itm := p.GetItem(e.Ch)
 			if itm == nil {
 				message.PrintMessage("You don't have that weapon.")
-				termbox.PollEvent()
+				ui.GetInput()
 			} else {
 				if w, ok := itm.(*item.Weapon); ok {
 					other := p.weapon
@@ -428,7 +430,7 @@ func (p *Player) WieldItem() bool {
 				} else {
 					message.PrintMessage("That is not a weapon.")
 					p.PickupItem(itm)
-					termbox.PollEvent()
+					ui.GetInput()
 					return false
 				}
 			}
@@ -457,7 +459,7 @@ func (p *Player) WearArmour() bool {
 			itm := p.GetItem(e.Ch)
 			if itm == nil {
 				message.PrintMessage("You don't have that piece of armour.")
-				termbox.PollEvent()
+				ui.GetInput()
 			} else {
 				if a, ok := itm.(*item.Armour); ok {
 					other := p.armour
@@ -472,7 +474,7 @@ func (p *Player) WearArmour() bool {
 				} else {
 					message.PrintMessage("That is not a piece of armour.")
 					p.PickupItem(itm)
-					termbox.PollEvent()
+					ui.GetInput()
 					return false
 				}
 			}
@@ -502,7 +504,7 @@ func (p *Player) ConsumeItem() bool {
 			itm := p.GetItem(e.Ch)
 			if itm == nil {
 				message.PrintMessage("You don't have that thing to eat.")
-				termbox.PollEvent()
+				ui.GetInput()
 			} else {
 				if c, ok := itm.(*item.Consumable); ok {
 					message.Enqueue(fmt.Sprintf("You ate a %s.", c.GetName()))
@@ -521,7 +523,7 @@ func (p *Player) ConsumeItem() bool {
 				} else {
 					message.PrintMessage("That is not something you can eat.")
 					p.PickupItem(itm)
-					termbox.PollEvent()
+					ui.GetInput()
 					return false
 				}
 			}
