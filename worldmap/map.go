@@ -361,22 +361,63 @@ func (m Map) GetHeight() int {
 }
 
 // Same as MoveCreature but viewer is adjusted as well.
-func (m Map) MovePlayer(c *creature.Player, x, y int) {
+func (m Map) MovePlayer(c *creature.Player, action ui.PlayerAction) {
+
+	x, y := c.GetCoordinates()
+
+	switch action {
+	case ui.MoveWest:
+		if x != 0 {
+			x--
+		}
+	case ui.MoveEast:
+		if x < m.GetWidth()-1 {
+			x++
+		}
+	case ui.MoveNorth:
+		if y != 0 {
+			y--
+		}
+	case ui.MoveSouth:
+		if y < m.GetHeight()-1 {
+			y++
+		}
+	case ui.MoveSouthWest:
+		if x != 0 && y < m.GetHeight()-1 {
+			x--
+			y++
+		}
+	case ui.MoveSouthEast:
+		if x < m.GetWidth()-1 && y < m.GetHeight()-1 {
+			x++
+			y++
+		}
+	case ui.MoveNorthWest:
+		if x != 0 && y != 0 {
+			x--
+			y--
+		}
+	case ui.MoveNorthEast:
+		if y != 0 && x < m.GetWidth()-1 {
+			y--
+			x++
+		}
+	}
 	m.MoveCreature(c, x, y)
-	cX, cY := c.GetCoordinates()
-	rX := cX - m.v.x
-	rY := cY - m.v.y
+
+	rX := x - m.v.x
+	rY := y - m.v.y
 	//Adjust viewer
-	if rX < padding && cX >= padding {
+	if rX < padding && x >= padding {
 		m.v.x--
 	}
-	if rX > m.v.width-padding && cX <= m.GetWidth()-padding {
+	if rX > m.v.width-padding && x <= m.GetWidth()-padding {
 		m.v.x++
 	}
-	if rY < padding && cY >= padding {
+	if rY < padding && x >= padding {
 		m.v.y--
 	}
-	if rY > m.v.height-padding && cY <= m.GetHeight()-padding {
+	if rY > m.v.height-padding && y <= m.GetHeight()-padding {
 		m.v.y++
 	}
 }

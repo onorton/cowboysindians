@@ -133,11 +133,9 @@ func main() {
 		// Sort by initiative order
 		sort.Slice(all, func(i, j int) bool {
 			return all[i].GetInitiative() > all[j].GetInitiative()
-
 		})
 
 		for i, c := range all {
-
 			// Used when initially loading, to make sure faster enemies do not move twice
 			if i < playerIndex {
 				continue
@@ -166,110 +164,75 @@ func main() {
 					action := ui.GetInput()
 
 					playerMoved := action.IsMovementAction()
+
 					if player.OverEncumbered() && playerMoved {
-						message.PrintMessage("You are too encumbered to move.")
-						continue
 					}
 
-					switch action {
-					case ui.MoveWest:
-						if x != 0 {
-							x--
-						}
-					case ui.MoveEast:
-						if x < width-1 {
-							x++
-						}
-					case ui.MoveNorth:
-						if y != 0 {
-							y--
-						}
-					case ui.MoveSouth:
-						if y < height-1 {
-							y++
-						}
-					case ui.PrintMessages:
-						{
-							message.PrintMessages()
-						}
-					case ui.Exit:
-						message.PrintMessage("Do you wish to save? [yn]")
+					if playerMoved {
 
-						if quitAction := ui.GetInput(); quitAction == ui.Confirm {
-							save(worldMap, player, enemies, t, i)
+						if player.OverEncumbered() {
+							message.PrintMessage("You are too encumbered to move.")
+							continue
+						} else {
+							worldMap.MovePlayer(player, action)
 						}
-						quit = true
+					} else {
+						switch action {
+						case ui.PrintMessages:
+							{
+								message.PrintMessages()
+							}
+						case ui.Exit:
+							message.PrintMessage("Do you wish to save? [yn]")
 
-					case ui.MoveSouthWest:
-						if x != 0 && y < height-1 {
-							x--
-							y++
-						}
-					case ui.MoveSouthEast:
-						if x < width-1 && y < height-1 {
-							x++
-							y++
-						}
-					case ui.MoveNorthWest:
-						if x != 0 && y != 0 {
-							x--
-							y--
-						}
-					case ui.MoveNorthEast:
-						if y != 0 && x < width-1 {
-							y--
-							x++
-						}
-					case ui.CloseDoor:
-						endTurn = worldMap.ToggleDoor(x, y, false)
-					case ui.OpenDoor:
-						endTurn = worldMap.ToggleDoor(x, y, true)
-					case ui.RangedAttack:
-						target := worldMap.FindTarget(player)
-						if target != nil {
-							player.RangedAttack(target)
-							endTurn = true
-						}
-					case ui.PickUpItem:
-						endTurn = worldMap.PickupItem()
-					case ui.DropItem:
-						endTurn = worldMap.DropItem()
-					case ui.ToggleInventory:
-						termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-						worldMap.Render()
+							if quitAction := ui.GetInput(); quitAction == ui.Confirm {
+								save(worldMap, player, enemies, t, i)
+							}
+							quit = true
 
-						inventory = !inventory
-					case ui.WieldItem:
-						endTurn = player.WieldItem()
-					case ui.WieldArmour:
-						endTurn = player.WearArmour()
-					case ui.Consume:
-						endTurn = player.ConsumeItem()
-					default:
-						quit = true
+						case ui.CloseDoor:
+							endTurn = worldMap.ToggleDoor(x, y, false)
+						case ui.OpenDoor:
+							endTurn = worldMap.ToggleDoor(x, y, true)
+						case ui.RangedAttack:
+							target := worldMap.FindTarget(player)
+							if target != nil {
+								player.RangedAttack(target)
+								endTurn = true
+							}
+						case ui.PickUpItem:
+							endTurn = worldMap.PickupItem()
+						case ui.DropItem:
+							endTurn = worldMap.DropItem()
+						case ui.ToggleInventory:
+							termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+							worldMap.Render()
+							inventory = !inventory
+						case ui.WieldItem:
+							endTurn = player.WieldItem()
+						case ui.WieldArmour:
+							endTurn = player.WearArmour()
+						case ui.Consume:
+							endTurn = player.ConsumeItem()
+						default:
+							quit = true
+						}
 					}
-
 					// End turn if player selects action that takes a turn
-
 					endTurn = (endTurn || playerMoved)
 
 					if endTurn || quit {
 						break
 					}
 				}
-
-				worldMap.MovePlayer(player, x, y)
-
 			} else {
 				e := c.(*enemy.Enemy)
 				if e.IsDead() {
-
 					continue
 				}
 				eX, eY := e.Update(worldMap)
 				worldMap.MoveCreature(e, eX, eY)
 			}
-
 		}
 
 		// Remove dead enemies
@@ -287,10 +250,8 @@ func main() {
 			break
 		}
 		if quit {
-
 			break
 		}
 		t++
 	}
-
 }
