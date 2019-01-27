@@ -365,45 +365,37 @@ func (m Map) MovePlayer(c *creature.Player, action ui.PlayerAction) {
 
 	x, y := c.GetCoordinates()
 
+	newX, newY := x, y
+
 	switch action {
 	case ui.MoveWest:
-		if x != 0 {
-			x--
-		}
+		newX--
 	case ui.MoveEast:
-		if x < m.GetWidth()-1 {
-			x++
-		}
+		newX++
 	case ui.MoveNorth:
-		if y != 0 {
-			y--
-		}
+		newY--
 	case ui.MoveSouth:
-		if y < m.GetHeight()-1 {
-			y++
-		}
+		newY++
 	case ui.MoveSouthWest:
-		if x != 0 && y < m.GetHeight()-1 {
-			x--
-			y++
-		}
+		newX--
+		newY++
 	case ui.MoveSouthEast:
-		if x < m.GetWidth()-1 && y < m.GetHeight()-1 {
-			x++
-			y++
-		}
+		newX++
+		newY++
 	case ui.MoveNorthWest:
-		if x != 0 && y != 0 {
-			x--
-			y--
-		}
+		newX--
+		newY--
 	case ui.MoveNorthEast:
-		if y != 0 && x < m.GetWidth()-1 {
-			y--
-			x++
-		}
+		newY--
+		newX++
 	}
-	m.MoveCreature(c, x, y)
+
+	// If out of bounds, reset to original position
+	if newX < 0 || newY < 0 || newX >= m.GetWidth() || newY >= m.GetHeight() {
+		newX, newY = x, y
+	}
+
+	m.MoveCreature(c, newX, newY)
 
 	rX := x - m.v.x
 	rY := y - m.v.y
