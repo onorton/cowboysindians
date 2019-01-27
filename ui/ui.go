@@ -12,9 +12,6 @@ func (a PlayerAction) IsMovementAction() bool {
 	return a < PrintMessages
 }
 
-// ItemSelection is a type that represents what item players have selected
-type ItemSelection int
-
 const (
 	MoveNorth PlayerAction = iota
 	MoveSouth
@@ -37,7 +34,11 @@ const (
 	WieldArmour
 	Consume
 	Confirm
+	CancelAction
 )
+
+// ItemSelection is a type that represents what item players have selected
+type ItemSelection int
 
 const (
 	All ItemSelection = iota
@@ -77,6 +78,8 @@ func GetInput() (action PlayerAction) {
 		action = PrintMessages
 	case termbox.KeyEsc:
 		action = Exit
+	case termbox.KeyEnter:
+		action = CancelAction
 	default:
 		{
 			switch e.Ch {

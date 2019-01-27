@@ -195,78 +195,54 @@ func (m Map) ToggleDoor(x, y int, open bool) bool {
 	// Select direction
 	for {
 		validMove := true
-		e := termbox.PollEvent()
-		if e.Type == termbox.EventKey {
-			switch e.Key {
-			case termbox.KeyArrowLeft:
+		action := ui.GetInput()
+
+		if action.IsMovementAction() {
+			switch action {
+			case ui.MoveWest:
 				if x != 0 {
 					x--
 				}
-			case termbox.KeyArrowRight:
+			case ui.MoveEast:
 				if x < width-1 {
 					x++
 				}
-			case termbox.KeyArrowUp:
+			case ui.MoveNorth:
 				if y != 0 {
 					y--
 				}
-			case termbox.KeyArrowDown:
+			case ui.MoveSouth:
 				if y < height-1 {
 					y++
 				}
-			case termbox.KeyEnter:
-				message.PrintMessage("Never mind...")
-				return false
-			default:
-				{
-
-					switch e.Ch {
-					case '1':
-						if x != 0 && y < height-1 {
-							x--
-							y++
-						}
-					case '2':
-						if y < height-1 {
-							y++
-						}
-					case '3':
-						if x < width-1 && y < height-1 {
-							x++
-							y++
-						}
-
-					case '4':
-						if x != 0 {
-							x--
-						}
-					case '6':
-						if x < width-1 {
-							x++
-						}
-					case '7':
-						if x != 0 && y != 0 {
-							x--
-							y--
-						}
-					case '8':
-						if y != 0 {
-							y--
-						}
-					case '9':
-						if y != 0 && x < width-1 {
-							y--
-							x++
-						}
-					default:
-						message.PrintMessage("Invalid direction.")
-						validMove = false
-
-					}
+			case ui.MoveSouthWest:
+				if x != 0 && y < height-1 {
+					x--
+					y++
 				}
 
+			case ui.MoveSouthEast:
+				if x < width-1 && y < height-1 {
+					x++
+					y++
+				}
+			case ui.MoveNorthWest:
+				if x != 0 && y != 0 {
+					x--
+					y--
+				}
+			case ui.MoveNorthEast:
+				if y != 0 && x < width-1 {
+					y--
+					x++
+				}
 			}
-
+		} else if action == ui.CancelAction {
+			message.PrintMessage("Never mind...")
+			return false
+		} else {
+			message.PrintMessage("Invalid direction.")
+			validMove = false
 		}
 
 		if validMove {
@@ -294,7 +270,6 @@ func (m Map) ToggleDoor(x, y int, open bool) bool {
 		message.PrintMessage("You see no door there.")
 	}
 	return false
-
 }
 
 func (m Map) PlaceItem(x, y int, item item.Item) {
@@ -321,87 +296,60 @@ func (m Map) FindTarget(p *creature.Player) creature.Creature {
 		message.PrintMessage("Select target")
 		termbox.SetCell(rX, rY, 'X', termbox.ColorYellow, termbox.ColorDefault)
 		termbox.Flush()
-		e := termbox.PollEvent()
 		x, y = m.v.x+rX, m.v.y+rY
 		m.grid[y][x].render(rX, rY)
-		if e.Type == termbox.EventKey {
-			switch e.Key {
-			case termbox.KeyArrowLeft:
+		action := ui.GetInput()
+		if action.IsMovementAction() {
+			switch action {
+			case ui.MoveWest:
 				if rX != 0 && x != 0 {
 					rX--
 				}
-			case termbox.KeyArrowRight:
+			case ui.MoveEast:
 				if rX < vWidth-1 && x < width-1 {
 					rX++
 				}
-			case termbox.KeyArrowUp:
+			case ui.MoveNorth:
 				if rY != 0 && y != 0 {
 					rY--
 				}
-			case termbox.KeyArrowDown:
+			case ui.MoveSouth:
 				if rY < vHeight-1 && y < height-1 {
 					rY++
 				}
-			case termbox.KeyEnter:
-				// If a creature is there, return it.
-				if m.IsOccupied(x, y) {
-					return m.grid[y][x].c
-				} else {
-					message.PrintMessage("Never mind...")
-					return nil
+			case ui.MoveSouthWest:
+				if rX != 0 && rY < vHeight-1 && x != 0 && y < height-1 {
+					rX--
+					rY++
 				}
-
-			default:
-				{
-
-					switch e.Ch {
-					case '1':
-						if rX != 0 && rY < vHeight-1 && x != 0 && y < height-1 {
-							rX--
-							rY++
-						}
-					case '2':
-						if rY < vHeight-1 && y < height-1 {
-							rY++
-						}
-					case '3':
-						if rX < vWidth-1 && rY < vHeight-1 && x < width-1 && y < height-1 {
-							rX++
-							rY++
-						}
-
-					case '4':
-						if rX != 0 && y != 0 {
-							rX--
-						}
-					case '6':
-						if rX < vWidth-1 && x < width-1 {
-							rX++
-						}
-					case '7':
-						if rX != 0 && rY != 0 && x != 0 && y != 0 {
-							rX--
-							rY--
-						}
-					case '8':
-						if rY != 0 && y != 0 {
-							rY--
-						}
-					case '9':
-						if rY != 0 && rX < vWidth-1 && y != 0 && x < width-1 {
-							rY--
-							rX++
-						}
-					default:
-
-					}
-
+			case ui.MoveSouthEast:
+				if rX < vWidth-1 && rY < vHeight-1 && x < width-1 && y < height-1 {
+					rX++
+					rY++
 				}
-
+			case ui.MoveNorthWest:
+				if rX != 0 && rY != 0 && x != 0 && y != 0 {
+					rX--
+					rY--
+				}
+			case ui.MoveNorthEast:
+				if rY != 0 && rX < vWidth-1 && y != 0 && x < width-1 {
+					rY--
+					rX++
+				}
 			}
+		} else if action == ui.CancelAction {
+			// Counter intuitive at the moment
+			if m.IsOccupied(x, y) {
+				// If a creature is there, return it.
+				return m.grid[y][x].c
+			} else {
+				message.PrintMessage("Never mind...")
+				return nil
+			}
+
 		}
 	}
-
 }
 
 func (m Map) GetWidth() int {
@@ -490,18 +438,17 @@ func (m Map) DropItem() bool {
 	x, y := player.GetCoordinates()
 	for {
 		message.PrintMessage(fmt.Sprintf("What do you want to drop? [%s or *]", player.GetInventoryKeys()))
-		e := termbox.PollEvent()
+		s, c := ui.GetItemSelection()
 
-		if e.Type == termbox.EventKey {
-			if e.Ch == '*' {
-				player.PrintInventory()
-				continue
-			}
-			if e.Key == termbox.KeyEnter {
-				message.PrintMessage("Never mind.")
-				return false
-			}
-			item := player.GetItem(e.Ch)
+		switch s {
+		case ui.All:
+			player.PrintInventory()
+			continue
+		case ui.Cancel:
+			message.PrintMessage("Never mind.")
+			return false
+		case ui.SpecificItem:
+			item := player.GetItem(c)
 			if item == nil {
 				message.PrintMessage("You don't have that item.")
 				ui.GetInput()
@@ -510,10 +457,13 @@ func (m Map) DropItem() bool {
 				message.Enqueue(fmt.Sprintf("You dropped a %s.", item.GetName()))
 				return true
 			}
+		// Not selectable but still need to consider it
+		case ui.AllRelevant:
+			return false
 		}
 	}
-	return false
 }
+
 func (m Map) GetPlayer() *creature.Player {
 	for _, row := range m.grid {
 		for _, tile := range row {
