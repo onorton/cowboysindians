@@ -338,8 +338,7 @@ func (m Map) FindTarget(p *creature.Player) creature.Creature {
 					rX++
 				}
 			}
-		} else if action == ui.CancelAction {
-			// Counter intuitive at the moment
+		} else if action == ui.CancelAction { // Counter intuitive at the moment
 			if m.IsOccupied(x, y) {
 				// If a creature is there, return it.
 				return m.grid[y][x].c
@@ -397,19 +396,21 @@ func (m Map) MovePlayer(c *creature.Player, action ui.PlayerAction) {
 
 	m.MoveCreature(c, newX, newY)
 
-	rX := x - m.v.x
-	rY := y - m.v.y
+	// Difference in coordinates from the window location
+	rX := newX - m.v.x
+	rY := newY - m.v.y
+
 	//Adjust viewer
-	if rX < padding && x >= padding {
+	if rX < padding && newX >= padding {
 		m.v.x--
 	}
-	if rX > m.v.width-padding && x <= m.GetWidth()-padding {
+	if rX > m.v.width-padding && newX <= m.GetWidth()-padding {
 		m.v.x++
 	}
-	if rY < padding && x >= padding {
+	if rY < padding && newY >= padding {
 		m.v.y--
 	}
-	if rY > m.v.height-padding && y <= m.GetHeight()-padding {
+	if rY > m.v.height-padding && newY <= m.GetHeight()-padding {
 		m.v.y++
 	}
 }
@@ -431,7 +432,6 @@ func (m Map) MoveCreature(c creature.Creature, x, y int) {
 	cY = y
 	c.SetCoordinates(cX, cY)
 	m.grid[cY][cX].c = c
-
 }
 
 func (m Map) PickupItem() bool {
@@ -451,7 +451,7 @@ func (m Map) PickupItem() bool {
 		existing = append(existing, itm)
 		items[itm.GetKey()] = existing
 	}
-	for k, _ := range items {
+	for k := range items {
 		for _, item := range items[k] {
 			player.PickupItem(item)
 		}
