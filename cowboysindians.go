@@ -6,6 +6,7 @@ import (
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/enemy"
+	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/ui"
 	"github.com/onorton/cowboysindians/worldmap"
@@ -103,6 +104,7 @@ func printStatus(status []string) {
 func main() {
 	ui.Init()
 	defer ui.Close()
+	item.LoadAllData()
 	message.SetWindowSize(windowWidth, windowHeight)
 	worldMap := worldmap.NewMap(width, height, windowWidth, windowHeight)
 	player := creature.NewPlayer()

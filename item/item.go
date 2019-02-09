@@ -1,6 +1,7 @@
 package item
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
@@ -17,7 +18,7 @@ func check(err error) {
 	}
 }
 
-type ItemAttributes struct {
+type itemAttributes struct {
 	Icon   icon.Icon
 	Weight float64
 }
@@ -28,15 +29,15 @@ type ItemDefinition struct {
 	Amount   int
 }
 
-var itemData map[string]ItemAttributes = fetchItemData()
+var itemData map[string]itemAttributes
 
-func fetchItemData() map[string]ItemAttributes {
+func fetchItemData() {
 	data, err := ioutil.ReadFile("data/item.json")
 	check(err)
-	var eD map[string]ItemAttributes
-	err = json.Unmarshal(data, &eD)
+	var iD map[string]itemAttributes
+	err = json.Unmarshal(data, &iD)
 	check(err)
-	return eD
+	itemData = iD
 }
 
 type NormalItem struct {
@@ -62,11 +63,40 @@ func (item *NormalItem) Serialize() string {
 	return fmt.Sprintf("Item{%s %f %s}", item.name, item.w, iconJson)
 }
 
+func (item *NormalItem) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	nameValue, err := json.Marshal(item.name)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Name\":%s,", nameValue))
+
+	iconValue, err := json.Marshal(item.ic)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Icon\":%s,", iconValue))
+
+	weightValue, err := json.Marshal(item.w)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Weight\":%s", weightValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
 func Deserialize(itemString string) Item {
 
 	if len(itemString) == 0 {
 		return nil
 	}
+
 	itemString = itemString[1 : len(itemString)-2]
 	item := new(NormalItem)
 	itemAttributes := strings.SplitN(itemString, " ", 3)
@@ -78,6 +108,26 @@ func Deserialize(itemString string) Item {
 
 	var itm Item = item
 	return itm
+}
+
+func (item *NormalItem) UnmarshalJSON(data []byte) error {
+
+	type itemJson struct {
+		Name   string
+		Icon   icon.Icon
+		Weight float64
+	}
+	var v itemJson
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	item.name = v.Name
+	item.ic = v.Icon
+	item.w = v.Weight
+
+	return nil
 }
 
 func (item *NormalItem) GetName() string {
@@ -100,6 +150,14 @@ func (item *NormalItem) GetKey() rune {
 
 func (item *NormalItem) GetWeight() float64 {
 	return item.w
+}
+
+func LoadAllData() {
+	fetchAmmoData()
+	fetchArmourData()
+	fetchConsumableData()
+	fetchItemData()
+	fetchWeaponData()
 }
 
 type Item interface {

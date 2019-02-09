@@ -17,15 +17,15 @@ type AmmoAttributes struct {
 	Weight float64
 }
 
-var ammoData map[string]AmmoAttributes = fetchAmmoData()
+var ammoData map[string]AmmoAttributes
 
-func fetchAmmoData() map[string]AmmoAttributes {
+func fetchAmmoData() {
 	data, err := ioutil.ReadFile("data/ammo.json")
 	check(err)
-	var eD map[string]AmmoAttributes
-	err = json.Unmarshal(data, &eD)
+	var aD map[string]AmmoAttributes
+	err = json.Unmarshal(data, &aD)
 	check(err)
-	return eD
+	ammoData = aD
 }
 
 type Ammo struct {

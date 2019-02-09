@@ -17,15 +17,15 @@ type ConsumableAttributes struct {
 	Effects map[string]int
 }
 
-var consumableData map[string]ConsumableAttributes = fetchConsumableData()
+var consumableData map[string]ConsumableAttributes
 
-func fetchConsumableData() map[string]ConsumableAttributes {
+func fetchConsumableData() {
 	data, err := ioutil.ReadFile("data/consumable.json")
 	check(err)
-	var eD map[string]ConsumableAttributes
-	err = json.Unmarshal(data, &eD)
+	var cD map[string]ConsumableAttributes
+	err = json.Unmarshal(data, &cD)
 	check(err)
-	return eD
+	consumableData = cD
 }
 
 type Consumable struct {

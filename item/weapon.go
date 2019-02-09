@@ -34,15 +34,15 @@ const (
 	Shotgun
 )
 
-var weaponData map[string]WeaponAttributes = fetchWeaponData()
+var weaponData map[string]WeaponAttributes
 
-func fetchWeaponData() map[string]WeaponAttributes {
+func fetchWeaponData() {
 	data, err := ioutil.ReadFile("data/weapon.json")
 	check(err)
-	var eD map[string]WeaponAttributes
-	err = json.Unmarshal(data, &eD)
+	var wD map[string]WeaponAttributes
+	err = json.Unmarshal(data, &wD)
 	check(err)
-	return eD
+	weaponData = wD
 }
 
 type Weapon struct {
