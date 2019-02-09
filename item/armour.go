@@ -1,6 +1,7 @@
 package item
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
@@ -51,6 +52,41 @@ func (armour *Armour) Serialize() string {
 	return fmt.Sprintf("Armour{%s %s %d %f}", strings.Replace(armour.name, " ", "_", -1), iconJson, armour.bonus, armour.w)
 }
 
+func (armour *Armour) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	nameValue, err := json.Marshal(armour.name)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Name\":%s,", nameValue))
+
+	iconValue, err := json.Marshal(armour.ic)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Icon\":%s,", iconValue))
+
+	bonusValue, err := json.Marshal(armour.bonus)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Bonus\":%s,", bonusValue))
+
+	weightValue, err := json.Marshal(armour.w)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Weight\":%s", weightValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
 func DeserializeArmour(armourString string) *Armour {
 
 	if len(armourString) == 1 {
@@ -68,6 +104,28 @@ func DeserializeArmour(armourString string) *Armour {
 	armour.w, _ = strconv.ParseFloat(armourAttributes[2], 64)
 
 	return armour
+}
+
+func (armour *Armour) UnmarshalJSON(data []byte) error {
+
+	type armourJson struct {
+		Name   string
+		Icon   icon.Icon
+		Bonus  int
+		Weight float64
+	}
+	var v armourJson
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	armour.name = v.Name
+	armour.ic = v.Icon
+	armour.bonus = v.Bonus
+	armour.w = v.Weight
+
+	return nil
 }
 
 func (armour *Armour) GetName() string {
