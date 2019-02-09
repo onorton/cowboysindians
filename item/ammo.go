@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io/ioutil"
-	"strconv"
-	"strings"
 
 	"github.com/onorton/cowboysindians/icon"
 )
@@ -40,17 +38,6 @@ func NewAmmo(name string) Item {
 	ammo := ammoData[name]
 	var itm Item = &Ammo{name, ammo.Icon, ammo.Type, ammo.Weight}
 	return itm
-}
-
-func (ammo *Ammo) Serialize() string {
-	if ammo == nil {
-		return ""
-	}
-
-	iconJson, err := json.Marshal(ammo.ic)
-	check(err)
-
-	return fmt.Sprintf("Ammo{%s %d %f %s}", strings.Replace(ammo.name, " ", "_", -1), ammo.t, ammo.w, iconJson)
 }
 
 func (ammo *Ammo) MarshalJSON() ([]byte, error) {
@@ -86,26 +73,6 @@ func (ammo *Ammo) MarshalJSON() ([]byte, error) {
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
-}
-
-func DeserializeAmmo(ammoString string) Item {
-
-	if len(ammoString) == 0 {
-		return nil
-	}
-	ammoString = ammoString[1 : len(ammoString)-2]
-	ammo := new(Ammo)
-	ammoAttributes := strings.SplitN(ammoString, " ", 4)
-	ammo.name = strings.Replace(ammoAttributes[0], "_", " ", -1)
-
-	err := json.Unmarshal([]byte(ammoAttributes[3]), &(ammo.ic))
-	check(err)
-
-	t, _ := strconv.Atoi(ammoAttributes[1])
-	ammo.t = WeaponType(t)
-	ammo.w, _ = strconv.ParseFloat(ammoAttributes[2], 64)
-	var itm Item = ammo
-	return itm
 }
 
 func (ammo *Ammo) UnmarshalJSON(data []byte) error {

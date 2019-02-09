@@ -68,31 +68,23 @@ func Deserialize(c string) Creature {
 		for i := 1; i < len(restWearing); i++ {
 			switch wearingTypes[i-1] {
 			case "Weapon":
-				p.weapon = item.DeserializeWeapon(restWearing[i])
+				err := json.Unmarshal([]byte(restWearing[i]), p.weapon)
+				check(err)
 			case "Armour":
-				p.armour = item.DeserializeArmour(restWearing[i])
+				err := json.Unmarshal([]byte(restWearing[i]), p.armour)
+				check(err)
 			}
 		}
 	}
 	p.inventory = make(map[rune]([]item.Item))
 
 	items := regexp.MustCompile("(Ammo)|(Armour)|(Consumable)|(Item)|(Weapon)").Split(inventory, -1)
-	starter := regexp.MustCompile("(Ammo)|(Armour)|(Consumable)|(Item)|(Weapon)").FindAllString(inventory, -1)
 	items = items[1:]
-	for i, itemString := range items {
-		switch starter[i] {
-		case "Item":
-			p.PickupItem(item.Deserialize(itemString))
-		case "Weapon":
-			p.PickupItem(item.DeserializeWeapon(itemString))
-		case "Armour":
-			p.PickupItem(item.DeserializeArmour(itemString))
-		case "Ammo":
-			p.PickupItem(item.DeserializeAmmo(itemString))
-		case "Consumable":
-			p.PickupItem(item.DeserializeConsumable(itemString))
-
-		}
+	for _, itemString := range items {
+		var itm item.Item
+		err := json.Unmarshal([]byte(itemString), &itm)
+		check(err)
+		p.PickupItem(itm)
 	}
 	var creature Creature = p
 	return creature
@@ -106,16 +98,25 @@ func (p *Player) Serialize() string {
 	items := "["
 	for k, _ := range p.inventory {
 		for _, item := range p.inventory[k] {
-			items += fmt.Sprintf("%s ", item.Serialize())
+			itemValue, err := json.Marshal(item)
+			check(err)
+			items += fmt.Sprintf("%s ", itemValue)
 
 		}
 	}
 
-	iconJson, err := json.Marshal(p.icon)
+	iconValue, err := json.Marshal(p.icon)
 	check(err)
 
 	items += "]"
-	return fmt.Sprintf("Player{%d %d %d %d %d %d %d %d %d %d %d %d %s %s %s %s}", p.x, p.y, p.hp, p.maxHp, p.hunger, p.maxHunger, p.thirst, p.maxThirst, p.ac, p.str, p.dex, p.encumbrance, iconJson, p.weapon.Serialize(), p.armour.Serialize(), items)
+
+	weaponValue, err := json.Marshal(p.weapon)
+	check(err)
+
+	armourValue, err := json.Marshal(p.armour)
+	check(err)
+
+	return fmt.Sprintf("Player{%d %d %d %d %d %d %d %d %d %d %d %d %s %s %s %s}", p.x, p.y, p.hp, p.maxHp, p.hunger, p.maxHunger, p.thirst, p.maxThirst, p.ac, p.str, p.dex, p.encumbrance, iconValue, weaponValue, armourValue, items)
 }
 
 func (p *Player) GetCoordinates() (int, int) {

@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io/ioutil"
-	"strconv"
-	"strings"
 
 	"github.com/onorton/cowboysindians/icon"
 )
@@ -39,17 +37,6 @@ type Armour struct {
 func NewArmour(name string) *Armour {
 	armour := armourData[name]
 	return &Armour{name, armour.Icon, armour.Bonus, armour.Weight}
-}
-
-func (armour *Armour) Serialize() string {
-	if armour == nil {
-		return ""
-	}
-
-	iconJson, err := json.Marshal(armour.ic)
-	check(err)
-
-	return fmt.Sprintf("Armour{%s %s %d %f}", strings.Replace(armour.name, " ", "_", -1), iconJson, armour.bonus, armour.w)
 }
 
 func (armour *Armour) MarshalJSON() ([]byte, error) {
@@ -85,25 +72,6 @@ func (armour *Armour) MarshalJSON() ([]byte, error) {
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
-}
-
-func DeserializeArmour(armourString string) *Armour {
-
-	if len(armourString) == 1 {
-		return nil
-	}
-	armourString = armourString[1 : len(armourString)-2]
-	armour := new(Armour)
-	armourAttributes := strings.SplitN(armourString, " ", 5)
-	armour.name = strings.Replace(armourAttributes[0], "_", " ", -1)
-
-	err := json.Unmarshal([]byte(armourAttributes[1]), &(armour.ic))
-	check(err)
-
-	armour.bonus, _ = strconv.Atoi(armourAttributes[2])
-	armour.w, _ = strconv.ParseFloat(armourAttributes[2], 64)
-
-	return armour
 }
 
 func (armour *Armour) UnmarshalJSON(data []byte) error {

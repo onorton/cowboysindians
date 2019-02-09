@@ -7,9 +7,6 @@ import (
 	"hash/fnv"
 	"io/ioutil"
 	"math/rand"
-	"regexp"
-	"strconv"
-	"strings"
 
 	"github.com/onorton/cowboysindians/icon"
 )
@@ -64,21 +61,6 @@ type Damage struct {
 func NewWeapon(name string) *Weapon {
 	weapon := weaponData[name]
 	return &Weapon{name, weapon.Icon, weapon.Range, weapon.Type, weapon.Weight, &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
-}
-
-func (weapon *Weapon) Serialize() string {
-	if weapon == nil {
-		return ""
-	}
-
-	iconJson, err := json.Marshal(weapon.ic)
-	check(err)
-
-	return fmt.Sprintf("Weapon{%s %d %d %f %s %s}", strings.Replace(weapon.name, " ", "_", -1), weapon.r, weapon.t, weapon.w, iconJson, weapon.damage.Serialize())
-}
-
-func (damage *Damage) Serialize() string {
-	return fmt.Sprintf("Damage{%d %d %d}", damage.dice, damage.number, damage.bonus)
 }
 
 func (damage *Damage) MarshalJSON() ([]byte, error) {
@@ -156,39 +138,6 @@ func (weapon *Weapon) MarshalJSON() ([]byte, error) {
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
-}
-
-func DeserializeDamage(damageString string) *Damage {
-	damageString = damageString[1 : len(damageString)-1]
-	damageAttributes := strings.SplitN(damageString, " ", 4)
-	damage := new(Damage)
-	damage.dice, _ = strconv.Atoi(damageAttributes[0])
-	damage.number, _ = strconv.Atoi(damageAttributes[1])
-	damage.bonus, _ = strconv.Atoi(damageAttributes[2])
-	return damage
-}
-
-func DeserializeWeapon(weaponString string) *Weapon {
-	if len(weaponString) == 0 {
-		return nil
-	}
-
-	weaponString = weaponString[1 : len(weaponString)-2]
-	weapon := new(Weapon)
-	nameAttributes := strings.SplitN(weaponString, " ", 5)
-
-	weapon.name = strings.Replace(nameAttributes[0], "_", " ", -1)
-	weapon.r, _ = strconv.Atoi(nameAttributes[1])
-	t, _ := strconv.Atoi(nameAttributes[2])
-	weapon.t = WeaponType(t)
-	weapon.w, _ = strconv.ParseFloat(nameAttributes[3], 64)
-	weaponAttributes := regexp.MustCompile("({*Icon*})|(Damage)").Split(nameAttributes[4], -1)
-
-	err := json.Unmarshal([]byte(weaponAttributes[0]), &weapon.ic)
-	check(err)
-
-	weapon.damage = DeserializeDamage(weaponAttributes[1])
-	return weapon
 }
 
 func (damage *Damage) UnmarshalJSON(data []byte) error {

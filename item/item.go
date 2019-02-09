@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io/ioutil"
-	"strconv"
-	"strings"
 
 	"github.com/onorton/cowboysindians/icon"
 )
@@ -52,17 +50,6 @@ func NewItem(name string) Item {
 	return itm
 }
 
-func (item *NormalItem) Serialize() string {
-	if item == nil {
-		return ""
-	}
-
-	iconJson, err := json.Marshal(item.ic)
-	check(err)
-
-	return fmt.Sprintf("Item{%s %f %s}", item.name, item.w, iconJson)
-}
-
 func (item *NormalItem) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
@@ -89,25 +76,6 @@ func (item *NormalItem) MarshalJSON() ([]byte, error) {
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
-}
-
-func Deserialize(itemString string) Item {
-
-	if len(itemString) == 0 {
-		return nil
-	}
-
-	itemString = itemString[1 : len(itemString)-2]
-	item := new(NormalItem)
-	itemAttributes := strings.SplitN(itemString, " ", 3)
-	item.name = itemAttributes[0]
-	item.w, _ = strconv.ParseFloat(itemAttributes[1], 64)
-
-	err := json.Unmarshal([]byte(itemAttributes[2]), &(item.ic))
-	check(err)
-
-	var itm Item = item
-	return itm
 }
 
 func (item *NormalItem) UnmarshalJSON(data []byte) error {
@@ -164,6 +132,7 @@ type Item interface {
 	GetKey() rune
 	GetName() string
 	Render(int, int)
-	Serialize() string
+	MarshalJSON() ([]byte, error)
+	UnmarshalJSON([]byte) error
 	GetWeight() float64
 }
