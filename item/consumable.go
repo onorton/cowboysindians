@@ -1,6 +1,7 @@
 package item
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
@@ -57,6 +58,41 @@ func (consumable *Consumable) Serialize() string {
 	return fmt.Sprintf("Consumable{%s %f %s %s}", strings.Replace(consumable.name, " ", "_", -1), consumable.w, iconJson, effects)
 }
 
+func (item *Consumable) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	nameValue, err := json.Marshal(item.name)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Name\":%s,", nameValue))
+
+	iconValue, err := json.Marshal(item.ic)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Icon\":%s,", iconValue))
+
+	weightValue, err := json.Marshal(item.w)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Weight\":%s,", weightValue))
+
+	effectsValue, err := json.Marshal(item.effects)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Effects\":%s", effectsValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
 func DeserializeConsumable(consumableString string) Item {
 
 	if len(consumableString) == 0 {
@@ -82,6 +118,28 @@ func DeserializeConsumable(consumableString string) Item {
 	}
 	var itm Item = consumable
 	return itm
+}
+
+func (consumable *Consumable) UnmarshalJSON(data []byte) error {
+
+	type consumableJson struct {
+		Name    string
+		Icon    icon.Icon
+		Weight  float64
+		Effects map[string]int
+	}
+	var v consumableJson
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	consumable.name = v.Name
+	consumable.ic = v.Icon
+	consumable.w = v.Weight
+	consumable.effects = v.Effects
+
+	return nil
 }
 
 func (consumable *Consumable) GetName() string {
