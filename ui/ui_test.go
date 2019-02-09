@@ -17,7 +17,7 @@ var tests = []testpair{
 	{PrintMessages, false},
 }
 
-func TestAverage(t *testing.T) {
+func TestIsMovementAction(t *testing.T) {
 	for _, pair := range tests {
 		v := pair.action.IsMovementAction()
 		if v != pair.isMovementAction {
