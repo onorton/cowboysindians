@@ -1,6 +1,7 @@
 package creature
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/rand"
@@ -14,6 +15,12 @@ import (
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/ui"
 )
+
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
 
 func NewPlayer() *Player {
 	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 10, 0, 100, 0, 100, 15, 12, 10, 100, nil, nil, make(map[rune]([]item.Item))}
@@ -36,10 +43,9 @@ func Deserialize(c string) Creature {
 	restInventory := strings.SplitN(c, "[", 2)
 	restWearing := regexp.MustCompile("(Weapon)|(Armour)").Split(restInventory[0], -1)
 	wearingTypes := regexp.MustCompile("(Weapon)|(Armour)").FindAllString(restInventory[0], -1)
-	restIcon := strings.Split(restWearing[0], "Icon")
+	rest := strings.Split(restWearing[0], " ")
 	inventory := restInventory[1][:len(restInventory[1])-1]
-	p.icon = icon.Deserialize(restIcon[1])
-	rest := strings.Split(restIcon[0], " ")
+
 	p.x, _ = strconv.Atoi(rest[0])
 	p.y, _ = strconv.Atoi(rest[1])
 	p.hp, _ = strconv.Atoi(rest[2])
@@ -54,6 +60,10 @@ func Deserialize(c string) Creature {
 	p.str, _ = strconv.Atoi(rest[9])
 	p.dex, _ = strconv.Atoi(rest[10])
 	p.encumbrance, _ = strconv.Atoi(rest[11])
+
+	err := json.Unmarshal([]byte(rest[12]), &(p.icon))
+	check(err)
+
 	if len(restWearing) > 1 {
 		for i := 1; i < len(restWearing); i++ {
 			switch wearingTypes[i-1] {
@@ -100,8 +110,12 @@ func (p *Player) Serialize() string {
 
 		}
 	}
+
+	iconJson, err := json.Marshal(p.icon)
+	check(err)
+
 	items += "]"
-	return fmt.Sprintf("Player{%d %d %d %d %d %d %d %d %d %d %d %d %s %s %s %s}", p.x, p.y, p.hp, p.maxHp, p.hunger, p.maxHunger, p.thirst, p.maxThirst, p.ac, p.str, p.dex, p.encumbrance, p.icon.Serialize(), p.weapon.Serialize(), p.armour.Serialize(), items)
+	return fmt.Sprintf("Player{%d %d %d %d %d %d %d %d %d %d %d %d %s %s %s %s}", p.x, p.y, p.hp, p.maxHp, p.hunger, p.maxHunger, p.thirst, p.maxThirst, p.ac, p.str, p.dex, p.encumbrance, iconJson, p.weapon.Serialize(), p.armour.Serialize(), items)
 }
 
 func (p *Player) GetCoordinates() (int, int) {

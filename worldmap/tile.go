@@ -52,7 +52,10 @@ func (t Tile) Serialize() string {
 	}
 	items += "]"
 
-	return fmt.Sprintf("Tile{%s %d %d %v %v %s}", t.terrain.Serialize(), t.x, t.y, t.passable, t.door, items)
+	iconJson, err := json.Marshal(t.terrain)
+	check(err)
+
+	return fmt.Sprintf("Tile{%s %d %d %v %v %s}", iconJson, t.x, t.y, t.passable, t.door, items)
 
 }
 
@@ -66,7 +69,7 @@ func DeserializeTile(t string) Tile {
 	b := 0
 	e := len(t)
 	for i, c := range t {
-		if c == 'I' && b == 0 {
+		if c == '{' && b == 0 {
 			b = i
 		}
 		if c == '}' && e == len(t) {
@@ -77,7 +80,8 @@ func DeserializeTile(t string) Tile {
 	e++
 	tile := Tile{}
 
-	tile.terrain = icon.Deserialize(t[b:e])
+	err := json.Unmarshal([]byte(t[b:e]), &(tile.terrain))
+	check(err)
 
 	t = t[(e + 1):]
 	fields := strings.SplitN(t, " ", 5)

@@ -78,11 +78,9 @@ func Deserialize(e string) creature.Creature {
 	restInventory := strings.SplitN(e, "[", 2)
 	restWearing := regexp.MustCompile("(Weapon)|(Armour)").Split(restInventory[0], -1)
 	wearingTypes := regexp.MustCompile("(Weapon)|(Armour)").FindAllString(restInventory[0], -1)
-	restIcon := strings.Split(restWearing[0], "Icon")
+	rest := strings.Split(restWearing[0], " ")
 	inventory := restInventory[1][:len(restInventory[1])-1]
-	enemy.icon = icon.Deserialize(restIcon[1])
 
-	rest := strings.Split(restIcon[0], " ")
 	enemy.name = strings.Replace(rest[0], "_", " ", -1)
 	enemy.x, _ = strconv.Atoi(rest[1])
 	enemy.y, _ = strconv.Atoi(rest[2])
@@ -92,6 +90,9 @@ func Deserialize(e string) creature.Creature {
 	enemy.str, _ = strconv.Atoi(rest[6])
 	enemy.dex, _ = strconv.Atoi(rest[7])
 	enemy.encumbrance, _ = strconv.Atoi(rest[8])
+	err := json.Unmarshal([]byte(rest[9]), &(enemy.icon))
+	check(err)
+
 	if len(restWearing) > 1 {
 		for i := 1; i < len(restWearing); i++ {
 			switch wearingTypes[i-1] {
@@ -131,7 +132,11 @@ func (e *Enemy) Serialize() string {
 		items += fmt.Sprintf("%s ", item.Serialize())
 	}
 	items += "]"
-	return fmt.Sprintf("Enemy{%s %d %d %d %d %d %d %d %d %s %s %s %s}", strings.Replace(e.name, " ", "_", -1), e.x, e.y, e.hp, e.maxHp, e.ac, e.str, e.dex, e.encumbrance, e.icon.Serialize(), e.weapon.Serialize(), e.armour.Serialize(), items)
+
+	iconJson, err := json.Marshal(e.icon)
+	check(err)
+
+	return fmt.Sprintf("Enemy{%s %d %d %d %d %d %d %d %d %s %s %s %s}", strings.Replace(e.name, " ", "_", -1), e.x, e.y, e.hp, e.maxHp, e.ac, e.str, e.dex, e.encumbrance, iconJson, e.weapon.Serialize(), e.armour.Serialize(), items)
 }
 
 func (e *Enemy) GetCoordinates() (int, int) {

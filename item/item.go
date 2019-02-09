@@ -55,7 +55,11 @@ func (item *NormalItem) Serialize() string {
 	if item == nil {
 		return ""
 	}
-	return fmt.Sprintf("Item{%s %f %s}", item.name, item.w, item.ic.Serialize())
+
+	iconJson, err := json.Marshal(item.ic)
+	check(err)
+
+	return fmt.Sprintf("Item{%s %f %s}", item.name, item.w, iconJson)
 }
 
 func Deserialize(itemString string) Item {
@@ -68,7 +72,10 @@ func Deserialize(itemString string) Item {
 	itemAttributes := strings.SplitN(itemString, " ", 3)
 	item.name = itemAttributes[0]
 	item.w, _ = strconv.ParseFloat(itemAttributes[1], 64)
-	item.ic = icon.Deserialize(itemAttributes[2])
+
+	err := json.Unmarshal([]byte(itemAttributes[2]), &(item.ic))
+	check(err)
+
 	var itm Item = item
 	return itm
 }

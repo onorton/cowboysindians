@@ -50,7 +50,11 @@ func (consumable *Consumable) Serialize() string {
 		effects += fmt.Sprintf("%s:%d ", effect, amount)
 	}
 	effects += "]"
-	return fmt.Sprintf("Consumable{%s %f %s %s}", strings.Replace(consumable.name, " ", "_", -1), consumable.w, consumable.ic.Serialize(), effects)
+
+	iconJson, err := json.Marshal(consumable.ic)
+	check(err)
+
+	return fmt.Sprintf("Consumable{%s %f %s %s}", strings.Replace(consumable.name, " ", "_", -1), consumable.w, iconJson, effects)
 }
 
 func DeserializeConsumable(consumableString string) Item {
@@ -61,10 +65,13 @@ func DeserializeConsumable(consumableString string) Item {
 	consumableString = consumableString[1 : len(consumableString)-2]
 	consumable := new(Consumable)
 	attributesEffects := strings.SplitN(consumableString, "[", 2)
-	attributesIcon := strings.SplitN(attributesEffects[0], "Icon", 2)
-	consumableAttributes := strings.Split(attributesIcon[0], " ")
+	consumableAttributes := strings.SplitN(attributesEffects[0], " ", 3)
+
 	consumable.name = strings.Replace(consumableAttributes[0], "_", " ", -1)
 	consumable.w, _ = strconv.ParseFloat(consumableAttributes[1], 64)
+
+	err := json.Unmarshal([]byte(consumableAttributes[2]), &(consumable.ic))
+	check(err)
 
 	effects := strings.Split(attributesEffects[1], " ")
 	effects = effects[:len(effects)-1]
@@ -73,7 +80,6 @@ func DeserializeConsumable(consumableString string) Item {
 		nameAmount := strings.Split(effect, ":")
 		consumable.effects[nameAmount[0]], _ = strconv.Atoi(nameAmount[1])
 	}
-	consumable.ic = icon.Deserialize(attributesIcon[1])
 	var itm Item = consumable
 	return itm
 }

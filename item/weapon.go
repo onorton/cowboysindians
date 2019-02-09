@@ -69,7 +69,11 @@ func (weapon *Weapon) Serialize() string {
 	if weapon == nil {
 		return ""
 	}
-	return fmt.Sprintf("Weapon{%s %d %d %f %s %s}", strings.Replace(weapon.name, " ", "_", -1), weapon.r, weapon.t, weapon.w, weapon.ic.Serialize(), weapon.damage.Serialize())
+
+	iconJson, err := json.Marshal(weapon.ic)
+	check(err)
+
+	return fmt.Sprintf("Weapon{%s %d %d %f %s %s}", strings.Replace(weapon.name, " ", "_", -1), weapon.r, weapon.t, weapon.w, iconJson, weapon.damage.Serialize())
 }
 
 func (damage *Damage) Serialize() string {
@@ -90,6 +94,7 @@ func DeserializeWeapon(weaponString string) *Weapon {
 	if len(weaponString) == 0 {
 		return nil
 	}
+
 	weaponString = weaponString[1 : len(weaponString)-2]
 	weapon := new(Weapon)
 	nameAttributes := strings.SplitN(weaponString, " ", 5)
@@ -99,9 +104,11 @@ func DeserializeWeapon(weaponString string) *Weapon {
 	t, _ := strconv.Atoi(nameAttributes[2])
 	weapon.t = WeaponType(t)
 	weapon.w, _ = strconv.ParseFloat(nameAttributes[3], 64)
-	weaponAttributes := regexp.MustCompile("(Icon)|(Damage)").Split(nameAttributes[4], -1)
-	weaponAttributes = weaponAttributes[1:]
-	weapon.ic = icon.Deserialize(weaponAttributes[0])
+	weaponAttributes := regexp.MustCompile("({*Icon*})|(Damage)").Split(nameAttributes[4], -1)
+
+	err := json.Unmarshal([]byte(weaponAttributes[0]), &weapon.ic)
+	check(err)
+
 	weapon.damage = DeserializeDamage(weaponAttributes[1])
 	return weapon
 }
