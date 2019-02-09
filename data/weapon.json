@@ -1,42 +1,40 @@
 {
 	"shotgun" : {
-		"Icon":115,
-		"Colour":3,
-		"Range":4,
-		"Type":1,
+		"Icon": {"Icon": 115, "Colour": 3},
+		"Range": 4,
+		"Type": 1,
 		"Weight": 20,
 	       	"Damage": {
 			"Dice": 4,
 			"Number": 1,
 			"Bonus": 0
-			
+
 		}
 	},
 
 	"pistol" : {
-		"Icon": 112,
-		"Colour":1,
-		"Range":10,
-		"Type":0,
+		"Icon": {"Icon": 112, "Colour": 1},
+		"Range": 10,
+		"Type": 0,
 		"Weight": 10,
 		"Damage": {
 			"Dice": 4,
 			"Number": 1,
 			"Bonus": -1
-		}	
+		}
 	},
+
 	"sawn-off shotgun" : {
-		"Icon":115,
-		"Colour":4,
-		"Range":3,
-		"Type":1, 
+		"Icon": {"Icon": 115, "Colour": 4},
+		"Range": 3,
+		"Type": 1,
 		"Weight": 15,
 	       	"Damage": {
 			"Dice": 6,
 			"Number": 1,
 			"Bonus": 0
-			
-		}	
+
+		}
 	}
 
 

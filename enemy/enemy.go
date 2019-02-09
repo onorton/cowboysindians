@@ -3,18 +3,18 @@ package enemy
 import (
 	"encoding/json"
 	"fmt"
-	termbox "github.com/nsf/termbox-go"
-	"github.com/onorton/cowboysindians/creature"
-	"github.com/onorton/cowboysindians/icon"
-	"github.com/onorton/cowboysindians/item"
-	"github.com/onorton/cowboysindians/message"
-	"github.com/onorton/cowboysindians/worldmap"
 	"io/ioutil"
 	"math"
 	"math/rand"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/onorton/cowboysindians/creature"
+	"github.com/onorton/cowboysindians/icon"
+	"github.com/onorton/cowboysindians/item"
+	"github.com/onorton/cowboysindians/message"
+	"github.com/onorton/cowboysindians/worldmap"
 )
 
 func check(err error) {
@@ -24,8 +24,7 @@ func check(err error) {
 }
 
 type EnemyAttributes struct {
-	Icon        rune
-	Colour      termbox.Attribute
+	Icon        icon.Icon
 	Initiative  int
 	Hp          int
 	Ac          int
@@ -48,7 +47,7 @@ func fetchEnemyData() map[string]EnemyAttributes {
 
 func NewEnemy(name string, x, y int) *Enemy {
 	enemy := enemyData[name]
-	e := &Enemy{name, x, y, icon.NewIcon(enemy.Icon, enemy.Colour), enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, nil, nil, make([]item.Item, 0)}
+	e := &Enemy{name, x, y, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, nil, nil, make([]item.Item, 0)}
 	for _, itemDefinition := range enemy.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm item.Item = nil

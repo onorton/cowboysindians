@@ -1,7 +1,6 @@
 {
 	"bandit": {
-		"Icon": 98,
-		"Colour": 5,
+		"Icon": {"Icon": 98, "Colour": 5},
 		"Initiative": 1,
 		"Hp": 5,
 		"Initiative": 10,
@@ -9,8 +8,8 @@
 		"Dex": 13,
 		"Encumbrance": 100,
 		"Inventory": [
-		{"Category": "Weapon", "Name": "pistol", "Amount": 1}, 
-		{"Category": "Ammo", "Name": "pistol bullet","Amount": 5}, 
+		{"Category": "Weapon", "Name": "pistol", "Amount": 1},
+		{"Category": "Ammo", "Name": "pistol bullet","Amount": 5},
 		{"Category": "Consumable", "Name": "standard ration", "Amount": 2}]
 	}
 

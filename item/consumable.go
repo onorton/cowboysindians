@@ -3,17 +3,16 @@ package item
 import (
 	"encoding/json"
 	"fmt"
-	termbox "github.com/nsf/termbox-go"
-	"github.com/onorton/cowboysindians/icon"
 	"hash/fnv"
 	"io/ioutil"
 	"strconv"
 	"strings"
+
+	"github.com/onorton/cowboysindians/icon"
 )
 
 type ConsumableAttributes struct {
-	Colour  termbox.Attribute
-	Icon    rune
+	Icon    icon.Icon
 	Weight  float64
 	Effects map[string]int
 }
@@ -38,7 +37,7 @@ type Consumable struct {
 
 func NewConsumable(name string) Item {
 	consumable := consumableData[name]
-	var itm Item = &Consumable{name, icon.NewIcon(consumable.Icon, consumable.Colour), consumable.Weight, consumable.Effects}
+	var itm Item = &Consumable{name, consumable.Icon, consumable.Weight, consumable.Effects}
 	return itm
 }
 

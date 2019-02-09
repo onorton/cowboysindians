@@ -3,19 +3,18 @@ package item
 import (
 	"encoding/json"
 	"fmt"
-	termbox "github.com/nsf/termbox-go"
-	"github.com/onorton/cowboysindians/icon"
 	"hash/fnv"
 	"io/ioutil"
 	"math/rand"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/onorton/cowboysindians/icon"
 )
 
 type WeaponAttributes struct {
-	Colour termbox.Attribute
-	Icon   rune
+	Icon   icon.Icon
 	Damage DamageAttributes
 	Range  int
 	Type   WeaponType
@@ -63,7 +62,7 @@ type Damage struct {
 
 func NewWeapon(name string) *Weapon {
 	weapon := weaponData[name]
-	return &Weapon{name, icon.NewIcon(weapon.Icon, weapon.Colour), weapon.Range, weapon.Type, weapon.Weight, &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
+	return &Weapon{name, weapon.Icon, weapon.Range, weapon.Type, weapon.Weight, &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
 }
 
 func (weapon *Weapon) Serialize() string {

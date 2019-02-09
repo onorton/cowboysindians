@@ -3,17 +3,16 @@ package item
 import (
 	"encoding/json"
 	"fmt"
-	termbox "github.com/nsf/termbox-go"
-	"github.com/onorton/cowboysindians/icon"
 	"hash/fnv"
 	"io/ioutil"
 	"strconv"
 	"strings"
+
+	"github.com/onorton/cowboysindians/icon"
 )
 
 type ArmourAttributes struct {
-	Colour termbox.Attribute
-	Icon   rune
+	Icon   icon.Icon
 	Bonus  int
 	Weight float64
 }
@@ -38,7 +37,7 @@ type Armour struct {
 
 func NewArmour(name string) *Armour {
 	armour := armourData[name]
-	return &Armour{name, icon.NewIcon(armour.Icon, armour.Colour), armour.Bonus, armour.Weight}
+	return &Armour{name, armour.Icon, armour.Bonus, armour.Weight}
 }
 
 func (armour *Armour) Serialize() string {

@@ -1,7 +1,6 @@
 {
 	"gem":{
-		"Colour" : 4,
-		"Icon" : 42,
-		"Weight" : 0.03
-	}	
+		"Icon": {"Icon": 42, "Colour": 4},
+		"Weight": 0.03
+	}
 }

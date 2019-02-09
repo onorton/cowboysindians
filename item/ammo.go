@@ -3,17 +3,16 @@ package item
 import (
 	"encoding/json"
 	"fmt"
-	termbox "github.com/nsf/termbox-go"
-	"github.com/onorton/cowboysindians/icon"
 	"hash/fnv"
 	"io/ioutil"
 	"strconv"
 	"strings"
+
+	"github.com/onorton/cowboysindians/icon"
 )
 
 type AmmoAttributes struct {
-	Colour termbox.Attribute
-	Icon   rune
+	Icon   icon.Icon
 	Type   WeaponType
 	Weight float64
 }
@@ -38,7 +37,7 @@ type Ammo struct {
 
 func NewAmmo(name string) Item {
 	ammo := ammoData[name]
-	var itm Item = &Ammo{name, icon.NewIcon(ammo.Icon, ammo.Colour), ammo.Type, ammo.Weight}
+	var itm Item = &Ammo{name, ammo.Icon, ammo.Type, ammo.Weight}
 	return itm
 }
 

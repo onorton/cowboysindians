@@ -3,14 +3,14 @@ package worldmap
 import (
 	"encoding/json"
 	"fmt"
-	termbox "github.com/nsf/termbox-go"
-	"github.com/onorton/cowboysindians/creature"
-	"github.com/onorton/cowboysindians/icon"
-	"github.com/onorton/cowboysindians/item"
 	"io/ioutil"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/onorton/cowboysindians/creature"
+	"github.com/onorton/cowboysindians/icon"
+	"github.com/onorton/cowboysindians/item"
 )
 
 func check(err error) {
@@ -20,8 +20,7 @@ func check(err error) {
 }
 
 type TileAttributes struct {
-	Icon     rune
-	Colour   termbox.Attribute
+	Icon     icon.Icon
 	Passable bool
 	Door     bool
 }
@@ -40,11 +39,10 @@ func fetchTerrainData() map[string]TileAttributes {
 func newTile(name string, x, y int) Tile {
 
 	terrain := terrainData[name]
-	c := terrain.Icon
-	colour := terrain.Colour
+	icon := terrain.Icon
 	passable := terrain.Passable
 	door := terrain.Door
-	return Tile{icon.NewIcon(c, colour), x, y, passable, door, nil, make([]item.Item, 0)}
+	return Tile{icon, x, y, passable, door, nil, make([]item.Item, 0)}
 }
 
 func (t Tile) Serialize() string {

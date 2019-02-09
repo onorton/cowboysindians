@@ -1,20 +1,18 @@
 {
 	"standard ration":{
-		"Colour" : 4,
-		"Icon" : 42,
-		"Weight" : 0.1,
+		"Icon": {"Icon": 42, "Colour": 4},
+		"Weight": 0.1,
 		"Effects": {
-			"hp" : 10,
-			"hunger" : 10 	
+			"hp": 10,
+			"hunger": 10
 		}
 	},
 	"beer": {
-		"Colour" : 2,
-		"Icon" : 98,
-		"Weight" : 0.01,
+		"Icon": {"Icon": 98,"Colour": 2},
+		"Weight": 0.01,
 		"Effects": {
 			"hp": 1,
-			"thirst": 10 
+			"thirst": 10
 		}
-	}	
+	}
 }

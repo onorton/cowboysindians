@@ -3,12 +3,12 @@ package item
 import (
 	"encoding/json"
 	"fmt"
-	termbox "github.com/nsf/termbox-go"
-	"github.com/onorton/cowboysindians/icon"
 	"hash/fnv"
 	"io/ioutil"
 	"strconv"
 	"strings"
+
+	"github.com/onorton/cowboysindians/icon"
 )
 
 func check(err error) {
@@ -18,8 +18,7 @@ func check(err error) {
 }
 
 type ItemAttributes struct {
-	Colour termbox.Attribute
-	Icon   rune
+	Icon   icon.Icon
 	Weight float64
 }
 
@@ -48,7 +47,7 @@ type NormalItem struct {
 
 func NewItem(name string) Item {
 	item := itemData[name]
-	var itm Item = &NormalItem{name, icon.NewIcon(item.Icon, item.Colour), item.Weight}
+	var itm Item = &NormalItem{name, item.Icon, item.Weight}
 	return itm
 }
 

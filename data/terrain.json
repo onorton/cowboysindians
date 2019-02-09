@@ -1,25 +1,19 @@
 {
 	"door": {
-		"Icon": 45,
-		"Colour": 8,
+		"Icon": {"Icon": 45, "Colour": 8},
 		"Passable": false,
 		"Door": true
 	},
 	"wall": {
-		"Icon": 35,
-		"Colour": 8,
+		"Icon": {"Icon": 35, "Colour": 8},
 		"Passable": false,
 		"Door": false
-		
+
 	},
 	"ground": {
-		"Icon": 46,
-		"Colour": 8,
+		"Icon": {"Icon": 46, "Colour": 8},
 		"Passable": true,
 		"Door": false
 	}
-
-
-
 
 }
