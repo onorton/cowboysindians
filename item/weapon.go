@@ -1,6 +1,7 @@
 package item
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
@@ -80,6 +81,83 @@ func (damage *Damage) Serialize() string {
 	return fmt.Sprintf("Damage{%d %d %d}", damage.dice, damage.number, damage.bonus)
 }
 
+func (damage *Damage) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	diceValue, err := json.Marshal(damage.dice)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Dice\":%s,", diceValue))
+
+	numberValue, err := json.Marshal(damage.number)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Number\":%s,", numberValue))
+
+	bonusValue, err := json.Marshal(damage.bonus)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Bonus\":%s", bonusValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (weapon *Weapon) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	nameValue, err := json.Marshal(weapon.name)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Name\":%s,", nameValue))
+
+	iconValue, err := json.Marshal(weapon.ic)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Icon\":%s,", iconValue))
+
+	rangeValue, err := json.Marshal(weapon.r)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Range\":%s,", rangeValue))
+
+	typeValue, err := json.Marshal(weapon.t)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Type\":%s,", typeValue))
+
+	weightValue, err := json.Marshal(weapon.w)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Weight\":%s,", weightValue))
+
+	damageValue, err := json.Marshal(weapon.damage)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Damage\":%s", damageValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
 func DeserializeDamage(damageString string) *Damage {
 	damageString = damageString[1 : len(damageString)-1]
 	damageAttributes := strings.SplitN(damageString, " ", 4)
@@ -111,6 +189,52 @@ func DeserializeWeapon(weaponString string) *Weapon {
 
 	weapon.damage = DeserializeDamage(weaponAttributes[1])
 	return weapon
+}
+
+func (damage *Damage) UnmarshalJSON(data []byte) error {
+
+	type damageJson struct {
+		Dice   int
+		Number int
+		Bonus  int
+	}
+	var v damageJson
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	damage.dice = v.Dice
+	damage.number = v.Number
+	damage.bonus = v.Bonus
+
+	return nil
+}
+
+func (weapon *Weapon) UnmarshalJSON(data []byte) error {
+
+	type weaponJson struct {
+		Name   string
+		Icon   icon.Icon
+		Range  int
+		Type   WeaponType
+		Weight float64
+		Damage *Damage
+	}
+	var v weaponJson
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	weapon.name = v.Name
+	weapon.ic = v.Icon
+	weapon.r = v.Range
+	weapon.t = v.Type
+	weapon.w = v.Weight
+	weapon.damage = v.Damage
+
+	return nil
 }
 
 func (weapon *Weapon) GetName() string {
