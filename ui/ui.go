@@ -163,6 +163,10 @@ func ClearCells(cells []Cell) {
 	termbox.Flush()
 }
 
+func ClearScreen() {
+	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+}
+
 func WriteText(x, y int, msg string) {
 	for _, c := range msg {
 		termbox.SetCell(x, y, c, termbox.ColorWhite, termbox.ColorDefault)

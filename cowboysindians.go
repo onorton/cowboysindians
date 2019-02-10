@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/enemy"
 	"github.com/onorton/cowboysindians/item"
@@ -102,14 +101,12 @@ func allCreatures(enemies []*enemy.Enemy, p *creature.Player) []creature.Creatur
 }
 
 func printStatus(status []string) {
-	length := 0
+	statusString := ""
 	for _, stat := range status {
-		for i, c := range stat {
-			termbox.SetCell(length+i, windowHeight+1, c, termbox.ColorWhite, termbox.ColorDefault)
-		}
-		length += len(stat) + 1
+		statusString += stat + " "
 	}
-	termbox.Flush()
+	ui.WriteText(0, windowHeight+1, statusString)
+
 }
 func main() {
 	ui.Init()
@@ -150,7 +147,7 @@ func main() {
 	for {
 		quit := false
 		endTurn := false
-		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+		ui.ClearScreen()
 		x, y := player.GetCoordinates()
 
 		// Sort by initiative order
@@ -228,7 +225,7 @@ func main() {
 						case ui.DropItem:
 							endTurn = worldMap.DropItem()
 						case ui.ToggleInventory:
-							termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+							ui.ClearScreen()
 							worldMap.Render()
 							inventory = !inventory
 						case ui.WieldItem:
