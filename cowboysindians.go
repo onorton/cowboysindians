@@ -124,7 +124,7 @@ func main() {
 		// Load from save file if player wants to
 		if l := ui.GetInput(); l == ui.Confirm {
 			state = load()
-			loaded = false
+			loaded = true
 		}
 	}
 
