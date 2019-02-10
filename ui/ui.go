@@ -4,6 +4,8 @@ import (
 	termbox "github.com/nsf/termbox-go"
 )
 
+// Inputs
+
 // PlayerAction is a type that represents player actions
 type PlayerAction int
 
@@ -142,4 +144,29 @@ func GetItemSelection() (ItemSelection, rune) {
 	} else {
 		return SpecificItem, e.Ch
 	}
+}
+
+// Rendering
+type Cell struct {
+	x int
+	y int
+}
+
+func NewCell(x int, y int) Cell {
+	return Cell{x, y}
+}
+
+func ClearCells(cells []Cell) {
+	for _, cell := range cells {
+		termbox.SetCell(cell.x, cell.y, ' ', termbox.ColorDefault, termbox.ColorDefault)
+	}
+	termbox.Flush()
+}
+
+func WriteText(x, y int, msg string) {
+	for _, c := range msg {
+		termbox.SetCell(x, y, c, termbox.ColorWhite, termbox.ColorDefault)
+		x++
+	}
+	termbox.Flush()
 }

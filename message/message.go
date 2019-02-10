@@ -1,8 +1,8 @@
 package message
 
 import (
-	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/structs"
+	"github.com/onorton/cowboysindians/ui"
 )
 
 // Singleton message queue
@@ -14,18 +14,14 @@ type MessageQueue struct {
 	windowHeight int
 }
 
-func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
-	for _, c := range msg {
-		termbox.SetCell(x, y, c, fg, bg)
-		x++
-	}
-}
-
 func clearMessageBar() {
 
-	for i := 0; i < Mq.windowWidth; i++ {
-		termbox.SetCell(i, Mq.windowHeight, ' ', termbox.ColorDefault, termbox.ColorDefault)
+	width := Mq.windowWidth
+	cells := make([]ui.Cell, width, width)
+	for i := 0; i < width; i++ {
+		cells[i] = ui.NewCell(i, Mq.windowHeight)
 	}
+	ui.ClearCells(cells)
 
 }
 
@@ -37,16 +33,14 @@ func PrintMessages() {
 		m += " --MORE--"
 
 	}
-	print_tb(0, Mq.windowHeight, termbox.ColorWhite, termbox.ColorDefault, m)
-	termbox.Flush()
+	ui.WriteText(0, Mq.windowHeight, m)
 }
 
 // Prints single message immediately to message bar
 func PrintMessage(m string) {
 
 	clearMessageBar()
-	print_tb(0, Mq.windowHeight, termbox.ColorWhite, termbox.ColorDefault, m)
-	termbox.Flush()
+	ui.WriteText(0, Mq.windowHeight, m)
 }
 
 func SetWindowSize(windowWidth, windowHeight int) {
