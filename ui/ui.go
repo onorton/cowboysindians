@@ -152,8 +152,21 @@ type Cell struct {
 	y int
 }
 
+type Element struct {
+	char   rune
+	colour termbox.Attribute
+}
+
 func NewCell(x int, y int) Cell {
 	return Cell{x, y}
+}
+
+func NewElement(char rune, colour termbox.Attribute) Element {
+	return Element{char, colour}
+}
+
+func EmptyElement() Element {
+	return Element{' ', termbox.ColorDefault}
 }
 
 func ClearCells(cells []Cell) {
@@ -167,10 +180,27 @@ func ClearScreen() {
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 }
 
+func DrawElement(x, y int, elem Element) {
+	termbox.SetCell(x, y, elem.char, elem.colour, termbox.ColorDefault)
+	termbox.Flush()
+}
+
 func WriteText(x, y int, msg string) {
 	for _, c := range msg {
 		termbox.SetCell(x, y, c, termbox.ColorWhite, termbox.ColorDefault)
 		x++
 	}
 	termbox.Flush()
+}
+
+func RenderGrid(x, y int, elems [][]Element) {
+	currY := y
+	for _, row := range elems {
+		for i, elem := range row {
+			termbox.SetCell(x+i, currY, elem.char, elem.colour, termbox.ColorDefault)
+		}
+		currY++
+	}
+	termbox.Flush()
+
 }

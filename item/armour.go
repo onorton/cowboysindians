@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 
 	"github.com/onorton/cowboysindians/icon"
+	"github.com/onorton/cowboysindians/ui"
 )
 
 type ArmourAttributes struct {
@@ -103,9 +104,8 @@ func (armour *Armour) UnmarshalJSON(data []byte) error {
 func (armour *Armour) GetName() string {
 	return armour.name
 }
-func (armour *Armour) Render(x, y int) {
-
-	armour.ic.Render(x, y)
+func (armour *Armour) Render() ui.Element {
+	return armour.ic.Render()
 }
 
 func (armour *Armour) GetACBonus() int {

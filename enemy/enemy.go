@@ -12,6 +12,7 @@ import (
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
+	"github.com/onorton/cowboysindians/ui"
 	"github.com/onorton/cowboysindians/worldmap"
 )
 
@@ -66,8 +67,8 @@ func NewEnemy(name string, x, y int) *Enemy {
 	}
 	return e
 }
-func (e *Enemy) Render(x, y int) {
-	e.icon.Render(x, y)
+func (e *Enemy) Render() ui.Element {
+	return e.icon.Render()
 }
 
 func (e *Enemy) MarshalJSON() ([]byte, error) {

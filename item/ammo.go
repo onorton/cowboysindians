@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 
 	"github.com/onorton/cowboysindians/icon"
+	"github.com/onorton/cowboysindians/ui"
 )
 
 type AmmoAttributes struct {
@@ -104,9 +105,8 @@ func (ammo *Ammo) UnmarshalJSON(data []byte) error {
 func (ammo *Ammo) GetName() string {
 	return ammo.name
 }
-func (ammo *Ammo) Render(x, y int) {
-
-	ammo.ic.Render(x, y)
+func (ammo *Ammo) Render() ui.Element {
+	return ammo.ic.Render()
 }
 
 func (ammo *Ammo) GetKey() rune {

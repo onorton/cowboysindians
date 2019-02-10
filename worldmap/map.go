@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -358,10 +359,10 @@ func (m Map) FindTarget(p *creature.Player) creature.Creature {
 	vWidth, vHeight := m.v.width, m.v.height
 	for {
 		message.PrintMessage("Select target")
-		termbox.SetCell(rX, rY, 'X', termbox.ColorYellow, termbox.ColorDefault)
-		termbox.Flush()
+		ui.DrawElement(rX, rY, ui.NewElement('X', termbox.ColorYellow))
 		x, y = m.v.x+rX, m.v.y+rY
-		m.grid[y][x].render(rX, rY)
+		oX, oY := rX, rY
+
 		action := ui.GetInput()
 		if action.IsMovementAction() {
 			switch action {
@@ -410,8 +411,10 @@ func (m Map) FindTarget(p *creature.Player) creature.Creature {
 				message.PrintMessage("Never mind...")
 				return nil
 			}
-
 		}
+
+		// overwrite
+		ui.DrawElement(oX, oY, m.grid[y][x].render())
 	}
 }
 
@@ -583,18 +586,28 @@ func (m Map) DeleteCreature(c creature.Creature) {
 
 func (m Map) Render() {
 	player := m.GetPlayer()
+
+	elems := make([][]ui.Element, m.v.height, m.v.height)
+
+	for i, _ := range elems {
+		if i >= m.v.height {
+			log.Panic("Sup")
+		}
+		elems[i] = make([]ui.Element, m.v.width, m.v.width)
+	}
+
 	for y, row := range m.grid {
 		for x, tile := range row {
 			rX := x - m.v.x
 			rY := y - m.v.y
 			if rX >= 0 && rX < m.v.width && rY >= 0 && rY < m.v.height {
 				if m.IsVisible(player, x, y) {
-					tile.render(rX, rY)
+					elems[rY][rX] = tile.render()
 				} else {
-					termbox.SetCell(rX, rY, ' ', termbox.ColorDefault, termbox.ColorDefault)
+					elems[rY][rX] = ui.EmptyElement()
 				}
 			}
 		}
 	}
-	termbox.Flush()
+	ui.RenderGrid(0, 0, elems)
 }

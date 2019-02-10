@@ -9,6 +9,7 @@ import (
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
+	"github.com/onorton/cowboysindians/ui"
 )
 
 func check(err error) {
@@ -106,15 +107,15 @@ func (t *Tile) PlaceItem(itm item.Item) {
 	t.items = append([]item.Item{itm}, t.items...)
 }
 
-func (t Tile) render(x, y int) {
+func (t Tile) render() ui.Element {
 	if t.c != nil {
-		t.c.Render(x, y)
+		return t.c.Render()
 	} else if t.door {
-		t.terrain.RenderDoor(x, y, t.passable)
+		return t.terrain.RenderDoor(t.passable)
 	} else if len(t.items) != 0 {
-		t.items[0].Render(x, y)
+		return t.items[0].Render()
 	} else {
-		t.terrain.Render(x, y)
+		return t.terrain.Render()
 	}
 }
 

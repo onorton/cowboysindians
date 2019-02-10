@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 
 	"github.com/onorton/cowboysindians/icon"
+	"github.com/onorton/cowboysindians/ui"
 )
 
 type ConsumableAttributes struct {
@@ -104,9 +105,8 @@ func (consumable *Consumable) UnmarshalJSON(data []byte) error {
 func (consumable *Consumable) GetName() string {
 	return consumable.name
 }
-func (consumable *Consumable) Render(x, y int) {
-
-	consumable.ic.Render(x, y)
+func (consumable *Consumable) Render() ui.Element {
+	return consumable.ic.Render()
 }
 
 func (consumable *Consumable) GetKey() rune {

@@ -9,6 +9,7 @@ import (
 	"math/rand"
 
 	"github.com/onorton/cowboysindians/icon"
+	"github.com/onorton/cowboysindians/ui"
 )
 
 type WeaponAttributes struct {
@@ -201,9 +202,8 @@ func (weapon *Weapon) UnmarshalJSON(data []byte) error {
 func (weapon *Weapon) GetName() string {
 	return weapon.name
 }
-func (weapon *Weapon) Render(x, y int) {
-
-	weapon.ic.Render(x, y)
+func (weapon *Weapon) Render() ui.Element {
+	return weapon.ic.Render()
 }
 
 func (weapon *Weapon) GetRange() int {

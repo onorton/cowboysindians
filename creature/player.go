@@ -8,7 +8,6 @@ import (
 	"math"
 	"math/rand"
 
-	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
@@ -32,8 +31,8 @@ func NewPlayer() *Player {
 	return player
 }
 
-func (p *Player) Render(x, y int) {
-	p.icon.Render(x, y)
+func (p *Player) Render() ui.Element {
+	return p.icon.Render()
 }
 
 func (p *Player) MarshalJSON() ([]byte, error) {
@@ -191,27 +190,21 @@ func (p *Player) GetStats() []string {
 }
 
 func (p *Player) PrintInventory() {
-	for i, c := range "Wearing: " {
-		termbox.SetCell(i, 0, c, termbox.ColorWhite, termbox.ColorDefault)
-	}
+	ui.WriteText(0, 0, "Wearing: ")
 
 	position := 2
 	if p.weapon != nil {
-		for i, c := range fmt.Sprintf("%s - %s", string(p.weapon.GetKey()), p.weapon.GetName()) {
-			termbox.SetCell(i, position, c, termbox.ColorWhite, termbox.ColorDefault)
-		}
+		equippedWeaponText := fmt.Sprintf("%s - %s", string(p.weapon.GetKey()), p.weapon.GetName())
+		ui.WriteText(0, position, equippedWeaponText)
 		position++
 	}
 	if p.armour != nil {
-		for i, c := range fmt.Sprintf("%s - %s", string(p.armour.GetKey()), p.armour.GetName()) {
-			termbox.SetCell(i, position, c, termbox.ColorWhite, termbox.ColorDefault)
-		}
+		equippedArmourText := fmt.Sprintf("%s - %s", string(p.armour.GetKey()), p.armour.GetName())
+		ui.WriteText(0, 2, equippedArmourText)
 		position++
 	}
 	position++
-	for i, c := range "Inventory: " {
-		termbox.SetCell(i, position, c, termbox.ColorWhite, termbox.ColorDefault)
-	}
+	ui.WriteText(0, position, "Inventory: ")
 	position += 2
 
 	for k, items := range p.inventory {
@@ -219,13 +212,9 @@ func (p *Player) PrintInventory() {
 		if len(items) > 1 {
 			itemString += fmt.Sprintf(" x%d", len(items))
 		}
-		for i, c := range itemString {
-			termbox.SetCell(i, position, c, termbox.ColorWhite, termbox.ColorDefault)
-		}
+		ui.WriteText(0, position, itemString)
 		position++
 	}
-
-	termbox.Flush()
 }
 
 func (p *Player) PrintWeapons() {
@@ -238,12 +227,9 @@ func (p *Player) PrintWeapons() {
 		if len(items) > 1 {
 			itemString += fmt.Sprintf(" x%d", len(items))
 		}
-		for i, c := range itemString {
-			termbox.SetCell(i, position, c, termbox.ColorWhite, termbox.ColorDefault)
-		}
+		ui.WriteText(0, position, itemString)
 		position++
 	}
-	termbox.Flush()
 }
 
 func (p *Player) PrintArmour() {
@@ -256,12 +242,9 @@ func (p *Player) PrintArmour() {
 		if len(items) > 1 {
 			itemString += fmt.Sprintf(" x%d", len(items))
 		}
-		for i, c := range itemString {
-			termbox.SetCell(i, position, c, termbox.ColorWhite, termbox.ColorDefault)
-		}
+		ui.WriteText(0, position, itemString)
 		position++
 	}
-	termbox.Flush()
 }
 
 func (p *Player) PrintConsumables() {
@@ -274,12 +257,10 @@ func (p *Player) PrintConsumables() {
 		if len(items) > 1 {
 			itemString += fmt.Sprintf(" x%d", len(items))
 		}
-		for i, c := range itemString {
-			termbox.SetCell(i, position, c, termbox.ColorWhite, termbox.ColorDefault)
-		}
+		ui.WriteText(0, position, itemString)
+
 		position++
 	}
-	termbox.Flush()
 }
 func (p *Player) IsDead() bool {
 	return p.hp <= 0 || p.hunger > p.maxHunger || p.thirst > p.maxThirst
@@ -638,7 +619,7 @@ func (p *Player) Update() {
 type Creature interface {
 	GetCoordinates() (int, int)
 	SetCoordinates(int, int)
-	Render(int, int)
+	Render() ui.Element
 	GetInitiative() int
 	MeleeAttack(Creature)
 	TakeDamage(int)

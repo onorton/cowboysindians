@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	termbox "github.com/nsf/termbox-go"
+	"github.com/onorton/cowboysindians/ui"
 )
 
 type Icon struct {
@@ -13,15 +14,15 @@ type Icon struct {
 	colour termbox.Attribute
 }
 
-func (i Icon) Render(x, y int) {
-	termbox.SetCell(x, y, i.icon, i.colour, termbox.ColorDefault)
+func (i Icon) Render() ui.Element {
+	return ui.NewElement(i.icon, i.colour)
 }
 
-func (i Icon) RenderDoor(x, y int, passable bool) {
+func (i Icon) RenderDoor(passable bool) ui.Element {
 	if passable {
-		termbox.SetCell(x, y, ' ', i.colour, termbox.ColorDefault)
+		return ui.NewElement(' ', i.colour)
 	} else {
-		i.Render(x, y)
+		return i.Render()
 	}
 }
 

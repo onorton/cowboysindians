@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 
 	"github.com/onorton/cowboysindians/icon"
+	"github.com/onorton/cowboysindians/ui"
 )
 
 func check(err error) {
@@ -167,9 +168,8 @@ func (itemList *ItemList) UnmarshalJSON(data []byte) error {
 func (item *NormalItem) GetName() string {
 	return item.name
 }
-func (item *NormalItem) Render(x, y int) {
-
-	item.ic.Render(x, y)
+func (item *NormalItem) Render() ui.Element {
+	return item.ic.Render()
 }
 
 func (item *NormalItem) GetKey() rune {
@@ -197,7 +197,7 @@ func LoadAllData() {
 type Item interface {
 	GetKey() rune
 	GetName() string
-	Render(int, int)
+	Render() ui.Element
 	MarshalJSON() ([]byte, error)
 	UnmarshalJSON([]byte) error
 	GetWeight() float64
