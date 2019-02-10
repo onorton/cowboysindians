@@ -16,7 +16,7 @@ import (
 
 const padding = 5
 
-func NewMap(width, height, viewerWidth, viewerHeight int) Map {
+func NewMap(width, height, viewerWidth, viewerHeight int) *Map {
 	grid := make([][]Tile, height)
 	for i := 0; i < height; i++ {
 		row := make([]Tile, width)
@@ -44,7 +44,7 @@ func NewMap(width, height, viewerWidth, viewerHeight int) Map {
 	viewer.y = 0
 	viewer.width = viewerWidth
 	viewer.height = viewerHeight
-	return Map{grid, viewer}
+	return &Map{grid, viewer}
 }
 
 func DeserializeViewer(v string) *Viewer {

@@ -34,26 +34,26 @@ func check(e error) {
 type GameState struct {
 	PlayerIndex int
 	Time        int
-	Map         worldmap.Map
+	Map         *worldmap.Map
 	Enemies     []*enemy.Enemy
 	Player      *creature.Player
 }
 
-func save(m *worldmap.Map, p *creature.Player, enemies []*enemy.Enemy, t, playerIndex int) {
+func save(state GameState) {
 	buffer := bytes.NewBufferString("{")
 
-	buffer.WriteString(fmt.Sprintf("\"PlayerIndex\":%d,\n", playerIndex))
-	buffer.WriteString(fmt.Sprintf("\"Time\":%d,\n", t))
+	buffer.WriteString(fmt.Sprintf("\"PlayerIndex\":%d,\n", state.PlayerIndex))
+	buffer.WriteString(fmt.Sprintf("\"Time\":%d,\n", state.Time))
 
-	mapValue, err := json.Marshal(m)
+	mapValue, err := json.Marshal(state.Map)
 	check(err)
 	buffer.WriteString(fmt.Sprintf("\"Map\":%s,\n", mapValue))
 
-	enemiesValue, err := json.Marshal(enemies)
+	enemiesValue, err := json.Marshal(state.Enemies)
 	check(err)
 	buffer.WriteString(fmt.Sprintf("\"Enemies\":%s,\n", enemiesValue))
 
-	playerValue, err := json.Marshal(p)
+	playerValue, err := json.Marshal(state.Player)
 	check(err)
 	buffer.WriteString(fmt.Sprintf("\"Player\":%s\n", playerValue))
 
@@ -64,19 +64,19 @@ func save(m *worldmap.Map, p *creature.Player, enemies []*enemy.Enemy, t, player
 
 }
 
-func load() (worldmap.Map, *creature.Player, []*enemy.Enemy, int, int) {
+func load() GameState {
 
 	data, err := ioutil.ReadFile(saveFilename)
 	check(err)
-	state := &GameState{}
-	err = json.Unmarshal(data, state)
+	state := GameState{}
+	err = json.Unmarshal(data, &state)
 	check(err)
 
-	return state.Map, state.Player, state.Enemies, state.Time, state.PlayerIndex
+	return state
 
 }
 
-func generateEnemies(m worldmap.Map, p *creature.Player, n int) []*enemy.Enemy {
+func generateEnemies(m *worldmap.Map, p *creature.Player, n int) []*enemy.Enemy {
 	enemies := make([]*enemy.Enemy, n)
 	for i := 0; i < n; i++ {
 		x := rand.Intn(width)
@@ -116,19 +116,30 @@ func main() {
 	defer ui.Close()
 	item.LoadAllData()
 	message.SetWindowSize(windowWidth, windowHeight)
-	worldMap := worldmap.NewMap(width, height, windowWidth, windowHeight)
-	player := creature.NewPlayer()
-	enemies := generateEnemies(worldMap, player, 2)
-	t := 1
-	playerIndex := 0
+	state := GameState{}
+
+	loaded := false
 	if _, err := os.Stat(saveFilename); !os.IsNotExist(err) {
 		message.PrintMessage("Do you wish to load the last save? [yn]")
 		// Load from save file if player wants to
 		if l := ui.GetInput(); l == ui.Confirm {
-			worldMap, player, enemies, t, playerIndex = load()
+			state = load()
+			loaded = false
 		}
-
 	}
+
+	if !loaded {
+		state.Map = worldmap.NewMap(width, height, windowWidth, windowHeight)
+		state.Player = creature.NewPlayer()
+		state.Enemies = generateEnemies(state.Map, state.Player, 2)
+		state.Time = 1
+		state.PlayerIndex = 0
+	}
+
+	worldMap := state.Map
+	player := state.Player
+	enemies := state.Enemies
+
 	all := allCreatures(enemies, player)
 	for _, c := range all {
 		x, y := c.GetCoordinates()
@@ -149,10 +160,10 @@ func main() {
 
 		for i, c := range all {
 			// Used when initially loading, to make sure faster enemies do not move twice
-			if i < playerIndex {
+			if i < state.PlayerIndex {
 				continue
 			} else {
-				playerIndex = 0
+				state.PlayerIndex = 0
 			}
 
 			if _, ok := c.(*creature.Player); ok {
@@ -161,7 +172,7 @@ func main() {
 				message.PrintMessages()
 				player.Update()
 				stats := player.GetStats()
-				stats = append([]string{fmt.Sprintf("T:%d", t)}, stats...)
+				stats = append([]string{fmt.Sprintf("T:%d", state.Time)}, stats...)
 				printStatus(stats)
 
 				// Game over, skip other enemies
@@ -198,7 +209,7 @@ func main() {
 							message.PrintMessage("Do you wish to save? [yn]")
 
 							if quitAction := ui.GetInput(); quitAction == ui.Confirm {
-								save(&worldMap, player, enemies, t, i)
+								save(state)
 							}
 							quit = true
 
@@ -264,6 +275,6 @@ func main() {
 		if quit {
 			break
 		}
-		t++
+		state.Time++
 	}
 }

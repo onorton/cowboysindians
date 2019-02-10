@@ -160,7 +160,7 @@ func (e *Enemy) SetCoordinates(x int, y int) {
 	e.y = y
 }
 
-func generateMap(aiMap [][]int, m worldmap.Map) [][]int {
+func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
 	width, height := len(aiMap[0]), len(aiMap)
 	prev := make([][]int, height)
 	for i, _ := range prev {
@@ -194,7 +194,7 @@ func generateMap(aiMap [][]int, m worldmap.Map) [][]int {
 	}
 	return aiMap
 }
-func (e *Enemy) getChaseMap(m worldmap.Map) [][]int {
+func (e *Enemy) getChaseMap(m *worldmap.Map) [][]int {
 	height, width := m.GetHeight(), m.GetWidth()
 	aiMap := make([][]int, height)
 
@@ -215,7 +215,7 @@ func (e *Enemy) getChaseMap(m worldmap.Map) [][]int {
 
 }
 
-func (e *Enemy) getItemMap(m worldmap.Map) [][]int {
+func (e *Enemy) getItemMap(m *worldmap.Map) [][]int {
 	height, width := m.GetHeight(), m.GetWidth()
 	aiMap := make([][]int, height)
 
@@ -343,7 +343,7 @@ type Coordinate struct {
 	y int
 }
 
-func (e *Enemy) Update(m worldmap.Map) (int, int) {
+func (e *Enemy) Update(m *worldmap.Map) (int, int) {
 	// If at half health heal up
 	if e.hp <= e.maxHp/2 {
 		for i, itm := range e.inventory {
@@ -414,7 +414,7 @@ func (e *Enemy) overEncumbered() bool {
 	}
 	return weight > float64(e.encumbrance)
 }
-func (e *Enemy) dropItem(item item.Item, m worldmap.Map) {
+func (e *Enemy) dropItem(item item.Item, m *worldmap.Map) {
 	m.PlaceItem(e.x, e.y, item)
 	if m.IsVisible(m.GetPlayer(), e.x, e.y) {
 		message.Enqueue(fmt.Sprintf("The %s dropped a %s.", e.name, item.GetName()))
@@ -422,7 +422,7 @@ func (e *Enemy) dropItem(item item.Item, m worldmap.Map) {
 
 }
 
-func (e *Enemy) EmptyInventory(m worldmap.Map) {
+func (e *Enemy) EmptyInventory(m *worldmap.Map) {
 	itemTypes := make(map[string]int)
 	for _, item := range e.inventory {
 		m.PlaceItem(e.x, e.y, item)
