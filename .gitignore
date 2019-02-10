@@ -11,4 +11,4 @@
 *.out
 
 # Game data file
-game.dat
+game.json

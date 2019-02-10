@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 
@@ -16,15 +17,13 @@ import (
 	"math/rand"
 	"os"
 	"sort"
-	"strconv"
-	"strings"
 )
 
 const windowWidth = 100
 const windowHeight = 25
 const width = 10
 const height = 10
-const saveFilename = "game.dat"
+const saveFilename = "game.json"
 
 func check(e error) {
 	if e != nil {
@@ -32,57 +31,48 @@ func check(e error) {
 	}
 }
 
+type GameState struct {
+	PlayerIndex int
+	Time        int
+	Map         worldmap.Map
+	Enemies     []*enemy.Enemy
+	Player      *creature.Player
+}
+
 func save(m *worldmap.Map, p *creature.Player, enemies []*enemy.Enemy, t, playerIndex int) {
-	data := fmt.Sprintf("%d %d\n", t, playerIndex)
+	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString(fmt.Sprintf("\"PlayerIndex\":%d,\n", playerIndex))
+	buffer.WriteString(fmt.Sprintf("\"Time\":%d,\n", t))
 
 	mapValue, err := json.Marshal(m)
 	check(err)
-	data += string(mapValue) + "\n\n"
+	buffer.WriteString(fmt.Sprintf("\"Map\":%s,\n", mapValue))
+
+	enemiesValue, err := json.Marshal(enemies)
+	check(err)
+	buffer.WriteString(fmt.Sprintf("\"Enemies\":%s,\n", enemiesValue))
+
 	playerValue, err := json.Marshal(p)
 	check(err)
+	buffer.WriteString(fmt.Sprintf("\"Player\":%s\n", playerValue))
 
-	data += string(playerValue) + "\n\n"
+	buffer.WriteString("}")
 
-	for _, e := range enemies {
-		enemyValue, err := json.Marshal(e)
-		check(err)
-		data += string(enemyValue) + "\n"
-	}
-	err = ioutil.WriteFile(saveFilename, []byte(data), 0644)
+	err = ioutil.WriteFile(saveFilename, buffer.Bytes(), 0644)
 	check(err)
+
 }
 
 func load() (worldmap.Map, *creature.Player, []*enemy.Enemy, int, int) {
 
 	data, err := ioutil.ReadFile(saveFilename)
 	check(err)
-	items := strings.Split(string(data), "\n\n")
-
-	player := &creature.Player{}
-	err = json.Unmarshal([]byte(items[1]), player)
+	state := &GameState{}
+	err = json.Unmarshal(data, state)
 	check(err)
 
-	enemyStrings := strings.Split(items[2], "\n")
-	enemyStrings = enemyStrings[0 : len(enemyStrings)-1]
-	enemies := make([]*enemy.Enemy, len(enemyStrings))
-
-	for i, e := range enemyStrings {
-		enemies[i] = &enemy.Enemy{}
-		err = json.Unmarshal([]byte(e), enemies[i])
-		check(err)
-	}
-
-	timeMap := strings.SplitN(items[0], "\n", 2)
-	status := strings.Split(timeMap[0], " ")
-
-	t, _ := strconv.Atoi(status[0])
-	playerIndex, _ := strconv.Atoi(status[1])
-
-	m := worldmap.Map{}
-	err = json.Unmarshal([]byte(timeMap[1]), &m)
-	check(err)
-
-	return m, player, enemies, t, playerIndex
+	return state.Map, state.Player, state.Enemies, state.Time, state.PlayerIndex
 
 }
 
