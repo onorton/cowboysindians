@@ -1,6 +1,8 @@
 package worldmap
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -71,37 +73,99 @@ type Map struct {
 	v    *Viewer
 }
 
-func DeserializeMap(m string) Map {
-	dimensionEntries := strings.Split(m, "\n")
-	dimensions := strings.Split(dimensionEntries[0], " ")
-	dimensionEntries = dimensionEntries[1:len(dimensionEntries)]
-	height, _ := strconv.Atoi(dimensions[1])
-	width, _ := strconv.Atoi(dimensions[0])
-	grid := make([][]Tile, height)
-	for i := 0; i < height; i++ {
-		row := make([]Tile, width)
-		tiles := strings.Split(dimensionEntries[i], "Tile")
-		tiles = tiles[1:len(tiles)]
-		for j := 0; j < width; j++ {
-			row[j] = DeserializeTile(tiles[j])
+func (v *Viewer) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
 
-		}
-		grid[i] = row
-
+	xValue, err := json.Marshal(v.x)
+	if err != nil {
+		return nil, err
 	}
-	return Map{grid, DeserializeViewer(dimensionEntries[len(dimensionEntries)-1])}
+
+	buffer.WriteString(fmt.Sprintf("\"X\":%s,", xValue))
+
+	yValue, err := json.Marshal(v.y)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Y\":%s,", yValue))
+
+	widthValue, err := json.Marshal(v.width)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"width\":%s,", widthValue))
+
+	heightValue, err := json.Marshal(v.height)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"height\":%s", heightValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
 }
-func (m Map) Serialize() string {
-	result := fmt.Sprintf("%d %d\n", m.GetWidth(), m.GetHeight())
-	for _, row := range m.grid {
-		for _, tile := range row {
-			result += tile.Serialize()
-		}
-		result += "\n"
 
+func (v *Viewer) UnmarshalJSON(data []byte) error {
+	type viewerJson struct {
+		X      int
+		Y      int
+		Width  int
+		Height int
 	}
-	result += m.v.Serialize() + "\n"
-	return result
+
+	value := viewerJson{}
+
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+
+	v.x = value.X
+	v.y = value.Y
+	v.width = value.Width
+	v.height = value.Height
+
+	return nil
+}
+
+func (m *Map) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	gridValue, err := json.Marshal(m.grid)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Map\":%s,", gridValue))
+
+	viewerValue, err := json.Marshal(m.v)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Viewer\":%s", viewerValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (m *Map) UnmarshalJSON(data []byte) error {
+	type mapJson struct {
+		Map    [][]Tile
+		Viewer *Viewer
+	}
+
+	v := mapJson{}
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	m.grid = v.Map
+	m.v = v.Viewer
+
+	return nil
 }
 
 func (m Map) HasPlayer(x, y int) bool {

@@ -1,12 +1,10 @@
 package worldmap
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"regexp"
-	"strconv"
-	"strings"
 
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/icon"
@@ -45,63 +43,63 @@ func newTile(name string, x, y int) Tile {
 	return Tile{icon, x, y, passable, door, nil, make([]item.Item, 0)}
 }
 
-func (t Tile) Serialize() string {
-	items := "["
-	for _, item := range t.items {
-		itemValue, err := json.Marshal(item)
-		check(err)
-		items += fmt.Sprintf("%s ", itemValue)
+func (t *Tile) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+	keys := []string{"Terrain", "X", "Y", "Passable", "Door", "Items"}
+
+	tileValues := map[string]interface{}{
+		"Terrain":  t.terrain,
+		"X":        t.x,
+		"Y":        t.y,
+		"Passable": t.passable,
+		"Door":     t.door,
+		"Items":    t.items,
 	}
-	items += "]"
 
-	iconJson, err := json.Marshal(t.terrain)
-	check(err)
+	length := len(tileValues)
+	count := 0
 
-	return fmt.Sprintf("Tile{%s %d %d %v %v %s}", iconJson, t.x, t.y, t.passable, t.door, items)
+	for _, key := range keys {
+		jsonValue, err := json.Marshal(tileValues[key])
+		if err != nil {
+			return nil, err
+		}
+		buffer.WriteString(fmt.Sprintf("\"%s\":%s", key, jsonValue))
+		count++
+		if count < length {
+			buffer.WriteString(",")
+		}
+	}
+	buffer.WriteString("}")
 
+	return buffer.Bytes(), nil
 }
 
-func DeserializeTile(t string) Tile {
+func (t *Tile) UnmarshalJSON(data []byte) error {
 
-	if len(t) == 0 || t[0] != '{' {
+	type tileJson struct {
+		Terrain  icon.Icon
+		X        int
+		Y        int
+		Passable bool
+		Door     bool
+		Items    item.ItemList
+	}
+	v := tileJson{}
 
-		return Tile{}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
 	}
 
-	b := 0
-	e := len(t)
-	for i, c := range t {
-		if c == '{' && b == 0 {
-			b = i
-		}
-		if c == '}' && e == len(t) {
-			e = i
-		}
-	}
+	t.terrain = v.Terrain
+	t.x = v.X
+	t.y = v.Y
+	t.passable = v.Passable
+	t.door = v.Door
+	t.items = v.Items
 
-	e++
-	tile := Tile{}
+	return nil
 
-	err := json.Unmarshal([]byte(t[b:e]), &(tile.terrain))
-	check(err)
-
-	t = t[(e + 1):]
-	fields := strings.SplitN(t, " ", 5)
-
-	tile.x, _ = strconv.Atoi(fields[0])
-	tile.y, _ = strconv.Atoi(fields[1])
-	tile.passable, _ = strconv.ParseBool(fields[2])
-	tile.door, _ = strconv.ParseBool(fields[3])
-	itemStrings := fields[4][1 : len(fields[4])-2]
-	items := regexp.MustCompile("(Ammo)|(Armour)|(Consumable)|(Item)|(Weapon)").Split(itemStrings, -1)
-	items = items[1:]
-	tile.items = make([]item.Item, len(items))
-
-	for i, itemString := range items {
-		err := json.Unmarshal([]byte(itemString), &(tile.items[i]))
-		check(err)
-	}
-	return tile
 }
 
 func (t *Tile) PlaceItem(itm item.Item) {

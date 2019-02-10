@@ -32,10 +32,12 @@ func check(e error) {
 	}
 }
 
-func save(m worldmap.Map, p *creature.Player, enemies []*enemy.Enemy, t, playerIndex int) {
+func save(m *worldmap.Map, p *creature.Player, enemies []*enemy.Enemy, t, playerIndex int) {
 	data := fmt.Sprintf("%d %d\n", t, playerIndex)
 
-	data += m.Serialize() + "\n\n"
+	mapValue, err := json.Marshal(m)
+	check(err)
+	data += string(mapValue) + "\n\n"
 	playerValue, err := json.Marshal(p)
 	check(err)
 
@@ -76,7 +78,11 @@ func load() (worldmap.Map, *creature.Player, []*enemy.Enemy, int, int) {
 	t, _ := strconv.Atoi(status[0])
 	playerIndex, _ := strconv.Atoi(status[1])
 
-	return worldmap.DeserializeMap(timeMap[1]), player, enemies, t, playerIndex
+	m := worldmap.Map{}
+	err = json.Unmarshal([]byte(timeMap[1]), &m)
+	check(err)
+
+	return m, player, enemies, t, playerIndex
 
 }
 
@@ -202,7 +208,7 @@ func main() {
 							message.PrintMessage("Do you wish to save? [yn]")
 
 							if quitAction := ui.GetInput(); quitAction == ui.Confirm {
-								save(worldMap, player, enemies, t, i)
+								save(&worldMap, player, enemies, t, i)
 							}
 							quit = true
 
