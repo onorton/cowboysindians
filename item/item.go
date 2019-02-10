@@ -98,6 +98,72 @@ func (item *NormalItem) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type ItemList []Item
+
+func (itemList *ItemList) UnmarshalJSON(data []byte) error {
+	var rawItems []interface{}
+
+	if err := json.Unmarshal(data, &rawItems); err != nil {
+		return err
+	}
+
+	items := []Item{}
+
+	//convert raw items back into byte data and unmarshal individually,
+	for _, rawItem := range rawItems {
+		itemJson, err := json.Marshal(rawItem)
+		check(err)
+
+		//Tying unmarshalling for each item type
+
+		//armour
+		armour := &Armour{}
+		err = json.Unmarshal(itemJson, armour)
+		if err == nil {
+			items = append(items, armour)
+			continue
+		}
+
+		//consumable
+		consumable := &Consumable{}
+		err = json.Unmarshal(itemJson, consumable)
+		if err == nil {
+			items = append(items, consumable)
+			continue
+		}
+
+		//weapon
+		weapon := &Weapon{}
+		err = json.Unmarshal(itemJson, weapon)
+		if err == nil {
+			items = append(items, weapon)
+			continue
+		}
+
+		//ammo
+		ammo := &Ammo{}
+		err = json.Unmarshal(itemJson, ammo)
+		if err == nil {
+			items = append(items, ammo)
+			continue
+		}
+
+		//Must be a plain ordinary item
+		item := &NormalItem{}
+		err = json.Unmarshal(itemJson, item)
+		if err == nil {
+			items = append(items, item)
+			continue
+		} else {
+			return err
+		}
+	}
+
+	*itemList = ItemList(items)
+
+	return nil
+}
+
 func (item *NormalItem) GetName() string {
 	return item.name
 }

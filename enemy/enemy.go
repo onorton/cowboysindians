@@ -1,14 +1,12 @@
 package enemy
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math"
 	"math/rand"
-	"regexp"
-	"strconv"
-	"strings"
 
 	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/icon"
@@ -72,72 +70,85 @@ func (e *Enemy) Render(x, y int) {
 	e.icon.Render(x, y)
 }
 
-func Deserialize(e string) creature.Creature {
-	enemy := new(Enemy)
-	e = e[strings.Index(e, "{")+1 : len(e)-1]
-	restInventory := strings.SplitN(e, "[", 2)
-	restWearing := regexp.MustCompile("(Weapon)|(Armour)").Split(restInventory[0], -1)
-	wearingTypes := regexp.MustCompile("(Weapon)|(Armour)").FindAllString(restInventory[0], -1)
-	rest := strings.Split(restWearing[0], " ")
-	inventory := restInventory[1][:len(restInventory[1])-1]
+func (e *Enemy) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
 
-	enemy.name = strings.Replace(rest[0], "_", " ", -1)
-	enemy.x, _ = strconv.Atoi(rest[1])
-	enemy.y, _ = strconv.Atoi(rest[2])
-	enemy.hp, _ = strconv.Atoi(rest[3])
-	enemy.maxHp, _ = strconv.Atoi(rest[4])
-	enemy.ac, _ = strconv.Atoi(rest[5])
-	enemy.str, _ = strconv.Atoi(rest[6])
-	enemy.dex, _ = strconv.Atoi(rest[7])
-	enemy.encumbrance, _ = strconv.Atoi(rest[8])
-	err := json.Unmarshal([]byte(rest[9]), &(enemy.icon))
-	check(err)
+	keys := []string{"Name", "X", "Y", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Weapon", "Armour", "Inventory"}
 
-	if len(restWearing) > 1 {
-		for i := 1; i < len(restWearing); i++ {
-			switch wearingTypes[i-1] {
-			case "Weapon":
-				err := json.Unmarshal([]byte(restWearing[i]), enemy.weapon)
-				check(err)
-			case "Armour":
-				err := json.Unmarshal([]byte(restWearing[i]), enemy.armour)
-				check(err)
-			}
+	enemyValues := map[string]interface{}{
+		"Name":        e.name,
+		"X":           e.x,
+		"Y":           e.y,
+		"Icon":        e.icon,
+		"Initiative":  e.initiative,
+		"Hp":          e.hp,
+		"MaxHp":       e.maxHp,
+		"AC":          e.ac,
+		"Str":         e.str,
+		"Dex":         e.dex,
+		"Encumbrance": e.encumbrance,
+		"Weapon":      e.weapon,
+		"Armour":      e.armour,
+		"Inventory":   e.inventory,
+	}
+
+	length := len(enemyValues)
+	count := 0
+
+	for _, key := range keys {
+		jsonValue, err := json.Marshal(enemyValues[key])
+		if err != nil {
+			return nil, err
+		}
+		buffer.WriteString(fmt.Sprintf("\"%s\":%s", key, jsonValue))
+		count++
+		if count < length {
+			buffer.WriteString(",")
 		}
 	}
-	enemy.inventory = make([]item.Item, 0)
+	buffer.WriteString("}")
 
-	items := regexp.MustCompile("(Ammo)|(Armour)|(Consumable)|(Item)|(Weapon)").Split(inventory, -1)
-	items = items[1:]
-	for _, itemString := range items {
-		var itm item.Item
-		err := json.Unmarshal([]byte(itemString), &itm)
-		check(err)
-		enemy.pickupItem(itm)
-	}
-	var creature creature.Creature = enemy
-	return creature
+	return buffer.Bytes(), nil
 }
 
-func (e *Enemy) Serialize() string {
-	items := "["
-	for _, item := range e.inventory {
-		itemValue, err := json.Marshal(item)
-		check(err)
-		items += fmt.Sprintf("%s ", itemValue)
+func (e *Enemy) UnmarshalJSON(data []byte) error {
+
+	type enemyJson struct {
+		Name        string
+		X           int
+		Y           int
+		Icon        icon.Icon
+		Initiative  int
+		Hp          int
+		MaxHp       int
+		AC          int
+		Str         int
+		Dex         int
+		Encumbrance int
+		Weapon      *item.Weapon
+		Armour      *item.Armour
+		Inventory   item.ItemList
 	}
-	items += "]"
+	var v enemyJson
 
-	iconValue, err := json.Marshal(e.icon)
-	check(err)
+	json.Unmarshal(data, &v)
 
-	weaponValue, err := json.Marshal(e.weapon)
-	check(err)
+	e.name = v.Name
+	e.x = v.X
+	e.y = v.Y
+	e.icon = v.Icon
+	e.initiative = v.Initiative
+	e.hp = v.Hp
+	e.maxHp = v.MaxHp
+	e.ac = v.AC
+	e.str = v.Str
+	e.dex = v.Dex
+	e.encumbrance = v.Encumbrance
+	e.weapon = v.Weapon
+	e.armour = v.Armour
+	e.inventory = v.Inventory
 
-	armourValue, err := json.Marshal(e.armour)
-	check(err)
-
-	return fmt.Sprintf("Enemy{%s %d %d %d %d %d %d %d %d %s %s %s %s}", strings.Replace(e.name, " ", "_", -1), e.x, e.y, e.hp, e.maxHp, e.ac, e.str, e.dex, e.encumbrance, iconValue, weaponValue, armourValue, items)
+	return nil
 }
 
 func (e *Enemy) GetCoordinates() (int, int) {

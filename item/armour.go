@@ -79,7 +79,7 @@ func (armour *Armour) UnmarshalJSON(data []byte) error {
 	type armourJson struct {
 		Name   string
 		Icon   icon.Icon
-		Bonus  int
+		Bonus  *int
 		Weight float64
 	}
 	var v armourJson
@@ -88,9 +88,13 @@ func (armour *Armour) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	if v.Bonus == nil {
+		return fmt.Errorf("The Bonus field is required")
+	}
+
 	armour.name = v.Name
 	armour.ic = v.Icon
-	armour.bonus = v.Bonus
+	armour.bonus = *(v.Bonus)
 	armour.w = v.Weight
 
 	return nil

@@ -165,8 +165,8 @@ func (weapon *Weapon) UnmarshalJSON(data []byte) error {
 	type weaponJson struct {
 		Name   string
 		Icon   icon.Icon
-		Range  int
-		Type   WeaponType
+		Range  *int
+		Type   *WeaponType
 		Weight float64
 		Damage *Damage
 	}
@@ -176,10 +176,22 @@ func (weapon *Weapon) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	if v.Range == nil {
+		return fmt.Errorf("The Range field is required")
+	}
+
+	if v.Type == nil {
+		return fmt.Errorf("The Type field is required")
+	}
+
+	if v.Damage == nil {
+		return fmt.Errorf("The Damage field is required")
+	}
+
 	weapon.name = v.Name
 	weapon.ic = v.Icon
-	weapon.r = v.Range
-	weapon.t = v.Type
+	weapon.r = *(v.Range)
+	weapon.t = *(v.Type)
 	weapon.w = v.Weight
 	weapon.damage = v.Damage
 

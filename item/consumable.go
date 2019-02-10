@@ -81,7 +81,7 @@ func (consumable *Consumable) UnmarshalJSON(data []byte) error {
 		Name    string
 		Icon    icon.Icon
 		Weight  float64
-		Effects map[string]int
+		Effects *map[string]int
 	}
 	var v consumableJson
 
@@ -89,10 +89,14 @@ func (consumable *Consumable) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	if v.Effects == nil {
+		return fmt.Errorf("The Effects field is required")
+	}
+
 	consumable.name = v.Name
 	consumable.ic = v.Icon
 	consumable.w = v.Weight
-	consumable.effects = v.Effects
+	consumable.effects = *(v.Effects)
 
 	return nil
 }

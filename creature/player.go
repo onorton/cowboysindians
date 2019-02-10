@@ -1,13 +1,12 @@
 package creature
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
-	"regexp"
-	"strconv"
-	"strings"
 
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/icon"
@@ -37,90 +36,110 @@ func (p *Player) Render(x, y int) {
 	p.icon.Render(x, y)
 }
 
-func Deserialize(c string) Creature {
-	p := new(Player)
-	c = c[strings.Index(c, "{")+1 : len(c)-1]
-	restInventory := strings.SplitN(c, "[", 2)
-	restWearing := regexp.MustCompile("(Weapon)|(Armour)").Split(restInventory[0], -1)
-	wearingTypes := regexp.MustCompile("(Weapon)|(Armour)").FindAllString(restInventory[0], -1)
-	rest := strings.Split(restWearing[0], " ")
-	inventory := restInventory[1][:len(restInventory[1])-1]
+func (p *Player) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
 
-	p.x, _ = strconv.Atoi(rest[0])
-	p.y, _ = strconv.Atoi(rest[1])
-	p.hp, _ = strconv.Atoi(rest[2])
-	p.maxHp, _ = strconv.Atoi(rest[3])
-	p.hunger, _ = strconv.Atoi(rest[4])
-	p.hunger--
-	p.maxHunger, _ = strconv.Atoi(rest[5])
-	p.thirst, _ = strconv.Atoi(rest[6])
-	p.thirst--
-	p.maxThirst, _ = strconv.Atoi(rest[7])
-	p.ac, _ = strconv.Atoi(rest[8])
-	p.str, _ = strconv.Atoi(rest[9])
-	p.dex, _ = strconv.Atoi(rest[10])
-	p.encumbrance, _ = strconv.Atoi(rest[11])
+	keys := []string{"X", "Y", "Icon", "Initiative", "Hp", "MaxHp", "Hunger", "MaxHunger", "Thirst", "MaxThirst", "AC", "Str", "Dex", "Encumbrance", "Weapon", "Armour", "Inventory"}
 
-	err := json.Unmarshal([]byte(rest[12]), &(p.icon))
-	check(err)
+	playerValues := map[string]interface{}{
+		"X":           p.x,
+		"Y":           p.y,
+		"Icon":        p.icon,
+		"Initiative":  p.initiative,
+		"Hp":          p.hp,
+		"MaxHp":       p.maxHp,
+		"Hunger":      p.hunger,
+		"MaxHunger":   p.maxHunger,
+		"Thirst":      p.thirst,
+		"MaxThirst":   p.maxThirst,
+		"AC":          p.ac,
+		"Str":         p.str,
+		"Dex":         p.dex,
+		"Encumbrance": p.encumbrance,
+		"Weapon":      p.weapon,
+		"Armour":      p.armour,
+	}
 
-	if len(restWearing) > 1 {
-		for i := 1; i < len(restWearing); i++ {
-			switch wearingTypes[i-1] {
-			case "Weapon":
-				err := json.Unmarshal([]byte(restWearing[i]), p.weapon)
-				check(err)
-			case "Armour":
-				err := json.Unmarshal([]byte(restWearing[i]), p.armour)
-				check(err)
-			}
+	var inventory []item.Item
+	for _, setItems := range p.inventory {
+		for _, item := range setItems {
+			inventory = append(inventory, item)
 		}
 	}
-	p.inventory = make(map[rune]([]item.Item))
+	playerValues["Inventory"] = inventory
 
-	items := regexp.MustCompile("(Ammo)|(Armour)|(Consumable)|(Item)|(Weapon)").Split(inventory, -1)
-	items = items[1:]
-	for _, itemString := range items {
-		var itm item.Item
-		err := json.Unmarshal([]byte(itemString), &itm)
-		check(err)
-		p.PickupItem(itm)
+	length := len(playerValues)
+	count := 0
+
+	for _, key := range keys {
+		jsonValue, err := json.Marshal(playerValues[key])
+		if err != nil {
+			return nil, err
+		}
+		buffer.WriteString(fmt.Sprintf("\"%s\":%s", key, jsonValue))
+		count++
+		if count < length {
+			buffer.WriteString(",")
+		}
 	}
-	var creature Creature = p
-	return creature
+	buffer.WriteString("}")
 
+	return buffer.Bytes(), nil
 }
 
-func (p *Player) Serialize() string {
-	if p == nil {
-		return ""
+func (p *Player) UnmarshalJSON(data []byte) error {
+
+	type playerJson struct {
+		X           int
+		Y           int
+		Icon        icon.Icon
+		Initiative  int
+		Hp          int
+		MaxHp       int
+		Hunger      int
+		MaxHunger   int
+		Thirst      int
+		MaxThirst   int
+		AC          int
+		Str         int
+		Dex         int
+		Encumbrance int
+		Weapon      *item.Weapon
+		Armour      *item.Armour
+		Inventory   item.ItemList
 	}
-	items := "["
-	for k, _ := range p.inventory {
-		for _, item := range p.inventory[k] {
-			itemValue, err := json.Marshal(item)
-			check(err)
-			items += fmt.Sprintf("%s ", itemValue)
+	v := playerJson{}
 
-		}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
 	}
 
-	iconValue, err := json.Marshal(p.icon)
-	check(err)
+	p.x = v.X
+	p.y = v.Y
+	p.icon = v.Icon
+	p.initiative = v.Initiative
+	p.hp = v.Hp
+	p.maxHp = v.MaxHp
+	p.hunger = v.Hunger
+	p.maxHunger = v.MaxHunger
+	p.thirst = v.Thirst
+	p.maxThirst = v.MaxThirst
+	p.ac = v.AC
+	p.str = v.Str
+	p.dex = v.Dex
+	p.encumbrance = v.Encumbrance
+	p.weapon = v.Weapon
+	p.armour = v.Armour
+	p.inventory = make(map[rune][]item.Item)
 
-	items += "]"
+	for _, itm := range v.Inventory {
+		p.PickupItem(itm)
+	}
 
-	weaponValue, err := json.Marshal(p.weapon)
-	check(err)
-
-	armourValue, err := json.Marshal(p.armour)
-	check(err)
-
-	return fmt.Sprintf("Player{%d %d %d %d %d %d %d %d %d %d %d %d %s %s %s %s}", p.x, p.y, p.hp, p.maxHp, p.hunger, p.maxHunger, p.thirst, p.maxThirst, p.ac, p.str, p.dex, p.encumbrance, iconValue, weaponValue, armourValue, items)
+	return nil
 }
 
 func (p *Player) GetCoordinates() (int, int) {
-
 	return p.x, p.y
 }
 
@@ -441,6 +460,7 @@ func (p *Player) WieldItem() bool {
 					message.Enqueue(fmt.Sprintf("You are now wielding a %s.", w.GetName()))
 					return true
 				} else {
+					log.Panic(itm.(*item.Weapon))
 					message.PrintMessage("That is not a weapon.")
 					p.PickupItem(itm)
 					ui.GetInput()
@@ -618,7 +638,6 @@ func (p *Player) Update() {
 type Creature interface {
 	GetCoordinates() (int, int)
 	SetCoordinates(int, int)
-	Serialize() string
 	Render(int, int)
 	GetInitiative() int
 	MeleeAttack(Creature)
@@ -627,6 +646,8 @@ type Creature interface {
 	AttackHits(int) bool
 	Ranged() bool
 	GetName() string
+	MarshalJSON() ([]byte, error)
+	UnmarshalJSON([]byte) error
 }
 
 type Player struct {

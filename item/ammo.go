@@ -80,7 +80,7 @@ func (ammo *Ammo) UnmarshalJSON(data []byte) error {
 	type ammoJson struct {
 		Name   string
 		Icon   icon.Icon
-		Type   WeaponType
+		Type   *WeaponType
 		Weight float64
 	}
 	var v ammoJson
@@ -89,9 +89,13 @@ func (ammo *Ammo) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	if v.Type == nil {
+		return fmt.Errorf("The Type field is required")
+	}
+
 	ammo.name = v.Name
 	ammo.ic = v.Icon
-	ammo.t = v.Type
+	ammo.t = *(v.Type)
 	ammo.w = v.Weight
 
 	return nil

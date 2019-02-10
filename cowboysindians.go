@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 
 	termbox "github.com/nsf/termbox-go"
@@ -33,13 +34,19 @@ func check(e error) {
 
 func save(m worldmap.Map, p *creature.Player, enemies []*enemy.Enemy, t, playerIndex int) {
 	data := fmt.Sprintf("%d %d\n", t, playerIndex)
+
 	data += m.Serialize() + "\n\n"
-	data += p.Serialize() + "\n\n"
+	playerValue, err := json.Marshal(p)
+	check(err)
+
+	data += string(playerValue) + "\n\n"
 
 	for _, e := range enemies {
-		data += e.Serialize() + "\n"
+		enemyValue, err := json.Marshal(e)
+		check(err)
+		data += string(enemyValue) + "\n"
 	}
-	err := ioutil.WriteFile(saveFilename, []byte(data), 0644)
+	err = ioutil.WriteFile(saveFilename, []byte(data), 0644)
 	check(err)
 }
 
@@ -48,14 +55,21 @@ func load() (worldmap.Map, *creature.Player, []*enemy.Enemy, int, int) {
 	data, err := ioutil.ReadFile(saveFilename)
 	check(err)
 	items := strings.Split(string(data), "\n\n")
-	player := (creature.Deserialize(items[1])).(*creature.Player)
+
+	player := &creature.Player{}
+	err = json.Unmarshal([]byte(items[1]), player)
+	check(err)
+
 	enemyStrings := strings.Split(items[2], "\n")
 	enemyStrings = enemyStrings[0 : len(enemyStrings)-1]
 	enemies := make([]*enemy.Enemy, len(enemyStrings))
 
 	for i, e := range enemyStrings {
-		enemies[i] = enemy.Deserialize(e).(*enemy.Enemy)
+		enemies[i] = &enemy.Enemy{}
+		err = json.Unmarshal([]byte(e), enemies[i])
+		check(err)
 	}
+
 	timeMap := strings.SplitN(items[0], "\n", 2)
 	status := strings.Split(timeMap[0], " ")
 
