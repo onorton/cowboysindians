@@ -8,11 +8,15 @@ import (
 	"strconv"
 	"strings"
 
-	termbox "github.com/nsf/termbox-go"
-	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/item"
-	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/ui"
+)
+
+type Alignment int
+
+const (
+	Player Alignment = iota
+	Enemy
 )
 
 const padding = 5
@@ -131,6 +135,22 @@ func (v *Viewer) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (m *Map) GetViewerX() int {
+	return m.v.x
+}
+
+func (m *Map) GetViewerY() int {
+	return m.v.y
+}
+
+func (m *Map) GetViewerWidth() int {
+	return m.v.width
+}
+
+func (m *Map) GetViewerHeight() int {
+	return m.v.height
+}
+
 func (m *Map) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
@@ -171,8 +191,7 @@ func (m *Map) UnmarshalJSON(data []byte) error {
 
 func (m Map) HasPlayer(x, y int) bool {
 	if m.IsOccupied(x, y) {
-		_, ok := m.grid[y][x].c.(*creature.Player)
-		return ok
+		return m.grid[y][x].c.GetAlignment() == Player
 	}
 	return false
 }
@@ -196,7 +215,7 @@ func (m Map) HasItems(x, y int) bool {
 }
 
 // Bresenham algorithm to check if creature c can see square x1, y1.
-func (m Map) IsVisible(c creature.Creature, x1, y1 int) bool {
+func (m Map) IsVisible(c Creature, x1, y1 int) bool {
 	x0, y0 := c.GetCoordinates()
 	var xStep, yStep int
 	x, y := x0, y0
@@ -253,169 +272,8 @@ func (m Map) IsVisible(c creature.Creature, x1, y1 int) bool {
 	return true
 }
 
-func (m Map) ToggleDoor(x, y int, open bool) bool {
-	message.PrintMessage("Which direction?")
-	height := m.GetHeight()
-	width := m.GetWidth()
-	// Select direction
-	for {
-		validMove := true
-		action := ui.GetInput()
-
-		if action.IsMovementAction() {
-			switch action {
-			case ui.MoveWest:
-				if x != 0 {
-					x--
-				}
-			case ui.MoveEast:
-				if x < width-1 {
-					x++
-				}
-			case ui.MoveNorth:
-				if y != 0 {
-					y--
-				}
-			case ui.MoveSouth:
-				if y < height-1 {
-					y++
-				}
-			case ui.MoveSouthWest:
-				if x != 0 && y < height-1 {
-					x--
-					y++
-				}
-
-			case ui.MoveSouthEast:
-				if x < width-1 && y < height-1 {
-					x++
-					y++
-				}
-			case ui.MoveNorthWest:
-				if x != 0 && y != 0 {
-					x--
-					y--
-				}
-			case ui.MoveNorthEast:
-				if y != 0 && x < width-1 {
-					y--
-					x++
-				}
-			}
-		} else if action == ui.CancelAction {
-			message.PrintMessage("Never mind...")
-			return false
-		} else {
-			message.PrintMessage("Invalid direction.")
-			validMove = false
-		}
-
-		if validMove {
-			break
-		}
-	}
-	// If there is a door, toggle its position if it's not already there
-	if m.grid[y][x].door {
-		if m.grid[y][x].passable != open {
-			m.grid[y][x].passable = open
-			if open {
-				message.Enqueue("The door opens.")
-			} else {
-				message.Enqueue("The door closes.")
-			}
-			return true
-		} else {
-			if open {
-				message.PrintMessage("The door is already open.")
-			} else {
-				message.PrintMessage("The door is already closed.")
-			}
-		}
-	} else {
-		message.PrintMessage("You see no door there.")
-	}
-	return false
-}
-
 func (m Map) PlaceItem(x, y int, item item.Item) {
 	m.grid[y][x].PlaceItem(item)
-}
-
-// Interface for player to find a ranged target.
-func (m Map) FindTarget(p *creature.Player) creature.Creature {
-	if !p.Ranged() {
-		message.PrintMessage("You are not wielding a ranged weapon.")
-		return nil
-	}
-
-	if !p.HasAmmo() {
-		message.PrintMessage("You have no ammunition for this weapon.")
-		return nil
-	}
-	x, y := p.GetCoordinates()
-	// In terms of viewer space rather than world space
-	rX, rY := x-m.v.x, y-m.v.y
-	width, height := m.GetWidth(), m.GetHeight()
-	vWidth, vHeight := m.v.width, m.v.height
-	for {
-		message.PrintMessage("Select target")
-		ui.DrawElement(rX, rY, ui.NewElement('X', termbox.ColorYellow))
-		x, y = m.v.x+rX, m.v.y+rY
-		oX, oY := rX, rY
-
-		action := ui.GetInput()
-		if action.IsMovementAction() {
-			switch action {
-			case ui.MoveWest:
-				if rX != 0 && x != 0 {
-					rX--
-				}
-			case ui.MoveEast:
-				if rX < vWidth-1 && x < width-1 {
-					rX++
-				}
-			case ui.MoveNorth:
-				if rY != 0 && y != 0 {
-					rY--
-				}
-			case ui.MoveSouth:
-				if rY < vHeight-1 && y < height-1 {
-					rY++
-				}
-			case ui.MoveSouthWest:
-				if rX != 0 && rY < vHeight-1 && x != 0 && y < height-1 {
-					rX--
-					rY++
-				}
-			case ui.MoveSouthEast:
-				if rX < vWidth-1 && rY < vHeight-1 && x < width-1 && y < height-1 {
-					rX++
-					rY++
-				}
-			case ui.MoveNorthWest:
-				if rX != 0 && rY != 0 && x != 0 && y != 0 {
-					rX--
-					rY--
-				}
-			case ui.MoveNorthEast:
-				if rY != 0 && rX < vWidth-1 && y != 0 && x < width-1 {
-					rY--
-					rX++
-				}
-			}
-		} else if action == ui.CancelAction { // Counter intuitive at the moment
-			if m.IsOccupied(x, y) {
-				// If a creature is there, return it.
-				return m.grid[y][x].c
-			} else {
-				message.PrintMessage("Never mind...")
-				return nil
-			}
-		}
-
-		// overwrite
-		ui.DrawElement(oX, oY, m.grid[y][x].render())
-	}
 }
 
 func (m Map) GetWidth() int {
@@ -427,7 +285,7 @@ func (m Map) GetHeight() int {
 }
 
 // Same as MoveCreature but viewer is adjusted as well.
-func (m Map) MovePlayer(c *creature.Player, action ui.PlayerAction) {
+func (m Map) MovePlayer(c Creature, action ui.PlayerAction) {
 
 	x, y := c.GetCoordinates()
 
@@ -482,7 +340,7 @@ func (m Map) MovePlayer(c *creature.Player, action ui.PlayerAction) {
 	}
 }
 
-func (m Map) MoveCreature(c creature.Creature, x, y int) {
+func (m Map) MoveCreature(c Creature, x, y int) {
 
 	if !m.grid[y][x].passable {
 		return
@@ -501,85 +359,35 @@ func (m Map) MoveCreature(c creature.Creature, x, y int) {
 	m.grid[cY][cX].c = c
 }
 
-func (m Map) PickupItem() bool {
-	player := m.GetPlayer()
-	x, y := player.GetCoordinates()
-	if m.grid[y][x].items == nil {
-		message.PrintMessage("There is no item here.")
-		return false
-	}
-
-	items := make(map[rune]([]item.Item))
-	for _, itm := range m.GetItems(x, y) {
-		existing := items[itm.GetKey()]
-		if existing == nil {
-			existing = make([]item.Item, 0)
-		}
-		existing = append(existing, itm)
-		items[itm.GetKey()] = existing
-	}
-	for k := range items {
-		for _, item := range items[k] {
-			player.PickupItem(item)
-		}
-		message.Enqueue(fmt.Sprintf("You pick up %d %ss.", len(items[k]), items[k][0].GetName()))
-
-	}
-	return true
-}
-
 func (m Map) GetItems(x, y int) []item.Item {
 	items := m.grid[y][x].items
 	m.grid[y][x].items = make([]item.Item, 0)
 	return items
 }
-func (m Map) DropItem() bool {
-	player := m.GetPlayer()
-	x, y := player.GetCoordinates()
-	for {
-		message.PrintMessage(fmt.Sprintf("What do you want to drop? [%s or *]", player.GetInventoryKeys()))
-		s, c := ui.GetItemSelection()
 
-		switch s {
-		case ui.All:
-			player.PrintInventory()
-			continue
-		case ui.Cancel:
-			message.PrintMessage("Never mind.")
-			return false
-		case ui.SpecificItem:
-			item := player.GetItem(c)
-			if item == nil {
-				message.PrintMessage("You don't have that item.")
-				ui.GetInput()
-			} else {
-				m.grid[y][x].PlaceItem(item)
-				message.Enqueue(fmt.Sprintf("You dropped a %s.", item.GetName()))
-				return true
-			}
-		// Not selectable but still need to consider it
-		case ui.AllRelevant:
-			return false
-		}
-	}
-}
-
-func (m Map) GetPlayer() *creature.Player {
+func (m Map) GetPlayer() Creature {
 	for _, row := range m.grid {
 		for _, tile := range row {
 			if tile.c == nil {
 				continue
 			}
-			player, ok := tile.c.(*creature.Player)
-			if ok {
-				return player
+			if tile.c.GetAlignment() == Player {
+				return tile.c
 			}
 		}
 	}
 	return nil
 }
 
-func (m Map) DeleteCreature(c creature.Creature) {
+func (m Map) GetCreature(x, y int) Creature {
+	return m.grid[y][x].c
+}
+
+func (m Map) RenderTile(x, y int) ui.Element {
+	return m.grid[y][x].render()
+}
+
+func (m Map) DeleteCreature(c Creature) {
 	x, y := c.GetCoordinates()
 	m.grid[y][x].c = nil
 }
@@ -610,4 +418,37 @@ func (m Map) Render() {
 		}
 	}
 	ui.RenderGrid(0, 0, elems)
+}
+
+func (m *Map) IsDoor(x, y int) bool {
+	return m.grid[y][x].door
+}
+
+func (m *Map) GetPassable(x, y int) bool {
+	return m.grid[y][x].passable
+}
+
+func (m *Map) SetPassable(x, y int, passable bool) {
+	m.grid[y][x].passable = passable
+}
+
+func GetBonus(score int) int {
+	return (score - 10) / 2
+}
+
+// Interface shared by Player and Enemy
+type Creature interface {
+	GetCoordinates() (int, int)
+	SetCoordinates(int, int)
+	Render() ui.Element
+	GetInitiative() int
+	MeleeAttack(Creature)
+	TakeDamage(int)
+	IsDead() bool
+	AttackHits(int) bool
+	Ranged() bool
+	GetName() string
+	GetAlignment() Alignment
+	MarshalJSON() ([]byte, error)
+	UnmarshalJSON([]byte) error
 }

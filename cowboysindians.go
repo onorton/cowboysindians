@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/enemy"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
+	"github.com/onorton/cowboysindians/player"
 	"github.com/onorton/cowboysindians/ui"
 	"github.com/onorton/cowboysindians/worldmap"
 
@@ -35,7 +35,7 @@ type GameState struct {
 	Time        int
 	Map         *worldmap.Map
 	Enemies     []*enemy.Enemy
-	Player      *creature.Player
+	Player      *player.Player
 }
 
 func save(state GameState) {
@@ -71,11 +71,17 @@ func load() GameState {
 	err = json.Unmarshal(data, &state)
 	check(err)
 
+	state.Player.SetMap(state.Map)
+
+	for _, enemy := range state.Enemies {
+		enemy.SetMap(state.Map)
+	}
+
 	return state
 
 }
 
-func generateEnemies(m *worldmap.Map, p *creature.Player, n int) []*enemy.Enemy {
+func generateEnemies(m *worldmap.Map, p *player.Player, n int) []*enemy.Enemy {
 	enemies := make([]*enemy.Enemy, n)
 	for i := 0; i < n; i++ {
 		x := rand.Intn(width)
@@ -85,14 +91,14 @@ func generateEnemies(m *worldmap.Map, p *creature.Player, n int) []*enemy.Enemy 
 			i--
 			continue
 		}
-		enemies[i] = enemy.NewEnemy("bandit", x, y)
+		enemies[i] = enemy.NewEnemy("bandit", x, y, m)
 	}
 	return enemies
 }
 
 // Combine enemies and player into same slice
-func allCreatures(enemies []*enemy.Enemy, p *creature.Player) []creature.Creature {
-	all := make([]creature.Creature, len(enemies)+1)
+func allCreatures(enemies []*enemy.Enemy, p *player.Player) []worldmap.Creature {
+	all := make([]worldmap.Creature, len(enemies)+1)
 	for i, e := range enemies {
 		all[i] = e
 	}
@@ -127,7 +133,7 @@ func main() {
 
 	if !loaded {
 		state.Map = worldmap.NewMap(width, height, windowWidth, windowHeight)
-		state.Player = creature.NewPlayer()
+		state.Player = player.NewPlayer(state.Map)
 		state.Enemies = generateEnemies(state.Map, state.Player, 2)
 		state.Time = 1
 		state.PlayerIndex = 0
@@ -163,7 +169,7 @@ func main() {
 				state.PlayerIndex = 0
 			}
 
-			if _, ok := c.(*creature.Player); ok {
+			if c.GetAlignment() == worldmap.Player {
 				// Only render when it is the player's turn
 				worldMap.Render()
 				message.PrintMessages()
@@ -211,19 +217,19 @@ func main() {
 							quit = true
 
 						case ui.CloseDoor:
-							endTurn = worldMap.ToggleDoor(x, y, false)
+							endTurn = player.ToggleDoor(x, y, false)
 						case ui.OpenDoor:
-							endTurn = worldMap.ToggleDoor(x, y, true)
+							endTurn = player.ToggleDoor(x, y, true)
 						case ui.RangedAttack:
-							target := worldMap.FindTarget(player)
+							target := player.FindTarget()
 							if target != nil {
 								player.RangedAttack(target)
 								endTurn = true
 							}
 						case ui.PickUpItem:
-							endTurn = worldMap.PickupItem()
+							endTurn = player.PickupItem()
 						case ui.DropItem:
-							endTurn = worldMap.DropItem()
+							endTurn = player.DropItem()
 						case ui.ToggleInventory:
 							ui.ClearScreen()
 							worldMap.Render()
@@ -258,7 +264,7 @@ func main() {
 		// Remove dead enemies
 		for i, c := range all {
 			if e, ok := c.(*enemy.Enemy); c.IsDead() && ok {
-				e.EmptyInventory(worldMap)
+				e.EmptyInventory()
 				worldMap.DeleteCreature(c)
 				all = append(all[:i], all[i+1:]...)
 			}

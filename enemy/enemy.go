@@ -8,7 +8,6 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
@@ -44,9 +43,9 @@ func fetchEnemyData() map[string]EnemyAttributes {
 	return eD
 }
 
-func NewEnemy(name string, x, y int) *Enemy {
+func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 	enemy := enemyData[name]
-	e := &Enemy{name, x, y, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, nil, nil, make([]item.Item, 0)}
+	e := &Enemy{name, x, y, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, nil, nil, make([]item.Item, 0), world}
 	for _, itemDefinition := range enemy.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm item.Item = nil
@@ -238,10 +237,10 @@ func (e *Enemy) GetInitiative() int {
 	return e.initiative
 }
 
-func (e *Enemy) MeleeAttack(c creature.Creature) {
-	e.attack(c, creature.GetBonus(e.str), creature.GetBonus(e.str))
+func (e *Enemy) MeleeAttack(c worldmap.Creature) {
+	e.attack(c, worldmap.GetBonus(e.str), worldmap.GetBonus(e.str))
 }
-func (e *Enemy) attack(c creature.Creature, hitBonus, damageBonus int) {
+func (e *Enemy) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 
 	hits := c.AttackHits(rand.Intn(20) + hitBonus + 1)
 	if hits {
@@ -251,7 +250,7 @@ func (e *Enemy) attack(c creature.Creature, hitBonus, damageBonus int) {
 			c.TakeDamage(damageBonus)
 		}
 	}
-	if _, ok := c.(*creature.Player); ok {
+	if c.GetAlignment() == worldmap.Player {
 		if hits {
 			message.Enqueue(fmt.Sprintf("The %s hit you.", e.name))
 		} else {
@@ -384,7 +383,7 @@ func (e *Enemy) Update(m *worldmap.Map) (int, int) {
 	if e.Ranged() && e.hasAmmo() {
 		if distance := math.Sqrt(math.Pow(float64(e.x-tX), 2) + math.Pow(float64(e.y-tY), 2)); distance < float64(e.weapon.GetRange()) && m.IsVisible(e, tX, tY) {
 			e.getAmmo()
-			e.attack(target, creature.GetBonus(e.dex), 0)
+			e.attack(target, worldmap.GetBonus(e.dex), 0)
 		}
 	} else if len(possibleLocations) > 0 {
 		if e.overEncumbered() {
@@ -423,30 +422,32 @@ func (e *Enemy) dropItem(item item.Item, m *worldmap.Map) {
 
 }
 
-func (e *Enemy) EmptyInventory(m *worldmap.Map) {
+func (e *Enemy) EmptyInventory() {
 	itemTypes := make(map[string]int)
 	for _, item := range e.inventory {
-		m.PlaceItem(e.x, e.y, item)
+		e.world.PlaceItem(e.x, e.y, item)
 		itemTypes[item.GetName()]++
 	}
+
 	if e.weapon != nil {
-		m.PlaceItem(e.x, e.y, e.weapon)
+		e.world.PlaceItem(e.x, e.y, e.weapon)
 		itemTypes[e.weapon.GetName()]++
 		e.weapon = nil
 	}
 	if e.armour != nil {
-		m.PlaceItem(e.x, e.y, e.armour)
+		e.world.PlaceItem(e.x, e.y, e.armour)
 		itemTypes[e.armour.GetName()]++
 		e.armour = nil
 	}
 
-	if m.IsVisible(m.GetPlayer(), e.x, e.y) {
+	if e.world.IsVisible(e.world.GetPlayer(), e.x, e.y) {
 		for name, count := range itemTypes {
 			message.Enqueue(fmt.Sprintf("The %s dropped %d %ss.", e.name, count, name))
 		}
 	}
 
 }
+
 func (e *Enemy) getAmmo() *item.Ammo {
 	for i, itm := range e.inventory {
 		if ammo, ok := itm.(*item.Ammo); ok && e.weapon.AmmoTypeMatches(ammo) {
@@ -485,6 +486,14 @@ func (e *Enemy) GetName() string {
 	return e.name
 }
 
+func (e *Enemy) GetAlignment() worldmap.Alignment {
+	return worldmap.Enemy
+}
+
+func (e *Enemy) SetMap(world *worldmap.Map) {
+	e.world = world
+}
+
 type Enemy struct {
 	name        string
 	x           int
@@ -500,4 +509,5 @@ type Enemy struct {
 	weapon      *item.Weapon
 	armour      *item.Armour
 	inventory   []item.Item
+	world       *worldmap.Map
 }

@@ -1,4 +1,4 @@
-package creature
+package player
 
 import (
 	"bytes"
@@ -8,10 +8,12 @@ import (
 	"math"
 	"math/rand"
 
+	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/ui"
+	"github.com/onorton/cowboysindians/worldmap"
 )
 
 func check(err error) {
@@ -20,14 +22,14 @@ func check(err error) {
 	}
 }
 
-func NewPlayer() *Player {
-	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 10, 0, 100, 0, 100, 15, 12, 10, 100, nil, nil, make(map[rune]([]item.Item))}
-	player.PickupItem(item.NewWeapon("shotgun"))
-	player.PickupItem(item.NewWeapon("sawn-off shotgun"))
-	player.PickupItem(item.NewArmour("leather jacket"))
-	player.PickupItem(item.NewAmmo("shotgun shell"))
-	player.PickupItem(item.NewConsumable("standard ration"))
-	player.PickupItem(item.NewConsumable("beer"))
+func NewPlayer(world *worldmap.Map) *Player {
+	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 10, 0, 100, 0, 100, 15, 12, 10, 100, nil, nil, make(map[rune]([]item.Item)), world}
+	player.AddItem(item.NewWeapon("shotgun"))
+	player.AddItem(item.NewWeapon("sawn-off shotgun"))
+	player.AddItem(item.NewArmour("leather jacket"))
+	player.AddItem(item.NewAmmo("shotgun shell"))
+	player.AddItem(item.NewConsumable("standard ration"))
+	player.AddItem(item.NewConsumable("beer"))
 	return player
 }
 
@@ -132,7 +134,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 	p.inventory = make(map[rune][]item.Item)
 
 	for _, itm := range v.Inventory {
-		p.PickupItem(itm)
+		p.AddItem(itm)
 	}
 
 	return nil
@@ -151,7 +153,7 @@ func (p *Player) GetInitiative() int {
 	return p.initiative
 }
 
-func (p *Player) attack(c Creature, hitBonus, damageBonus int) {
+func (p *Player) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 	if c.AttackHits(rand.Intn(20) + hitBonus + 1) {
 		message.Enqueue(fmt.Sprintf("You hit the %s.", c.GetName()))
 		if p.weapon != nil {
@@ -167,8 +169,8 @@ func (p *Player) attack(c Creature, hitBonus, damageBonus int) {
 	}
 }
 
-func (p *Player) MeleeAttack(c Creature) {
-	p.attack(c, GetBonus(p.str), GetBonus(p.str))
+func (p *Player) MeleeAttack(c worldmap.Creature) {
+	p.attack(c, worldmap.GetBonus(p.str), worldmap.GetBonus(p.str))
 }
 
 func (p *Player) TakeDamage(damage int) {
@@ -177,8 +179,8 @@ func (p *Player) TakeDamage(damage int) {
 func (p *Player) GetStats() []string {
 	stats := make([]string, 4)
 	stats[0] = fmt.Sprintf("HP:%d/%d", p.hp, p.maxHp)
-	stats[1] = fmt.Sprintf("STR:%d(%+d)", p.str, GetBonus(p.str))
-	stats[2] = fmt.Sprintf("DEX:%d(%+d)", p.dex, GetBonus(p.dex))
+	stats[1] = fmt.Sprintf("STR:%d(%+d)", p.str, worldmap.GetBonus(p.str))
+	stats[2] = fmt.Sprintf("DEX:%d(%+d)", p.dex, worldmap.GetBonus(p.dex))
 	stats[3] = fmt.Sprintf("AC:%d", p.ac)
 	if p.hunger > p.maxHunger/2 {
 		stats = append(stats, "Hungry")
@@ -270,12 +272,12 @@ func (p *Player) AttackHits(roll int) bool {
 	return roll > p.ac
 }
 
-func (p *Player) RangedAttack(target Creature) {
+func (p *Player) RangedAttack(target worldmap.Creature) {
 	p.getAmmo()
 	tX, tY := target.GetCoordinates()
 	distance := math.Sqrt(math.Pow(float64(p.x-tX), 2) + math.Pow(float64(p.y-tY), 2))
 	if distance < float64(p.weapon.GetRange()) {
-		p.attack(target, GetBonus(p.str), 0)
+		p.attack(target, worldmap.GetBonus(p.str), 0)
 	} else {
 		message.Enqueue("Your target was too far away.")
 	}
@@ -291,7 +293,7 @@ func (p *Player) getAmmo() *item.Ammo {
 	return nil
 }
 
-func (p *Player) PickupItem(itm item.Item) {
+func (p *Player) AddItem(itm item.Item) {
 	existing := p.inventory[itm.GetKey()]
 	if existing == nil {
 		existing = make([]item.Item, 0)
@@ -436,14 +438,14 @@ func (p *Player) WieldItem() bool {
 					other := p.weapon
 					p.weapon = w
 					if other != nil {
-						p.PickupItem(w)
+						p.AddItem(w)
 					}
 					message.Enqueue(fmt.Sprintf("You are now wielding a %s.", w.GetName()))
 					return true
 				} else {
 					log.Panic(itm.(*item.Weapon))
 					message.PrintMessage("That is not a weapon.")
-					p.PickupItem(itm)
+					p.AddItem(itm)
 					ui.GetInput()
 					return false
 				}
@@ -481,13 +483,13 @@ func (p *Player) WearArmour() bool {
 					p.ac += a.GetACBonus()
 					if other != nil {
 						p.ac -= other.GetACBonus()
-						p.PickupItem(a)
+						p.AddItem(a)
 					}
 					message.Enqueue(fmt.Sprintf("You are now wearing a %s.", a.GetName()))
 					return true
 				} else {
 					message.PrintMessage("That is not a piece of armour.")
-					p.PickupItem(itm)
+					p.AddItem(itm)
 					ui.GetInput()
 					return false
 				}
@@ -535,7 +537,7 @@ func (p *Player) ConsumeItem() bool {
 					return true
 				} else {
 					message.PrintMessage("That is not something you can eat.")
-					p.PickupItem(itm)
+					p.AddItem(itm)
 					ui.GetInput()
 					return false
 				}
@@ -561,9 +563,6 @@ func (p *Player) HasAmmo() bool {
 		}
 	}
 	return false
-}
-func GetBonus(score int) int {
-	return (score - 10) / 2
 }
 
 func (p *Player) heal(amount int) {
@@ -606,29 +605,238 @@ func (p *Player) OverEncumbered() bool {
 	return total > float64(p.encumbrance)
 }
 
+// Interface for player to find a ranged target.
+func (p *Player) FindTarget() worldmap.Creature {
+	if !p.Ranged() {
+		message.PrintMessage("You are not wielding a ranged weapon.")
+		return nil
+	}
+
+	if !p.HasAmmo() {
+		message.PrintMessage("You have no ammunition for this weapon.")
+		return nil
+	}
+	x, y := p.GetCoordinates()
+	// In terms of viewer space rather than world space
+	rX, rY := x-p.world.GetViewerX(), y-p.world.GetViewerY()
+	width, height := p.world.GetWidth(), p.world.GetHeight()
+	vWidth, vHeight := p.world.GetViewerWidth(), p.world.GetViewerHeight()
+	for {
+		message.PrintMessage("Select target")
+		ui.DrawElement(rX, rY, ui.NewElement('X', termbox.ColorYellow))
+		x, y = p.world.GetViewerX()+rX, p.world.GetViewerY()+rY
+		oX, oY := rX, rY
+
+		action := ui.GetInput()
+		if action.IsMovementAction() {
+			switch action {
+			case ui.MoveWest:
+				if rX != 0 && x != 0 {
+					rX--
+				}
+			case ui.MoveEast:
+				if rX < vWidth-1 && x < width-1 {
+					rX++
+				}
+			case ui.MoveNorth:
+				if rY != 0 && y != 0 {
+					rY--
+				}
+			case ui.MoveSouth:
+				if rY < vHeight-1 && y < height-1 {
+					rY++
+				}
+			case ui.MoveSouthWest:
+				if rX != 0 && rY < vHeight-1 && x != 0 && y < height-1 {
+					rX--
+					rY++
+				}
+			case ui.MoveSouthEast:
+				if rX < vWidth-1 && rY < vHeight-1 && x < width-1 && y < height-1 {
+					rX++
+					rY++
+				}
+			case ui.MoveNorthWest:
+				if rX != 0 && rY != 0 && x != 0 && y != 0 {
+					rX--
+					rY--
+				}
+			case ui.MoveNorthEast:
+				if rY != 0 && rX < vWidth-1 && y != 0 && x < width-1 {
+					rY--
+					rX++
+				}
+			}
+		} else if action == ui.CancelAction { // Counter intuitive at the moment
+			if p.world.IsOccupied(x, y) {
+				// If a creature is there, return it.
+				return p.world.GetCreature(x, y)
+			} else {
+				message.PrintMessage("Never mind...")
+				return nil
+			}
+		}
+
+		// overwrite
+		ui.DrawElement(oX, oY, p.world.RenderTile(x, y))
+	}
+}
+
+func (p *Player) PickupItem() bool {
+	x, y := p.x, p.y
+	if p.world.GetItems(x, y) == nil {
+		message.PrintMessage("There is no item here.")
+		return false
+	}
+
+	items := make(map[rune]([]item.Item))
+	for _, itm := range p.world.GetItems(x, y) {
+		existing := items[itm.GetKey()]
+		if existing == nil {
+			existing = make([]item.Item, 0)
+		}
+		existing = append(existing, itm)
+		items[itm.GetKey()] = existing
+	}
+	for k := range items {
+		for _, item := range items[k] {
+			p.AddItem(item)
+		}
+		message.Enqueue(fmt.Sprintf("You pick up %d %ss.", len(items[k]), items[k][0].GetName()))
+
+	}
+	return true
+}
+
+func (p *Player) DropItem() bool {
+	x, y := p.GetCoordinates()
+	for {
+		message.PrintMessage(fmt.Sprintf("What do you want to drop? [%s or *]", p.GetInventoryKeys()))
+		s, c := ui.GetItemSelection()
+
+		switch s {
+		case ui.All:
+			p.PrintInventory()
+			continue
+		case ui.Cancel:
+			message.PrintMessage("Never mind.")
+			return false
+		case ui.SpecificItem:
+			item := p.GetItem(c)
+			if item == nil {
+				message.PrintMessage("You don't have that item.")
+				ui.GetInput()
+			} else {
+				p.world.PlaceItem(x, y, item)
+				message.Enqueue(fmt.Sprintf("You dropped a %s.", item.GetName()))
+				return true
+			}
+		// Not selectable but still need to consider it
+		case ui.AllRelevant:
+			return false
+		}
+	}
+}
+
+func (p *Player) ToggleDoor(x, y int, open bool) bool {
+	message.PrintMessage("Which direction?")
+	height := p.world.GetHeight()
+	width := p.world.GetWidth()
+	// Select direction
+	for {
+		validMove := true
+		action := ui.GetInput()
+
+		if action.IsMovementAction() {
+			switch action {
+			case ui.MoveWest:
+				if x != 0 {
+					x--
+				}
+			case ui.MoveEast:
+				if x < width-1 {
+					x++
+				}
+			case ui.MoveNorth:
+				if y != 0 {
+					y--
+				}
+			case ui.MoveSouth:
+				if y < height-1 {
+					y++
+				}
+			case ui.MoveSouthWest:
+				if x != 0 && y < height-1 {
+					x--
+					y++
+				}
+
+			case ui.MoveSouthEast:
+				if x < width-1 && y < height-1 {
+					x++
+					y++
+				}
+			case ui.MoveNorthWest:
+				if x != 0 && y != 0 {
+					x--
+					y--
+				}
+			case ui.MoveNorthEast:
+				if y != 0 && x < width-1 {
+					y--
+					x++
+				}
+			}
+		} else if action == ui.CancelAction {
+			message.PrintMessage("Never mind...")
+			return false
+		} else {
+			message.PrintMessage("Invalid direction.")
+			validMove = false
+		}
+
+		if validMove {
+			break
+		}
+	}
+	// If there is a door, toggle its position if it's not already there
+	if p.world.IsDoor(x, y) {
+		if p.world.IsPassable(x, y) != open {
+			p.world.SetPassable(x, y, open)
+			if open {
+				message.Enqueue("The door opens.")
+			} else {
+				message.Enqueue("The door closes.")
+			}
+			return true
+		} else {
+			if open {
+				message.PrintMessage("The door is already open.")
+			} else {
+				message.PrintMessage("The door is already closed.")
+			}
+		}
+	} else {
+		message.PrintMessage("You see no door there.")
+	}
+	return false
+}
+
 func (p *Player) GetName() string {
 	return "you"
+}
+
+func (p *Player) GetAlignment() worldmap.Alignment {
+	return worldmap.Player
+}
+
+func (p *Player) SetMap(world *worldmap.Map) {
+	p.world = world
 }
 
 func (p *Player) Update() {
 	p.hunger++
 	p.thirst++
-}
-
-// Interface shared by Player and Enemy
-type Creature interface {
-	GetCoordinates() (int, int)
-	SetCoordinates(int, int)
-	Render() ui.Element
-	GetInitiative() int
-	MeleeAttack(Creature)
-	TakeDamage(int)
-	IsDead() bool
-	AttackHits(int) bool
-	Ranged() bool
-	GetName() string
-	MarshalJSON() ([]byte, error)
-	UnmarshalJSON([]byte) error
 }
 
 type Player struct {
@@ -649,4 +857,5 @@ type Player struct {
 	weapon      *item.Weapon
 	armour      *item.Armour
 	inventory   map[rune]([]item.Item)
+	world       *worldmap.Map
 }

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/onorton/cowboysindians/creature"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/ui"
@@ -125,6 +124,6 @@ type Tile struct {
 	y        int
 	passable bool
 	door     bool
-	c        creature.Creature
+	c        Creature
 	items    []item.Item
 }
