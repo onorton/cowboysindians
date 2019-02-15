@@ -2,9 +2,9 @@
 	"shotgun" : {
 		"Icon": {"Icon": 115, "Colour": 3},
 		"Range": 4,
-		"Type": 1,
+		"Type": 2,
 		"Weight": 20,
-	       	"Damage": {
+		"Damage": {
 			"Dice": 4,
 			"Number": 1,
 			"Bonus": 0
@@ -15,7 +15,7 @@
 	"pistol" : {
 		"Icon": {"Icon": 112, "Colour": 1},
 		"Range": 10,
-		"Type": 0,
+		"Type": 1,
 		"Weight": 10,
 		"Damage": {
 			"Dice": 4,
@@ -27,9 +27,22 @@
 	"sawn-off shotgun" : {
 		"Icon": {"Icon": 115, "Colour": 4},
 		"Range": 3,
-		"Type": 1,
+		"Type": 2,
 		"Weight": 15,
-	       	"Damage": {
+		"Damage": {
+			"Dice": 6,
+			"Number": 1,
+			"Bonus": 3
+
+		}
+	},
+
+	"baseball bat" : {
+		"Icon": {"Icon": 98, "Colour": 8},
+		"Range": 0,
+		"Type": 0,
+		"Weight": 10,
+		"Damage": {
 			"Dice": 6,
 			"Number": 1,
 			"Bonus": 0

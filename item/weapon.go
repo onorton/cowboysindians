@@ -29,7 +29,8 @@ type DamageAttributes struct {
 type WeaponType int
 
 const (
-	Pistol WeaponType = iota
+	NoAmmo WeaponType = iota
+	Pistol
 	Shotgun
 )
 

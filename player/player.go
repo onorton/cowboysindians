@@ -26,6 +26,7 @@ func NewPlayer(world *worldmap.Map) *Player {
 	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 10, 0, 100, 0, 100, 15, 12, 10, 100, nil, nil, make(map[rune]([]item.Item)), world}
 	player.AddItem(item.NewWeapon("shotgun"))
 	player.AddItem(item.NewWeapon("sawn-off shotgun"))
+	player.AddItem(item.NewWeapon("baseball bat"))
 	player.AddItem(item.NewArmour("leather jacket"))
 	player.AddItem(item.NewAmmo("shotgun shell"))
 	player.AddItem(item.NewConsumable("standard ration"))
@@ -176,6 +177,7 @@ func (p *Player) MeleeAttack(c worldmap.Creature) {
 func (p *Player) TakeDamage(damage int) {
 	p.hp -= damage
 }
+
 func (p *Player) GetStats() []string {
 	stats := make([]string, 4)
 	stats[0] = fmt.Sprintf("HP:%d/%d", p.hp, p.maxHp)
@@ -272,15 +274,29 @@ func (p *Player) AttackHits(roll int) bool {
 	return roll > p.ac
 }
 
-func (p *Player) RangedAttack(target worldmap.Creature) {
+func (p *Player) RangedAttack() bool {
+	if !p.Ranged() {
+		message.PrintMessage("You are not wielding a ranged weapon.")
+		return false
+	}
+
+	if !p.HasAmmo() {
+		message.PrintMessage("You have no ammunition for this weapon.")
+		return false
+	}
+
+	target := p.findTarget()
+
 	p.getAmmo()
 	tX, tY := target.GetCoordinates()
 	distance := math.Sqrt(math.Pow(float64(p.x-tX), 2) + math.Pow(float64(p.y-tY), 2))
 	if distance < float64(p.weapon.GetRange()) {
-		p.attack(target, worldmap.GetBonus(p.str), 0)
+		p.attack(target, worldmap.GetBonus(p.dex), 0)
 	} else {
 		message.Enqueue("Your target was too far away.")
 	}
+
+	return true
 
 }
 
@@ -605,17 +621,7 @@ func (p *Player) OverEncumbered() bool {
 	return total > float64(p.encumbrance)
 }
 
-// Interface for player to find a ranged target.
-func (p *Player) FindTarget() worldmap.Creature {
-	if !p.Ranged() {
-		message.PrintMessage("You are not wielding a ranged weapon.")
-		return nil
-	}
-
-	if !p.HasAmmo() {
-		message.PrintMessage("You have no ammunition for this weapon.")
-		return nil
-	}
+func (p *Player) findTarget() worldmap.Creature {
 	x, y := p.GetCoordinates()
 	// In terms of viewer space rather than world space
 	rX, rY := x-p.world.GetViewerX(), y-p.world.GetViewerY()
@@ -684,13 +690,15 @@ func (p *Player) FindTarget() worldmap.Creature {
 
 func (p *Player) PickupItem() bool {
 	x, y := p.x, p.y
-	if p.world.GetItems(x, y) == nil {
+	itemsOnGround := p.world.GetItems(x, y)
+	if itemsOnGround == nil {
 		message.PrintMessage("There is no item here.")
 		return false
 	}
 
 	items := make(map[rune]([]item.Item))
-	for _, itm := range p.world.GetItems(x, y) {
+	for _, itm := range itemsOnGround {
+
 		existing := items[itm.GetKey()]
 		if existing == nil {
 			existing = make([]item.Item, 0)
@@ -698,11 +706,16 @@ func (p *Player) PickupItem() bool {
 		existing = append(existing, itm)
 		items[itm.GetKey()] = existing
 	}
+
 	for k := range items {
 		for _, item := range items[k] {
 			p.AddItem(item)
 		}
-		message.Enqueue(fmt.Sprintf("You pick up %d %ss.", len(items[k]), items[k][0].GetName()))
+		if len(items[k]) == 1 {
+			message.Enqueue(fmt.Sprintf("You pick up 1 %s.", items[k][0].GetName()))
+		} else {
+			message.Enqueue(fmt.Sprintf("You pick up %d %ss.", len(items[k]), items[k][0].GetName()))
+		}
 
 	}
 	return true

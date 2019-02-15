@@ -221,11 +221,7 @@ func main() {
 						case ui.OpenDoor:
 							endTurn = player.ToggleDoor(x, y, true)
 						case ui.RangedAttack:
-							target := player.FindTarget()
-							if target != nil {
-								player.RangedAttack(target)
-								endTurn = true
-							}
+							endTurn = player.RangedAttack()
 						case ui.PickUpItem:
 							endTurn = player.PickupItem()
 						case ui.DropItem:
