@@ -20,6 +20,7 @@ func check(err error) {
 type itemAttributes struct {
 	Icon   icon.Icon
 	Weight float64
+	Cover  bool
 }
 
 type ItemDefinition struct {
@@ -40,14 +41,15 @@ func fetchItemData() {
 }
 
 type NormalItem struct {
-	name string
-	ic   icon.Icon
-	w    float64
+	name  string
+	ic    icon.Icon
+	w     float64
+	cover bool
 }
 
 func NewItem(name string) Item {
 	item := itemData[name]
-	var itm Item = &NormalItem{name, item.Icon, item.Weight}
+	var itm Item = &NormalItem{name, item.Icon, item.Weight, item.Cover}
 	return itm
 }
 
@@ -73,7 +75,14 @@ func (item *NormalItem) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"Weight\":%s", weightValue))
+	buffer.WriteString(fmt.Sprintf("\"Weight\":%s,", weightValue))
+
+	coverValue, err := json.Marshal(item.cover)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Cover\":%s", coverValue))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -85,6 +94,7 @@ func (item *NormalItem) UnmarshalJSON(data []byte) error {
 		Name   string
 		Icon   icon.Icon
 		Weight float64
+		Cover  bool
 	}
 	var v itemJson
 
@@ -95,6 +105,7 @@ func (item *NormalItem) UnmarshalJSON(data []byte) error {
 	item.name = v.Name
 	item.ic = v.Icon
 	item.w = v.Weight
+	item.cover = v.Cover
 
 	return nil
 }
@@ -165,11 +176,12 @@ func (itemList *ItemList) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (item *NormalItem) GetName() string {
-	return item.name
-}
 func (item *NormalItem) Render() ui.Element {
 	return item.ic.Render()
+}
+
+func (item *NormalItem) GetName() string {
+	return item.name
 }
 
 func (item *NormalItem) GetKey() rune {
@@ -184,6 +196,10 @@ func (item *NormalItem) GetKey() rune {
 
 func (item *NormalItem) GetWeight() float64 {
 	return item.w
+}
+
+func (item *NormalItem) GivesCover() bool {
+	return item.cover
 }
 
 func LoadAllData() {
@@ -201,4 +217,5 @@ type Item interface {
 	MarshalJSON() ([]byte, error)
 	UnmarshalJSON([]byte) error
 	GetWeight() float64
+	GivesCover() bool
 }

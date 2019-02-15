@@ -1,6 +1,12 @@
 {
 	"gem":{
 		"Icon": {"Icon": 42, "Colour": 4},
-		"Weight": 0.03
+		"Weight": 0.03,
+		"Cover": false
+	},
+	"barrel":{
+		"Icon": {"Icon": 111, "Colour": 8},
+		"Weight": 30,
+		"Cover": true
 	}
 }

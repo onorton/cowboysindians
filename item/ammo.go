@@ -122,3 +122,7 @@ func (ammo *Ammo) GetKey() rune {
 func (ammo *Ammo) GetWeight() float64 {
 	return ammo.w
 }
+
+func (ammo *Ammo) GivesCover() bool {
+	return false
+}

@@ -125,3 +125,7 @@ func (armour *Armour) GetKey() rune {
 func (armour *Armour) GetWeight() float64 {
 	return armour.w
 }
+
+func (armour *Armour) GivesCover() bool {
+	return false
+}

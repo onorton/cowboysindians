@@ -126,3 +126,7 @@ func (consumable *Consumable) GetWeight() float64 {
 func (consumable *Consumable) GetEffect(e string) int {
 	return consumable.effects[e]
 }
+
+func (consumable *Consumable) GivesCover() bool {
+	return false
+}

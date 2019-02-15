@@ -44,6 +44,10 @@ func NewMap(width, height, viewerWidth, viewerHeight int) *Map {
 	grid[2][3].PlaceItem(item.NewItem("gem"))
 	grid[3][3].PlaceItem(item.NewItem("gem"))
 	grid[7][1].PlaceItem(item.NewItem("gem"))
+	grid[5][2].PlaceItem(item.NewItem("barrel"))
+	grid[5][2].PlaceItem(item.NewItem("gem"))
+	grid[5][3].PlaceItem(item.NewItem("barrel"))
+
 	viewer := new(Viewer)
 	viewer.x = 0
 	viewer.y = 0

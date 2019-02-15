@@ -106,12 +106,27 @@ func (t *Tile) PlaceItem(itm item.Item) {
 	t.items = append([]item.Item{itm}, t.items...)
 }
 
+func (t *Tile) hasCover() bool {
+	cover := !t.passable
+
+	for _, item := range t.items {
+		cover = cover || item.GivesCover()
+	}
+	return cover
+}
+
 func (t Tile) render() ui.Element {
 	if t.c != nil {
 		return t.c.Render()
 	} else if t.door {
 		return t.terrain.RenderDoor(t.passable)
 	} else if len(t.items) != 0 {
+		// pick an item that gives cover if it exists
+		for _, item := range t.items {
+			if item.GivesCover() {
+				return item.Render()
+			}
+		}
 		return t.items[0].Render()
 	} else {
 		return t.terrain.Render()

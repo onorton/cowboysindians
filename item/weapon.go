@@ -242,3 +242,7 @@ func (weapon *Weapon) GetKey() rune {
 func (weapon *Weapon) GetWeight() float64 {
 	return weapon.w
 }
+
+func (weapon *Weapon) GivesCover() bool {
+	return false
+}

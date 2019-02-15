@@ -13,9 +13,10 @@ type marshallingPair struct {
 }
 
 var marshallingTests = []marshallingPair{
-	{NormalItem{"gem", icon.NewIcon(42, 4), 2}, "{\"Name\":\"gem\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":2}"},
-	{NormalItem{"stick", icon.NewIcon(30, 7), 5}, "{\"Name\":\"stick\",\"Icon\":{\"Icon\":30,\"Colour\":7},\"Weight\":5}"},
-	{NormalItem{"bowl", icon.NewIcon(66, 10), 3}, "{\"Name\":\"bowl\",\"Icon\":{\"Icon\":66,\"Colour\":10},\"Weight\":3}"},
+	{NormalItem{"gem", icon.NewIcon(42, 4), 2, false}, "{\"Name\":\"gem\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":2,\"Cover\":false}"},
+	{NormalItem{"stick", icon.NewIcon(30, 7), 5, false}, "{\"Name\":\"stick\",\"Icon\":{\"Icon\":30,\"Colour\":7},\"Weight\":5,\"Cover\":false}"},
+	{NormalItem{"bowl", icon.NewIcon(66, 10), 3, false}, "{\"Name\":\"bowl\",\"Icon\":{\"Icon\":66,\"Colour\":10},\"Weight\":3,\"Cover\":false}"},
+	{NormalItem{"barrel", icon.NewIcon(111, 0), 30, true}, "{\"Name\":\"barrel\",\"Icon\":{\"Icon\":111,\"Colour\":0},\"Weight\":30,\"Cover\":true}"},
 }
 
 type unmarshallingPair struct {
@@ -24,9 +25,10 @@ type unmarshallingPair struct {
 }
 
 var unmarshallingTests = []unmarshallingPair{
-	{"{\"Name\":\"gem\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":2}", NormalItem{"gem", icon.NewIcon(42, 4), 2}},
-	{"{\"Name\":\"stick\",\"Icon\":{\"Icon\":30,\"Colour\":7},\"Weight\":5}", NormalItem{"stick", icon.NewIcon(30, 7), 5}},
-	{"{\"Name\":\"bowl\",\"Icon\":{\"Icon\":66,\"Colour\":10},\"Weight\":3}", NormalItem{"bowl", icon.NewIcon(66, 10), 3}},
+	{"{\"Name\":\"gem\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":2,\"Cover\":false}", NormalItem{"gem", icon.NewIcon(42, 4), 2, false}},
+	{"{\"Name\":\"stick\",\"Icon\":{\"Icon\":30,\"Colour\":7},\"Weight\":5,\"Cover\":false}", NormalItem{"stick", icon.NewIcon(30, 7), 5, false}},
+	{"{\"Name\":\"bowl\",\"Icon\":{\"Icon\":66,\"Colour\":10},\"Weight\":3,\"Cover\":false}", NormalItem{"bowl", icon.NewIcon(66, 10), 3, false}},
+	{"{\"Name\":\"barrel\",\"Icon\":{\"Icon\":111,\"Colour\":0},\"Weight\":30,\"Cover\":true}", NormalItem{"barrel", icon.NewIcon(111, 0), 30, true}},
 }
 
 func TestMarshalling(t *testing.T) {
