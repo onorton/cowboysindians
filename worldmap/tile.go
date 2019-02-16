@@ -119,7 +119,11 @@ func (t Tile) render() ui.Element {
 	if t.c != nil {
 		return t.c.Render()
 	} else if t.door {
-		return t.terrain.RenderDoor(t.passable)
+		if t.passable {
+			return terrainData["ground"].Icon.Render()
+		} else {
+			return t.terrain.Render()
+		}
 	} else if len(t.items) != 0 {
 		// pick an item that gives cover if it exists
 		for _, item := range t.items {

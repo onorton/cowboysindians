@@ -18,14 +18,6 @@ func (i Icon) Render() ui.Element {
 	return ui.NewElement(i.icon, i.colour)
 }
 
-func (i Icon) RenderDoor(passable bool) ui.Element {
-	if passable {
-		return ui.NewElement(' ', i.colour)
-	} else {
-		return i.Render()
-	}
-}
-
 func CreatePlayerIcon() Icon {
 	return Icon{'@', termbox.ColorWhite}
 }
