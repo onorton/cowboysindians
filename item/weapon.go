@@ -298,6 +298,20 @@ func (weapon *Weapon) IsUnloaded() bool {
 	return weapon.wc.loaded == 0
 }
 
+func (weapon *Weapon) IsFullyLoaded() bool {
+	return weapon.wc.capacity == weapon.wc.loaded
+}
+
+func (weapon *Weapon) Load() {
+	weapon.wc.loaded++
+}
+
+func (weapon *Weapon) Fire() {
+	if weapon.wc != nil && weapon.wc.loaded > 0 {
+		weapon.wc.loaded--
+	}
+}
+
 func (weapon *Weapon) GetKey() rune {
 	h := fnv.New32()
 	h.Write([]byte(weapon.name))

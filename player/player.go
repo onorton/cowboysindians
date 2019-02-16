@@ -293,9 +293,9 @@ func (p *Player) RangedAttack() bool {
 
 	target := p.findTarget()
 
-	p.getAmmo()
 	tX, tY := target.GetCoordinates()
 	distance := math.Sqrt(math.Pow(float64(p.x-tX), 2) + math.Pow(float64(p.y-tY), 2))
+	p.weapon.Fire()
 	if distance < float64(p.weapon.GetRange()) {
 		coverPenalty := 0
 		if p.world.TargetBehindCover(p, target) {
@@ -524,6 +524,35 @@ func (p *Player) WearArmour() bool {
 	}
 }
 
+func (p *Player) LoadWeapon() bool {
+	if !p.ranged() {
+		message.PrintMessage("You are not wielding a ranged weapon.")
+		return false
+	}
+
+	if p.weaponFullyLoaded() {
+		message.PrintMessage("The weapon you are wielding is already fully loaded.")
+		return false
+	}
+
+	if !p.hasAmmo() {
+		message.PrintMessage("You don't have ammo for the weapon you are wielding.")
+		return false
+	}
+
+	for !p.weaponFullyLoaded() && p.hasAmmo() {
+		p.getAmmo()
+		p.weapon.Load()
+	}
+
+	if p.weaponFullyLoaded() {
+		message.Enqueue("You have fully loaded your weapon.")
+	} else {
+		message.Enqueue("You have loaded your weapon.")
+	}
+	return true
+}
+
 func (p *Player) ConsumeItem() bool {
 
 	for {
@@ -578,6 +607,11 @@ func (p *Player) ranged() bool {
 		return p.weapon.GetRange() > 0
 	}
 	return false
+}
+
+// Check whether player is carrying a fully loaded weapon
+func (p *Player) weaponFullyLoaded() bool {
+	return p.weapon.IsFullyLoaded()
 }
 
 // Check whether player has ammo for particular wielded weapon

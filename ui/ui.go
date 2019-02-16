@@ -35,6 +35,7 @@ const (
 	ToggleInventory
 	WieldItem
 	WieldArmour
+	LoadWeapon
 	Consume
 	Confirm
 	CancelAction
@@ -122,6 +123,8 @@ func GetInput() (action PlayerAction) {
 				action = WieldItem
 			case 'W':
 				action = WieldArmour
+			case 'l':
+				action = LoadWeapon
 			case 'e':
 				action = Consume
 			case 'y':

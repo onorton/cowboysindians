@@ -382,17 +382,28 @@ func (e *Enemy) Update(m *worldmap.Map) (int, int) {
 
 	target := m.GetPlayer()
 	tX, tY := target.GetCoordinates()
-	// If close enough and can see target, use ranged attack
-	if e.ranged() && e.hasAmmo() {
-		if distance := math.Sqrt(math.Pow(float64(e.x-tX), 2) + math.Pow(float64(e.y-tY), 2)); distance < float64(e.weapon.GetRange()) && m.IsVisible(e, tX, tY) {
-			e.getAmmo()
+
+	if distance := math.Sqrt(math.Pow(float64(e.x-tX), 2) + math.Pow(float64(e.y-tY), 2)); e.ranged() && distance < float64(e.weapon.GetRange()) && m.IsVisible(e, tX, tY) {
+		// if weapon loaded, shoot at target else if enemy has ammo, load weapon
+		if e.weaponLoaded() {
+			e.weapon.Fire()
 			coverPenalty := 0
 			if e.world.TargetBehindCover(e, target) {
 				coverPenalty = 5
 			}
 			e.attack(target, worldmap.GetBonus(e.dex)-coverPenalty, 0)
+			return e.x, e.y
+		} else if e.hasAmmo() {
+			for !e.weaponFullyLoaded() && e.hasAmmo() {
+				e.getAmmo()
+				e.weapon.Load()
+			}
+			return e.x, e.y
 		}
-	} else if len(possibleLocations) > 0 {
+
+	}
+
+	if len(possibleLocations) > 0 {
 		if e.overEncumbered() {
 			for _, itm := range e.inventory {
 				if itm.GetWeight() > 1 {
@@ -465,14 +476,6 @@ func (e *Enemy) getAmmo() *item.Ammo {
 	return nil
 }
 
-func (e *Enemy) hasAmmo() bool {
-	for _, itm := range e.inventory {
-		if a, ok := itm.(*item.Ammo); ok && e.weapon.AmmoTypeMatches(a) {
-			return true
-		}
-	}
-	return false
-}
 func (e *Enemy) pickupItem(item item.Item) {
 	e.inventory = append(e.inventory, item)
 }
@@ -482,6 +485,29 @@ func (e *Enemy) ranged() bool {
 		return e.weapon.GetRange() > 0
 	}
 	return false
+}
+
+// Check whether enemy is carrying a fully loaded weapon
+func (e *Enemy) weaponFullyLoaded() bool {
+	return e.weapon.IsFullyLoaded()
+}
+
+// Check whether enemy has ammo for particular wielded weapon
+func (e *Enemy) hasAmmo() bool {
+	for _, itm := range e.inventory {
+		if a, ok := itm.(*item.Ammo); ok && e.weapon.AmmoTypeMatches(a) {
+			return true
+		}
+	}
+	return false
+}
+
+func (e *Enemy) weaponLoaded() bool {
+	if e.weapon != nil && e.weapon.NeedsAmmo() {
+		return !e.weapon.IsUnloaded()
+	}
+	return true
+
 }
 
 func (e *Enemy) heal(amount int) {

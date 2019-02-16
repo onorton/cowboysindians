@@ -237,6 +237,8 @@ func main() {
 							endTurn = player.WieldItem()
 						case ui.WieldArmour:
 							endTurn = player.WearArmour()
+						case ui.LoadWeapon:
+							endTurn = player.LoadWeapon()
 						case ui.Consume:
 							endTurn = player.ConsumeItem()
 						default:
