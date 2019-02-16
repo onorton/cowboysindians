@@ -177,19 +177,20 @@ func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
 				if !m.IsPassable(x, y) {
 					continue
 				}
-				min := 100
+				min := height * width
 				for i := -1; i <= 1; i++ {
 					for j := -1; j <= 1; j++ {
 						nX := x + i
 						nY := y + j
+
 						if nX >= 0 && nX < width && nY >= 0 && nY < height && aiMap[nY][nX] < min {
 							min = aiMap[nY][nX]
 						}
 					}
+				}
 
-					if aiMap[y][x] > min {
-						aiMap[y][x] = min + 1
-					}
+				if aiMap[y][x] > min {
+					aiMap[y][x] = min + 1
 				}
 
 			}
@@ -213,7 +214,6 @@ func (e *Enemy) getChaseMap(m *worldmap.Map) [][]int {
 			}
 		}
 	}
-
 	return generateMap(aiMap, m)
 
 }
@@ -330,9 +330,13 @@ func compareMaps(m, o [][]int) bool {
 
 func addMaps(maps [][][]int, weights []float64) [][]float64 {
 	result := make([][]float64, len(maps[0]))
+
+	for y, row := range maps[0] {
+		result[y] = make([]float64, len(row))
+	}
+
 	for i, _ := range maps {
 		for y, row := range maps[i] {
-			result[y] = make([]float64, len(row))
 			for x, location := range row {
 				result[y][x] += weights[i] * float64(location)
 			}
@@ -366,6 +370,7 @@ func (e *Enemy) Update(m *worldmap.Map) (int, int) {
 	if e.WearArmour() {
 		return e.x, e.y
 	}
+
 	aiMap := addMaps([][][]int{e.getChaseMap(m), e.getItemMap(m)}, []float64{0.8, 0.2})
 	current := aiMap[e.y][e.x]
 	possibleLocations := make([]Coordinate, 0)
@@ -375,7 +380,10 @@ func (e *Enemy) Update(m *worldmap.Map) (int, int) {
 			nX := e.x + i
 			nY := e.y + j
 			if nX >= 0 && nX < len(aiMap[0]) && nY >= 0 && nY < len(aiMap) && aiMap[nY][nX] < current {
-				possibleLocations = append(possibleLocations, Coordinate{nX, nY})
+				// Add if not occupied by another enemy
+				if m.HasPlayer(nX, nY) || !m.IsOccupied(nX, nY) {
+					possibleLocations = append(possibleLocations, Coordinate{nX, nY})
+				}
 			}
 		}
 	}

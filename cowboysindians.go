@@ -215,7 +215,8 @@ func main() {
 								save(state)
 							}
 							quit = true
-
+						case ui.Wait:
+							endTurn = true
 						case ui.CloseDoor:
 							endTurn = player.ToggleDoor(x, y, false)
 						case ui.OpenDoor:
