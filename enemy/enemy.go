@@ -198,8 +198,8 @@ func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
 	}
 	return aiMap
 }
-func (e *Enemy) getChaseMap(m *worldmap.Map) [][]int {
-	height, width := m.GetHeight(), m.GetWidth()
+func (e *Enemy) getChaseMap() [][]int {
+	height, width := e.world.GetHeight(), e.world.GetWidth()
 	aiMap := make([][]int, height)
 
 	// Initialise Dijkstra map with goals.
@@ -207,19 +207,19 @@ func (e *Enemy) getChaseMap(m *worldmap.Map) [][]int {
 	for y := 0; y < height; y++ {
 		aiMap[y] = make([]int, width)
 		for x := 0; x < width; x++ {
-			if m.IsVisible(e, x, y) && m.HasPlayer(x, y) {
+			if e.world.IsVisible(e, x, y) && e.world.HasPlayer(x, y) {
 				aiMap[y][x] = 0
 			} else {
 				aiMap[y][x] = height * width
 			}
 		}
 	}
-	return generateMap(aiMap, m)
+	return generateMap(aiMap, e.world)
 
 }
 
-func (e *Enemy) getItemMap(m *worldmap.Map) [][]int {
-	height, width := m.GetHeight(), m.GetWidth()
+func (e *Enemy) getItemMap() [][]int {
+	height, width := e.world.GetHeight(), e.world.GetWidth()
 	aiMap := make([][]int, height)
 
 	// Initialise Dijkstra map with goals.
@@ -227,21 +227,21 @@ func (e *Enemy) getItemMap(m *worldmap.Map) [][]int {
 	for y := 0; y < height; y++ {
 		aiMap[y] = make([]int, width)
 		for x := 0; x < width; x++ {
-			if m.IsVisible(e, x, y) && m.HasItems(x, y) {
+			if e.world.IsVisible(e, x, y) && e.world.HasItems(x, y) {
 				aiMap[y][x] = 0
 			} else {
 				aiMap[y][x] = height * width
 			}
 		}
 	}
-	return generateMap(aiMap, m)
+	return generateMap(aiMap, e.world)
 }
 
-func (e *Enemy) getCoverMap(m *worldmap.Map) [][]int {
-	height, width := m.GetHeight(), m.GetWidth()
+func (e *Enemy) getCoverMap() [][]int {
+	height, width := e.world.GetHeight(), e.world.GetWidth()
 	aiMap := make([][]int, height)
 
-	player := m.GetPlayer()
+	player := e.world.GetPlayer()
 	pX, pY := player.GetCoordinates()
 	// Initialise Dijkstra map with goals.
 	// Max is size of grid.
@@ -249,14 +249,14 @@ func (e *Enemy) getCoverMap(m *worldmap.Map) [][]int {
 		aiMap[y] = make([]int, width)
 		for x := 0; x < width; x++ {
 			// Enemy must be able to see player in order to know it would be behind cover
-			if m.IsVisible(e, x, y) && m.IsVisible(e, pX, pY) && m.BehindCover(x, y, player) {
+			if e.world.IsVisible(e, x, y) && e.world.IsVisible(e, pX, pY) && e.world.BehindCover(x, y, player) {
 				aiMap[y][x] = 0
 			} else {
 				aiMap[y][x] = height * width
 			}
 		}
 	}
-	return generateMap(aiMap, m)
+	return generateMap(aiMap, e.world)
 }
 
 func (e *Enemy) GetInitiative() int {
@@ -373,7 +373,7 @@ type Coordinate struct {
 	y int
 }
 
-func (e *Enemy) Update(m *worldmap.Map) (int, int) {
+func (e *Enemy) Update() (int, int) {
 	// If at half health heal up
 	if e.hp <= e.maxHp/2 {
 		for i, itm := range e.inventory {
@@ -385,8 +385,8 @@ func (e *Enemy) Update(m *worldmap.Map) (int, int) {
 		}
 	}
 
-	coverMap := e.getCoverMap(m)
-	aiMap := addMaps([][][]int{e.getChaseMap(m), e.getItemMap(m), coverMap}, []float64{0.5, 0.2, 0.3})
+	coverMap := e.getCoverMap()
+	aiMap := addMaps([][][]int{e.getChaseMap(), e.getItemMap(), coverMap}, []float64{0.5, 0.2, 0.3})
 
 	// If moving into or out of cover toggle crouch
 	if coverMap[e.y][e.x] == 0 && !e.crouching {
@@ -415,17 +415,17 @@ func (e *Enemy) Update(m *worldmap.Map) (int, int) {
 			nY := e.y + j
 			if nX >= 0 && nX < len(aiMap[0]) && nY >= 0 && nY < len(aiMap) && aiMap[nY][nX] < current {
 				// Add if not occupied by another enemy
-				if m.HasPlayer(nX, nY) || !m.IsOccupied(nX, nY) {
+				if e.world.HasPlayer(nX, nY) || !e.world.IsOccupied(nX, nY) {
 					possibleLocations = append(possibleLocations, Coordinate{nX, nY})
 				}
 			}
 		}
 	}
 
-	target := m.GetPlayer()
+	target := e.world.GetPlayer()
 	tX, tY := target.GetCoordinates()
 
-	if distance := math.Sqrt(math.Pow(float64(e.x-tX), 2) + math.Pow(float64(e.y-tY), 2)); e.ranged() && distance < float64(e.weapon.GetRange()) && m.IsVisible(e, tX, tY) {
+	if distance := math.Sqrt(math.Pow(float64(e.x-tX), 2) + math.Pow(float64(e.y-tY), 2)); e.ranged() && distance < float64(e.weapon.GetRange()) && e.world.IsVisible(e, tX, tY) {
 		// if weapon loaded, shoot at target else if enemy has ammo, load weapon
 		if e.weaponLoaded() {
 			e.weapon.Fire()
@@ -449,7 +449,7 @@ func (e *Enemy) Update(m *worldmap.Map) (int, int) {
 		if e.overEncumbered() {
 			for _, itm := range e.inventory {
 				if itm.GetWeight() > 1 {
-					e.dropItem(itm, m)
+					e.dropItem(itm)
 				}
 			}
 		} else {
@@ -457,7 +457,7 @@ func (e *Enemy) Update(m *worldmap.Map) (int, int) {
 			return l.x, l.y
 		}
 	} else {
-		items := m.GetItems(e.x, e.y)
+		items := e.world.GetItems(e.x, e.y)
 		for _, item := range items {
 			e.pickupItem(item)
 		}
@@ -474,9 +474,9 @@ func (e *Enemy) overEncumbered() bool {
 	}
 	return weight > float64(e.encumbrance)
 }
-func (e *Enemy) dropItem(item item.Item, m *worldmap.Map) {
-	m.PlaceItem(e.x, e.y, item)
-	if m.IsVisible(m.GetPlayer(), e.x, e.y) {
+func (e *Enemy) dropItem(item item.Item) {
+	e.world.PlaceItem(e.x, e.y, item)
+	if e.world.IsVisible(e.world.GetPlayer(), e.x, e.y) {
 		message.Enqueue(fmt.Sprintf("The %s dropped a %s.", e.name, item.GetName()))
 	}
 

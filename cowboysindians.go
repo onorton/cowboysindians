@@ -258,7 +258,7 @@ func main() {
 				if e.IsDead() {
 					continue
 				}
-				eX, eY := e.Update(worldMap)
+				eX, eY := e.Update()
 				worldMap.MoveCreature(e, eX, eY)
 			}
 		}
