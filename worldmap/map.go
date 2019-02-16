@@ -23,31 +23,8 @@ const (
 const padding = 5
 
 func NewMap(width, height, viewerWidth, viewerHeight int) *Map {
-	grid := make([][]Tile, height)
-	for i := 0; i < height; i++ {
-		row := make([]Tile, width)
-		for j := 0; j < width; j++ {
-			row[j] = newTile("ground", j, i)
 
-		}
-		grid[i] = row
-	}
-
-	grid[0][4] = newTile("wall", 4, 0)
-	grid[0][5] = newTile("wall", 5, 0)
-	grid[0][6] = newTile("wall", 6, 0)
-	grid[1][4] = newTile("door", 4, 1)
-	grid[2][4] = newTile("wall", 4, 2)
-	grid[2][5] = newTile("wall", 5, 2)
-	grid[2][6] = newTile("wall", 6, 2)
-	grid[1][6] = newTile("wall", 6, 1)
-	grid[2][2].PlaceItem(item.NewItem("gem"))
-	grid[2][3].PlaceItem(item.NewItem("gem"))
-	grid[3][3].PlaceItem(item.NewItem("gem"))
-	grid[7][1].PlaceItem(item.NewItem("gem"))
-	grid[5][2].PlaceItem(item.NewItem("barrel"))
-	grid[5][2].PlaceItem(item.NewItem("gem"))
-	grid[5][3].PlaceItem(item.NewItem("barrel"))
+	grid := generateMap(width, height)
 
 	viewer := new(Viewer)
 	viewer.x = 0
