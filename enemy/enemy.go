@@ -236,6 +236,29 @@ func (e *Enemy) getItemMap(m *worldmap.Map) [][]int {
 	}
 	return generateMap(aiMap, m)
 }
+
+func (e *Enemy) getCoverMap(m *worldmap.Map) [][]int {
+	height, width := m.GetHeight(), m.GetWidth()
+	aiMap := make([][]int, height)
+
+	player := m.GetPlayer()
+	pX, pY := player.GetCoordinates()
+	// Initialise Dijkstra map with goals.
+	// Max is size of grid.
+	for y := 0; y < height; y++ {
+		aiMap[y] = make([]int, width)
+		for x := 0; x < width; x++ {
+			// Enemy must be able to see player in order to know it would be behind cover
+			if m.IsVisible(e, x, y) && m.IsVisible(e, pX, pY) && m.BehindCover(x, y, player) {
+				aiMap[y][x] = 0
+			} else {
+				aiMap[y][x] = height * width
+			}
+		}
+	}
+	return generateMap(aiMap, m)
+}
+
 func (e *Enemy) GetInitiative() int {
 	return e.initiative
 }
@@ -362,6 +385,18 @@ func (e *Enemy) Update(m *worldmap.Map) (int, int) {
 		}
 	}
 
+	coverMap := e.getCoverMap(m)
+	aiMap := addMaps([][][]int{e.getChaseMap(m), e.getItemMap(m), coverMap}, []float64{0.5, 0.2, 0.3})
+
+	// If moving into or out of cover toggle crouch
+	if coverMap[e.y][e.x] == 0 && !e.crouching {
+		e.crouching = true
+		return e.x, e.y
+	} else if coverMap[e.y][e.x] > 0 && e.crouching {
+		e.crouching = false
+		return e.x, e.y
+	}
+
 	// Try and wield best weapon
 	if e.WieldItem() {
 		return e.x, e.y
@@ -371,7 +406,6 @@ func (e *Enemy) Update(m *worldmap.Map) (int, int) {
 		return e.x, e.y
 	}
 
-	aiMap := addMaps([][][]int{e.getChaseMap(m), e.getItemMap(m)}, []float64{0.8, 0.2})
 	current := aiMap[e.y][e.x]
 	possibleLocations := make([]Coordinate, 0)
 	// Find adjacent locations closer to the goal

@@ -348,10 +348,73 @@ func (m Map) TargetBehindCover(a, t Creature) bool {
 			if m.IsValid(x, y) && m.givesCover(x, y) && m.isAdjacent(x, y, x1, y1) && t.IsCrouching() {
 				return true
 			}
-
 		}
 	}
+	return false
+}
 
+func (m Map) BehindCover(x1, y1 int, a Creature) bool {
+	x0, y0 := a.GetCoordinates()
+	var xStep, yStep int
+	x, y := x0, y0
+	dx := float64(x1 - x0)
+	dy := float64(y1 - y0)
+	if dy < 0 {
+		yStep = -1
+		dy *= -1
+	} else if dy > 0 {
+		yStep = 1
+	}
+	if dx < 0 {
+		xStep = -1
+		dx *= -1
+	} else if dx > 0 {
+		xStep = 1
+	}
+
+	// Go down longest delta
+	if dx >= dy {
+		dErr := dy / dx
+		e := dErr - 0.5
+		for i := 0; i < int(dx); i++ {
+			x += xStep
+			e += dErr
+
+			if e >= 0.5 {
+				y += yStep
+				e -= 1
+			}
+			// If any square along path is impassable, target square is behind cover
+			if m.IsValid(x, y) && !(x == x1 && y == y1) && !m.IsPassable(x, y) {
+				return true
+			}
+
+			// If square in path gives cover, is adjacent to the target square then target square would be behind cover
+			if m.IsValid(x, y) && m.givesCover(x, y) && m.isAdjacent(x, y, x1, y1) {
+				return true
+			}
+		}
+	} else {
+		dErr := dx / dy
+		e := dErr - 0.5
+		for i := 0; i < int(dy); i++ {
+			y += yStep
+			e += dErr
+			if e >= 0.5 {
+				x += xStep
+				e -= 1
+			}
+			// If any square along path is impassable, target square is behind cover
+			if m.IsValid(x, y) && !(x == x1 && y == y1) && !m.IsPassable(x, y) {
+				return true
+			}
+
+			// If square in path gives cover, is adjacent to the target square then target square would be behind cover
+			if m.IsValid(x, y) && m.givesCover(x, y) && m.isAdjacent(x, y, x1, y1) {
+				return true
+			}
+		}
+	}
 	return false
 }
 
