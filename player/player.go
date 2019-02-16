@@ -293,9 +293,14 @@ func (p *Player) RangedAttack() bool {
 
 	target := p.findTarget()
 
+	p.weapon.Fire()
+	if target == nil {
+		message.Enqueue("You fire your weapon at the ground.")
+		return true
+	}
+
 	tX, tY := target.GetCoordinates()
 	distance := math.Sqrt(math.Pow(float64(p.x-tX), 2) + math.Pow(float64(p.y-tY), 2))
-	p.weapon.Fire()
 	if distance < float64(p.weapon.GetRange()) {
 		coverPenalty := 0
 		if p.world.TargetBehindCover(p, target) {

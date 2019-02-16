@@ -198,6 +198,7 @@ func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
 	}
 	return aiMap
 }
+
 func (e *Enemy) getChaseMap() [][]int {
 	height, width := e.world.GetHeight(), e.world.GetWidth()
 	aiMap := make([][]int, height)
@@ -297,7 +298,7 @@ func (e *Enemy) IsDead() bool {
 	return e.hp <= 0
 }
 
-func (e *Enemy) WieldItem() bool {
+func (e *Enemy) wieldItem() bool {
 	changed := false
 	for i, itm := range e.inventory {
 		if w, ok := itm.(*item.Weapon); ok {
@@ -318,7 +319,7 @@ func (e *Enemy) WieldItem() bool {
 	return changed
 }
 
-func (e *Enemy) WearArmour() bool {
+func (e *Enemy) wearArmour() bool {
 	changed := false
 	for i, itm := range e.inventory {
 		if a, ok := itm.(*item.Armour); ok {
@@ -398,11 +399,11 @@ func (e *Enemy) Update() (int, int) {
 	}
 
 	// Try and wield best weapon
-	if e.WieldItem() {
+	if e.wieldItem() {
 		return e.x, e.y
 	}
 	// Try and wear best armour
-	if e.WearArmour() {
+	if e.wearArmour() {
 		return e.x, e.y
 	}
 
