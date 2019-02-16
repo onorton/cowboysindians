@@ -13,11 +13,12 @@ import (
 )
 
 type WeaponAttributes struct {
-	Icon   icon.Icon
-	Damage DamageAttributes
-	Range  int
-	Type   WeaponType
-	Weight float64
+	Icon     icon.Icon
+	Damage   DamageAttributes
+	Range    int
+	Type     WeaponType
+	Capacity int
+	Weight   float64
 }
 
 type DamageAttributes struct {
@@ -51,6 +52,7 @@ type Weapon struct {
 	r      int
 	t      WeaponType
 	w      float64
+	wc     *WeaponCapacity
 	damage *Damage
 }
 
@@ -60,9 +62,40 @@ type Damage struct {
 	bonus  int
 }
 
+type WeaponCapacity struct {
+	capacity int
+	loaded   int
+}
+
 func NewWeapon(name string) *Weapon {
 	weapon := weaponData[name]
-	return &Weapon{name, weapon.Icon, weapon.Range, weapon.Type, weapon.Weight, &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
+
+	var weaponCapacity *WeaponCapacity
+	if weapon.Capacity != 0 {
+		weaponCapacity = &WeaponCapacity{weapon.Capacity, 0}
+	}
+	return &Weapon{name, weapon.Icon, weapon.Range, weapon.Type, weapon.Weight, weaponCapacity, &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
+}
+
+func (weaponCapacity *WeaponCapacity) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	capacityValue, err := json.Marshal(weaponCapacity.capacity)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Capacity\":%s,", capacityValue))
+
+	loadedValue, err := json.Marshal(weaponCapacity.loaded)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Loaded\":%s", loadedValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
 }
 
 func (damage *Damage) MarshalJSON() ([]byte, error) {
@@ -131,6 +164,14 @@ func (weapon *Weapon) MarshalJSON() ([]byte, error) {
 
 	buffer.WriteString(fmt.Sprintf("\"Weight\":%s,", weightValue))
 
+	if weapon.wc != nil {
+		weaponCapacityValue, err := json.Marshal(weapon.wc)
+		if err != nil {
+			return nil, err
+		}
+
+		buffer.WriteString(fmt.Sprintf("\"WeaponCapacity\":%s,", weaponCapacityValue))
+	}
 	damageValue, err := json.Marshal(weapon.damage)
 	if err != nil {
 		return nil, err
@@ -140,6 +181,24 @@ func (weapon *Weapon) MarshalJSON() ([]byte, error) {
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
+}
+
+func (weaponCapacity *WeaponCapacity) UnmarshalJSON(data []byte) error {
+
+	type weaponCapacityJson struct {
+		Capacity int
+		Loaded   int
+	}
+	var v weaponCapacityJson
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	weaponCapacity.capacity = v.Capacity
+	weaponCapacity.loaded = v.Loaded
+
+	return nil
 }
 
 func (damage *Damage) UnmarshalJSON(data []byte) error {
@@ -165,12 +224,13 @@ func (damage *Damage) UnmarshalJSON(data []byte) error {
 func (weapon *Weapon) UnmarshalJSON(data []byte) error {
 
 	type weaponJson struct {
-		Name   string
-		Icon   icon.Icon
-		Range  *int
-		Type   *WeaponType
-		Weight float64
-		Damage *Damage
+		Name           string
+		Icon           icon.Icon
+		Range          *int
+		Type           *WeaponType
+		Weight         float64
+		WeaponCapacity *WeaponCapacity
+		Damage         *Damage
 	}
 	var v weaponJson
 
@@ -195,6 +255,7 @@ func (weapon *Weapon) UnmarshalJSON(data []byte) error {
 	weapon.r = *(v.Range)
 	weapon.t = *(v.Type)
 	weapon.w = v.Weight
+	weapon.wc = v.WeaponCapacity
 	weapon.damage = v.Damage
 
 	return nil
