@@ -493,6 +493,10 @@ func (e *Enemy) GetAlignment() worldmap.Alignment {
 	return worldmap.Enemy
 }
 
+func (e *Enemy) IsCrouching() bool {
+	return e.crouching
+}
+
 func (e *Enemy) SetMap(world *worldmap.Map) {
 	e.world = world
 }

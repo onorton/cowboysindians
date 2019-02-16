@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"strconv"
 	"strings"
 
@@ -250,8 +251,13 @@ func (m Map) IsVisible(c Creature, x1, y1 int) bool {
 				y += yStep
 				e -= 1
 			}
-			// If any square along path is impassable, x1, y1 is invisible
+			// If any square along path is impassable, target square is invisible
 			if m.IsValid(x, y) && !(x == x1 && y == y1) && !m.IsPassable(x, y) {
+				return false
+			}
+
+			// If square in path gives cover, is adjacent to the target square and c is crouching then target square is invisible
+			if m.IsValid(x, y) && m.givesCover(x, y) && m.isAdjacent(x, y, x1, y1) && c.IsCrouching() {
 				return false
 			}
 		}
@@ -265,8 +271,13 @@ func (m Map) IsVisible(c Creature, x1, y1 int) bool {
 				x += xStep
 				e -= 1
 			}
-			// If any square along path is impassable, x1, y1 is invisible
+			// If any square along path is impassable, target square is invisible
 			if m.IsValid(x, y) && !(x == x1 && y == y1) && !m.IsPassable(x, y) {
+				return false
+			}
+
+			// If square in path gives cover, is adjacent to the target square and c is crouching then target square is invisible
+			if m.IsValid(x, y) && m.givesCover(x, y) && m.isAdjacent(x, y, x1, y1) && c.IsCrouching() {
 				return false
 			}
 
@@ -436,6 +447,17 @@ func (m *Map) SetPassable(x, y int, passable bool) {
 	m.grid[y][x].passable = passable
 }
 
+func (m *Map) givesCover(x, y int) bool {
+	return m.grid[y][x].givesCover()
+}
+
+func (m *Map) isAdjacent(x1, y1, x2, y2 int) bool {
+	if x1 == x2 && y1 == y2 {
+		return false
+	}
+	return math.Abs(float64(x1-x2)) <= 1 && math.Abs(float64(y1-y2)) <= 1
+}
+
 func GetBonus(score int) int {
 	return (score - 10) / 2
 }
@@ -449,6 +471,7 @@ type Creature interface {
 	MeleeAttack(Creature)
 	TakeDamage(int)
 	IsDead() bool
+	IsCrouching() bool
 	AttackHits(int) bool
 	GetName() string
 	GetAlignment() Alignment

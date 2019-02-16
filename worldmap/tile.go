@@ -106,7 +106,7 @@ func (t *Tile) PlaceItem(itm item.Item) {
 	t.items = append([]item.Item{itm}, t.items...)
 }
 
-func (t *Tile) hasCover() bool {
+func (t *Tile) givesCover() bool {
 	cover := !t.passable
 
 	for _, item := range t.items {
