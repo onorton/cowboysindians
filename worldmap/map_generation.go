@@ -4,6 +4,13 @@ import (
 	"math/rand"
 )
 
+type building struct {
+	x1 int
+	y1 int
+	x2 int
+	y2 int
+}
+
 func generateMap(width, height int) [][]Tile {
 	grid := make([][]Tile, height)
 	for i := 0; i < height; i++ {
@@ -15,16 +22,17 @@ func generateMap(width, height int) [][]Tile {
 		grid[i] = row
 	}
 
+	buildings := make([]building, 0)
 	// Generate a number of buildings
 	for i := 0; i < 3; i++ {
-		generateBuilding(&grid)
+		generateBuilding(&grid, &buildings)
 	}
 
 	return grid
 }
 
 // Generate a rectangular building and place on map
-func generateBuilding(grid *([][]Tile)) {
+func generateBuilding(grid *[][]Tile, buildings *[]building) {
 	width := len((*grid)[0])
 	height := len(*grid)
 
@@ -60,7 +68,8 @@ func generateBuilding(grid *([][]Tile)) {
 		x1, y1 := cX-negWidth, cY-negHeight
 		x2, y2 := cX+posWidth, cY+posHeight
 
-		validBuilding = isValid(x1, y1, width, height) && isValid(x2, y2, width, height)
+		b := building{x1, y1, x2, y2}
+		validBuilding = isValid(x1, y1, width, height) && isValid(x2, y2, width, height) && !overlap(*buildings, b)
 
 		if validBuilding {
 			// Add walls
@@ -80,12 +89,26 @@ func generateBuilding(grid *([][]Tile)) {
 			} else {
 				(*grid)[y1][cX] = newTile("door", x2, cY)
 			}
-			break
+			*buildings = append(*buildings, b)
 		}
 	}
-
 }
 
 func isValid(x, y, width, height int) bool {
 	return x >= 0 && y >= 0 && x < width && y < height
+}
+
+func overlap(buildings []building, b building) bool {
+	for _, otherBuilding := range buildings {
+		x1y1Overlaps := b.x1 >= otherBuilding.x1-1 && b.x1 <= otherBuilding.x2+1 && b.y1 >= otherBuilding.y1-1 && b.y1 <= otherBuilding.y2+1
+		x1y2Overlaps := b.x1 >= otherBuilding.x1-1 && b.x1 <= otherBuilding.x2+1 && b.y2 >= otherBuilding.y1-1 && b.y2 <= otherBuilding.y2+1
+		x2y1Overlaps := b.x2 >= otherBuilding.x1-1 && b.x2 <= otherBuilding.x2+1 && b.y1 >= otherBuilding.y1-1 && b.y1 <= otherBuilding.y2+1
+		x2y2Overlaps := b.x2 >= otherBuilding.x1-1 && b.x2 <= otherBuilding.x2+1 && b.y2 >= otherBuilding.y1-1 && b.y2 <= otherBuilding.y2+1
+
+		if x1y1Overlaps || x1y2Overlaps || x2y1Overlaps || x2y2Overlaps {
+			return true
+		}
+	}
+	return false
+
 }
