@@ -34,23 +34,21 @@ func fetchTerrainData() map[string]TileAttributes {
 	return tD
 }
 
-func newTile(name string, x, y int) Tile {
+func newTile(name string) Tile {
 
 	terrain := terrainData[name]
 	icon := terrain.Icon
 	passable := terrain.Passable
 	door := terrain.Door
-	return Tile{icon, x, y, passable, door, nil, make([]item.Item, 0)}
+	return Tile{icon, passable, door, nil, make([]item.Item, 0)}
 }
 
 func (t *Tile) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
-	keys := []string{"Terrain", "X", "Y", "Passable", "Door", "Items"}
+	keys := []string{"Terrain", "Passable", "Door", "Items"}
 
 	tileValues := map[string]interface{}{
 		"Terrain":  t.terrain,
-		"X":        t.x,
-		"Y":        t.y,
 		"Passable": t.passable,
 		"Door":     t.door,
 		"Items":    t.items,
@@ -79,8 +77,6 @@ func (t *Tile) UnmarshalJSON(data []byte) error {
 
 	type tileJson struct {
 		Terrain  icon.Icon
-		X        int
-		Y        int
 		Passable bool
 		Door     bool
 		Items    item.ItemList
@@ -92,8 +88,6 @@ func (t *Tile) UnmarshalJSON(data []byte) error {
 	}
 
 	t.terrain = v.Terrain
-	t.x = v.X
-	t.y = v.Y
 	t.passable = v.Passable
 	t.door = v.Door
 	t.items = v.Items
@@ -139,8 +133,6 @@ func (t Tile) render() ui.Element {
 
 type Tile struct {
 	terrain  icon.Icon
-	x        int
-	y        int
 	passable bool
 	door     bool
 	c        Creature

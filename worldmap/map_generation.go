@@ -16,7 +16,7 @@ func generateMap(width, height int) [][]Tile {
 	for i := 0; i < height; i++ {
 		row := make([]Tile, width)
 		for j := 0; j < width; j++ {
-			row[j] = newTile("ground", j, i)
+			row[j] = newTile("ground")
 
 		}
 		grid[i] = row
@@ -74,13 +74,13 @@ func generateBuilding(grid *[][]Tile, buildings *[]building) {
 		if validBuilding {
 			// Add walls
 			for x := x1; x <= x2; x++ {
-				(*grid)[y1][x] = newTile("wall", x, y1)
-				(*grid)[y2][x] = newTile("wall", x, y2)
+				(*grid)[y1][x] = newTile("wall")
+				(*grid)[y2][x] = newTile("wall")
 			}
 
 			for y := y1; y <= y2; y++ {
-				(*grid)[y][x1] = newTile("wall", x1, y)
-				(*grid)[y][x2] = newTile("wall", x2, y)
+				(*grid)[y][x1] = newTile("wall")
+				(*grid)[y][x2] = newTile("wall")
 			}
 
 			// Add door randomly as long it's not a corner
@@ -90,16 +90,16 @@ func generateBuilding(grid *[][]Tile, buildings *[]building) {
 			switch wallSelection {
 			case 0:
 				doorX := x1 + 1 + rand.Intn(buildingWidth-2)
-				(*grid)[y1][doorX] = newTile("door", doorX, y1)
+				(*grid)[y1][doorX] = newTile("door")
 			case 1:
 				doorX := x1 + 1 + rand.Intn(buildingWidth-2)
-				(*grid)[y2][doorX] = newTile("door", doorX, y2)
+				(*grid)[y2][doorX] = newTile("door")
 			case 2:
 				doorY := y1 + 1 + rand.Intn(buildingHeight-2)
-				(*grid)[doorY][x2] = newTile("door", x2, doorY)
+				(*grid)[doorY][x2] = newTile("door")
 			case 3:
 				doorY := y1 + 1 + rand.Intn(buildingHeight-2)
-				(*grid)[doorY][x1] = newTile("door", x1, doorY)
+				(*grid)[doorY][x1] = newTile("door")
 			}
 			*buildings = append(*buildings, b)
 		}
