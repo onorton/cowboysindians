@@ -83,11 +83,23 @@ func generateBuilding(grid *[][]Tile, buildings *[]building) {
 				(*grid)[y][x2] = newTile("wall", x2, y)
 			}
 
-			// Add door on longest side
-			if buildingWidth > buildingHeight {
-				(*grid)[cY][x2] = newTile("door", x2, cY)
-			} else {
-				(*grid)[y1][cX] = newTile("door", x2, cY)
+			// Add door randomly as long it's not a corner
+			wallSelection := rand.Intn(4)
+
+			// Wall selection is North, South, East, West
+			switch wallSelection {
+			case 0:
+				doorX := x1 + 1 + rand.Intn(buildingWidth-2)
+				(*grid)[y1][doorX] = newTile("door", doorX, y1)
+			case 1:
+				doorX := x1 + 1 + rand.Intn(buildingWidth-2)
+				(*grid)[y2][doorX] = newTile("door", doorX, y2)
+			case 2:
+				doorY := y1 + 1 + rand.Intn(buildingHeight-2)
+				(*grid)[doorY][x2] = newTile("door", x2, doorY)
+			case 3:
+				doorY := y1 + 1 + rand.Intn(buildingHeight-2)
+				(*grid)[doorY][x1] = newTile("door", x1, doorY)
 			}
 			*buildings = append(*buildings, b)
 		}
