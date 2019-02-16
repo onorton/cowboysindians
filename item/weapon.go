@@ -290,6 +290,14 @@ func (weapon *Weapon) AmmoTypeMatches(ammo *Ammo) bool {
 	return weapon.t == ammo.t
 }
 
+func (weapon *Weapon) NeedsAmmo() bool {
+	return weapon.wc != nil
+}
+
+func (weapon *Weapon) IsUnloaded() bool {
+	return weapon.wc.loaded == 0
+}
+
 func (weapon *Weapon) GetKey() rune {
 	h := fnv.New32()
 	h.Write([]byte(weapon.name))

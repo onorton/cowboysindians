@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math"
 	"math/rand"
 
@@ -282,13 +281,13 @@ func (p *Player) AttackHits(roll int) bool {
 }
 
 func (p *Player) RangedAttack() bool {
-	if !p.Ranged() {
+	if !p.ranged() {
 		message.PrintMessage("You are not wielding a ranged weapon.")
 		return false
 	}
 
-	if !p.HasAmmo() {
-		message.PrintMessage("You have no ammunition for this weapon.")
+	if !p.weaponLoaded() {
+		message.PrintMessage("The weapon you are carrying is not loaded.")
 		return false
 	}
 
@@ -465,12 +464,11 @@ func (p *Player) WieldItem() bool {
 					other := p.weapon
 					p.weapon = w
 					if other != nil {
-						p.AddItem(w)
+						p.AddItem(other)
 					}
 					message.Enqueue(fmt.Sprintf("You are now wielding a %s.", w.GetName()))
 					return true
 				} else {
-					log.Panic(itm.(*item.Weapon))
 					message.PrintMessage("That is not a weapon.")
 					p.AddItem(itm)
 					ui.GetInput()
@@ -575,7 +573,7 @@ func (p *Player) ConsumeItem() bool {
 }
 
 // Check whether player can carry out a range attack this turn
-func (p *Player) Ranged() bool {
+func (p *Player) ranged() bool {
 	if p.weapon != nil {
 		return p.weapon.GetRange() > 0
 	}
@@ -583,13 +581,21 @@ func (p *Player) Ranged() bool {
 }
 
 // Check whether player has ammo for particular wielded weapon
-func (p *Player) HasAmmo() bool {
+func (p *Player) hasAmmo() bool {
 	for _, items := range p.inventory {
 		if a, ok := items[0].(*item.Ammo); ok && p.weapon.AmmoTypeMatches(a) {
 			return true
 		}
 	}
 	return false
+}
+
+func (p *Player) weaponLoaded() bool {
+	if p.weapon != nil && p.weapon.NeedsAmmo() {
+		return !p.weapon.IsUnloaded()
+	}
+	return true
+
 }
 
 func (p *Player) heal(amount int) {
