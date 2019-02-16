@@ -298,7 +298,11 @@ func (p *Player) RangedAttack() bool {
 	tX, tY := target.GetCoordinates()
 	distance := math.Sqrt(math.Pow(float64(p.x-tX), 2) + math.Pow(float64(p.y-tY), 2))
 	if distance < float64(p.weapon.GetRange()) {
-		p.attack(target, worldmap.GetBonus(p.dex), 0)
+		coverPenalty := 0
+		if p.world.TargetBehindCover(p, target) {
+			coverPenalty = 5
+		}
+		p.attack(target, worldmap.GetBonus(p.dex)-coverPenalty, 0)
 	} else {
 		message.Enqueue("Your target was too far away.")
 	}

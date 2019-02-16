@@ -386,7 +386,11 @@ func (e *Enemy) Update(m *worldmap.Map) (int, int) {
 	if e.ranged() && e.hasAmmo() {
 		if distance := math.Sqrt(math.Pow(float64(e.x-tX), 2) + math.Pow(float64(e.y-tY), 2)); distance < float64(e.weapon.GetRange()) && m.IsVisible(e, tX, tY) {
 			e.getAmmo()
-			e.attack(target, worldmap.GetBonus(e.dex), 0)
+			coverPenalty := 0
+			if e.world.TargetBehindCover(e, target) {
+				coverPenalty = 5
+			}
+			e.attack(target, worldmap.GetBonus(e.dex)-coverPenalty, 0)
 		}
 	} else if len(possibleLocations) > 0 {
 		if e.overEncumbered() {
