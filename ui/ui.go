@@ -28,6 +28,7 @@ const (
 	Wait
 	CloseDoor
 	OpenDoor
+	ToggleCrouch
 	RangedAttack
 	PickUpItem
 	DropItem
@@ -107,6 +108,8 @@ func GetInput() (action PlayerAction) {
 				action = CloseDoor
 			case 'o':
 				action = OpenDoor
+			case 'C':
+				action = ToggleCrouch
 			case 't':
 				action = RangedAttack
 			case ',':

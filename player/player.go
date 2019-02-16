@@ -23,7 +23,7 @@ func check(err error) {
 }
 
 func NewPlayer(world *worldmap.Map) *Player {
-	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 10, 0, 100, 0, 100, 15, 12, 10, 100, nil, nil, make(map[rune]([]item.Item)), world}
+	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 10, 0, 100, 0, 100, 15, 12, 10, 100, false, nil, nil, make(map[rune]([]item.Item)), world}
 	player.AddItem(item.NewWeapon("shotgun"))
 	player.AddItem(item.NewWeapon("sawn-off shotgun"))
 	player.AddItem(item.NewWeapon("baseball bat"))
@@ -41,7 +41,7 @@ func (p *Player) Render() ui.Element {
 func (p *Player) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"X", "Y", "Icon", "Initiative", "Hp", "MaxHp", "Hunger", "MaxHunger", "Thirst", "MaxThirst", "AC", "Str", "Dex", "Encumbrance", "Weapon", "Armour", "Inventory"}
+	keys := []string{"X", "Y", "Icon", "Initiative", "Hp", "MaxHp", "Hunger", "MaxHunger", "Thirst", "MaxThirst", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Weapon", "Armour", "Inventory"}
 
 	playerValues := map[string]interface{}{
 		"X":           p.x,
@@ -60,6 +60,7 @@ func (p *Player) MarshalJSON() ([]byte, error) {
 		"Encumbrance": p.encumbrance,
 		"Weapon":      p.weapon,
 		"Armour":      p.armour,
+		"Crouching":   p.crouching,
 	}
 
 	var inventory []item.Item
@@ -106,6 +107,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 		Str         int
 		Dex         int
 		Encumbrance int
+		Crouching   bool
 		Weapon      *item.Weapon
 		Armour      *item.Armour
 		Inventory   item.ItemList
@@ -130,6 +132,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 	p.str = v.Str
 	p.dex = v.Dex
 	p.encumbrance = v.Encumbrance
+	p.crouching = v.Crouching
 	p.weapon = v.Weapon
 	p.armour = v.Armour
 	p.inventory = make(map[rune][]item.Item)
@@ -184,12 +187,16 @@ func (p *Player) GetStats() []string {
 	stats[1] = fmt.Sprintf("STR:%d(%+d)", p.str, worldmap.GetBonus(p.str))
 	stats[2] = fmt.Sprintf("DEX:%d(%+d)", p.dex, worldmap.GetBonus(p.dex))
 	stats[3] = fmt.Sprintf("AC:%d", p.ac)
+	if p.crouching {
+		stats = append(stats, "Crouching")
+	}
 	if p.hunger > p.maxHunger/2 {
 		stats = append(stats, "Hungry")
 	}
 	if p.thirst > p.maxThirst/2 {
 		stats = append(stats, "Thirsty")
 	}
+
 	return stats
 }
 
@@ -843,6 +850,19 @@ func (p *Player) GetAlignment() worldmap.Alignment {
 	return worldmap.Player
 }
 
+func (p *Player) IsCrouching() bool {
+	return p.crouching
+}
+
+func (p *Player) ToggleCrouch() {
+	p.crouching = !p.crouching
+	if p.crouching {
+		message.Enqueue("You crouch down.")
+	} else {
+		message.Enqueue("You stand up.")
+	}
+}
+
 func (p *Player) SetMap(world *worldmap.Map) {
 	p.world = world
 }
@@ -867,6 +887,7 @@ type Player struct {
 	str         int
 	dex         int
 	encumbrance int
+	crouching   bool
 	weapon      *item.Weapon
 	armour      *item.Armour
 	inventory   map[rune]([]item.Item)
