@@ -20,8 +20,8 @@ import (
 
 const windowWidth = 100
 const windowHeight = 25
-const width = 50
-const height = 50
+const width = 100
+const height = 100
 const saveFilename = "game.json"
 
 func check(e error) {

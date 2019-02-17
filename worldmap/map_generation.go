@@ -36,8 +36,10 @@ func generateMap(width, height int) [][]Tile {
 
 	towns := make([]town, 0)
 	buildings := make([]building, 0)
-	generateTown(&grid, &towns, &buildings)
 
+	for i := 0; i < 2; i++ {
+		generateTown(&grid, &towns, &buildings)
+	}
 	// Generate building outside town
 	generateBuildingOutsideTown(&grid, &towns, &buildings)
 
@@ -287,16 +289,16 @@ func generateTown(grid *[][]Tile, towns *[]town, buildings *[]building) {
 		x1, y1 := cX-negWidth, cY-negHeight
 		x2, y2 := cX+posWidth, cY+posHeight
 
-		validTown := isValid(x1, y1, width, height) && isValid(x2, y2, width, height)
+		// For now single horizontal street
+		streetBreadth := 1 + rand.Intn(5)
+
+		streetX1, streetY1 := x1, cY-streetBreadth/2
+		streetX2, streetY2 := x2, cY+(streetBreadth+1)/2
+
+		t := town{x1, y1, x2, y2, streetX1, streetY1, streetX2, streetY2}
+
+		validTown := isValid(x1, y1, width, height) && isValid(x2, y2, width, height) && !townsOverlap(*towns, t)
 		if validTown {
-
-			// For now single horizontal street
-			streetBreadth := 1 + rand.Intn(5)
-
-			streetX1, streetY1 := x1, cY-streetBreadth/2
-			streetX2, streetY2 := x2, cY+(streetBreadth+1)/2
-
-			t := town{x1, y1, x2, y2, streetX1, streetY1, streetX2, streetY2}
 
 			//Select random number of buildings, assuming 2 on each side of street
 			minNumBuildings, maxNumBuildings := int(math.Max(1, float64(townWidth/10))), int(math.Max(1, float64(townWidth/5)))
@@ -334,6 +336,21 @@ func overlap(buildings []building, b building) bool {
 		x1y2Overlaps := b.x1 >= otherBuilding.x1-1 && b.x1 <= otherBuilding.x2+1 && b.y2 >= otherBuilding.y1-1 && b.y2 <= otherBuilding.y2+1
 		x2y1Overlaps := b.x2 >= otherBuilding.x1-1 && b.x2 <= otherBuilding.x2+1 && b.y1 >= otherBuilding.y1-1 && b.y1 <= otherBuilding.y2+1
 		x2y2Overlaps := b.x2 >= otherBuilding.x1-1 && b.x2 <= otherBuilding.x2+1 && b.y2 >= otherBuilding.y1-1 && b.y2 <= otherBuilding.y2+1
+
+		if x1y1Overlaps || x1y2Overlaps || x2y1Overlaps || x2y2Overlaps {
+			return true
+		}
+	}
+	return false
+
+}
+
+func townsOverlap(towns []town, t town) bool {
+	for _, otherTown := range towns {
+		x1y1Overlaps := t.tX1 >= otherTown.tX1-1 && t.tX1 <= otherTown.tX2+1 && t.tY1 >= otherTown.tY1-1 && t.tY1 <= otherTown.tY2+1
+		x1y2Overlaps := t.tX1 >= otherTown.tX1-1 && t.tX1 <= otherTown.tX2+1 && t.tY2 >= otherTown.tY1-1 && t.tY2 <= otherTown.tY2+1
+		x2y1Overlaps := t.tX2 >= otherTown.tX1-1 && t.tX2 <= otherTown.tX2+1 && t.tY1 >= otherTown.tY1-1 && t.tY1 <= otherTown.tY2+1
+		x2y2Overlaps := t.tX2 >= otherTown.tX1-1 && t.tX2 <= otherTown.tX2+1 && t.tY2 >= otherTown.tY1-1 && t.tY2 <= otherTown.tY2+1
 
 		if x1y1Overlaps || x1y2Overlaps || x2y1Overlaps || x2y2Overlaps {
 			return true
