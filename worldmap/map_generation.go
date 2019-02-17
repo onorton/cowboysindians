@@ -101,6 +101,42 @@ func generateBuilding(grid *[][]Tile, buildings *[]building) {
 				doorY := y1 + 1 + rand.Intn(buildingHeight-2)
 				(*grid)[doorY][x1] = newTile("door")
 			}
+
+			// Add number of windows according total perimeter of building
+			perimeter := 2*(y2-y1) + 2*(x2-x1)
+			minNumWindows := perimeter / 5
+			maxNumWindows := perimeter / 3
+			numWindows := minNumWindows + rand.Intn(maxNumWindows-minNumWindows)
+
+			for i := 0; i < numWindows; i++ {
+
+				wallSelection = rand.Intn(4)
+				wX, wY := 0, 0
+
+				switch wallSelection {
+				case 0:
+					doorX := x1 + 1 + rand.Intn(buildingWidth-2)
+					wX, wY = doorX, y1
+				case 1:
+					doorX := x1 + 1 + rand.Intn(buildingWidth-2)
+					wX, wY = doorX, y2
+				case 2:
+					doorY := y1 + 1 + rand.Intn(buildingHeight-2)
+					wX, wY = x2, doorY
+				case 3:
+					doorY := y1 + 1 + rand.Intn(buildingHeight-2)
+					wX, wY = x1, doorY
+				}
+
+				// If a door is not in place, add window. Otherwise, try again.
+				if !(*grid)[wY][wX].door {
+					(*grid)[wY][wX] = newTile("window")
+				} else {
+					i--
+				}
+
+			}
+
 			*buildings = append(*buildings, b)
 		}
 	}
