@@ -188,6 +188,10 @@ func (m Map) IsPassable(x, y int) bool {
 	return m.grid[y][x].passable
 }
 
+func (m Map) blocksVision(x, y int) bool {
+	return m.grid[y][x].blocksV
+}
+
 func (m Map) IsOccupied(x, y int) bool {
 	return m.grid[y][x].c != nil
 }
@@ -228,8 +232,8 @@ func (m Map) IsVisible(c Creature, x1, y1 int) bool {
 				y += yStep
 				e -= 1
 			}
-			// If any square along path is impassable, target square is invisible
-			if m.IsValid(x, y) && !(x == x1 && y == y1) && !m.IsPassable(x, y) {
+			// If any square along path blocks vision, target square is invisible
+			if m.IsValid(x, y) && !(x == x1 && y == y1) && m.blocksVision(x, y) {
 				return false
 			}
 
@@ -248,8 +252,8 @@ func (m Map) IsVisible(c Creature, x1, y1 int) bool {
 				x += xStep
 				e -= 1
 			}
-			// If any square along path is impassable, target square is invisible
-			if m.IsValid(x, y) && !(x == x1 && y == y1) && !m.IsPassable(x, y) {
+			// If any square along path blocks vision, target square is invisible
+			if m.IsValid(x, y) && !(x == x1 && y == y1) && m.blocksVision(x, y) {
 				return false
 			}
 
@@ -553,6 +557,10 @@ func (m *Map) GetPassable(x, y int) bool {
 
 func (m *Map) SetPassable(x, y int, passable bool) {
 	m.grid[y][x].passable = passable
+}
+
+func (m *Map) SetBlocksVision(x, y int, blocksV bool) {
+	m.grid[y][x].blocksV = blocksV
 }
 
 func (m *Map) givesCover(x, y int) bool {

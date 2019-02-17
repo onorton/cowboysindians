@@ -2,17 +2,20 @@
 	"door": {
 		"Icon": {"Icon": 45, "Colour": 8},
 		"Passable": false,
+		"BlocksVision": true,
 		"Door": true
 	},
 	"wall": {
 		"Icon": {"Icon": 35, "Colour": 8},
 		"Passable": false,
+		"BlocksVision": true,
 		"Door": false
 
 	},
 	"ground": {
 		"Icon": {"Icon": 46, "Colour": 8},
 		"Passable": true,
+		"BlocksVision": false,
 		"Door": false
 	}
 

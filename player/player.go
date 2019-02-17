@@ -872,6 +872,7 @@ func (p *Player) ToggleDoor(x, y int, open bool) bool {
 	if p.world.IsDoor(x, y) {
 		if p.world.IsPassable(x, y) != open {
 			p.world.SetPassable(x, y, open)
+			p.world.SetBlocksVision(x, y, !open)
 			if open {
 				message.Enqueue("The door opens.")
 			} else {
