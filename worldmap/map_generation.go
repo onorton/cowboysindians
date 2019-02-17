@@ -34,13 +34,18 @@ func generateMap(width, height int) [][]Tile {
 		grid[i] = row
 	}
 
-	generateTown(&grid)
+	towns := make([]town, 0)
+	buildings := make([]building, 0)
+	generateTown(&grid, &towns, &buildings)
+
+	// Generate building outside town
+	generateBuildingOutsideTown(&grid, &towns, &buildings)
 
 	return grid
 }
 
 // Generate a rectangular building and place on map
-func generateBuilding(grid *[][]Tile, buildings *[]building) {
+func generateBuildingOutsideTown(grid *[][]Tile, towns *[]town, buildings *[]building) {
 	width := len((*grid)[0])
 	height := len(*grid)
 
@@ -77,7 +82,7 @@ func generateBuilding(grid *[][]Tile, buildings *[]building) {
 		x2, y2 := cX+posWidth, cY+posHeight
 
 		b := building{x1, y1, x2, y2}
-		validBuilding = isValid(x1, y1, width, height) && isValid(x2, y2, width, height) && !overlap(*buildings, b)
+		validBuilding = isValid(x1, y1, width, height) && isValid(x2, y2, width, height) && !overlap(*buildings, b) && inTowns(*towns, b)
 
 		if validBuilding {
 			// Add walls
@@ -247,7 +252,7 @@ func generateBuildingInTown(grid *[][]Tile, t town, buildings *[]building) {
 }
 
 // Generate small town (single street with buildings)
-func generateTown(grid *[][]Tile) {
+func generateTown(grid *[][]Tile, towns *[]town, buildings *[]building) {
 	// Generate area of town
 	width := len((*grid)[0])
 	height := len(*grid)
@@ -296,12 +301,11 @@ func generateTown(grid *[][]Tile) {
 			//Select random number of buildings, assuming 2 on each side of street
 			minNumBuildings, maxNumBuildings := int(math.Max(1, float64(townWidth/10))), int(math.Max(1, float64(townWidth/5)))
 			numBuildings := minNumBuildings + rand.Intn(maxNumBuildings-minNumBuildings)
-
-			buildings := make([]building, 0)
 			// Generate a number of buildings
 			for i := 0; i < numBuildings; i++ {
-				generateBuildingInTown(grid, t, &buildings)
+				generateBuildingInTown(grid, t, buildings)
 			}
+			*towns = append(*towns, t)
 			break
 		}
 	}
@@ -313,6 +317,15 @@ func isValid(x, y, width, height int) bool {
 
 func inTown(t town, b building) bool {
 	return b.x1 >= t.tX1 && b.x1 <= t.tX2 && b.x2 >= t.tX1 && b.x2 <= t.tX2 && b.y1 >= t.tY1 && b.y1 <= t.tY2 && b.y2 >= t.tY1 && b.y2 <= t.tY2
+}
+
+func inTowns(towns []town, b building) bool {
+	for _, t := range towns {
+		if inTown(t, b) {
+			return true
+		}
+	}
+	return false
 }
 
 func overlap(buildings []building, b building) bool {
