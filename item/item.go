@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io/ioutil"
+	"math/rand"
 
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/ui"
@@ -18,9 +19,10 @@ func check(err error) {
 }
 
 type itemAttributes struct {
-	Icon   icon.Icon
-	Weight float64
-	Cover  bool
+	Icon        icon.Icon
+	Weight      float64
+	Cover       bool
+	Probability float64
 }
 
 type ItemDefinition struct {
@@ -29,7 +31,8 @@ type ItemDefinition struct {
 	Amount   int
 }
 
-var itemData map[string]itemAttributes
+var normalItemData map[string]itemAttributes
+var normalItemProbabilities map[string]float64
 
 func fetchItemData() {
 	data, err := ioutil.ReadFile("data/item.json")
@@ -37,7 +40,12 @@ func fetchItemData() {
 	var iD map[string]itemAttributes
 	err = json.Unmarshal(data, &iD)
 	check(err)
-	itemData = iD
+	normalItemData = iD
+
+	normalItemProbabilities = make(map[string]float64)
+	for name, attributes := range normalItemData {
+		normalItemProbabilities[name] = attributes.Probability
+	}
 }
 
 type NormalItem struct {
@@ -47,10 +55,35 @@ type NormalItem struct {
 	cover bool
 }
 
-func NewItem(name string) Item {
-	item := itemData[name]
+func NewNormalItem(name string) Item {
+	item := normalItemData[name]
 	var itm Item = &NormalItem{name, item.Icon, item.Weight, item.Cover}
 	return itm
+}
+
+func SelectItem(probabilites map[string]float64) string {
+	max := 0.0
+
+	for _, probability := range probabilites {
+		inverse := 1.0 / probability
+		if inverse > max {
+			max = inverse
+		}
+	}
+	items := make([]string, 0)
+
+	for name, probability := range probabilites {
+		count := int(probability * max)
+		for i := 0; i < count; i++ {
+			items = append(items, name)
+		}
+	}
+	n := rand.Intn(len(items))
+	return items[n]
+}
+
+func GenerateNormalItem() Item {
+	return NewNormalItem(SelectItem(normalItemProbabilities))
 }
 
 func (item *NormalItem) MarshalJSON() ([]byte, error) {
@@ -200,6 +233,28 @@ func (item *NormalItem) GetWeight() float64 {
 
 func (item *NormalItem) GivesCover() bool {
 	return item.cover
+}
+
+func GenerateItem() Item {
+	// Pick random type (all same probability)
+
+	n := rand.Intn(5)
+
+	var itm Item = nil
+	switch n {
+	case 0:
+		itm = GenerateAmmo()
+	case 1:
+		itm = GenerateArmour()
+	case 2:
+		itm = GenerateConsumable()
+	case 3:
+		itm = GenerateNormalItem()
+	case 4:
+		itm = GenerateWeapon()
+	}
+
+	return itm
 }
 
 func LoadAllData() {

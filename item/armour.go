@@ -12,12 +12,14 @@ import (
 )
 
 type ArmourAttributes struct {
-	Icon   icon.Icon
-	Bonus  int
-	Weight float64
+	Icon        icon.Icon
+	Bonus       int
+	Weight      float64
+	Probability float64
 }
 
 var armourData map[string]ArmourAttributes
+var armourProbabilities map[string]float64
 
 func fetchArmourData() {
 	data, err := ioutil.ReadFile("data/armour.json")
@@ -26,6 +28,11 @@ func fetchArmourData() {
 	err = json.Unmarshal(data, &aD)
 	check(err)
 	armourData = aD
+
+	armourProbabilities = make(map[string]float64)
+	for name, attributes := range armourData {
+		armourProbabilities[name] = attributes.Probability
+	}
 }
 
 type Armour struct {
@@ -38,6 +45,10 @@ type Armour struct {
 func NewArmour(name string) *Armour {
 	armour := armourData[name]
 	return &Armour{name, armour.Icon, armour.Bonus, armour.Weight}
+}
+
+func GenerateArmour() Item {
+	return NewArmour(SelectItem(armourProbabilities))
 }
 
 func (armour *Armour) MarshalJSON() ([]byte, error) {

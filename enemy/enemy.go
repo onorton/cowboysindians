@@ -57,7 +57,7 @@ func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 			case "Consumable":
 				itm = item.NewConsumable(itemDefinition.Name)
 			case "Item":
-				itm = item.NewItem(itemDefinition.Name)
+				itm = item.NewNormalItem(itemDefinition.Name)
 			case "Weapon":
 				itm = item.NewWeapon(itemDefinition.Name)
 			}

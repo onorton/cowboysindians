@@ -5,7 +5,8 @@
 		"Effects": {
 			"hp": 10,
 			"hunger": 10
-		}
+		},
+		"Probability": 1.0
 	},
 	"beer": {
 		"Icon": {"Icon": 98,"Colour": 2},
@@ -13,6 +14,7 @@
 		"Effects": {
 			"hp": 1,
 			"thirst": 10
-		}
+		},
+		"Probability": 1.0
 	}
 }

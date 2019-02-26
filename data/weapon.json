@@ -10,7 +10,8 @@
 			"Number": 1,
 			"Bonus": 0
 
-		}
+		},
+		"Probability": 1
 	},
 
 	"pistol" : {
@@ -23,7 +24,9 @@
 			"Dice": 4,
 			"Number": 1,
 			"Bonus": -1
-		}
+		},
+		"Probability": 1
+
 	},
 
 	"sawn-off shotgun" : {
@@ -36,8 +39,8 @@
 			"Dice": 6,
 			"Number": 1,
 			"Bonus": 3
-
-		}
+		},
+		"Probability": 0.7
 	},
 
 	"baseball bat" : {
@@ -50,8 +53,8 @@
 			"Dice": 6,
 			"Number": 1,
 			"Bonus": 0
-
-		}
+		},
+		"Probability": 1.0
 	}
 
 

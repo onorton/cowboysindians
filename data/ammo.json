@@ -2,11 +2,13 @@
 	"shotgun shell":{
 		"Icon": {"Icon": 44, "Colour": 2},
 		"Type": 2,
-		"Weight": 0.02
+		"Weight": 0.02,
+		"Probability": 1.0
 	},
 	"pistol bullet":{
 		"Icon": {"Icon" : 44, "Colour" : 3},
 		"Type": 1,
-		"Weight": 0.01
+		"Weight": 0.01,
+		"Probability": 1.0
 	}
 }

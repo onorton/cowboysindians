@@ -12,12 +12,14 @@ import (
 )
 
 type ConsumableAttributes struct {
-	Icon    icon.Icon
-	Weight  float64
-	Effects map[string]int
+	Icon        icon.Icon
+	Weight      float64
+	Effects     map[string]int
+	Probability float64
 }
 
 var consumableData map[string]ConsumableAttributes
+var consumableProbabilities map[string]float64
 
 func fetchConsumableData() {
 	data, err := ioutil.ReadFile("data/consumable.json")
@@ -26,6 +28,11 @@ func fetchConsumableData() {
 	err = json.Unmarshal(data, &cD)
 	check(err)
 	consumableData = cD
+
+	consumableProbabilities = make(map[string]float64)
+	for name, attributes := range consumableData {
+		consumableProbabilities[name] = attributes.Probability
+	}
 }
 
 type Consumable struct {
@@ -39,6 +46,10 @@ func NewConsumable(name string) Item {
 	consumable := consumableData[name]
 	var itm Item = &Consumable{name, consumable.Icon, consumable.Weight, consumable.Effects}
 	return itm
+}
+
+func GenerateConsumable() Item {
+	return NewConsumable(SelectItem(consumableProbabilities))
 }
 
 func (item *Consumable) MarshalJSON() ([]byte, error) {

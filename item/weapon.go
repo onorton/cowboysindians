@@ -13,12 +13,13 @@ import (
 )
 
 type WeaponAttributes struct {
-	Icon     icon.Icon
-	Damage   DamageAttributes
-	Range    int
-	Type     WeaponType
-	Capacity int
-	Weight   float64
+	Icon        icon.Icon
+	Damage      DamageAttributes
+	Range       int
+	Type        WeaponType
+	Capacity    int
+	Weight      float64
+	Probability float64
 }
 
 type DamageAttributes struct {
@@ -36,6 +37,7 @@ const (
 )
 
 var weaponData map[string]WeaponAttributes
+var weaponProbabilities map[string]float64
 
 func fetchWeaponData() {
 	data, err := ioutil.ReadFile("data/weapon.json")
@@ -44,6 +46,11 @@ func fetchWeaponData() {
 	err = json.Unmarshal(data, &wD)
 	check(err)
 	weaponData = wD
+
+	weaponProbabilities = make(map[string]float64)
+	for name, attributes := range armourData {
+		weaponProbabilities[name] = attributes.Probability
+	}
 }
 
 type Weapon struct {
@@ -75,6 +82,10 @@ func NewWeapon(name string) *Weapon {
 		weaponCapacity = &WeaponCapacity{weapon.Capacity, 0}
 	}
 	return &Weapon{name, weapon.Icon, weapon.Range, weapon.Type, weapon.Weight, weaponCapacity, &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
+}
+
+func GenerateWeapon() Item {
+	return NewWeapon(SelectItem(weaponProbabilities))
 }
 
 func (weaponCapacity *WeaponCapacity) MarshalJSON() ([]byte, error) {

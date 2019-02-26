@@ -1,8 +1,11 @@
 package worldmap
 
 import (
+	"log"
 	"math"
 	"math/rand"
+
+	"github.com/onorton/cowboysindians/item"
 )
 
 type building struct {
@@ -44,6 +47,29 @@ func generateMap(width, height int) [][]Tile {
 	generateBuildingOutsideTown(&grid, &towns, &buildings)
 
 	return grid
+}
+
+func addItemsToBuilding(grid *[][]Tile, b building) {
+	// Consider inner area (exclude walls)
+	x1, y1 := b.x1+1, b.y1+1
+	x2, y2 := b.x2-1, b.y2-1
+
+	buildingArea := (x2 - x1) * (y2 - y1)
+
+	numOfItems := buildingArea / 2
+	log.Print("Number of items is : ", numOfItems)
+
+	for i := 0; i < numOfItems; i++ {
+		// Select a random item
+		itm := item.GenerateItem()
+
+		// Select a random
+		x := x1 + rand.Intn(x2-x1)
+		y := y1 + rand.Intn(y2-y1)
+		(*grid)[y][x].PlaceItem(itm)
+
+	}
+
 }
 
 // Generate a rectangular building and place on map
@@ -152,6 +178,9 @@ func generateBuildingOutsideTown(grid *[][]Tile, towns *[]town, buildings *[]bui
 
 			}
 
+			// Finally, add items to the building
+			addItemsToBuilding(grid, b)
+
 			*buildings = append(*buildings, b)
 		}
 	}
@@ -248,6 +277,10 @@ func generateBuildingInHorizontalTown(grid *[][]Tile, t town, buildings *[]build
 				}
 
 			}
+
+			// Finally, add items to the building
+			addItemsToBuilding(grid, b)
+
 			*buildings = append(*buildings, b)
 		}
 	}
@@ -343,6 +376,10 @@ func generateBuildingInVerticalTown(grid *[][]Tile, t town, buildings *[]buildin
 				}
 
 			}
+
+			// Finally, add items to the building
+			addItemsToBuilding(grid, b)
+
 			*buildings = append(*buildings, b)
 		}
 	}

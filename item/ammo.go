@@ -12,12 +12,14 @@ import (
 )
 
 type AmmoAttributes struct {
-	Icon   icon.Icon
-	Type   WeaponType
-	Weight float64
+	Icon        icon.Icon
+	Type        WeaponType
+	Weight      float64
+	Probability float64
 }
 
 var ammoData map[string]AmmoAttributes
+var ammoProbabilities map[string]float64
 
 func fetchAmmoData() {
 	data, err := ioutil.ReadFile("data/ammo.json")
@@ -26,6 +28,11 @@ func fetchAmmoData() {
 	err = json.Unmarshal(data, &aD)
 	check(err)
 	ammoData = aD
+
+	ammoProbabilities = make(map[string]float64)
+	for name, attributes := range ammoData {
+		ammoProbabilities[name] = attributes.Probability
+	}
 }
 
 type Ammo struct {
@@ -39,6 +46,10 @@ func NewAmmo(name string) Item {
 	ammo := ammoData[name]
 	var itm Item = &Ammo{name, ammo.Icon, ammo.Type, ammo.Weight}
 	return itm
+}
+
+func GenerateAmmo() Item {
+	return NewAmmo(SelectItem(ammoProbabilities))
 }
 
 func (ammo *Ammo) MarshalJSON() ([]byte, error) {
