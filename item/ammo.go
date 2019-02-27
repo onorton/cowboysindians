@@ -49,7 +49,7 @@ func NewAmmo(name string) Item {
 }
 
 func GenerateAmmo() Item {
-	return NewAmmo(SelectItem(ammoProbabilities))
+	return NewAmmo(Choose(ammoProbabilities))
 }
 
 func (ammo *Ammo) MarshalJSON() ([]byte, error) {

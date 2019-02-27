@@ -49,7 +49,7 @@ func NewNormalItem(name string) Item {
 }
 
 func GenerateNormalItem() Item {
-	return NewNormalItem(SelectItem(normalItemProbabilities))
+	return NewNormalItem(Choose(normalItemProbabilities))
 }
 
 func (item *NormalItem) MarshalJSON() ([]byte, error) {

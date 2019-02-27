@@ -48,7 +48,7 @@ func NewArmour(name string) *Armour {
 }
 
 func GenerateArmour() Item {
-	return NewArmour(SelectItem(armourProbabilities))
+	return NewArmour(Choose(armourProbabilities))
 }
 
 func (armour *Armour) MarshalJSON() ([]byte, error) {

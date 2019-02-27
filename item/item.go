@@ -13,13 +13,21 @@ func check(err error) {
 	}
 }
 
+var typeProbabilities = map[string]float64{
+	"armour":      0.1,
+	"ammo":        0.5,
+	"consumable":  0.2,
+	"normal item": 0.1,
+	"weapon":      0.1,
+}
+
 type ItemDefinition struct {
 	Category string
 	Name     string
 	Amount   int
 }
 
-func SelectItem(probabilites map[string]float64) string {
+func Choose(probabilites map[string]float64) string {
 	max := 0.0
 
 	for _, probability := range probabilites {
@@ -107,21 +115,20 @@ func (itemList *ItemList) UnmarshalJSON(data []byte) error {
 }
 
 func GenerateItem() Item {
-	// Pick random type (all same probability)
 
-	n := rand.Intn(5)
+	itemType := Choose(typeProbabilities)
 
 	var itm Item = nil
-	switch n {
-	case 0:
+	switch itemType {
+	case "ammo":
 		itm = GenerateAmmo()
-	case 1:
+	case "armour":
 		itm = GenerateArmour()
-	case 2:
+	case "consumable":
 		itm = GenerateConsumable()
-	case 3:
+	case "normal item":
 		itm = GenerateNormalItem()
-	case 4:
+	case "weapon":
 		itm = GenerateWeapon()
 	}
 

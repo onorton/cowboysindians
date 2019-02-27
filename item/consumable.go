@@ -49,7 +49,7 @@ func NewConsumable(name string) Item {
 }
 
 func GenerateConsumable() Item {
-	return NewConsumable(SelectItem(consumableProbabilities))
+	return NewConsumable(Choose(consumableProbabilities))
 }
 
 func (item *Consumable) MarshalJSON() ([]byte, error) {

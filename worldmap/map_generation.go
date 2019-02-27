@@ -1,7 +1,6 @@
 package worldmap
 
 import (
-	"log"
 	"math"
 	"math/rand"
 
@@ -57,7 +56,6 @@ func addItemsToBuilding(grid *[][]Tile, b building) {
 	buildingArea := (x2 - x1) * (y2 - y1)
 
 	numOfItems := buildingArea / 2
-	log.Print("Number of items is : ", numOfItems)
 
 	for i := 0; i < numOfItems; i++ {
 		// Select a random item

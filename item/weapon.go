@@ -85,7 +85,7 @@ func NewWeapon(name string) *Weapon {
 }
 
 func GenerateWeapon() Item {
-	return NewWeapon(SelectItem(weaponProbabilities))
+	return NewWeapon(Choose(weaponProbabilities))
 }
 
 func (weaponCapacity *WeaponCapacity) MarshalJSON() ([]byte, error) {
