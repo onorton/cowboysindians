@@ -15,14 +15,15 @@ type building struct {
 }
 
 type town struct {
-	tX1 int
-	tY1 int
-	tX2 int
-	tY2 int
-	sX1 int
-	sY1 int
-	sX2 int
-	sY2 int
+	tX1        int
+	tY1        int
+	tX2        int
+	tY2        int
+	sX1        int
+	sY1        int
+	sX2        int
+	sY2        int
+	horizontal bool
 }
 
 func generateMap(width, height int) [][]Tile {
@@ -184,14 +185,16 @@ func generateBuildingOutsideTown(grid *[][]Tile, towns *[]town, buildings *[]bui
 	}
 }
 
-func generateBuildingInHorizontalTown(grid *[][]Tile, t town, buildings *[]building) {
+func generateBuildingInTown(grid *[][]Tile, t town, buildings *[]building) {
 
 	validBuilding := false
 	// Keeps trying until a usable building position and size found
 	for !validBuilding {
-		// Has to be at least three squares wide
+		// Must be at least 3 in each dimension
+
+		// Width along the street
 		buildingWidth := rand.Intn(3) + 3
-		buildingHeight := rand.Intn(3) + 3
+		depth := rand.Intn(3) + 3
 
 		posWidth := 0
 		negWidth := 0
@@ -202,28 +205,45 @@ func generateBuildingInHorizontalTown(grid *[][]Tile, t town, buildings *[]build
 			posWidth, negWidth = (buildingWidth+1)/2, buildingWidth/2
 		}
 
-		// stop it from reaching the edges of the map
-		cX := t.sX1 + rand.Intn(t.sX2-t.sX1)
-		northOfStreet := rand.Intn(2) == 0
-		x1 := cX - negWidth
-		x2 := cX + posWidth
+		x1, y1 := 0, 0
+		x2, y2 := 0, 0
 
-		y1, y2 := 0, 0
+		sideOfStreet := rand.Intn(2) == 0
 
-		if northOfStreet {
-			y2 = t.sY1 - 1
-			y1 = y2 - buildingHeight
+		if t.horizontal {
+			centreAlongStreet := t.sX1 + rand.Intn(t.sX2-t.sX1)
+			x1 = centreAlongStreet - negWidth
+			x2 = centreAlongStreet + posWidth
+
+			if sideOfStreet {
+				y2 = t.sY1 - 1
+				y1 = y2 - depth
+			} else {
+				y1 = t.sY2 + 1
+				y2 = y1 + depth
+			}
 		} else {
-			y1 = t.sY2 + 1
-			y2 = y1 + buildingHeight
+			centreAlongStreet := t.sY1 + rand.Intn(t.sY2-t.sY1)
+			y1 = centreAlongStreet - negWidth
+			y2 = centreAlongStreet + posWidth
+
+			if sideOfStreet {
+				x2 = t.sX1 - 1
+				x1 = x2 - depth
+			} else {
+				x1 = t.sX2 + 1
+				x2 = x1 + depth
+			}
 		}
 
 		b := building{x1, y1, x2, y2}
+
 		validBuilding = inTown(t, b) && !overlap(*buildings, b)
 
 		if validBuilding {
 
 			// Add walls
+
 			for x := x1; x <= x2; x++ {
 				(*grid)[y1][x] = newTile("wall")
 				(*grid)[y2][x] = newTile("wall")
@@ -234,114 +254,24 @@ func generateBuildingInHorizontalTown(grid *[][]Tile, t town, buildings *[]build
 				(*grid)[y][x2] = newTile("wall")
 			}
 
-			doorX := x1 + 1 + rand.Intn(buildingWidth-2)
 			// Door is on side facing street
-			if northOfStreet {
-				(*grid)[y2][doorX] = newTile("door")
-			} else {
-				(*grid)[y1][doorX] = newTile("door")
-			}
-			// Add number of windows according total perimeter of building
-			perimeter := 2*(y2-y1) + 2*(x2-x1)
-			minNumWindows := perimeter / 5
-			maxNumWindows := perimeter / 3
-			numWindows := minNumWindows + rand.Intn(maxNumWindows-minNumWindows)
-
-			for i := 0; i < numWindows; i++ {
-
-				wallSelection := rand.Intn(4)
-				wX, wY := 0, 0
-
-				switch wallSelection {
-				case 0:
-					doorX := x1 + 1 + rand.Intn(buildingWidth-2)
-					wX, wY = doorX, y1
-				case 1:
-					doorX := x1 + 1 + rand.Intn(buildingWidth-2)
-					wX, wY = doorX, y2
-				case 2:
-					doorY := y1 + 1 + rand.Intn(buildingHeight-2)
-					wX, wY = x2, doorY
-				case 3:
-					doorY := y1 + 1 + rand.Intn(buildingHeight-2)
-					wX, wY = x1, doorY
-				}
-
-				// If a door is not in place, add window. Otherwise, try again.
-				if !(*grid)[wY][wX].door {
-					(*grid)[wY][wX] = newTile("window")
+			if t.horizontal {
+				doorLocation := x1 + 1 + rand.Intn(buildingWidth-2)
+				if sideOfStreet {
+					(*grid)[y2][doorLocation] = newTile("door")
 				} else {
-					i--
+					(*grid)[y1][doorLocation] = newTile("door")
 				}
-
-			}
-
-			// Finally, add items to the building
-			addItemsToBuilding(grid, b)
-
-			*buildings = append(*buildings, b)
-		}
-	}
-}
-
-func generateBuildingInVerticalTown(grid *[][]Tile, t town, buildings *[]building) {
-
-	validBuilding := false
-	// Keeps trying until a usable building position and size found
-	for !validBuilding {
-		// Has to be at least three squares wide
-		buildingWidth := rand.Intn(3) + 3
-		buildingHeight := rand.Intn(3) + 3
-
-		posHeight := 0
-		negHeight := 0
-
-		if buildingHeight%2 == 0 {
-			posHeight, negHeight = buildingHeight/2, buildingHeight/2
-		} else {
-			posHeight, negHeight = (buildingHeight+1)/2, buildingHeight/2
-		}
-
-		cY := t.sY1 + rand.Intn(t.sY2-t.sY1)
-		westOfStreet := rand.Intn(2) == 0
-		y1 := cY - negHeight
-		y2 := cY + posHeight
-
-		x1, x2 := 0, 0
-
-		if westOfStreet {
-			x2 = t.sX1 - 1
-			x1 = x2 - buildingWidth
-		} else {
-			x1 = t.sX2 + 1
-			x2 = x1 + buildingWidth
-		}
-
-		b := building{x1, y1, x2, y2}
-		validBuilding = inTown(t, b) && !overlap(*buildings, b)
-
-		if validBuilding {
-
-			// Add walls
-			for x := x1; x <= x2; x++ {
-				(*grid)[y1][x] = newTile("wall")
-				(*grid)[y2][x] = newTile("wall")
-			}
-
-			for y := y1; y <= y2; y++ {
-				(*grid)[y][x1] = newTile("wall")
-				(*grid)[y][x2] = newTile("wall")
-			}
-
-			doorY := y1 + 1 + rand.Intn(buildingHeight-2)
-			// Door is on side facing street
-			if westOfStreet {
-				(*grid)[doorY][x2] = newTile("door")
 			} else {
-				(*grid)[doorY][x1] = newTile("door")
+				doorLocation := y1 + 1 + rand.Intn(buildingWidth-2)
+				if sideOfStreet {
+					(*grid)[doorLocation][x2] = newTile("door")
+				} else {
+					(*grid)[doorLocation][x1] = newTile("door")
+				}
 			}
 			// Add number of windows according total perimeter of building
-			perimeter := 2*(y2-y1) + 2*(x2-x1)
+			perimeter := 2*buildingWidth + 2*depth
 			minNumWindows := perimeter / 5
 			maxNumWindows := perimeter / 3
 			numWindows := minNumWindows + rand.Intn(maxNumWindows-minNumWindows)
@@ -353,17 +283,17 @@ func generateBuildingInVerticalTown(grid *[][]Tile, t town, buildings *[]buildin
 
 				switch wallSelection {
 				case 0:
-					doorX := x1 + 1 + rand.Intn(buildingWidth-2)
-					wX, wY = doorX, y1
+					windowX := x1 + 1 + rand.Intn(x2-x1-2)
+					wX, wY = windowX, y1
 				case 1:
-					doorX := x1 + 1 + rand.Intn(buildingWidth-2)
-					wX, wY = doorX, y2
+					windowX := x1 + 1 + rand.Intn(x2-x1-2)
+					wX, wY = windowX, y2
 				case 2:
-					doorY := y1 + 1 + rand.Intn(buildingHeight-2)
-					wX, wY = x2, doorY
+					windowY := y1 + 1 + rand.Intn(y2-y1-2)
+					wX, wY = x2, windowY
 				case 3:
-					doorY := y1 + 1 + rand.Intn(buildingHeight-2)
-					wX, wY = x1, doorY
+					windowY := y1 + 1 + rand.Intn(y2-y1-2)
+					wX, wY = x1, windowY
 				}
 
 				// If a door is not in place, add window. Otherwise, try again.
@@ -433,7 +363,7 @@ func generateTown(grid *[][]Tile, towns *[]town, buildings *[]building) {
 			streetX2, streetY2 = cX+(streetBreadth+1)/2, y2
 		}
 
-		t := town{x1, y1, x2, y2, streetX1, streetY1, streetX2, streetY2}
+		t := town{x1, y1, x2, y2, streetX1, streetY1, streetX2, streetY2, horizontalStreet}
 
 		validTown := isValid(x1, y1, width, height) && isValid(x2, y2, width, height) && !townsOverlap(*towns, t)
 		if validTown {
@@ -443,12 +373,7 @@ func generateTown(grid *[][]Tile, towns *[]town, buildings *[]building) {
 			numBuildings := minNumBuildings + rand.Intn(maxNumBuildings-minNumBuildings)
 			// Generate a number of buildings
 			for i := 0; i < numBuildings; i++ {
-				if horizontalStreet {
-					generateBuildingInHorizontalTown(grid, t, buildings)
-				} else {
-					generateBuildingInVerticalTown(grid, t, buildings)
-
-				}
+				generateBuildingInTown(grid, t, buildings)
 			}
 			*towns = append(*towns, t)
 			break
