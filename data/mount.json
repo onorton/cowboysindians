@@ -1,0 +1,11 @@
+{
+  "horse": {
+    "Icon": {"Icon": 104, "Colour": 20},
+    "Hp": 20,
+    "Initiative": 2,
+    "Ac": 12,
+    "Str": 13,
+    "Dex": 12,
+    "Encumbrance": 100
+  }
+}

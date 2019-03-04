@@ -18,6 +18,7 @@ type Alignment int
 const (
 	Player Alignment = iota
 	Enemy
+	Neutral
 )
 
 const padding = 5

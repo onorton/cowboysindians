@@ -8,6 +8,7 @@ import (
 	"github.com/onorton/cowboysindians/enemy"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
+	"github.com/onorton/cowboysindians/mount"
 	"github.com/onorton/cowboysindians/player"
 	"github.com/onorton/cowboysindians/ui"
 	"github.com/onorton/cowboysindians/worldmap"
@@ -34,6 +35,7 @@ type GameState struct {
 	PlayerIndex int
 	Time        int
 	Map         *worldmap.Map
+	Mounts      []*mount.Mount
 	Enemies     []*enemy.Enemy
 	Player      *player.Player
 }
@@ -81,6 +83,21 @@ func load() GameState {
 
 }
 
+func generateMounts(m *worldmap.Map, p *player.Player, n int) []*mount.Mount {
+	mounts := make([]*mount.Mount, n)
+	for i := 0; i < n; i++ {
+		x := rand.Intn(width)
+		y := rand.Intn(height)
+		pX, pY := p.GetCoordinates()
+		if !m.IsPassable(x, y) || (x == pX && y == pY) || m.IsOccupied(x, y) {
+			i--
+			continue
+		}
+		mounts[i] = mount.NewMount("horse", x, y, m)
+	}
+	return mounts
+}
+
 func generateEnemies(m *worldmap.Map, p *player.Player, n int) []*enemy.Enemy {
 	enemies := make([]*enemy.Enemy, n)
 	for i := 0; i < n; i++ {
@@ -97,12 +114,20 @@ func generateEnemies(m *worldmap.Map, p *player.Player, n int) []*enemy.Enemy {
 }
 
 // Combine enemies and player into same slice
-func allCreatures(enemies []*enemy.Enemy, p *player.Player) []worldmap.Creature {
-	all := make([]worldmap.Creature, len(enemies)+1)
-	for i, e := range enemies {
+func allCreatures(enemies []*enemy.Enemy, mounts []*mount.Mount, p *player.Player) []worldmap.Creature {
+	all := make([]worldmap.Creature, len(enemies)+len(mounts)+1)
+	i := 0
+	for _, e := range enemies {
 		all[i] = e
+		i++
 	}
-	all[len(enemies)] = p
+
+	for _, m := range mounts {
+		all[i] = m
+		i++
+	}
+
+	all[len(all)-1] = p
 	return all
 }
 
@@ -134,6 +159,7 @@ func main() {
 	if !loaded {
 		state.Map = worldmap.NewMap(width, height, windowWidth, windowHeight)
 		state.Player = player.NewPlayer(state.Map)
+		state.Mounts = generateMounts(state.Map, state.Player, 5)
 		state.Enemies = generateEnemies(state.Map, state.Player, 2)
 		state.Time = 1
 		state.PlayerIndex = 0
@@ -141,9 +167,10 @@ func main() {
 
 	worldMap := state.Map
 	player := state.Player
+	mounts := state.Mounts
 	enemies := state.Enemies
 
-	all := allCreatures(enemies, player)
+	all := allCreatures(enemies, mounts, player)
 	for _, c := range all {
 		x, y := c.GetCoordinates()
 		worldMap.MoveCreature(c, x, y)
@@ -253,23 +280,35 @@ func main() {
 						break
 					}
 				}
-			} else {
+			} else if c.GetAlignment() == worldmap.Enemy {
 				e := c.(*enemy.Enemy)
 				if e.IsDead() {
 					continue
 				}
 				eX, eY := e.Update()
 				worldMap.MoveCreature(e, eX, eY)
+			} else {
+				m := c.(*mount.Mount)
+				if m.IsDead() {
+					continue
+				}
+				mX, mY := m.Update()
+				worldMap.MoveCreature(m, mX, mY)
 			}
 		}
 
-		// Remove dead enemies
+		// Remove dead enemies and mounts
 		for i, c := range all {
-			if e, ok := c.(*enemy.Enemy); c.IsDead() && ok {
+			if e, ok := c.(*enemy.Enemy); ok && e.IsDead() {
 				e.EmptyInventory()
 				worldMap.DeleteCreature(c)
 				all = append(all[:i], all[i+1:]...)
 			}
+			if m, ok := c.(*mount.Mount); ok && m.IsDead() {
+				worldMap.DeleteCreature(m)
+				all = append(all[:i], all[i+1:]...)
+			}
+
 		}
 		// End game if player is dead
 		if player.IsDead() {
