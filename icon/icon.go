@@ -18,6 +18,10 @@ func (i Icon) Render() ui.Element {
 	return ui.NewElement(i.icon, i.colour)
 }
 
+func MergeIcons(f, b Icon) ui.Element {
+	return ui.NewElementWithBg(f.icon, f.colour, b.colour)
+}
+
 func CreatePlayerIcon() Icon {
 	return Icon{'@', termbox.ColorWhite}
 }

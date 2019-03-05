@@ -37,6 +37,7 @@ const (
 	WieldArmour
 	LoadWeapon
 	Consume
+	Mount
 	Confirm
 	CancelAction
 )
@@ -127,6 +128,8 @@ func GetInput() (action PlayerAction) {
 				action = LoadWeapon
 			case 'e':
 				action = Consume
+			case 'm':
+				action = Mount
 			case 'y':
 				action = Confirm
 			default:
@@ -161,6 +164,7 @@ type Cell struct {
 type Element struct {
 	char   rune
 	colour termbox.Attribute
+	bg     termbox.Attribute
 }
 
 func NewCell(x int, y int) Cell {
@@ -168,11 +172,15 @@ func NewCell(x int, y int) Cell {
 }
 
 func NewElement(char rune, colour termbox.Attribute) Element {
-	return Element{char, colour}
+	return Element{char, colour, termbox.ColorDefault}
+}
+
+func NewElementWithBg(char rune, colour, bg termbox.Attribute) Element {
+	return Element{char, colour, bg}
 }
 
 func EmptyElement() Element {
-	return Element{' ', termbox.ColorDefault}
+	return Element{' ', termbox.ColorDefault, termbox.ColorDefault}
 }
 
 func ClearCells(cells []Cell) {
@@ -187,7 +195,7 @@ func ClearScreen() {
 }
 
 func DrawElement(x, y int, elem Element) {
-	termbox.SetCell(x, y, elem.char, elem.colour, termbox.ColorDefault)
+	termbox.SetCell(x, y, elem.char, elem.colour, elem.bg)
 	termbox.Flush()
 }
 
@@ -203,7 +211,7 @@ func RenderGrid(x, y int, elems [][]Element) {
 	currY := y
 	for _, row := range elems {
 		for i, elem := range row {
-			termbox.SetCell(x+i, currY, elem.char, elem.colour, termbox.ColorDefault)
+			termbox.SetCell(x+i, currY, elem.char, elem.colour, elem.bg)
 		}
 		currY++
 	}

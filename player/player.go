@@ -11,6 +11,7 @@ import (
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
+	"github.com/onorton/cowboysindians/mount"
 	"github.com/onorton/cowboysindians/ui"
 	"github.com/onorton/cowboysindians/worldmap"
 )
@@ -22,7 +23,7 @@ func check(err error) {
 }
 
 func NewPlayer(world *worldmap.Map) *Player {
-	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 10, 0, 100, 0, 100, 15, 12, 10, 100, false, nil, nil, make(map[rune]([]item.Item)), world}
+	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 10, 0, 100, 0, 100, 15, 12, 10, 100, false, nil, nil, make(map[rune]([]item.Item)), nil, world}
 	player.AddItem(item.NewWeapon("shotgun"))
 	player.AddItem(item.NewWeapon("sawn-off shotgun"))
 	player.AddItem(item.NewWeapon("baseball bat"))
@@ -34,6 +35,9 @@ func NewPlayer(world *worldmap.Map) *Player {
 }
 
 func (p *Player) Render() ui.Element {
+	if p.mount != nil {
+		return icon.MergeIcons(p.icon, p.mount.GetIcon())
+	}
 	return p.icon.Render()
 }
 
@@ -150,6 +154,9 @@ func (p *Player) GetCoordinates() (int, int) {
 func (p *Player) SetCoordinates(x int, y int) {
 	p.x = x
 	p.y = y
+	if p.mount != nil {
+		p.mount.SetCoordinates(x, y)
+	}
 }
 
 func (p *Player) GetInitiative() int {
@@ -807,10 +814,12 @@ func (p *Player) DropItem() bool {
 	}
 }
 
-func (p *Player) ToggleDoor(x, y int, open bool) bool {
+func (p *Player) ToggleDoor(open bool) bool {
 	message.PrintMessage("Which direction?")
 	height := p.world.GetHeight()
 	width := p.world.GetWidth()
+	x, y := p.GetCoordinates()
+
 	// Select direction
 	for {
 		validMove := true
@@ -892,6 +901,100 @@ func (p *Player) ToggleDoor(x, y int, open bool) bool {
 	return false
 }
 
+func (p *Player) ToggleMount() bool {
+	message.PrintMessage("Which direction?")
+	height := p.world.GetHeight()
+	width := p.world.GetWidth()
+	x, y := p.GetCoordinates()
+
+	mounted := p.mount != nil
+	action := ui.Wait
+	// Select direction
+	for {
+		validMove := true
+		action = ui.GetInput()
+
+		if action.IsMovementAction() {
+			switch action {
+			case ui.MoveWest:
+				if x != 0 {
+					x--
+				}
+			case ui.MoveEast:
+				if x < width-1 {
+					x++
+				}
+			case ui.MoveNorth:
+				if y != 0 {
+					y--
+				}
+			case ui.MoveSouth:
+				if y < height-1 {
+					y++
+				}
+			case ui.MoveSouthWest:
+				if x != 0 && y < height-1 {
+					x--
+					y++
+				}
+
+			case ui.MoveSouthEast:
+				if x < width-1 && y < height-1 {
+					x++
+					y++
+				}
+			case ui.MoveNorthWest:
+				if x != 0 && y != 0 {
+					x--
+					y--
+				}
+			case ui.MoveNorthEast:
+				if y != 0 && x < width-1 {
+					y--
+					x++
+				}
+			}
+		} else if action == ui.CancelAction {
+			message.PrintMessage("Never mind...")
+			return false
+		} else {
+			message.PrintMessage("Invalid direction.")
+			validMove = false
+		}
+
+		if validMove {
+			break
+		}
+	}
+	// If there is a door, toggle its position if it's not already there
+
+	if mounted {
+		if p.world.IsPassable(x, y) {
+			p.mount.RemoveRider()
+			p.mount = nil
+			p.world.MovePlayer(p, action)
+			message.Enqueue("You dismount.")
+			return true
+		} else {
+			message.PrintMessage("You cannot dismount here.")
+		}
+	} else {
+		c := p.world.GetCreature(x, y)
+		if m, ok := c.(*mount.Mount); c != nil && ok {
+			m.AddRider(p)
+			p.mount = m
+			p.world.DeleteCreature(m)
+			p.world.MovePlayer(p, action)
+			message.Enqueue(fmt.Sprintf("You mount the %s.", m.GetName()))
+			return true
+		}
+		message.PrintMessage("There is no creature to mount here.")
+
+	}
+
+	return false
+}
+
 func (p *Player) GetName() string {
 	return "you"
 }
@@ -941,5 +1044,6 @@ type Player struct {
 	weapon      *item.Weapon
 	armour      *item.Armour
 	inventory   map[rune]([]item.Item)
+	mount       *mount.Mount
 	world       *worldmap.Map
 }

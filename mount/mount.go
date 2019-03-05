@@ -53,7 +53,7 @@ func (m *Mount) Render() ui.Element {
 func (m *Mount) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "X", "Y", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Weapon", "Armour", "Inventory"}
+	keys := []string{"Name", "X", "Y", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance"}
 
 	mountValues := map[string]interface{}{
 		"Name":        m.name,
@@ -318,8 +318,24 @@ func (m *Mount) IsCrouching() bool {
 	return false
 }
 
+func (m *Mount) AddRider(c worldmap.Creature) {
+	m.rider = c
+}
+
+func (m *Mount) RemoveRider() {
+	m.rider = nil
+}
+
+func (m *Mount) IsMounted() bool {
+	return m.rider != nil
+}
+
 func (m *Mount) SetMap(world *worldmap.Map) {
 	m.world = world
+}
+
+func (m *Mount) GetIcon() icon.Icon {
+	return m.icon
 }
 
 type Mount struct {

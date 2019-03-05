@@ -54,6 +54,10 @@ func save(state GameState) {
 	check(err)
 	buffer.WriteString(fmt.Sprintf("\"Enemies\":%s,\n", enemiesValue))
 
+	mountsValue, err := json.Marshal(state.Mounts)
+	check(err)
+	buffer.WriteString(fmt.Sprintf("\"Mounts\":%s,\n", mountsValue))
+
 	playerValue, err := json.Marshal(state.Player)
 	check(err)
 	buffer.WriteString(fmt.Sprintf("\"Player\":%s\n", playerValue))
@@ -181,7 +185,6 @@ func main() {
 		quit := false
 		endTurn := false
 		ui.ClearScreen()
-		x, y := player.GetCoordinates()
 
 		// Sort by initiative order
 		sort.Slice(all, func(i, j int) bool {
@@ -245,9 +248,9 @@ func main() {
 						case ui.Wait:
 							endTurn = true
 						case ui.CloseDoor:
-							endTurn = player.ToggleDoor(x, y, false)
+							endTurn = player.ToggleDoor(false)
 						case ui.OpenDoor:
-							endTurn = player.ToggleDoor(x, y, true)
+							endTurn = player.ToggleDoor(true)
 						case ui.ToggleCrouch:
 							player.ToggleCrouch()
 							endTurn = true
@@ -269,6 +272,8 @@ func main() {
 							endTurn = player.LoadWeapon()
 						case ui.Consume:
 							endTurn = player.ConsumeItem()
+						case ui.Mount:
+							endTurn = player.ToggleMount()
 						default:
 							quit = true
 						}
@@ -292,8 +297,12 @@ func main() {
 				if m.IsDead() {
 					continue
 				}
-				mX, mY := m.Update()
-				worldMap.MoveCreature(m, mX, mY)
+
+				// If mounted, controlled by rider
+				if !m.IsMounted() {
+					mX, mY := m.Update()
+					worldMap.MoveCreature(m, mX, mY)
+				}
 			}
 		}
 
