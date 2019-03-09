@@ -739,7 +739,16 @@ func (p *Player) findTarget() worldmap.Creature {
 		} else if action == ui.CancelAction { // Counter intuitive at the moment
 			if p.world.IsOccupied(x, y) {
 				// If a creature is there, return it.
-				return p.world.GetCreature(x, y)
+				c := p.world.GetCreature(x, y)
+				m := c.GetMount()
+				if m != nil {
+					message.Enqueue(fmt.Sprintf("The %s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), m.GetName(), m.GetName()))
+					input := ui.GetInput()
+					if input == ui.Confirm {
+						return c
+					}
+				}
+				return c
 			} else {
 				message.PrintMessage("Never mind...")
 				return nil
@@ -1018,6 +1027,10 @@ func (p *Player) ToggleCrouch() {
 
 func (p *Player) SetMap(world *worldmap.Map) {
 	p.world = world
+}
+
+func (p *Player) GetMount() worldmap.Creature {
+	return p.mount
 }
 
 func (p *Player) Update() {

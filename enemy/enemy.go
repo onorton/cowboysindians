@@ -574,6 +574,10 @@ func (e *Enemy) SetMap(world *worldmap.Map) {
 	e.world = world
 }
 
+func (e *Enemy) GetMount() worldmap.Creature {
+	return nil
+}
+
 type Enemy struct {
 	name        string
 	x           int

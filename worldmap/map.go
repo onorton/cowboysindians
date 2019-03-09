@@ -593,5 +593,6 @@ type Creature interface {
 	GetName() string
 	GetAlignment() Alignment
 	MarshalJSON() ([]byte, error)
+	GetMount() Creature
 	UnmarshalJSON([]byte) error
 }
