@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/onorton/cowboysindians/item"
+	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/ui"
 )
 
@@ -447,7 +448,22 @@ func (m Map) MovePlayer(c Creature, action ui.PlayerAction) {
 		newX, newY = x, y
 	}
 
-	m.MoveCreature(c, newX, newY)
+	// If occupied by another creature, melee attack
+	if m.grid[newY][newX].c != nil && m.grid[newY][newX].c != c {
+		targetC := m.grid[newY][newX].c
+		mount := targetC.GetMount()
+		if mount != nil {
+			message.Enqueue(fmt.Sprintf("The %s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), mount.GetName(), mount.GetName()))
+			input := ui.GetInput()
+			if input == ui.Confirm {
+				c.MeleeAttack(mount)
+			}
+		} else {
+			c.MeleeAttack(targetC)
+		}
+	} else {
+		m.Move(c, newX, newY)
+	}
 
 	// Difference in coordinates from the window location
 	rX := newX - m.v.x
@@ -470,12 +486,18 @@ func (m Map) MovePlayer(c Creature, action ui.PlayerAction) {
 
 func (m Map) MoveCreature(c Creature, x, y int) {
 
-	if !m.grid[y][x].passable {
-		return
-	}
 	// If occupied by another creature, melee attack
 	if m.grid[y][x].c != nil && m.grid[y][x].c != c {
 		c.MeleeAttack(m.grid[y][x].c)
+		return
+	}
+
+	m.Move(c, x, y)
+}
+
+func (m Map) Move(c Creature, x, y int) {
+
+	if !m.grid[y][x].passable {
 		return
 	}
 
