@@ -338,6 +338,10 @@ func (m *Mount) GetIcon() icon.Icon {
 	return m.icon
 }
 
+func (m *Mount) GetEncumbrance() int {
+	return m.encumbrance
+}
+
 func (m *Mount) GetMount() worldmap.Creature {
 	return nil
 }

@@ -681,7 +681,12 @@ func (p *Player) OverEncumbered() bool {
 			total += item.GetWeight()
 		}
 	}
-	return total > float64(p.encumbrance)
+	total_encumbrance := p.encumbrance
+	if p.mount != nil {
+		total_encumbrance += p.mount.GetEncumbrance()
+	}
+
+	return total > float64(total_encumbrance)
 }
 
 func (p *Player) findTarget() worldmap.Creature {
