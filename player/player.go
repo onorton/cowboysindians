@@ -668,6 +668,71 @@ func (p *Player) drink(amount int) {
 
 }
 
+func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
+	newX, newY := p.x, p.y
+
+	switch action {
+	case ui.MoveWest:
+		newX--
+	case ui.MoveEast:
+		newX++
+	case ui.MoveNorth:
+		newY--
+	case ui.MoveSouth:
+		newY++
+	case ui.MoveSouthWest:
+		newX--
+		newY++
+	case ui.MoveSouthEast:
+		newX++
+		newY++
+	case ui.MoveNorthWest:
+		newX--
+		newY--
+	case ui.MoveNorthEast:
+		newY--
+		newX++
+	}
+
+	// If out of bounds, reset to original position
+	if newX < 0 || newY < 0 || newX >= p.world.GetWidth() || newY >= p.world.GetHeight() {
+		newX, newY = p.x, p.y
+	}
+
+	c := p.world.GetCreature(newX, newY)
+	// If occupied by another creature, melee attack
+	if c != nil && c != p {
+		mount := c.GetMount()
+		if mount != nil {
+			message.Enqueue(fmt.Sprintf("The %s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), mount.GetName(), mount.GetName()))
+			input := ui.GetInput()
+			if input == ui.Confirm {
+				p.MeleeAttack(mount)
+			}
+		} else {
+			p.MeleeAttack(c)
+		}
+		// Will always be NoAction
+		return true, ui.NoAction
+	}
+
+	if p.mount != nil {
+
+		// If mount has not moved already, player can still do an action
+		if !p.mount.Moved() {
+			p.world.Move(p, newX, newY)
+			p.world.AdjustViewer()
+			p.mount.Move()
+			return false, ui.NoAction
+		} else {
+			return true, action
+		}
+	}
+
+	p.world.Move(p, newX, newY)
+	return true, ui.NoAction
+}
+
 func (p *Player) OverEncumbered() bool {
 	total := 0.0
 	if p.weapon != nil {
@@ -980,13 +1045,12 @@ func (p *Player) ToggleMount() bool {
 			break
 		}
 	}
-	// If there is a door, toggle its position if it's not already there
 
 	if mounted {
 		if p.world.IsPassable(x, y) {
 			p.mount.RemoveRider()
 			p.mount = nil
-			p.world.MovePlayer(p, action)
+			p.Move(action)
 			message.Enqueue("You dismount.")
 			return true
 		} else {
@@ -996,9 +1060,9 @@ func (p *Player) ToggleMount() bool {
 		c := p.world.GetCreature(x, y)
 		if m, ok := c.(*mount.Mount); c != nil && ok {
 			m.AddRider(p)
-			p.mount = m
 			p.world.DeleteCreature(m)
-			p.world.MovePlayer(p, action)
+			p.Move(action)
+			p.mount = m
 			message.Enqueue(fmt.Sprintf("You mount the %s.", m.GetName()))
 			return true
 		}
@@ -1041,6 +1105,9 @@ func (p *Player) GetMount() worldmap.Creature {
 func (p *Player) Update() {
 	p.hunger++
 	p.thirst++
+	if p.mount != nil {
+		p.mount.ResetMoved()
+	}
 }
 
 type Player struct {

@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/onorton/cowboysindians/item"
-	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/ui"
 )
 
@@ -413,73 +412,24 @@ func (m Map) GetHeight() int {
 	return len(m.grid)
 }
 
-// Same as MoveCreature but viewer is adjusted as well.
-func (m Map) MovePlayer(c Creature, action ui.PlayerAction) {
-
-	x, y := c.GetCoordinates()
-
-	newX, newY := x, y
-
-	switch action {
-	case ui.MoveWest:
-		newX--
-	case ui.MoveEast:
-		newX++
-	case ui.MoveNorth:
-		newY--
-	case ui.MoveSouth:
-		newY++
-	case ui.MoveSouthWest:
-		newX--
-		newY++
-	case ui.MoveSouthEast:
-		newX++
-		newY++
-	case ui.MoveNorthWest:
-		newX--
-		newY--
-	case ui.MoveNorthEast:
-		newY--
-		newX++
-	}
-
-	// If out of bounds, reset to original position
-	if newX < 0 || newY < 0 || newX >= m.GetWidth() || newY >= m.GetHeight() {
-		newX, newY = x, y
-	}
-
-	// If occupied by another creature, melee attack
-	if m.grid[newY][newX].c != nil && m.grid[newY][newX].c != c {
-		targetC := m.grid[newY][newX].c
-		mount := targetC.GetMount()
-		if mount != nil {
-			message.Enqueue(fmt.Sprintf("The %s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), mount.GetName(), mount.GetName()))
-			input := ui.GetInput()
-			if input == ui.Confirm {
-				c.MeleeAttack(mount)
-			}
-		} else {
-			c.MeleeAttack(targetC)
-		}
-	} else {
-		m.Move(c, newX, newY)
-	}
-
+// Adjust the viewer according to the new position of the player
+func (m Map) AdjustViewer() {
+	x, y := m.GetPlayer().GetCoordinates()
 	// Difference in coordinates from the window location
-	rX := newX - m.v.x
-	rY := newY - m.v.y
+	rX := x - m.v.x
+	rY := y - m.v.y
 
 	//Adjust viewer
-	if rX < padding && newX >= padding {
+	if rX < padding && x >= padding {
 		m.v.x--
 	}
-	if rX > m.v.width-padding && newX <= m.GetWidth()-padding {
+	if rX > m.v.width-padding && x <= m.GetWidth()-padding {
 		m.v.x++
 	}
-	if rY < padding && newY >= padding {
+	if rY < padding && y >= padding {
 		m.v.y--
 	}
-	if rY > m.v.height-padding && newY <= m.GetHeight()-padding {
+	if rY > m.v.height-padding && y <= m.GetHeight()-padding {
 		m.v.y++
 	}
 }

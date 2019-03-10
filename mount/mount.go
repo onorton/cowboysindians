@@ -43,7 +43,7 @@ func fetchMountData() map[string]MountAttributes {
 
 func NewMount(name string, x, y int, world *worldmap.Map) *Mount {
 	mount := mountData[name]
-	m := &Mount{name, x, y, mount.Icon, mount.Initiative, mount.Hp, mount.Hp, mount.Ac, mount.Str, mount.Dex, mount.Encumbrance, nil, world}
+	m := &Mount{name, x, y, mount.Icon, mount.Initiative, mount.Hp, mount.Hp, mount.Ac, mount.Str, mount.Dex, mount.Encumbrance, nil, world, false}
 	return m
 }
 func (m *Mount) Render() ui.Element {
@@ -301,6 +301,18 @@ func (m *Mount) Update() (int, int) {
 	return m.x, m.y
 }
 
+func (m *Mount) ResetMoved() {
+	m.moved = false
+}
+
+func (m *Mount) Move() {
+	m.moved = true
+}
+
+func (m *Mount) Moved() bool {
+	return m.moved
+}
+
 func (m *Mount) heal(amount int) {
 	originalHp := m.hp
 	m.hp = int(math.Min(float64(originalHp+amount), float64(m.maxHp)))
@@ -360,4 +372,5 @@ type Mount struct {
 	encumbrance int
 	rider       worldmap.Creature
 	world       *worldmap.Map
+	moved       bool
 }

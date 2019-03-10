@@ -87,13 +87,12 @@ func load() GameState {
 
 }
 
-func generateMounts(m *worldmap.Map, p *player.Player, n int) []*mount.Mount {
+func generateMounts(m *worldmap.Map, n int) []*mount.Mount {
 	mounts := make([]*mount.Mount, n)
 	for i := 0; i < n; i++ {
 		x := rand.Intn(width)
 		y := rand.Intn(height)
-		pX, pY := p.GetCoordinates()
-		if !m.IsPassable(x, y) || (x == pX && y == pY) || m.IsOccupied(x, y) {
+		if !m.IsPassable(x, y) || m.IsOccupied(x, y) {
 			i--
 			continue
 		}
@@ -102,13 +101,12 @@ func generateMounts(m *worldmap.Map, p *player.Player, n int) []*mount.Mount {
 	return mounts
 }
 
-func generateEnemies(m *worldmap.Map, p *player.Player, n int) []*enemy.Enemy {
+func generateEnemies(m *worldmap.Map, n int) []*enemy.Enemy {
 	enemies := make([]*enemy.Enemy, n)
 	for i := 0; i < n; i++ {
 		x := rand.Intn(width)
 		y := rand.Intn(height)
-		pX, pY := p.GetCoordinates()
-		if !m.IsPassable(x, y) || (x == pX && y == pY) || m.IsOccupied(x, y) {
+		if !m.IsPassable(x, y) || m.IsOccupied(x, y) {
 			i--
 			continue
 		}
@@ -163,8 +161,8 @@ func main() {
 	if !loaded {
 		state.Map = worldmap.NewMap(width, height, windowWidth, windowHeight)
 		state.Player = player.NewPlayer(state.Map)
-		state.Mounts = generateMounts(state.Map, state.Player, 5)
-		state.Enemies = generateEnemies(state.Map, state.Player, 2)
+		state.Mounts = generateMounts(state.Map, 5)
+		state.Enemies = generateEnemies(state.Map, 2)
 		state.Time = 1
 		state.PlayerIndex = 0
 	}
@@ -180,10 +178,13 @@ func main() {
 		worldMap.MoveCreature(c, x, y)
 	}
 
+	// Initial action is nothing
+	action := ui.NoAction
 	inventory := false
 	for {
 		quit := false
 		endTurn := false
+
 		ui.ClearScreen()
 
 		// Sort by initiative order
@@ -214,15 +215,15 @@ func main() {
 				}
 
 				for {
+					worldMap.Render()
 					if inventory {
 						player.PrintInventory()
 					}
-					action := ui.GetInput()
+					if action == ui.NoAction {
+						action = ui.GetInput()
+					}
 
 					playerMoved := action.IsMovementAction()
-
-					if player.OverEncumbered() && playerMoved {
-					}
 
 					if playerMoved {
 
@@ -230,14 +231,13 @@ func main() {
 							message.PrintMessage("You are too encumbered to move.")
 							continue
 						} else {
-							worldMap.MovePlayer(player, action)
+							endTurn, action = player.Move(action)
 						}
+
 					} else {
 						switch action {
 						case ui.PrintMessages:
-							{
-								message.PrintMessages()
-							}
+							message.PrintMessages()
 						case ui.Exit:
 							message.PrintMessage("Do you wish to save? [yn]")
 
@@ -277,9 +277,8 @@ func main() {
 						default:
 							quit = true
 						}
+						action = ui.NoAction
 					}
-					// End turn if player selects action that takes a turn
-					endTurn = (endTurn || playerMoved)
 
 					if endTurn || quit {
 						break
@@ -298,9 +297,9 @@ func main() {
 					continue
 				}
 
+				mX, mY := m.Update()
 				// If mounted, controlled by rider
 				if !m.IsMounted() {
-					mX, mY := m.Update()
 					worldMap.MoveCreature(m, mX, mY)
 				}
 			}

@@ -40,6 +40,7 @@ const (
 	Mount
 	Confirm
 	CancelAction
+	NoAction
 )
 
 // ItemSelection is a type that represents what item players have selected
