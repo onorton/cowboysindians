@@ -256,6 +256,14 @@ func (m *Mount) AttackHits(roll int) bool {
 }
 func (m *Mount) TakeDamage(damage int) {
 	m.hp -= damage
+
+	// Rider takes falling damage if mount dies
+	if m.rider != nil && m.IsDead() {
+		m.rider.TakeDamage(rand.Intn(4) + 1)
+		if m.rider.GetAlignment() == worldmap.Player {
+			message.Enqueue(fmt.Sprintf("Your %s died and you fell.", m.name))
+		}
+	}
 }
 
 func (m *Mount) IsDead() bool {
