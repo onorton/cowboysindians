@@ -730,6 +730,7 @@ func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
 	}
 
 	p.world.Move(p, newX, newY)
+	p.world.AdjustViewer()
 	return true, ui.NoAction
 }
 
