@@ -11,6 +11,7 @@ import (
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
+	"github.com/onorton/cowboysindians/mount"
 	"github.com/onorton/cowboysindians/ui"
 	"github.com/onorton/cowboysindians/worldmap"
 )
@@ -45,7 +46,7 @@ func fetchEnemyData() map[string]EnemyAttributes {
 
 func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 	enemy := enemyData[name]
-	e := &Enemy{name, x, y, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, false, nil, nil, make([]item.Item, 0), world}
+	e := &Enemy{name, x, y, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, false, nil, nil, make([]item.Item, 0), nil, world}
 	for _, itemDefinition := range enemy.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm item.Item = nil
@@ -67,6 +68,9 @@ func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 	return e
 }
 func (e *Enemy) Render() ui.Element {
+	if e.mount != nil {
+		return icon.MergeIcons(e.icon, e.mount.GetIcon())
+	}
 	return e.icon.Render()
 }
 
@@ -260,6 +264,26 @@ func (e *Enemy) getCoverMap() [][]int {
 	return generateMap(aiMap, e.world)
 }
 
+func (e *Enemy) getMountMap() [][]int {
+	height, width := e.world.GetHeight(), e.world.GetWidth()
+	aiMap := make([][]int, height)
+
+	// Initialise Dijkstra map with goals.
+	// Max is size of grid.
+	for y := 0; y < height; y++ {
+		aiMap[y] = make([]int, width)
+		for x := 0; x < width; x++ {
+			// Looks for mount on its own
+			if m, ok := e.world.GetCreature(x, y).(*mount.Mount); ok && m != nil {
+				aiMap[y][x] = 0
+			} else {
+				aiMap[y][x] = height * width
+			}
+		}
+	}
+	return generateMap(aiMap, e.world)
+}
+
 func (e *Enemy) GetInitiative() int {
 	return e.initiative
 }
@@ -374,38 +398,16 @@ type Coordinate struct {
 	y int
 }
 
-func (e *Enemy) Update() (int, int) {
-	// If at half health heal up
-	if e.hp <= e.maxHp/2 {
-		for i, itm := range e.inventory {
-			if con, ok := itm.(*item.Consumable); ok && con.GetEffect("hp") > 0 {
-				e.heal(con.GetEffect("hp"))
-				e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
-				return e.x, e.y
-			}
-		}
-	}
+func (e *Enemy) FindAction() {
 
+	coefficients := []float64{0.5, 0.2, 0.3, 0.0}
+	// Focus on getting a mount if possible
+	if e.mount == nil {
+		coefficients = []float64{0.3, 0.2, 0.1, 0.4}
+	}
 	coverMap := e.getCoverMap()
-	aiMap := addMaps([][][]int{e.getChaseMap(), e.getItemMap(), coverMap}, []float64{0.5, 0.2, 0.3})
-
-	// If moving into or out of cover toggle crouch
-	if coverMap[e.y][e.x] == 0 && !e.crouching {
-		e.crouching = true
-		return e.x, e.y
-	} else if coverMap[e.y][e.x] > 0 && e.crouching {
-		e.crouching = false
-		return e.x, e.y
-	}
-
-	// Try and wield best weapon
-	if e.wieldItem() {
-		return e.x, e.y
-	}
-	// Try and wear best armour
-	if e.wearArmour() {
-		return e.x, e.y
-	}
+	mountMap := e.getMountMap()
+	aiMap := addMaps([][][]int{e.getChaseMap(), e.getItemMap(), coverMap, mountMap}, coefficients)
 
 	current := aiMap[e.y][e.x]
 	possibleLocations := make([]Coordinate, 0)
@@ -422,6 +424,57 @@ func (e *Enemy) Update() (int, int) {
 			}
 		}
 	}
+	// If mounted, can move first before executing another action
+	if e.mount != nil && !e.mount.Moved() {
+		if len(possibleLocations) > 0 {
+			if e.overEncumbered() {
+				for _, itm := range e.inventory {
+					if itm.GetWeight() > 1 {
+						e.dropItem(itm)
+						return
+					}
+				}
+			} else {
+				l := possibleLocations[rand.Intn(len(possibleLocations))]
+				e.mount.Move()
+				e.x, e.y = l.x, l.y
+				// Can choose new action again
+				e.FindAction()
+				return
+			}
+		}
+	}
+
+	// If at half health heal up
+	if e.hp <= e.maxHp/2 {
+		for i, itm := range e.inventory {
+			if con, ok := itm.(*item.Consumable); ok && con.GetEffect("hp") > 0 {
+				e.heal(con.GetEffect("hp"))
+				e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
+				return
+			}
+		}
+	}
+
+	// If moving into or out of cover and not mounted toggle crouch
+	if e.mount == nil {
+		if coverMap[e.y][e.x] == 0 && !e.crouching {
+			e.crouching = true
+			return
+		} else if coverMap[e.y][e.x] > 0 && e.crouching {
+			e.crouching = false
+			return
+		}
+	}
+
+	// Try and wield best weapon
+	if e.wieldItem() {
+		return
+	}
+	// Try and wear best armour
+	if e.wearArmour() {
+		return
+	}
 
 	target := e.world.GetPlayer()
 	tX, tY := target.GetCoordinates()
@@ -435,15 +488,33 @@ func (e *Enemy) Update() (int, int) {
 				coverPenalty = 5
 			}
 			e.attack(target, worldmap.GetBonus(e.dex)-coverPenalty, 0)
-			return e.x, e.y
+			return
 		} else if e.hasAmmo() {
 			for !e.weaponFullyLoaded() && e.hasAmmo() {
 				e.getAmmo()
 				e.weapon.Load()
 			}
-			return e.x, e.y
+			return
 		}
 
+	}
+
+	// If adjacent to mount, attempt to mount it
+	if e.mount == nil {
+		for i := -1; i <= 1; i++ {
+			for j := -1; j <= 1; j++ {
+				x, y := e.x+j, e.y+i
+				if e.world.IsValid(x, y) && mountMap[y][x] == 0 {
+					m, _ := e.world.GetCreature(x, y).(*mount.Mount)
+					m.AddRider(e)
+					e.world.DeleteCreature(m)
+					e.mount = m
+					e.crouching = false
+					e.x, e.y = x, y
+					return
+				}
+			}
+		}
 	}
 
 	if len(possibleLocations) > 0 {
@@ -451,11 +522,13 @@ func (e *Enemy) Update() (int, int) {
 			for _, itm := range e.inventory {
 				if itm.GetWeight() > 1 {
 					e.dropItem(itm)
+					return
 				}
 			}
-		} else {
+		} else if e.mount != nil && !e.mount.Moved() {
 			l := possibleLocations[rand.Intn(len(possibleLocations))]
-			return l.x, l.y
+			e.x, e.y = l.x, l.y
+			return
 		}
 	} else {
 		items := e.world.GetItems(e.x, e.y)
@@ -463,9 +536,7 @@ func (e *Enemy) Update() (int, int) {
 			e.pickupItem(item)
 		}
 	}
-
-	return e.x, e.y
-
+	return
 }
 
 func (e *Enemy) overEncumbered() bool {
@@ -481,6 +552,18 @@ func (e *Enemy) dropItem(item item.Item) {
 		message.Enqueue(fmt.Sprintf("The %s dropped a %s.", e.name, item.GetName()))
 	}
 
+}
+
+func (e *Enemy) Update() (int, int) {
+	// Needs to be fixed
+	x, y := e.x, e.y
+	e.FindAction()
+	if e.mount != nil {
+		e.mount.ResetMoved()
+	}
+	newX, newY := e.x, e.y
+	e.x, e.y = x, y
+	return newX, newY
 }
 
 func (e *Enemy) EmptyInventory() {
@@ -575,7 +658,7 @@ func (e *Enemy) SetMap(world *worldmap.Map) {
 }
 
 func (e *Enemy) GetMount() worldmap.Creature {
-	return nil
+	return e.mount
 }
 
 type Enemy struct {
@@ -594,5 +677,6 @@ type Enemy struct {
 	weapon      *item.Weapon
 	armour      *item.Armour
 	inventory   []item.Item
+	mount       *mount.Mount
 	world       *worldmap.Map
 }
