@@ -263,6 +263,7 @@ func (m *Mount) TakeDamage(damage int) {
 		if m.rider.GetAlignment() == worldmap.Player {
 			message.Enqueue(fmt.Sprintf("Your %s died and you fell.", m.name))
 		}
+		m.RemoveRider()
 	}
 }
 

@@ -704,7 +704,7 @@ func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
 	if c != nil && c != p {
 		mount := c.GetMount()
 		if mount != nil {
-			message.Enqueue(fmt.Sprintf("The %s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), mount.GetName(), mount.GetName()))
+			message.PrintMessage(fmt.Sprintf("The %s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), mount.GetName(), mount.GetName()))
 			input := ui.GetInput()
 			if input == ui.Confirm {
 				p.MeleeAttack(mount)
@@ -813,10 +813,10 @@ func (p *Player) findTarget() worldmap.Creature {
 				c := p.world.GetCreature(x, y)
 				m := c.GetMount()
 				if m != nil {
-					message.Enqueue(fmt.Sprintf("The %s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), m.GetName(), m.GetName()))
+					message.PrintMessage(fmt.Sprintf("The %s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), m.GetName(), m.GetName()))
 					input := ui.GetInput()
 					if input == ui.Confirm {
-						return c
+						return m
 					}
 				}
 				return c
@@ -1017,7 +1017,6 @@ func (p *Player) ToggleMount() bool {
 					x--
 					y++
 				}
-
 			case ui.MoveSouthEast:
 				if x < width-1 && y < height-1 {
 					x++
@@ -1108,6 +1107,10 @@ func (p *Player) Update() {
 	p.thirst++
 	if p.mount != nil {
 		p.mount.ResetMoved()
+		p.mount.SetCoordinates(p.x, p.y)
+		if p.mount.IsDead() {
+			p.mount = nil
+		}
 	}
 }
 
