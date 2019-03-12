@@ -306,6 +306,13 @@ type Coordinate struct {
 }
 
 func (m *Mount) Update() (int, int) {
+	if m.rider != nil {
+		if m.rider.IsDead() {
+			m.RemoveRider()
+		} else {
+			m.x, m.y = m.rider.GetCoordinates()
+		}
+	}
 	// For now do nothing
 	return m.x, m.y
 }

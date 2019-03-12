@@ -560,7 +560,6 @@ func (e *Enemy) Update() (int, int) {
 	e.FindAction()
 	if e.mount != nil {
 		e.mount.ResetMoved()
-		e.mount.SetCoordinates(e.x, e.y)
 		if e.mount.IsDead() {
 			e.mount = nil
 		}
