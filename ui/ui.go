@@ -90,7 +90,7 @@ func GetInput() (action PlayerAction) {
 		{
 			switch e.Ch {
 			case '1':
-				action = MoveNorthWest
+				action = MoveSouthWest
 			case '2':
 				action = MoveSouth
 			case '3':

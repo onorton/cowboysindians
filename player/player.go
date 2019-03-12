@@ -708,6 +708,8 @@ func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
 			input := ui.GetInput()
 			if input == ui.Confirm {
 				p.MeleeAttack(mount)
+			} else {
+				p.MeleeAttack(c)
 			}
 		} else {
 			p.MeleeAttack(c)
