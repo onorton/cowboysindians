@@ -12,6 +12,7 @@ import (
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/ui"
 	"github.com/onorton/cowboysindians/worldmap"
+	"github.com/rs/xid"
 )
 
 func check(err error) {
@@ -43,7 +44,8 @@ func fetchMountData() map[string]MountAttributes {
 
 func NewMount(name string, x, y int, world *worldmap.Map) *Mount {
 	mount := mountData[name]
-	m := &Mount{name, x, y, mount.Icon, mount.Initiative, mount.Hp, mount.Hp, mount.Ac, mount.Str, mount.Dex, mount.Encumbrance, nil, world, false}
+	id := xid.New()
+	m := &Mount{name, id.String(), x, y, mount.Icon, mount.Initiative, mount.Hp, mount.Hp, mount.Ac, mount.Str, mount.Dex, mount.Encumbrance, nil, world, false}
 	return m
 }
 func (m *Mount) Render() ui.Element {
@@ -53,10 +55,11 @@ func (m *Mount) Render() ui.Element {
 func (m *Mount) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "X", "Y", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance"}
+	keys := []string{"Name", "Id", "X", "Y", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance"}
 
 	mountValues := map[string]interface{}{
 		"Name":        m.name,
+		"Id":          m.id,
 		"X":           m.x,
 		"Y":           m.y,
 		"Icon":        m.icon,
@@ -92,6 +95,7 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 
 	type mountJson struct {
 		Name        string
+		Id          string
 		X           int
 		Y           int
 		Icon        icon.Icon
@@ -108,6 +112,7 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 	json.Unmarshal(data, &v)
 
 	m.name = v.Name
+	m.id = v.Id
 	m.x = v.X
 	m.y = v.Y
 	m.icon = v.Icon
@@ -374,8 +379,13 @@ func (m *Mount) GetMount() worldmap.Creature {
 	return nil
 }
 
+func (m *Mount) GetID() string {
+	return m.id
+}
+
 type Mount struct {
 	name        string
+	id          string
 	x           int
 	y           int
 	icon        icon.Icon

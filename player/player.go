@@ -23,7 +23,7 @@ func check(err error) {
 }
 
 func NewPlayer(world *worldmap.Map) *Player {
-	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 10, 0, 100, 0, 100, 15, 12, 10, 100, false, nil, nil, make(map[rune]([]item.Item)), nil, world}
+	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 10, 0, 100, 0, 100, 15, 12, 10, 100, false, nil, nil, make(map[rune]([]item.Item)), "", nil, world}
 	player.AddItem(item.NewWeapon("shotgun"))
 	player.AddItem(item.NewWeapon("sawn-off shotgun"))
 	player.AddItem(item.NewWeapon("baseball bat"))
@@ -44,7 +44,12 @@ func (p *Player) Render() ui.Element {
 func (p *Player) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"X", "Y", "Icon", "Initiative", "Hp", "MaxHp", "Hunger", "MaxHunger", "Thirst", "MaxThirst", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Weapon", "Armour", "Inventory"}
+	keys := []string{"X", "Y", "Icon", "Initiative", "Hp", "MaxHp", "Hunger", "MaxHunger", "Thirst", "MaxThirst", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Weapon", "Armour", "Inventory", "MountID"}
+
+	mountID := ""
+	if p.mount != nil {
+		mountID = p.mount.GetID()
+	}
 
 	playerValues := map[string]interface{}{
 		"X":           p.x,
@@ -64,6 +69,7 @@ func (p *Player) MarshalJSON() ([]byte, error) {
 		"Weapon":      p.weapon,
 		"Armour":      p.armour,
 		"Crouching":   p.crouching,
+		"MountID":     mountID,
 	}
 
 	var inventory []item.Item
@@ -114,6 +120,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 		Weapon      *item.Weapon
 		Armour      *item.Armour
 		Inventory   item.ItemList
+		MountID     string
 	}
 	v := playerJson{}
 
@@ -138,6 +145,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 	p.crouching = v.Crouching
 	p.weapon = v.Weapon
 	p.armour = v.Armour
+	p.mountID = v.MountID
 	p.inventory = make(map[rune][]item.Item)
 
 	for _, itm := range v.Inventory {
@@ -1124,6 +1132,15 @@ func (p *Player) Update() {
 	}
 }
 
+func (p *Player) LoadMount(mounts []*mount.Mount) {
+	for _, m := range mounts {
+		if p.mountID == m.GetID() {
+			m.AddRider(p)
+			p.mount = m
+		}
+	}
+}
+
 type Player struct {
 	x           int
 	y           int
@@ -1143,6 +1160,7 @@ type Player struct {
 	weapon      *item.Weapon
 	armour      *item.Armour
 	inventory   map[rune]([]item.Item)
+	mountID     string
 	mount       *mount.Mount
 	world       *worldmap.Map
 }

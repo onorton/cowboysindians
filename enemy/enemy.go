@@ -46,7 +46,7 @@ func fetchEnemyData() map[string]EnemyAttributes {
 
 func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 	enemy := enemyData[name]
-	e := &Enemy{name, x, y, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, false, nil, nil, make([]item.Item, 0), nil, world}
+	e := &Enemy{name, x, y, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, false, nil, nil, make([]item.Item, 0), "", nil, world}
 	for _, itemDefinition := range enemy.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm item.Item = nil
@@ -77,7 +77,12 @@ func (e *Enemy) Render() ui.Element {
 func (e *Enemy) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "X", "Y", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Weapon", "Armour", "Inventory"}
+	keys := []string{"Name", "X", "Y", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Weapon", "Armour", "Inventory", "MountID"}
+
+	mountID := ""
+	if e.mount != nil {
+		mountID = e.mount.GetID()
+	}
 
 	enemyValues := map[string]interface{}{
 		"Name":        e.name,
@@ -95,6 +100,7 @@ func (e *Enemy) MarshalJSON() ([]byte, error) {
 		"Weapon":      e.weapon,
 		"Armour":      e.armour,
 		"Inventory":   e.inventory,
+		"MountID":     mountID,
 	}
 
 	length := len(enemyValues)
@@ -134,6 +140,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 		Weapon      *item.Weapon
 		Armour      *item.Armour
 		Inventory   item.ItemList
+		MountID     string
 	}
 	var v enemyJson
 
@@ -154,6 +161,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 	e.weapon = v.Weapon
 	e.armour = v.Armour
 	e.inventory = v.Inventory
+	e.mountID = v.MountID
 
 	return nil
 }
@@ -664,6 +672,15 @@ func (e *Enemy) GetMount() worldmap.Creature {
 	return e.mount
 }
 
+func (e *Enemy) LoadMount(mounts []*mount.Mount) {
+	for _, m := range mounts {
+		if e.mountID == m.GetID() {
+			m.AddRider(e)
+			e.mount = m
+		}
+	}
+}
+
 type Enemy struct {
 	name        string
 	x           int
@@ -680,6 +697,7 @@ type Enemy struct {
 	weapon      *item.Weapon
 	armour      *item.Armour
 	inventory   []item.Item
+	mountID     string
 	mount       *mount.Mount
 	world       *worldmap.Map
 }

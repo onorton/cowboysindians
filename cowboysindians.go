@@ -78,9 +78,15 @@ func load() GameState {
 	check(err)
 
 	state.Player.SetMap(state.Map)
+	state.Player.LoadMount(state.Mounts)
 
 	for _, enemy := range state.Enemies {
 		enemy.SetMap(state.Map)
+		enemy.LoadMount(state.Mounts)
+	}
+
+	for _, mount := range state.Mounts {
+		mount.SetMap(state.Map)
 	}
 
 	return state
@@ -175,7 +181,7 @@ func main() {
 	all := allCreatures(enemies, mounts, player)
 	for _, c := range all {
 		x, y := c.GetCoordinates()
-		worldMap.MoveCreature(c, x, y)
+		worldMap.Move(c, x, y)
 	}
 
 	// Initial action is nothing
