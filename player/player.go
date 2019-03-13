@@ -1065,6 +1065,7 @@ func (p *Player) ToggleMount() bool {
 			p.world.DeleteCreature(m)
 			p.Move(action)
 			p.mount = m
+			p.crouching = false
 			message.Enqueue(fmt.Sprintf("You mount the %s.", m.GetName()))
 			return true
 		}
@@ -1087,13 +1088,20 @@ func (p *Player) IsCrouching() bool {
 	return p.crouching
 }
 
-func (p *Player) ToggleCrouch() {
+func (p *Player) ToggleCrouch() bool {
 	p.crouching = !p.crouching
 	if p.crouching {
-		message.Enqueue("You crouch down.")
+		if p.mount != nil {
+			message.PrintMessage("You can't crouch while riding.")
+			p.crouching = false
+			return false
+		} else {
+			message.Enqueue("You crouch down.")
+		}
 	} else {
 		message.Enqueue("You stand up.")
 	}
+	return true
 }
 
 func (p *Player) SetMap(world *worldmap.Map) {

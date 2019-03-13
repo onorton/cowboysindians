@@ -252,8 +252,7 @@ func main() {
 						case ui.OpenDoor:
 							endTurn = player.ToggleDoor(true)
 						case ui.ToggleCrouch:
-							player.ToggleCrouch()
-							endTurn = true
+							endTurn = player.ToggleCrouch()
 						case ui.RangedAttack:
 							endTurn = player.RangedAttack()
 						case ui.PickUpItem:
