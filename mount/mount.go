@@ -45,7 +45,7 @@ func fetchMountData() map[string]MountAttributes {
 func NewMount(name string, x, y int, world *worldmap.Map) *Mount {
 	mount := mountData[name]
 	id := xid.New()
-	m := &Mount{name, id.String(), x, y, mount.Icon, mount.Initiative, mount.Hp, mount.Hp, mount.Ac, mount.Str, mount.Dex, mount.Encumbrance, nil, world, false}
+	m := &Mount{name, id.String(), x, y, mount.Icon, mount.Initiative, mount.Hp, mount.Hp, mount.Ac, mount.Str, mount.Dex, mount.Encumbrance, nil, world, false, Coordinate{x, y}}
 	return m
 }
 func (m *Mount) Render() ui.Element {
@@ -70,6 +70,7 @@ func (m *Mount) MarshalJSON() ([]byte, error) {
 		"Str":         m.str,
 		"Dex":         m.dex,
 		"Encumbrance": m.encumbrance,
+		"Waypoint":    m.waypoint,
 	}
 
 	length := len(mountValues)
@@ -106,6 +107,7 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 		Str         int
 		Dex         int
 		Encumbrance int
+		Waypoint    Coordinate
 	}
 	var v mountJson
 
@@ -123,7 +125,7 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 	m.str = v.Str
 	m.dex = v.Dex
 	m.encumbrance = v.Encumbrance
-
+	m.waypoint = v.Waypoint
 	return nil
 }
 
@@ -131,9 +133,20 @@ func (m *Mount) GetCoordinates() (int, int) {
 	return m.x, m.y
 }
 func (m *Mount) SetCoordinates(x int, y int) {
-
 	m.x = x
 	m.y = y
+}
+
+func compareMaps(m, o [][]int) bool {
+	for i := 0; i < len(m); i++ {
+		for j := 0; j < len(m[0]); j++ {
+			if m[i][j] != o[i][j] {
+				return false
+			}
+		}
+	}
+	return true
+
 }
 
 func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
@@ -172,7 +185,7 @@ func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
 	return aiMap
 }
 
-func (m *Mount) getChaseMap() [][]int {
+func (m *Mount) getWaypointMap() [][]int {
 	height, width := m.world.GetHeight(), m.world.GetWidth()
 	aiMap := make([][]int, height)
 
@@ -181,49 +194,8 @@ func (m *Mount) getChaseMap() [][]int {
 	for y := 0; y < height; y++ {
 		aiMap[y] = make([]int, width)
 		for x := 0; x < width; x++ {
-			if m.world.IsVisible(m, x, y) && m.world.HasPlayer(x, y) {
-				aiMap[y][x] = 0
-			} else {
-				aiMap[y][x] = height * width
-			}
-		}
-	}
-	return generateMap(aiMap, m.world)
-
-}
-
-func (m *Mount) getItemMap() [][]int {
-	height, width := m.world.GetHeight(), m.world.GetWidth()
-	aiMap := make([][]int, height)
-
-	// Initialise Dijkstra map with goals.
-	// Max is size of grid.
-	for y := 0; y < height; y++ {
-		aiMap[y] = make([]int, width)
-		for x := 0; x < width; x++ {
-			if m.world.IsVisible(m, x, y) && m.world.HasItems(x, y) {
-				aiMap[y][x] = 0
-			} else {
-				aiMap[y][x] = height * width
-			}
-		}
-	}
-	return generateMap(aiMap, m.world)
-}
-
-func (m *Mount) getCoverMap() [][]int {
-	height, width := m.world.GetHeight(), m.world.GetWidth()
-	aiMap := make([][]int, height)
-
-	player := m.world.GetPlayer()
-	pX, pY := player.GetCoordinates()
-	// Initialise Dijkstra map with goals.
-	// Max is size of grid.
-	for y := 0; y < height; y++ {
-		aiMap[y] = make([]int, width)
-		for x := 0; x < width; x++ {
-			// Mount must be able to see player in order to know it would be behind cover
-			if m.world.IsVisible(m, x, y) && m.world.IsVisible(m, pX, pY) && m.world.BehindCover(x, y, player) {
+			waypoint := Coordinate{x, y}
+			if m.waypoint == waypoint {
 				aiMap[y][x] = 0
 			} else {
 				aiMap[y][x] = height * width
@@ -276,48 +248,59 @@ func (m *Mount) IsDead() bool {
 	return m.hp <= 0
 }
 
-func compareMaps(m, o [][]int) bool {
-	for i := 0; i < len(m); i++ {
-		for j := 0; j < len(m[0]); j++ {
-			if m[i][j] != o[i][j] {
-				return false
-			}
-		}
-	}
-	return true
-
-}
-
-func addMaps(maps [][][]int, weights []float64) [][]float64 {
-	result := make([][]float64, len(maps[0]))
-
-	for y, row := range maps[0] {
-		result[y] = make([]float64, len(row))
-	}
-
-	for i, _ := range maps {
-		for y, row := range maps[i] {
-			for x, location := range row {
-				result[y][x] += weights[i] * float64(location)
-			}
-		}
-	}
-	return result
-}
-
 type Coordinate struct {
 	x int
 	y int
 }
 
+func (m *Mount) NewWaypoint() {
+	for {
+		newX := m.x + rand.Intn(11) - 5
+		newY := m.y + rand.Intn(11) - 5
+
+		if m.world.IsValid(newX, newY) {
+			m.waypoint = Coordinate{newX, newY}
+			break
+		}
+	}
+}
+
 func (m *Mount) Update() (int, int) {
+	w := Coordinate{m.x, m.y}
+	if m.waypoint == w {
+		m.NewWaypoint()
+	}
+
 	if m.rider != nil {
 		if m.rider.IsDead() {
 			m.RemoveRider()
 		} else {
 			m.x, m.y = m.rider.GetCoordinates()
 		}
+	} else {
+		aiMap := m.getWaypointMap()
+		current := aiMap[m.y][m.x]
+		possibleLocations := make([]Coordinate, 0)
+		// Find adjacent locations closer to the goal
+		for i := -1; i <= 1; i++ {
+			for j := -1; j <= 1; j++ {
+				nX := m.x + i
+				nY := m.y + j
+				if nX >= 0 && nX < len(aiMap[0]) && nY >= 0 && nY < len(aiMap) && aiMap[nY][nX] < current {
+					// Add if not occupied by another enemy
+					if !m.world.IsOccupied(nX, nY) {
+						possibleLocations = append(possibleLocations, Coordinate{nX, nY})
+					}
+				}
+			}
+		}
+		if len(possibleLocations) > 0 {
+			l := possibleLocations[rand.Intn(len(possibleLocations))]
+			return l.x, l.y
+		}
+
 	}
+
 	// For now do nothing
 	return m.x, m.y
 }
@@ -399,4 +382,5 @@ type Mount struct {
 	rider       worldmap.Creature
 	world       *worldmap.Map
 	moved       bool
+	waypoint    Coordinate
 }
