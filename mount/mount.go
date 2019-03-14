@@ -55,7 +55,7 @@ func (m *Mount) Render() ui.Element {
 func (m *Mount) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "X", "Y", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance"}
+	keys := []string{"Name", "Id", "X", "Y", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Waypoint"}
 
 	mountValues := map[string]interface{}{
 		"Name":        m.name,
@@ -253,6 +253,35 @@ type Coordinate struct {
 	y int
 }
 
+func (c Coordinate) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString(fmt.Sprintf("\"X\":%d,", c.x))
+	buffer.WriteString(fmt.Sprintf("\"Y\":%d", c.y))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (c *Coordinate) UnmarshalJSON(data []byte) error {
+
+	type coordinateJson struct {
+		X int
+		Y int
+	}
+
+	var v coordinateJson
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	c.x = v.X
+	c.y = v.Y
+
+	return nil
+}
+
 func (m *Mount) NewWaypoint() {
 	for {
 		newX := m.x + rand.Intn(11) - 5
@@ -286,8 +315,8 @@ func (m *Mount) Update() (int, int) {
 			for j := -1; j <= 1; j++ {
 				nX := m.x + i
 				nY := m.y + j
-				if nX >= 0 && nX < len(aiMap[0]) && nY >= 0 && nY < len(aiMap) && aiMap[nY][nX] < current {
-					// Add if not occupied by another enemy
+				if nX >= 0 && nX < len(aiMap[0]) && nY >= 0 && nY < len(aiMap) && aiMap[nY][nX] <= current {
+					// Add if not occupied
 					if !m.world.IsOccupied(nX, nY) {
 						possibleLocations = append(possibleLocations, Coordinate{nX, nY})
 					}
