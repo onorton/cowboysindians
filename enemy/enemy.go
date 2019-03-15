@@ -46,7 +46,7 @@ func fetchEnemyData() map[string]EnemyAttributes {
 
 func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 	enemy := enemyData[name]
-	e := &Enemy{name, x, y, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, false, nil, nil, make([]item.Item, 0), "", nil, world}
+	e := &Enemy{name, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, false, nil, nil, make([]item.Item, 0), "", nil, world}
 	for _, itemDefinition := range enemy.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm item.Item = nil
@@ -77,7 +77,7 @@ func (e *Enemy) Render() ui.Element {
 func (e *Enemy) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "X", "Y", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Weapon", "Armour", "Inventory", "MountID"}
+	keys := []string{"Name", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Weapon", "Armour", "Inventory", "MountID"}
 
 	mountID := ""
 	if e.mount != nil {
@@ -86,8 +86,7 @@ func (e *Enemy) MarshalJSON() ([]byte, error) {
 
 	enemyValues := map[string]interface{}{
 		"Name":        e.name,
-		"X":           e.x,
-		"Y":           e.y,
+		"Location":    e.location,
 		"Icon":        e.icon,
 		"Initiative":  e.initiative,
 		"Hp":          e.hp,
@@ -126,8 +125,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 
 	type enemyJson struct {
 		Name        string
-		X           int
-		Y           int
+		Location    worldmap.Coordinates
 		Icon        icon.Icon
 		Initiative  int
 		Hp          int
@@ -147,8 +145,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 	json.Unmarshal(data, &v)
 
 	e.name = v.Name
-	e.x = v.X
-	e.y = v.Y
+	e.location = v.Location
 	e.icon = v.Icon
 	e.initiative = v.Initiative
 	e.hp = v.Hp
@@ -167,12 +164,10 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 }
 
 func (e *Enemy) GetCoordinates() (int, int) {
-	return e.x, e.y
+	return e.location.X, e.location.Y
 }
 func (e *Enemy) SetCoordinates(x int, y int) {
-
-	e.x = x
-	e.y = y
+	e.location = worldmap.Coordinates{x, y}
 }
 
 func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
@@ -401,11 +396,6 @@ func addMaps(maps [][][]int, weights []float64) [][]float64 {
 	return result
 }
 
-type Coordinate struct {
-	x int
-	y int
-}
-
 func (e *Enemy) FindAction() {
 
 	coefficients := []float64{0.5, 0.2, 0.3, 0.0}
@@ -417,17 +407,17 @@ func (e *Enemy) FindAction() {
 	mountMap := e.getMountMap()
 	aiMap := addMaps([][][]int{e.getChaseMap(), e.getItemMap(), coverMap, mountMap}, coefficients)
 
-	current := aiMap[e.y][e.x]
-	possibleLocations := make([]Coordinate, 0)
+	current := aiMap[e.location.Y][e.location.X]
+	possibleLocations := make([]worldmap.Coordinates, 0)
 	// Find adjacent locations closer to the goal
 	for i := -1; i <= 1; i++ {
 		for j := -1; j <= 1; j++ {
-			nX := e.x + i
-			nY := e.y + j
+			nX := e.location.X + i
+			nY := e.location.Y + j
 			if nX >= 0 && nX < len(aiMap[0]) && nY >= 0 && nY < len(aiMap) && aiMap[nY][nX] < current {
 				// Add if not occupied by another enemy
 				if e.world.HasPlayer(nX, nY) || !e.world.IsOccupied(nX, nY) {
-					possibleLocations = append(possibleLocations, Coordinate{nX, nY})
+					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
 				}
 			}
 		}
@@ -445,7 +435,7 @@ func (e *Enemy) FindAction() {
 			} else {
 				l := possibleLocations[rand.Intn(len(possibleLocations))]
 				e.mount.Move()
-				e.x, e.y = l.x, l.y
+				e.location = l
 				// Can choose new action again
 				e.FindAction()
 				return
@@ -466,10 +456,10 @@ func (e *Enemy) FindAction() {
 
 	// If moving into or out of cover and not mounted toggle crouch
 	if e.mount == nil {
-		if coverMap[e.y][e.x] == 0 && !e.crouching {
+		if coverMap[e.location.Y][e.location.X] == 0 && !e.crouching {
 			e.crouching = true
 			return
-		} else if coverMap[e.y][e.x] > 0 && e.crouching {
+		} else if coverMap[e.location.Y][e.location.X] > 0 && e.crouching {
 			e.crouching = false
 			return
 		}
@@ -487,7 +477,7 @@ func (e *Enemy) FindAction() {
 	target := e.world.GetPlayer()
 	tX, tY := target.GetCoordinates()
 
-	if distance := math.Sqrt(math.Pow(float64(e.x-tX), 2) + math.Pow(float64(e.y-tY), 2)); e.ranged() && distance < float64(e.weapon.GetRange()) && e.world.IsVisible(e, tX, tY) {
+	if distance := math.Sqrt(math.Pow(float64(e.location.X-tX), 2) + math.Pow(float64(e.location.Y-tY), 2)); e.ranged() && distance < float64(e.weapon.GetRange()) && e.world.IsVisible(e, tX, tY) {
 		// if weapon loaded, shoot at target else if enemy has ammo, load weapon
 		if e.weaponLoaded() {
 			e.weapon.Fire()
@@ -511,14 +501,14 @@ func (e *Enemy) FindAction() {
 	if e.mount == nil {
 		for i := -1; i <= 1; i++ {
 			for j := -1; j <= 1; j++ {
-				x, y := e.x+j, e.y+i
+				x, y := e.location.X+j, e.location.Y+i
 				if e.world.IsValid(x, y) && mountMap[y][x] == 0 {
 					m, _ := e.world.GetCreature(x, y).(*mount.Mount)
 					m.AddRider(e)
 					e.world.DeleteCreature(m)
 					e.mount = m
 					e.crouching = false
-					e.x, e.y = x, y
+					e.location = worldmap.Coordinates{x, y}
 					return
 				}
 			}
@@ -535,11 +525,11 @@ func (e *Enemy) FindAction() {
 			}
 		} else if e.mount != nil && !e.mount.Moved() {
 			l := possibleLocations[rand.Intn(len(possibleLocations))]
-			e.x, e.y = l.x, l.y
+			e.location = l
 			return
 		}
 	} else {
-		items := e.world.GetItems(e.x, e.y)
+		items := e.world.GetItems(e.location.X, e.location.Y)
 		for _, item := range items {
 			e.pickupItem(item)
 		}
@@ -555,8 +545,8 @@ func (e *Enemy) overEncumbered() bool {
 	return weight > float64(e.encumbrance)
 }
 func (e *Enemy) dropItem(item item.Item) {
-	e.world.PlaceItem(e.x, e.y, item)
-	if e.world.IsVisible(e.world.GetPlayer(), e.x, e.y) {
+	e.world.PlaceItem(e.location.X, e.location.Y, item)
+	if e.world.IsVisible(e.world.GetPlayer(), e.location.X, e.location.Y) {
 		message.Enqueue(fmt.Sprintf("The %s dropped a %s.", e.name, item.GetName()))
 	}
 
@@ -564,7 +554,7 @@ func (e *Enemy) dropItem(item item.Item) {
 
 func (e *Enemy) Update() (int, int) {
 	// Needs to be fixed
-	x, y := e.x, e.y
+	x, y := e.location.X, e.location.Y
 	e.FindAction()
 	if e.mount != nil {
 		e.mount.ResetMoved()
@@ -572,30 +562,30 @@ func (e *Enemy) Update() (int, int) {
 			e.mount = nil
 		}
 	}
-	newX, newY := e.x, e.y
-	e.x, e.y = x, y
+	newX, newY := e.location.X, e.location.Y
+	e.location = worldmap.Coordinates{x, y}
 	return newX, newY
 }
 
 func (e *Enemy) EmptyInventory() {
 	itemTypes := make(map[string]int)
 	for _, item := range e.inventory {
-		e.world.PlaceItem(e.x, e.y, item)
+		e.world.PlaceItem(e.location.X, e.location.Y, item)
 		itemTypes[item.GetName()]++
 	}
 
 	if e.weapon != nil {
-		e.world.PlaceItem(e.x, e.y, e.weapon)
+		e.world.PlaceItem(e.location.X, e.location.Y, e.weapon)
 		itemTypes[e.weapon.GetName()]++
 		e.weapon = nil
 	}
 	if e.armour != nil {
-		e.world.PlaceItem(e.x, e.y, e.armour)
+		e.world.PlaceItem(e.location.X, e.location.Y, e.armour)
 		itemTypes[e.armour.GetName()]++
 		e.armour = nil
 	}
 
-	if e.world.IsVisible(e.world.GetPlayer(), e.x, e.y) {
+	if e.world.IsVisible(e.world.GetPlayer(), e.location.X, e.location.Y) {
 		for name, count := range itemTypes {
 			message.Enqueue(fmt.Sprintf("The %s dropped %d %ss.", e.name, count, name))
 		}
@@ -683,8 +673,7 @@ func (e *Enemy) LoadMount(mounts []*mount.Mount) {
 
 type Enemy struct {
 	name        string
-	x           int
-	y           int
+	location    worldmap.Coordinates
 	icon        icon.Icon
 	initiative  int
 	hp          int

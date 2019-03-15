@@ -551,6 +551,11 @@ func GetBonus(score int) int {
 	return (score - 10) / 2
 }
 
+type Coordinates struct {
+	X int
+	Y int
+}
+
 // Interface shared by Player and Enemy
 type Creature interface {
 	GetCoordinates() (int, int)

@@ -23,7 +23,7 @@ func check(err error) {
 }
 
 func NewPlayer(world *worldmap.Map) *Player {
-	player := &Player{0, 0, icon.CreatePlayerIcon(), 1, 10, 10, 0, 100, 0, 100, 15, 12, 10, 100, false, nil, nil, make(map[rune]([]item.Item)), "", nil, world}
+	player := &Player{worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, 10, 10, 0, 100, 0, 100, 15, 12, 10, 100, false, nil, nil, make(map[rune]([]item.Item)), "", nil, world}
 	player.AddItem(item.NewWeapon("shotgun"))
 	player.AddItem(item.NewWeapon("sawn-off shotgun"))
 	player.AddItem(item.NewWeapon("baseball bat"))
@@ -44,7 +44,7 @@ func (p *Player) Render() ui.Element {
 func (p *Player) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"X", "Y", "Icon", "Initiative", "Hp", "MaxHp", "Hunger", "MaxHunger", "Thirst", "MaxThirst", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Weapon", "Armour", "Inventory", "MountID"}
+	keys := []string{"Location", "Icon", "Initiative", "Hp", "MaxHp", "Hunger", "MaxHunger", "Thirst", "MaxThirst", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Weapon", "Armour", "Inventory", "MountID"}
 
 	mountID := ""
 	if p.mount != nil {
@@ -52,8 +52,7 @@ func (p *Player) MarshalJSON() ([]byte, error) {
 	}
 
 	playerValues := map[string]interface{}{
-		"X":           p.x,
-		"Y":           p.y,
+		"Location":    p.location,
 		"Icon":        p.icon,
 		"Initiative":  p.initiative,
 		"Hp":          p.hp,
@@ -102,8 +101,7 @@ func (p *Player) MarshalJSON() ([]byte, error) {
 func (p *Player) UnmarshalJSON(data []byte) error {
 
 	type playerJson struct {
-		X           int
-		Y           int
+		Location    worldmap.Coordinates
 		Icon        icon.Icon
 		Initiative  int
 		Hp          int
@@ -128,8 +126,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	p.x = v.X
-	p.y = v.Y
+	p.location = v.Location
 	p.icon = v.Icon
 	p.initiative = v.Initiative
 	p.hp = v.Hp
@@ -156,12 +153,12 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 }
 
 func (p *Player) GetCoordinates() (int, int) {
-	return p.x, p.y
+	return p.location.X, p.location.Y
 }
 
 func (p *Player) SetCoordinates(x int, y int) {
-	p.x = x
-	p.y = y
+	p.location.X = x
+	p.location.Y = y
 	if p.mount != nil {
 		p.mount.SetCoordinates(x, y)
 	}
@@ -315,7 +312,7 @@ func (p *Player) RangedAttack() bool {
 	}
 
 	tX, tY := target.GetCoordinates()
-	distance := math.Sqrt(math.Pow(float64(p.x-tX), 2) + math.Pow(float64(p.y-tY), 2))
+	distance := math.Sqrt(math.Pow(float64(p.location.X-tX), 2) + math.Pow(float64(p.location.Y-tY), 2))
 	if distance < float64(p.weapon.GetRange()) {
 		coverPenalty := 0
 		if p.world.TargetBehindCover(p, target) {
@@ -677,7 +674,7 @@ func (p *Player) drink(amount int) {
 }
 
 func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
-	newX, newY := p.x, p.y
+	newX, newY := p.location.X, p.location.Y
 
 	switch action {
 	case ui.MoveWest:
@@ -704,7 +701,7 @@ func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
 
 	// If out of bounds, reset to original position
 	if newX < 0 || newY < 0 || newX >= p.world.GetWidth() || newY >= p.world.GetHeight() {
-		newX, newY = p.x, p.y
+		newX, newY = p.location.X, p.location.Y
 	}
 
 	c := p.world.GetCreature(newX, newY)
@@ -842,7 +839,7 @@ func (p *Player) findTarget() worldmap.Creature {
 }
 
 func (p *Player) PickupItem() bool {
-	x, y := p.x, p.y
+	x, y := p.location.X, p.location.Y
 	itemsOnGround := p.world.GetItems(x, y)
 	if itemsOnGround == nil {
 		message.PrintMessage("There is no item here.")
@@ -1125,7 +1122,7 @@ func (p *Player) Update() {
 	p.thirst++
 	if p.mount != nil {
 		p.mount.ResetMoved()
-		p.mount.SetCoordinates(p.x, p.y)
+		p.mount.SetCoordinates(p.location.X, p.location.Y)
 		if p.mount.IsDead() {
 			p.mount = nil
 		}
@@ -1142,8 +1139,7 @@ func (p *Player) LoadMount(mounts []*mount.Mount) {
 }
 
 type Player struct {
-	x           int
-	y           int
+	location    worldmap.Coordinates
 	icon        icon.Icon
 	initiative  int
 	maxHp       int
