@@ -45,7 +45,8 @@ func fetchMountData() map[string]MountAttributes {
 func NewMount(name string, x, y int, world *worldmap.Map) *Mount {
 	mount := mountData[name]
 	id := xid.New()
-	m := &Mount{name, id.String(), worldmap.Coordinates{x, y}, mount.Icon, mount.Initiative, mount.Hp, mount.Hp, mount.Ac, mount.Str, mount.Dex, mount.Encumbrance, nil, world, false, worldmap.Coordinates{x, y}}
+	location := worldmap.Coordinates{x, y}
+	m := &Mount{name, id.String(), location, mount.Icon, mount.Initiative, mount.Hp, mount.Hp, mount.Ac, mount.Str, mount.Dex, mount.Encumbrance, nil, world, false, worldmap.NewRandomWaypoint(world, location)}
 	return m
 }
 func (m *Mount) Render() ui.Element {
@@ -55,7 +56,7 @@ func (m *Mount) Render() ui.Element {
 func (m *Mount) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Waypoint"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance"}
 
 	mountValues := map[string]interface{}{
 		"Name":        m.name,
@@ -69,7 +70,6 @@ func (m *Mount) MarshalJSON() ([]byte, error) {
 		"Str":         m.str,
 		"Dex":         m.dex,
 		"Encumbrance": m.encumbrance,
-		"Waypoint":    m.waypoint,
 	}
 
 	length := len(mountValues)
@@ -105,7 +105,6 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 		Str         int
 		Dex         int
 		Encumbrance int
-		Waypoint    worldmap.Coordinates
 	}
 	var v mountJson
 
@@ -122,7 +121,6 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 	m.str = v.Str
 	m.dex = v.Dex
 	m.encumbrance = v.Encumbrance
-	m.waypoint = v.Waypoint
 	return nil
 }
 
@@ -181,7 +179,7 @@ func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
 	return aiMap
 }
 
-func (m *Mount) getWaypointMap() [][]int {
+func (m *Mount) getWaypointMap(waypoint worldmap.Coordinates) [][]int {
 	height, width := m.world.GetHeight(), m.world.GetWidth()
 	aiMap := make([][]int, height)
 
@@ -190,8 +188,8 @@ func (m *Mount) getWaypointMap() [][]int {
 	for y := 0; y < height; y++ {
 		aiMap[y] = make([]int, width)
 		for x := 0; x < width; x++ {
-			waypoint := worldmap.Coordinates{x, y}
-			if m.waypoint == waypoint {
+			location := worldmap.Coordinates{x, y}
+			if waypoint == location {
 				aiMap[y][x] = 0
 			} else {
 				aiMap[y][x] = height * width
@@ -244,23 +242,8 @@ func (m *Mount) IsDead() bool {
 	return m.hp <= 0
 }
 
-func (m *Mount) NewWaypoint() {
-	for {
-		newX := m.location.X + rand.Intn(11) - 5
-		newY := m.location.Y + rand.Intn(11) - 5
-
-		if m.world.IsValid(newX, newY) {
-			m.waypoint = worldmap.Coordinates{newX, newY}
-			break
-		}
-	}
-}
-
 func (m *Mount) Update() (int, int) {
-	if m.waypoint == m.location {
-		m.NewWaypoint()
-	}
-
+	waypoint := m.waypoint.NextWaypoint(m.location)
 	if m.rider != nil {
 		if m.rider.IsDead() {
 			m.RemoveRider()
@@ -268,7 +251,7 @@ func (m *Mount) Update() (int, int) {
 			m.location.X, m.location.Y = m.rider.GetCoordinates()
 		}
 	} else {
-		aiMap := m.getWaypointMap()
+		aiMap := m.getWaypointMap(waypoint)
 		current := aiMap[m.location.Y][m.location.X]
 		possibleLocations := make([]worldmap.Coordinates, 0)
 		// Find adjacent locations closer to the goal
@@ -371,5 +354,5 @@ type Mount struct {
 	rider       worldmap.Creature
 	world       *worldmap.Map
 	moved       bool
-	waypoint    worldmap.Coordinates
+	waypoint    worldmap.WaypointSystem
 }
