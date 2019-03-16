@@ -56,20 +56,21 @@ func (m *Mount) Render() ui.Element {
 func (m *Mount) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "WaypointSystem"}
 
 	mountValues := map[string]interface{}{
-		"Name":        m.name,
-		"Id":          m.id,
-		"Location":    m.location,
-		"Icon":        m.icon,
-		"Initiative":  m.initiative,
-		"Hp":          m.hp,
-		"MaxHp":       m.maxHp,
-		"AC":          m.ac,
-		"Str":         m.str,
-		"Dex":         m.dex,
-		"Encumbrance": m.encumbrance,
+		"Name":           m.name,
+		"Id":             m.id,
+		"Location":       m.location,
+		"Icon":           m.icon,
+		"Initiative":     m.initiative,
+		"Hp":             m.hp,
+		"MaxHp":          m.maxHp,
+		"AC":             m.ac,
+		"Str":            m.str,
+		"Dex":            m.dex,
+		"Encumbrance":    m.encumbrance,
+		"WaypointSystem": m.waypoint,
 	}
 
 	length := len(mountValues)
@@ -94,17 +95,18 @@ func (m *Mount) MarshalJSON() ([]byte, error) {
 func (m *Mount) UnmarshalJSON(data []byte) error {
 
 	type mountJson struct {
-		Name        string
-		Id          string
-		Location    worldmap.Coordinates
-		Icon        icon.Icon
-		Initiative  int
-		Hp          int
-		MaxHp       int
-		AC          int
-		Str         int
-		Dex         int
-		Encumbrance int
+		Name           string
+		Id             string
+		Location       worldmap.Coordinates
+		Icon           icon.Icon
+		Initiative     int
+		Hp             int
+		MaxHp          int
+		AC             int
+		Str            int
+		Dex            int
+		Encumbrance    int
+		WaypointSystem map[string]interface{}
 	}
 	var v mountJson
 
@@ -121,6 +123,7 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 	m.str = v.Str
 	m.dex = v.Dex
 	m.encumbrance = v.Encumbrance
+	m.waypoint = worldmap.UnmarshalWaypointSystem(v.WaypointSystem)
 	return nil
 }
 
@@ -321,6 +324,9 @@ func (m *Mount) IsMounted() bool {
 
 func (m *Mount) SetMap(world *worldmap.Map) {
 	m.world = world
+	if w, ok := m.waypoint.(*worldmap.RandomWaypoint); ok {
+		w.SetMap(world)
+	}
 }
 
 func (m *Mount) GetIcon() icon.Icon {
