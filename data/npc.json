@@ -1,0 +1,12 @@
+{
+	"townsman": {
+		"Icon": {"Icon": 116, "Colour": 6},
+		"Initiative": 1,
+		"Hp": 5,
+		"Ac": 10,
+		"Str": 10,
+		"Dex": 13,
+		"Encumbrance": 100,
+		"Inventory": []
+	}
+}

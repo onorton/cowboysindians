@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math"
 	"strconv"
 	"strings"
@@ -498,9 +497,6 @@ func (m Map) Render() {
 	elems := make([][]ui.Element, m.v.height, m.v.height)
 
 	for i, _ := range elems {
-		if i >= m.v.height {
-			log.Panic("Sup")
-		}
 		elems[i] = make([]ui.Element, m.v.width, m.v.width)
 	}
 
