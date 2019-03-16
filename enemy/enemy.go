@@ -170,15 +170,27 @@ func (e *Enemy) SetCoordinates(x int, y int) {
 	e.location = worldmap.Coordinates{x, y}
 }
 
+func copyMap(o [][]int) [][]int {
+	h := len(o)
+	w := len(o[0])
+	c := make([][]int, h)
+	for i, _ := range o {
+		c[i] = make([]int, w)
+		copy(c[i], o[i])
+	}
+	return c
+}
+
 func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
 	width, height := len(aiMap[0]), len(aiMap)
 	prev := make([][]int, height)
 	for i, _ := range prev {
 		prev[i] = make([]int, width)
 	}
+
 	// While map changes, update
 	for !compareMaps(aiMap, prev) {
-		prev = aiMap
+		prev = copyMap(aiMap)
 		for y := 0; y < height; y++ {
 			for x := 0; x < width; x++ {
 				if !m.IsPassable(x, y) {
@@ -523,7 +535,7 @@ func (e *Enemy) FindAction() {
 					return
 				}
 			}
-		} else if e.mount != nil && !e.mount.Moved() {
+		} else if e.mount == nil || (e.mount != nil && !e.mount.Moved()) {
 			l := possibleLocations[rand.Intn(len(possibleLocations))]
 			e.location = l
 			return

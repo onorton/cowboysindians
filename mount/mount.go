@@ -146,6 +146,17 @@ func compareMaps(m, o [][]int) bool {
 
 }
 
+func copyMap(o [][]int) [][]int {
+	h := len(o)
+	w := len(o[0])
+	c := make([][]int, h)
+	for i, _ := range o {
+		c[i] = make([]int, w)
+		copy(c[i], o[i])
+	}
+	return c
+}
+
 func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
 	width, height := len(aiMap[0]), len(aiMap)
 	prev := make([][]int, height)
@@ -154,7 +165,7 @@ func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
 	}
 	// While map changes, update
 	for !compareMaps(aiMap, prev) {
-		prev = aiMap
+		prev = copyMap(aiMap)
 		for y := 0; y < height; y++ {
 			for x := 0; x < width; x++ {
 				if !m.IsPassable(x, y) {
