@@ -47,7 +47,7 @@ func fetchNpcData() map[string]NpcAttributes {
 func NewNpc(name string, x, y int, world *worldmap.Map) *Npc {
 	n := npcData[name]
 	location := worldmap.Coordinates{x, y}
-	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location)}
+	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location), Dialogue{false}}
 	for _, itemDefinition := range n.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm item.Item = nil
@@ -466,6 +466,10 @@ func (npc *Npc) dropItem(item item.Item) {
 func (npc *Npc) Update() (int, int) {
 	// Needs to be fixed
 	x, y := npc.location.X, npc.location.Y
+	pX, pY := npc.world.GetPlayer().GetCoordinates()
+	if npc.world.IsVisible(npc, pX, pY) {
+		npc.dialogue.Greet()
+	}
 	npc.FindAction()
 	if npc.mount != nil {
 		npc.mount.ResetMoved()
@@ -604,4 +608,5 @@ type Npc struct {
 	mount       *mount.Mount
 	world       *worldmap.Map
 	waypoint    worldmap.WaypointSystem
+	dialogue    Dialogue
 }
