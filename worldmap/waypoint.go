@@ -26,7 +26,7 @@ func (r *RandomWaypoint) NextWaypoint(location Coordinates) Coordinates {
 		for {
 			newX := location.X + rand.Intn(11) - 5
 			newY := location.Y + rand.Intn(11) - 5
-			if r.world.IsValid(newX, newY) {
+			if r.world.IsValid(newX, newY) && r.world.IsPassable(newX, newY) {
 				r.currentWaypoint = Coordinates{newX, newY}
 				break
 			}
