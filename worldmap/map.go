@@ -201,6 +201,11 @@ func (m Map) HasItems(x, y int) bool {
 // Bresenham algorithm to check if creature c can see square x1, y1.
 func (m Map) IsVisible(c Creature, x1, y1 int) bool {
 	x0, y0 := c.GetCoordinates()
+	distance := math.Sqrt(math.Pow(float64(x1-x0), 2) + math.Pow(float64(y1-y0), 2))
+	if distance > float64(c.GetVisionDistance()) {
+		return false
+	}
+
 	var xStep, yStep int
 	x, y := x0, y0
 	dx := float64(x1 - x0)
@@ -563,7 +568,8 @@ type Creature interface {
 	AttackHits(int) bool
 	GetName() string
 	GetAlignment() Alignment
-	MarshalJSON() ([]byte, error)
 	GetMount() Creature
+	GetVisionDistance() int
+	MarshalJSON() ([]byte, error)
 	UnmarshalJSON([]byte) error
 }

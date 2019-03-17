@@ -589,6 +589,10 @@ func (npc *Npc) GetMount() worldmap.Creature {
 	return npc.mount
 }
 
+func (npc *Npc) GetVisionDistance() int {
+	return 20
+}
+
 func (npc *Npc) LoadMount(mounts []*mount.Mount) {
 	for _, m := range mounts {
 		if npc.mountID == m.GetID() {

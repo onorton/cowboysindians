@@ -352,6 +352,10 @@ func (m *Mount) GetMount() worldmap.Creature {
 	return nil
 }
 
+func (m *Mount) GetVisionDistance() int {
+	return 20
+}
+
 func (m *Mount) GetID() string {
 	return m.id
 }

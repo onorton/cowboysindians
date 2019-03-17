@@ -1147,6 +1147,10 @@ func (p *Player) GetMount() worldmap.Creature {
 	return p.mount
 }
 
+func (p *Player) GetVisionDistance() int {
+	return 20
+}
+
 func (p *Player) Update() {
 	p.hunger++
 	p.thirst++
