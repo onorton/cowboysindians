@@ -4,7 +4,9 @@ import (
 	"math"
 	"math/rand"
 
+	"github.com/onorton/cowboysindians/enemy"
 	"github.com/onorton/cowboysindians/item"
+	"github.com/onorton/cowboysindians/mount"
 	"github.com/onorton/cowboysindians/npc"
 	"github.com/onorton/cowboysindians/worldmap"
 )
@@ -28,7 +30,7 @@ type town struct {
 	horizontal bool
 }
 
-func GenerateWorld(width, height, viewerWidth, viewerHeight int) (*worldmap.Map, []*npc.Npc) {
+func GenerateWorld(width, height, viewerWidth, viewerHeight int) (*worldmap.Map, []*mount.Mount, []*enemy.Enemy, []*npc.Npc) {
 	grid := make([][]worldmap.Tile, height)
 	for i := 0; i < height; i++ {
 		row := make([]worldmap.Tile, width)
@@ -49,9 +51,11 @@ func GenerateWorld(width, height, viewerWidth, viewerHeight int) (*worldmap.Map,
 	generateBuildingOutsideTown(&grid, &towns, &buildings)
 
 	world := worldmap.NewMap(grid, viewerWidth, viewerHeight)
-	npcs := generateNpcs(world, buildings)
+	mounts := generateMounts(world, buildings, 5)
+	enemies := generateEnemies(world, 2)
+	npcs := generateNpcs(world, buildings, 5)
 
-	return world, npcs
+	return world, mounts, enemies, npcs
 }
 
 func addItemsToBuilding(grid *[][]worldmap.Tile, b building) {
@@ -386,10 +390,41 @@ func generateTown(grid *[][]worldmap.Tile, towns *[]town, buildings *[]building)
 	}
 }
 
-func generateNpcs(m *worldmap.Map, buildings []building) []*npc.Npc {
+func generateMounts(m *worldmap.Map, buildings []building, n int) []*mount.Mount {
 	width := m.GetWidth()
 	height := m.GetHeight()
-	n := 5
+	mounts := make([]*mount.Mount, n)
+	for i := 0; i < n; i++ {
+		x := rand.Intn(width)
+		y := rand.Intn(height)
+		if !m.IsPassable(x, y) || m.IsOccupied(x, y) || !outside(buildings, x, y) {
+			i--
+			continue
+		}
+		mounts[i] = mount.NewMount("horse", x, y, m)
+	}
+	return mounts
+}
+
+func generateEnemies(m *worldmap.Map, n int) []*enemy.Enemy {
+	width := m.GetWidth()
+	height := m.GetHeight()
+	enemies := make([]*enemy.Enemy, n)
+	for i := 0; i < n; i++ {
+		x := rand.Intn(width)
+		y := rand.Intn(height)
+		if !m.IsPassable(x, y) || m.IsOccupied(x, y) {
+			i--
+			continue
+		}
+		enemies[i] = enemy.NewEnemy("bandit", x, y, m)
+	}
+	return enemies
+}
+
+func generateNpcs(m *worldmap.Map, buildings []building, n int) []*npc.Npc {
+	width := m.GetWidth()
+	height := m.GetHeight()
 	npcs := make([]*npc.Npc, n)
 	for i := 0; i < n; i++ {
 		x, y := 0, 0
@@ -416,6 +451,15 @@ func generateNpcs(m *worldmap.Map, buildings []building) []*npc.Npc {
 
 func isValid(x, y, width, height int) bool {
 	return x >= 0 && y >= 0 && x < width && y < height
+}
+
+func outside(buildings []building, x, y int) bool {
+	for _, b := range buildings {
+		if x >= b.x1 && x <= b.x2 && y >= b.x1 && y <= b.x2 {
+			return false
+		}
+	}
+	return true
 }
 
 func inTown(t town, b building) bool {

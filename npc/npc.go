@@ -78,7 +78,7 @@ func (npc *Npc) Render() ui.Element {
 func (npc *Npc) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Weapon", "Armour", "Inventory", "MountID", "Waypoint", "Dialogue"}
+	keys := []string{"Name", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Weapon", "Armour", "Inventory", "MountID", "WaypointSystem", "Dialogue"}
 
 	mountID := ""
 	if npc.mount != nil {

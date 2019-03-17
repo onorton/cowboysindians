@@ -16,7 +16,6 @@ import (
 	"github.com/onorton/cowboysindians/worldmap"
 
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"sort"
 )
@@ -105,34 +104,6 @@ func load() GameState {
 
 }
 
-func generateMounts(m *worldmap.Map, n int) []*mount.Mount {
-	mounts := make([]*mount.Mount, n)
-	for i := 0; i < n; i++ {
-		x := rand.Intn(width)
-		y := rand.Intn(height)
-		if !m.IsPassable(x, y) || m.IsOccupied(x, y) {
-			i--
-			continue
-		}
-		mounts[i] = mount.NewMount("horse", x, y, m)
-	}
-	return mounts
-}
-
-func generateEnemies(m *worldmap.Map, n int) []*enemy.Enemy {
-	enemies := make([]*enemy.Enemy, n)
-	for i := 0; i < n; i++ {
-		x := rand.Intn(width)
-		y := rand.Intn(height)
-		if !m.IsPassable(x, y) || m.IsOccupied(x, y) {
-			i--
-			continue
-		}
-		enemies[i] = enemy.NewEnemy("bandit", x, y, m)
-	}
-	return enemies
-}
-
 // Combine enemies and player into same slice
 func allCreatures(enemies []*enemy.Enemy, mounts []*mount.Mount, npcs []*npc.Npc, p *player.Player) []worldmap.Creature {
 	all := make([]worldmap.Creature, len(enemies)+len(mounts)+len(npcs)+1)
@@ -182,11 +153,11 @@ func main() {
 	}
 
 	if !loaded {
-		m, npcs := world.GenerateWorld(width, height, windowWidth, windowHeight)
+		m, mounts, enemies, npcs := world.GenerateWorld(width, height, windowWidth, windowHeight)
 		state.Map = m
 		state.Player = player.NewPlayer(state.Map)
-		state.Mounts = generateMounts(state.Map, 5)
-		state.Enemies = generateEnemies(state.Map, 2)
+		state.Mounts = mounts
+		state.Enemies = enemies
 		state.Npcs = npcs
 		state.Time = 1
 		state.PlayerIndex = 0
