@@ -181,19 +181,19 @@ func copyMap(o [][]int) [][]int {
 	return c
 }
 
-func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
+func (e *Enemy) generateMap(aiMap [][]int) [][]int {
 	width, height := len(aiMap[0]), len(aiMap)
 	prev := make([][]int, height)
 	for i, _ := range prev {
 		prev[i] = make([]int, width)
 	}
-
 	// While map changes, update
 	for !compareMaps(aiMap, prev) {
 		prev = copyMap(aiMap)
 		for y := 0; y < height; y++ {
 			for x := 0; x < width; x++ {
-				if !m.IsPassable(x, y) {
+				wX, wY := e.location.X+x-e.GetVisionDistance(), e.location.Y+y-e.GetVisionDistance()
+				if !e.world.IsValid(wX, wY) || !e.world.IsPassable(wX, wY) {
 					continue
 				}
 				min := height * width
@@ -219,84 +219,110 @@ func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
 }
 
 func (e *Enemy) getChaseMap() [][]int {
-	height, width := e.world.GetHeight(), e.world.GetWidth()
-	aiMap := make([][]int, height)
+	d := e.GetVisionDistance()
+	// Creature will be at location d,d in this AI map
+	width := 2*d + 1
+	aiMap := make([][]int, width)
 
 	// Initialise Dijkstra map with goals.
 	// Max is size of grid.
-	for y := 0; y < height; y++ {
-		aiMap[y] = make([]int, width)
-		for x := 0; x < width; x++ {
-			if e.world.IsVisible(e, x, y) && e.world.HasPlayer(x, y) {
+	for i := -d; i < d+1; i++ {
+		aiMap[i+d] = make([]int, width)
+		for j := -d; j < d+1; j++ {
+			x := j + d
+			y := i + d
+			// Translate location into world coordinates
+			wX, wY := e.location.X+j, e.location.Y+i
+			if e.world.IsValid(wX, wY) && e.world.IsVisible(e, wX, wY) && e.world.HasPlayer(wX, wY) {
 				aiMap[y][x] = 0
 			} else {
-				aiMap[y][x] = height * width
+				aiMap[y][x] = width * width
 			}
 		}
 	}
-	return generateMap(aiMap, e.world)
-
+	return e.generateMap(aiMap)
 }
 
 func (e *Enemy) getItemMap() [][]int {
-	height, width := e.world.GetHeight(), e.world.GetWidth()
-	aiMap := make([][]int, height)
+	d := e.GetVisionDistance()
+	// Creature will be at location d,d in this AI map
+	width := 2*d + 1
+	aiMap := make([][]int, width)
 
 	// Initialise Dijkstra map with goals.
 	// Max is size of grid.
-	for y := 0; y < height; y++ {
-		aiMap[y] = make([]int, width)
-		for x := 0; x < width; x++ {
-			if e.world.IsVisible(e, x, y) && e.world.HasItems(x, y) {
+	for i := -d; i < d+1; i++ {
+		aiMap[i+d] = make([]int, width)
+		for j := -d; j < d+1; j++ {
+			x := j + d
+			y := i + d
+			// Translate location into world coordinates
+			wX, wY := e.location.X+j, e.location.Y+i
+			if e.world.IsValid(wX, wY) && e.world.IsVisible(e, wX, wY) && e.world.HasItems(wX, wY) {
 				aiMap[y][x] = 0
 			} else {
-				aiMap[y][x] = height * width
+				aiMap[y][x] = width * width
 			}
 		}
 	}
-	return generateMap(aiMap, e.world)
+	return e.generateMap(aiMap)
 }
 
 func (e *Enemy) getCoverMap() [][]int {
-	height, width := e.world.GetHeight(), e.world.GetWidth()
-	aiMap := make([][]int, height)
+	d := e.GetVisionDistance()
+	// Creature will be at location d,d in this AI map
+	width := 2*d + 1
+	aiMap := make([][]int, width)
 
 	player := e.world.GetPlayer()
 	pX, pY := player.GetCoordinates()
+
 	// Initialise Dijkstra map with goals.
 	// Max is size of grid.
-	for y := 0; y < height; y++ {
-		aiMap[y] = make([]int, width)
-		for x := 0; x < width; x++ {
+	for i := -d; i < d+1; i++ {
+		aiMap[i+d] = make([]int, width)
+		for j := -d; j < d+1; j++ {
+			x := j + d
+			y := i + d
+			// Translate location into world coordinates
+			wX, wY := e.location.X+j, e.location.Y+i
 			// Enemy must be able to see player in order to know it would be behind cover
-			if e.world.IsVisible(e, x, y) && e.world.IsVisible(e, pX, pY) && e.world.BehindCover(x, y, player) {
+			if e.world.IsValid(wX, wY) && e.world.IsVisible(e, wX, wY) && e.world.IsVisible(e, pX, pY) && e.world.BehindCover(wX, wY, player) {
 				aiMap[y][x] = 0
 			} else {
-				aiMap[y][x] = height * width
+				aiMap[y][x] = width * width
 			}
 		}
 	}
-	return generateMap(aiMap, e.world)
+	return e.generateMap(aiMap)
 }
 
 func (e *Enemy) getMountMap() [][]int {
-	height, width := e.world.GetHeight(), e.world.GetWidth()
-	aiMap := make([][]int, height)
+	d := e.GetVisionDistance()
+	// Creature will be at location d,d in this AI map
+	width := 2*d + 1
+	aiMap := make([][]int, width)
 
 	// Initialise Dijkstra map with goals.
 	// Max is size of grid.
-	for y := 0; y < height; y++ {
-		aiMap[y] = make([]int, width)
-		for x := 0; x < width; x++ {
+	for i := -d; i < d+1; i++ {
+		aiMap[i+d] = make([]int, width)
+		for j := -d; j < d+1; j++ {
+			x := j + d
+			y := i + d
+			// Translate location into world coordinates
+			wX, wY := e.location.X+j, e.location.Y+i
 			// Looks for mount on its own
-			if m, ok := e.world.GetCreature(x, y).(*mount.Mount); ok && m != nil {
-				aiMap[y][x] = 0
-			} else {
-				aiMap[y][x] = height * width
+			if e.world.IsValid(wX, wY) && e.world.IsVisible(e, wX, wY) {
+				if m, ok := e.world.GetCreature(wX, wY).(*mount.Mount); ok && m != nil {
+					aiMap[y][x] = 0
+				} else {
+					aiMap[y][x] = width * width
+				}
 			}
 		}
 	}
-	return generateMap(aiMap, e.world)
+	return e.generateMap(aiMap)
 }
 
 func (e *Enemy) GetInitiative() int {
@@ -419,16 +445,16 @@ func (e *Enemy) FindAction() {
 	mountMap := e.getMountMap()
 	aiMap := addMaps([][][]int{e.getChaseMap(), e.getItemMap(), coverMap, mountMap}, coefficients)
 
-	current := aiMap[e.location.Y][e.location.X]
+	current := aiMap[e.GetVisionDistance()][e.GetVisionDistance()]
 	possibleLocations := make([]worldmap.Coordinates, 0)
 	// Find adjacent locations closer to the goal
 	for i := -1; i <= 1; i++ {
 		for j := -1; j <= 1; j++ {
 			nX := e.location.X + i
 			nY := e.location.Y + j
-			if nX >= 0 && nX < len(aiMap[0]) && nY >= 0 && nY < len(aiMap) && aiMap[nY][nX] < current {
+			if aiMap[nY-e.location.Y+e.GetVisionDistance()][nX-e.location.X+e.GetVisionDistance()] < current {
 				// Add if not occupied by another enemy
-				if e.world.HasPlayer(nX, nY) || !e.world.IsOccupied(nX, nY) {
+				if e.world.IsValid(nX, nY) && (e.world.HasPlayer(nX, nY) || !e.world.IsOccupied(nX, nY)) {
 					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
 				}
 			}
@@ -468,10 +494,10 @@ func (e *Enemy) FindAction() {
 
 	// If moving into or out of cover and not mounted toggle crouch
 	if e.mount == nil {
-		if coverMap[e.location.Y][e.location.X] == 0 && !e.crouching {
+		if coverMap[e.GetVisionDistance()][e.GetVisionDistance()] == 0 && !e.crouching {
 			e.crouching = true
 			return
-		} else if coverMap[e.location.Y][e.location.X] > 0 && e.crouching {
+		} else if coverMap[e.GetVisionDistance()][e.GetVisionDistance()] > 0 && e.crouching {
 			e.crouching = false
 			return
 		}
@@ -514,7 +540,7 @@ func (e *Enemy) FindAction() {
 		for i := -1; i <= 1; i++ {
 			for j := -1; j <= 1; j++ {
 				x, y := e.location.X+j, e.location.Y+i
-				if e.world.IsValid(x, y) && mountMap[y][x] == 0 {
+				if e.world.IsValid(x, y) && mountMap[e.GetVisionDistance()+i][e.GetVisionDistance()+j] == 0 {
 					m, _ := e.world.GetCreature(x, y).(*mount.Mount)
 					m.AddRider(e)
 					e.world.DeleteCreature(m)

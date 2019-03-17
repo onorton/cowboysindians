@@ -157,7 +157,7 @@ func copyMap(o [][]int) [][]int {
 	return c
 }
 
-func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
+func (m *Mount) generateMap(aiMap [][]int) [][]int {
 	width, height := len(aiMap[0]), len(aiMap)
 	prev := make([][]int, height)
 	for i, _ := range prev {
@@ -168,7 +168,8 @@ func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
 		prev = copyMap(aiMap)
 		for y := 0; y < height; y++ {
 			for x := 0; x < width; x++ {
-				if !m.IsPassable(x, y) {
+				wX, wY := m.location.X+x-m.GetVisionDistance(), m.location.Y+y-m.GetVisionDistance()
+				if !m.world.IsValid(wX, wY) || !m.world.IsPassable(wX, wY) {
 					continue
 				}
 				min := height * width
@@ -194,23 +195,27 @@ func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
 }
 
 func (m *Mount) getWaypointMap(waypoint worldmap.Coordinates) [][]int {
-	height, width := m.world.GetHeight(), m.world.GetWidth()
-	aiMap := make([][]int, height)
+	d := m.GetVisionDistance()
+	// Creature will be at location d,d in this AI map
+	width := 2*d + 1
+	aiMap := make([][]int, width)
 
 	// Initialise Dijkstra map with goals.
 	// Max is size of grid.
-	for y := 0; y < height; y++ {
-		aiMap[y] = make([]int, width)
-		for x := 0; x < width; x++ {
-			location := worldmap.Coordinates{x, y}
+	for i := -d; i < d+1; i++ {
+		aiMap[i+d] = make([]int, width)
+		for j := -d; j < d+1; j++ {
+			x := j + d
+			y := i + d
+			location := worldmap.Coordinates{m.location.X + j, m.location.Y + i}
 			if waypoint == location {
 				aiMap[y][x] = 0
 			} else {
-				aiMap[y][x] = height * width
+				aiMap[y][x] = width * width
 			}
 		}
 	}
-	return generateMap(aiMap, m.world)
+	return m.generateMap(aiMap)
 }
 
 func (m *Mount) GetInitiative() int {
@@ -266,16 +271,16 @@ func (m *Mount) Update() (int, int) {
 		}
 	} else {
 		aiMap := m.getWaypointMap(waypoint)
-		current := aiMap[m.location.Y][m.location.X]
+		current := aiMap[m.GetVisionDistance()][m.GetVisionDistance()]
 		possibleLocations := make([]worldmap.Coordinates, 0)
 		// Find adjacent locations closer to the goal
 		for i := -1; i <= 1; i++ {
 			for j := -1; j <= 1; j++ {
 				nX := m.location.X + i
 				nY := m.location.Y + j
-				if nX >= 0 && nX < len(aiMap[0]) && nY >= 0 && nY < len(aiMap) && aiMap[nY][nX] <= current {
+				if aiMap[nY-m.location.Y+m.GetVisionDistance()][nX-m.location.X+m.GetVisionDistance()] <= current {
 					// Add if not occupied
-					if !m.world.IsOccupied(nX, nY) {
+					if m.world.IsValid(nX, nY) && !m.world.IsOccupied(nX, nY) {
 						possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
 					}
 				}

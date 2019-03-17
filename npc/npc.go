@@ -194,23 +194,22 @@ func copyMap(o [][]int) [][]int {
 	return c
 }
 
-func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
+func (npc *Npc) generateMap(aiMap [][]int) [][]int {
 	width, height := len(aiMap[0]), len(aiMap)
 	prev := make([][]int, height)
 	for i, _ := range prev {
 		prev[i] = make([]int, width)
 	}
-
 	// While map changes, update
 	for !compareMaps(aiMap, prev) {
 		prev = copyMap(aiMap)
 		for y := 0; y < height; y++ {
 			for x := 0; x < width; x++ {
-				if !m.IsPassable(x, y) {
+				wX, wY := npc.location.X+x-npc.GetVisionDistance(), npc.location.Y+y-npc.GetVisionDistance()
+				if !npc.world.IsValid(wX, wY) || !npc.world.IsPassable(wX, wY) {
 					continue
 				}
 				min := height * width
-
 				for i := -1; i <= 1; i++ {
 					for j := -1; j <= 1; j++ {
 						nX := x + i
@@ -233,43 +232,55 @@ func generateMap(aiMap [][]int, m *worldmap.Map) [][]int {
 }
 
 func (npc *Npc) getWaypointMap(waypoint worldmap.Coordinates) [][]int {
-	height, width := npc.world.GetHeight(), npc.world.GetWidth()
-	aiMap := make([][]int, height)
+	d := npc.GetVisionDistance()
+	// Creature will be at location d,d in this AI map
+	width := 2*d + 1
+	aiMap := make([][]int, width)
 
 	// Initialise Dijkstra map with goals.
 	// Max is size of grid.
-	for y := 0; y < height; y++ {
-		aiMap[y] = make([]int, width)
-		for x := 0; x < width; x++ {
-			location := worldmap.Coordinates{x, y}
+	for i := -d; i < d+1; i++ {
+		aiMap[i+d] = make([]int, width)
+		for j := -d; j < d+1; j++ {
+			x := j + d
+			y := i + d
+			location := worldmap.Coordinates{npc.location.X + j, npc.location.Y + i}
 			if waypoint == location {
 				aiMap[y][x] = 0
 			} else {
-				aiMap[y][x] = height * width
+				aiMap[y][x] = width * width
 			}
 		}
 	}
-	return generateMap(aiMap, npc.world)
+	return npc.generateMap(aiMap)
 }
 
 func (npc *Npc) getMountMap() [][]int {
-	height, width := npc.world.GetHeight(), npc.world.GetWidth()
-	aiMap := make([][]int, height)
+	d := npc.GetVisionDistance()
+	// Creature will be at location d,d in this AI map
+	width := 2*d + 1
+	aiMap := make([][]int, width)
 
 	// Initialise Dijkstra map with goals.
 	// Max is size of grid.
-	for y := 0; y < height; y++ {
-		aiMap[y] = make([]int, width)
-		for x := 0; x < width; x++ {
+	for i := -d; i < d+1; i++ {
+		aiMap[i+d] = make([]int, width)
+		for j := -d; j < d+1; j++ {
+			x := j + d
+			y := i + d
+			// Translate location into world coordinates
+			wX, wY := npc.location.X+j, npc.location.Y+i
 			// Looks for mount on its own
-			if m, ok := npc.world.GetCreature(x, y).(*mount.Mount); ok && m != nil {
-				aiMap[y][x] = 0
-			} else {
-				aiMap[y][x] = height * width
+			if npc.world.IsValid(wX, wY) && npc.world.IsVisible(npc, wX, wY) {
+				if m, ok := npc.world.GetCreature(wX, wY).(*mount.Mount); ok && m != nil {
+					aiMap[y][x] = 0
+				} else {
+					aiMap[y][x] = width * width
+				}
 			}
 		}
 	}
-	return generateMap(aiMap, npc.world)
+	return npc.generateMap(aiMap)
 }
 
 func (npc *Npc) GetInitiative() int {
@@ -369,7 +380,7 @@ func (npc *Npc) FindAction() {
 	aiMap := npc.getWaypointMap(waypoint)
 	mountMap := npc.getMountMap()
 
-	current := aiMap[npc.location.Y][npc.location.X]
+	current := aiMap[npc.GetVisionDistance()][npc.GetVisionDistance()]
 	possibleLocations := make([]worldmap.Coordinates, 0)
 
 	// Find adjacent locations closer to the goal
@@ -377,9 +388,9 @@ func (npc *Npc) FindAction() {
 		for j := -1; j <= 1; j++ {
 			nX := npc.location.X + i
 			nY := npc.location.Y + j
-			if nX >= 0 && nX < len(aiMap[0]) && nY >= 0 && nY < len(aiMap) && aiMap[nY][nX] < current {
+			if aiMap[nY-npc.location.Y+npc.GetVisionDistance()][nX-npc.location.X+npc.GetVisionDistance()] < current {
 				// Add if not occupied
-				if !npc.world.IsOccupied(nX, nY) {
+				if npc.world.IsValid(nX, nY) && !npc.world.IsOccupied(nX, nY) {
 					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
 				}
 			}
@@ -422,7 +433,7 @@ func (npc *Npc) FindAction() {
 		for i := -1; i <= 1; i++ {
 			for j := -1; j <= 1; j++ {
 				x, y := npc.location.X+j, npc.location.Y+i
-				if npc.world.IsValid(x, y) && mountMap[y][x] == 0 {
+				if npc.world.IsValid(x, y) && mountMap[npc.GetVisionDistance()+i][npc.GetVisionDistance()+j] == 0 {
 					m, _ := npc.world.GetCreature(x, y).(*mount.Mount)
 					m.AddRider(npc)
 					npc.world.DeleteCreature(m)
