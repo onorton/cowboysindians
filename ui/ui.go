@@ -83,14 +83,10 @@ func GetInput() (action PlayerAction) {
 		action = MoveSouth
 	case termbox.KeySpace:
 		action = PrintMessages
+	case termbox.KeyCtrlC:
+		action = Talk
 	case termbox.KeyEsc:
-		e = termbox.PollEvent()
-		switch e.Ch {
-		case 'c':
-			action = Talk
-		default:
-			action = Exit
-		}
+		action = Exit
 	case termbox.KeyEnter:
 		action = CancelAction
 	default:
