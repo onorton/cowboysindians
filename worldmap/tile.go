@@ -35,7 +35,7 @@ func fetchTerrainData() map[string]TileAttributes {
 	return tD
 }
 
-func newTile(name string) Tile {
+func NewTile(name string) Tile {
 
 	terrain := terrainData[name]
 	icon := terrain.Icon
@@ -112,6 +112,10 @@ func (t *Tile) givesCover() bool {
 		cover = cover || item.GivesCover()
 	}
 	return cover
+}
+
+func (t *Tile) IsDoor() bool {
+	return t.door
 }
 
 func (t Tile) render() ui.Element {

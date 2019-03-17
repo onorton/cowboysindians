@@ -12,6 +12,7 @@ import (
 	"github.com/onorton/cowboysindians/npc"
 	"github.com/onorton/cowboysindians/player"
 	"github.com/onorton/cowboysindians/ui"
+	"github.com/onorton/cowboysindians/world"
 	"github.com/onorton/cowboysindians/worldmap"
 
 	"io/ioutil"
@@ -132,20 +133,6 @@ func generateEnemies(m *worldmap.Map, n int) []*enemy.Enemy {
 	return enemies
 }
 
-func generateNpcs(m *worldmap.Map, n int) []*npc.Npc {
-	npcs := make([]*npc.Npc, n)
-	for i := 0; i < n; i++ {
-		x := rand.Intn(width)
-		y := rand.Intn(height)
-		if !m.IsPassable(x, y) || m.IsOccupied(x, y) {
-			i--
-			continue
-		}
-		npcs[i] = npc.NewNpc("townsman", x, y, m)
-	}
-	return npcs
-}
-
 // Combine enemies and player into same slice
 func allCreatures(enemies []*enemy.Enemy, mounts []*mount.Mount, npcs []*npc.Npc, p *player.Player) []worldmap.Creature {
 	all := make([]worldmap.Creature, len(enemies)+len(mounts)+len(npcs)+1)
@@ -195,11 +182,12 @@ func main() {
 	}
 
 	if !loaded {
-		state.Map = worldmap.NewMap(width, height, windowWidth, windowHeight)
+		m, npcs := world.GenerateWorld(width, height, windowWidth, windowHeight)
+		state.Map = m
 		state.Player = player.NewPlayer(state.Map)
 		state.Mounts = generateMounts(state.Map, 5)
 		state.Enemies = generateEnemies(state.Map, 2)
-		state.Npcs = generateNpcs(state.Map, 5)
+		state.Npcs = npcs
 		state.Time = 1
 		state.PlayerIndex = 0
 	}

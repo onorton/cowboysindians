@@ -22,9 +22,7 @@ const (
 
 const padding = 5
 
-func NewMap(width, height, viewerWidth, viewerHeight int) *Map {
-
-	grid := generateMap(width, height)
+func NewMap(grid [][]Tile, viewerWidth, viewerHeight int) *Map {
 
 	viewer := new(Viewer)
 	viewer.x = 0

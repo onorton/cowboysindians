@@ -21,18 +21,18 @@ func (r *RandomWaypoint) SetMap(world *Map) {
 	r.world = world
 }
 
-func (w *RandomWaypoint) NextWaypoint(location Coordinates) Coordinates {
-	if w.currentWaypoint == location {
+func (r *RandomWaypoint) NextWaypoint(location Coordinates) Coordinates {
+	if r.currentWaypoint == location {
 		for {
 			newX := location.X + rand.Intn(11) - 5
 			newY := location.Y + rand.Intn(11) - 5
-			if w.world.IsValid(newX, newY) {
-				w.currentWaypoint = Coordinates{newX, newY}
+			if r.world.IsValid(newX, newY) {
+				r.currentWaypoint = Coordinates{newX, newY}
 				break
 			}
 		}
 	}
-	return w.currentWaypoint
+	return r.currentWaypoint
 }
 
 func (r *RandomWaypoint) MarshalJSON() ([]byte, error) {

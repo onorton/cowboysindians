@@ -1,10 +1,12 @@
-package worldmap
+package world
 
 import (
 	"math"
 	"math/rand"
 
 	"github.com/onorton/cowboysindians/item"
+	"github.com/onorton/cowboysindians/npc"
+	"github.com/onorton/cowboysindians/worldmap"
 )
 
 type building struct {
@@ -26,12 +28,12 @@ type town struct {
 	horizontal bool
 }
 
-func generateMap(width, height int) [][]Tile {
-	grid := make([][]Tile, height)
+func GenerateWorld(width, height, viewerWidth, viewerHeight int) (*worldmap.Map, []*npc.Npc) {
+	grid := make([][]worldmap.Tile, height)
 	for i := 0; i < height; i++ {
-		row := make([]Tile, width)
+		row := make([]worldmap.Tile, width)
 		for j := 0; j < width; j++ {
-			row[j] = newTile("ground")
+			row[j] = worldmap.NewTile("ground")
 
 		}
 		grid[i] = row
@@ -46,10 +48,13 @@ func generateMap(width, height int) [][]Tile {
 	// Generate building outside town
 	generateBuildingOutsideTown(&grid, &towns, &buildings)
 
-	return grid
+	world := worldmap.NewMap(grid, viewerWidth, viewerHeight)
+	npcs := generateNpcs(world)
+
+	return world, npcs
 }
 
-func addItemsToBuilding(grid *[][]Tile, b building) {
+func addItemsToBuilding(grid *[][]worldmap.Tile, b building) {
 	// Consider inner area (exclude walls)
 	x1, y1 := b.x1+1, b.y1+1
 	x2, y2 := b.x2-1, b.y2-1
@@ -72,7 +77,7 @@ func addItemsToBuilding(grid *[][]Tile, b building) {
 }
 
 // Generate a rectangular building and place on map
-func generateBuildingOutsideTown(grid *[][]Tile, towns *[]town, buildings *[]building) {
+func generateBuildingOutsideTown(grid *[][]worldmap.Tile, towns *[]town, buildings *[]building) {
 	width := len((*grid)[0])
 	height := len(*grid)
 
@@ -114,13 +119,13 @@ func generateBuildingOutsideTown(grid *[][]Tile, towns *[]town, buildings *[]bui
 		if validBuilding {
 			// Add walls
 			for x := x1; x <= x2; x++ {
-				(*grid)[y1][x] = newTile("wall")
-				(*grid)[y2][x] = newTile("wall")
+				(*grid)[y1][x] = worldmap.NewTile("wall")
+				(*grid)[y2][x] = worldmap.NewTile("wall")
 			}
 
 			for y := y1; y <= y2; y++ {
-				(*grid)[y][x1] = newTile("wall")
-				(*grid)[y][x2] = newTile("wall")
+				(*grid)[y][x1] = worldmap.NewTile("wall")
+				(*grid)[y][x2] = worldmap.NewTile("wall")
 			}
 
 			// Add door randomly as long it's not a corner
@@ -130,16 +135,16 @@ func generateBuildingOutsideTown(grid *[][]Tile, towns *[]town, buildings *[]bui
 			switch wallSelection {
 			case 0:
 				doorX := x1 + 1 + rand.Intn(buildingWidth-2)
-				(*grid)[y1][doorX] = newTile("door")
+				(*grid)[y1][doorX] = worldmap.NewTile("door")
 			case 1:
 				doorX := x1 + 1 + rand.Intn(buildingWidth-2)
-				(*grid)[y2][doorX] = newTile("door")
+				(*grid)[y2][doorX] = worldmap.NewTile("door")
 			case 2:
 				doorY := y1 + 1 + rand.Intn(buildingHeight-2)
-				(*grid)[doorY][x2] = newTile("door")
+				(*grid)[doorY][x2] = worldmap.NewTile("door")
 			case 3:
 				doorY := y1 + 1 + rand.Intn(buildingHeight-2)
-				(*grid)[doorY][x1] = newTile("door")
+				(*grid)[doorY][x1] = worldmap.NewTile("door")
 			}
 
 			// Add number of windows according total perimeter of building
@@ -169,8 +174,8 @@ func generateBuildingOutsideTown(grid *[][]Tile, towns *[]town, buildings *[]bui
 				}
 
 				// If a door is not in place, add window. Otherwise, try again.
-				if !(*grid)[wY][wX].door {
-					(*grid)[wY][wX] = newTile("window")
+				if !(*grid)[wY][wX].IsDoor() {
+					(*grid)[wY][wX] = worldmap.NewTile("window")
 				} else {
 					i--
 				}
@@ -185,7 +190,7 @@ func generateBuildingOutsideTown(grid *[][]Tile, towns *[]town, buildings *[]bui
 	}
 }
 
-func generateBuildingInTown(grid *[][]Tile, t town, buildings *[]building) {
+func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]building) {
 
 	validBuilding := false
 	// Keeps trying until a usable building position and size found
@@ -245,29 +250,29 @@ func generateBuildingInTown(grid *[][]Tile, t town, buildings *[]building) {
 			// Add walls
 
 			for x := x1; x <= x2; x++ {
-				(*grid)[y1][x] = newTile("wall")
-				(*grid)[y2][x] = newTile("wall")
+				(*grid)[y1][x] = worldmap.NewTile("wall")
+				(*grid)[y2][x] = worldmap.NewTile("wall")
 			}
 
 			for y := y1; y <= y2; y++ {
-				(*grid)[y][x1] = newTile("wall")
-				(*grid)[y][x2] = newTile("wall")
+				(*grid)[y][x1] = worldmap.NewTile("wall")
+				(*grid)[y][x2] = worldmap.NewTile("wall")
 			}
 
 			// Door is on side facing street
 			if t.horizontal {
 				doorLocation := x1 + 1 + rand.Intn(buildingWidth-2)
 				if sideOfStreet {
-					(*grid)[y2][doorLocation] = newTile("door")
+					(*grid)[y2][doorLocation] = worldmap.NewTile("door")
 				} else {
-					(*grid)[y1][doorLocation] = newTile("door")
+					(*grid)[y1][doorLocation] = worldmap.NewTile("door")
 				}
 			} else {
 				doorLocation := y1 + 1 + rand.Intn(buildingWidth-2)
 				if sideOfStreet {
-					(*grid)[doorLocation][x2] = newTile("door")
+					(*grid)[doorLocation][x2] = worldmap.NewTile("door")
 				} else {
-					(*grid)[doorLocation][x1] = newTile("door")
+					(*grid)[doorLocation][x1] = worldmap.NewTile("door")
 				}
 			}
 			// Add number of windows according total perimeter of building
@@ -297,8 +302,8 @@ func generateBuildingInTown(grid *[][]Tile, t town, buildings *[]building) {
 				}
 
 				// If a door is not in place, add window. Otherwise, try again.
-				if !(*grid)[wY][wX].door {
-					(*grid)[wY][wX] = newTile("window")
+				if !(*grid)[wY][wX].IsDoor() {
+					(*grid)[wY][wX] = worldmap.NewTile("window")
 				} else {
 					i--
 				}
@@ -314,7 +319,7 @@ func generateBuildingInTown(grid *[][]Tile, t town, buildings *[]building) {
 }
 
 // Generate small town (single street with buildings)
-func generateTown(grid *[][]Tile, towns *[]town, buildings *[]building) {
+func generateTown(grid *[][]worldmap.Tile, towns *[]town, buildings *[]building) {
 	// Generate area of town
 	width := len((*grid)[0])
 	height := len(*grid)
@@ -379,6 +384,23 @@ func generateTown(grid *[][]Tile, towns *[]town, buildings *[]building) {
 			break
 		}
 	}
+}
+
+func generateNpcs(m *worldmap.Map) []*npc.Npc {
+	width := m.GetWidth()
+	height := m.GetHeight()
+	n := 5
+	npcs := make([]*npc.Npc, n)
+	for i := 0; i < n; i++ {
+		x := rand.Intn(width)
+		y := rand.Intn(height)
+		if !m.IsPassable(x, y) || m.IsOccupied(x, y) {
+			i--
+			continue
+		}
+		npcs[i] = npc.NewNpc("townsman", x, y, m)
+	}
+	return npcs
 }
 
 func isValid(x, y, width, height int) bool {
