@@ -126,6 +126,10 @@ func (npc *Npc) MarshalJSON() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
+func (npc *Npc) Talk() {
+	npc.dialogue.Greet()
+}
+
 func (npc *Npc) UnmarshalJSON(data []byte) error {
 
 	type npcJson struct {
@@ -473,7 +477,7 @@ func (npc *Npc) Update() (int, int) {
 	x, y := npc.location.X, npc.location.Y
 	pX, pY := npc.world.GetPlayer().GetCoordinates()
 	if npc.world.IsVisible(npc, pX, pY) {
-		npc.dialogue.Greet()
+		npc.dialogue.InitialGreeting()
 	}
 	npc.FindAction()
 	if npc.mount != nil {

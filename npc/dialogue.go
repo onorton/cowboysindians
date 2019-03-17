@@ -15,11 +15,15 @@ type Dialogue struct {
 	seenPlayerBefore bool
 }
 
-func (d *Dialogue) Greet() {
+func (d *Dialogue) InitialGreeting() {
 	if !d.seenPlayerBefore {
 		message.Enqueue(fmt.Sprintf("\"%s\"", greetings[rand.Intn(len(greetings))]))
 		d.seenPlayerBefore = true
 	}
+}
+
+func (d *Dialogue) Greet() {
+	message.PrintMessage(fmt.Sprintf("\"%s\"", greetings[rand.Intn(len(greetings))]))
 }
 
 func (d *Dialogue) MarshalJSON() ([]byte, error) {

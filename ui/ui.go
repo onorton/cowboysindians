@@ -38,6 +38,7 @@ const (
 	LoadWeapon
 	Consume
 	Mount
+	Talk
 	Confirm
 	CancelAction
 	NoAction
@@ -83,11 +84,18 @@ func GetInput() (action PlayerAction) {
 	case termbox.KeySpace:
 		action = PrintMessages
 	case termbox.KeyEsc:
-		action = Exit
+		e = termbox.PollEvent()
+		switch e.Ch {
+		case 'c':
+			action = Talk
+		default:
+			action = Exit
+		}
 	case termbox.KeyEnter:
 		action = CancelAction
 	default:
 		{
+
 			switch e.Ch {
 			case '1':
 				action = MoveSouthWest
@@ -108,7 +116,11 @@ func GetInput() (action PlayerAction) {
 			case '9':
 				action = MoveNorthEast
 			case 'c':
-				action = CloseDoor
+				if e.Mod == termbox.ModAlt {
+					action = Talk
+				} else {
+					action = CloseDoor
+				}
 			case 'o':
 				action = OpenDoor
 			case 'C':

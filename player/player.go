@@ -8,10 +8,12 @@ import (
 	"math/rand"
 
 	termbox "github.com/nsf/termbox-go"
+	"github.com/onorton/cowboysindians/enemy"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/mount"
+	"github.com/onorton/cowboysindians/npc"
 	"github.com/onorton/cowboysindians/ui"
 	"github.com/onorton/cowboysindians/worldmap"
 )
@@ -1110,6 +1112,31 @@ func (p *Player) ToggleCrouch() bool {
 		message.Enqueue("You stand up.")
 	}
 	return true
+}
+
+func (p *Player) Talk() {
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			x := p.location.X + i
+			y := p.location.Y + j
+			if p.world.IsValid(x, y) {
+				creature := p.world.GetCreature(x, y)
+				switch c := creature.(type) {
+				case *npc.Npc:
+					c.Talk()
+					return
+				case *mount.Mount:
+					message.PrintMessage(fmt.Sprintf("You try to talk to the %s. It doesn't seem to respond.", c.GetName()))
+					return
+				case *enemy.Enemy:
+					message.PrintMessage(fmt.Sprintf("You try to talk to the %s. They don't seem amused.", c.GetName()))
+					return
+				}
+			}
+		}
+	}
+	message.PrintMessage("You talk to yourself.")
+
 }
 
 func (p *Player) SetMap(world *worldmap.Map) {

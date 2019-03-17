@@ -311,6 +311,8 @@ func main() {
 							endTurn = player.ConsumeItem()
 						case ui.Mount:
 							endTurn = player.ToggleMount()
+						case ui.Talk:
+							player.Talk()
 						default:
 							quit = true
 						}
