@@ -47,7 +47,7 @@ func fetchNpcData() map[string]NpcAttributes {
 func NewNpc(name string, x, y int, world *worldmap.Map) *Npc {
 	n := npcData[name]
 	location := worldmap.Coordinates{x, y}
-	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location), Dialogue{false}}
+	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location), &Dialogue{false}}
 	for _, itemDefinition := range n.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm item.Item = nil
@@ -78,7 +78,7 @@ func (npc *Npc) Render() ui.Element {
 func (npc *Npc) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Weapon", "Armour", "Inventory", "MountID", "Waypoint"}
+	keys := []string{"Name", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Weapon", "Armour", "Inventory", "MountID", "Waypoint", "Dialogue"}
 
 	mountID := ""
 	if npc.mount != nil {
@@ -102,6 +102,7 @@ func (npc *Npc) MarshalJSON() ([]byte, error) {
 		"Inventory":      npc.inventory,
 		"MountID":        mountID,
 		"WaypointSystem": npc.waypoint,
+		"Dialogue":       npc.dialogue,
 	}
 
 	length := len(npcValues)
@@ -109,9 +110,11 @@ func (npc *Npc) MarshalJSON() ([]byte, error) {
 
 	for _, key := range keys {
 		jsonValue, err := json.Marshal(npcValues[key])
+
 		if err != nil {
 			return nil, err
 		}
+
 		buffer.WriteString(fmt.Sprintf("\"%s\":%s", key, jsonValue))
 		count++
 		if count < length {
@@ -142,6 +145,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 		Inventory      item.ItemList
 		MountID        string
 		WaypointSystem map[string]interface{}
+		Dialogue       *Dialogue
 	}
 	var v npcJson
 
@@ -163,6 +167,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 	npc.inventory = v.Inventory
 	npc.mountID = v.MountID
 	npc.waypoint = worldmap.UnmarshalWaypointSystem(v.WaypointSystem)
+	npc.dialogue = v.Dialogue
 
 	return nil
 }
@@ -608,5 +613,5 @@ type Npc struct {
 	mount       *mount.Mount
 	world       *worldmap.Map
 	waypoint    worldmap.WaypointSystem
-	dialogue    Dialogue
+	dialogue    *Dialogue
 }

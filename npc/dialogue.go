@@ -1,6 +1,8 @@
 package npc
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 
@@ -18,4 +20,30 @@ func (d *Dialogue) Greet() {
 		message.Enqueue(fmt.Sprintf("\"%s\"", greetings[rand.Intn(len(greetings))]))
 		d.seenPlayerBefore = true
 	}
+}
+
+func (d *Dialogue) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+	seenPlayerBeforeValue, err := json.Marshal(d.seenPlayerBefore)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"SeenPlayerBefore\":%s", seenPlayerBeforeValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (d *Dialogue) UnmarshalJSON(data []byte) error {
+	type dialogueJson struct {
+		SeenPlayerBefore bool
+	}
+
+	var v dialogueJson
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	d.seenPlayerBefore = v.SeenPlayerBefore
+	return nil
 }
