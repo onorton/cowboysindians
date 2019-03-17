@@ -49,7 +49,7 @@ func GenerateWorld(width, height, viewerWidth, viewerHeight int) (*worldmap.Map,
 	generateBuildingOutsideTown(&grid, &towns, &buildings)
 
 	world := worldmap.NewMap(grid, viewerWidth, viewerHeight)
-	npcs := generateNpcs(world)
+	npcs := generateNpcs(world, buildings)
 
 	return world, npcs
 }
@@ -386,19 +386,30 @@ func generateTown(grid *[][]worldmap.Tile, towns *[]town, buildings *[]building)
 	}
 }
 
-func generateNpcs(m *worldmap.Map) []*npc.Npc {
+func generateNpcs(m *worldmap.Map, buildings []building) []*npc.Npc {
 	width := m.GetWidth()
 	height := m.GetHeight()
 	n := 5
 	npcs := make([]*npc.Npc, n)
 	for i := 0; i < n; i++ {
-		x := rand.Intn(width)
-		y := rand.Intn(height)
+		x, y := 0, 0
+
+		// 50/50 chance of being placed inside or outside a building
+		insideBuilding := rand.Intn(2) == 0
+		if insideBuilding {
+			b := buildings[rand.Intn(len(buildings))]
+			x = b.x1 + 1 + rand.Intn(b.x2-b.x1-1)
+			y = b.y1 + 1 + rand.Intn(b.y2-b.y1-1)
+		} else {
+			x, y = rand.Intn(width), rand.Intn(height)
+		}
 		if !m.IsPassable(x, y) || m.IsOccupied(x, y) {
 			i--
 			continue
 		}
 		npcs[i] = npc.NewNpc("townsman", x, y, m)
+		m.Move(npcs[i], x, y)
+
 	}
 	return npcs
 }

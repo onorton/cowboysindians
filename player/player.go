@@ -709,9 +709,9 @@ func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
 	c := p.world.GetCreature(newX, newY)
 	// If occupied by another creature, melee attack
 	if c != nil && c != p {
-		m := c.GetMount()
-		if m != nil {
-			m = m.(*mount.Mount)
+		v := c.GetMount()
+		if v != nil {
+			m := v.(*mount.Mount)
 			if m != nil {
 				message.PrintMessage(fmt.Sprintf("The %s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), m.GetName(), m.GetName()))
 				input := ui.GetInput()
