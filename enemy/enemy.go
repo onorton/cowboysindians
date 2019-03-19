@@ -553,6 +553,18 @@ func (e *Enemy) FindAction() {
 		}
 	}
 
+	// If adjacent to closed door attempt to open it
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			x, y := e.location.X+j, e.location.Y+i
+			if e.world.IsValid(x, y) && e.world.IsDoor(x, y) && !e.world.IsPassable(x, y) {
+				e.world.SetPassable(x, y, true)
+				e.world.SetBlocksVision(x, y, false)
+				return
+			}
+		}
+	}
+
 	if len(possibleLocations) > 0 {
 		if e.overEncumbered() {
 			for _, itm := range e.inventory {

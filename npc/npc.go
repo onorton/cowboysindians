@@ -446,6 +446,18 @@ func (npc *Npc) FindAction() {
 		}
 	}
 
+	// If adjacent to closed door attempt to open it
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			x, y := npc.location.X+j, npc.location.Y+i
+			if npc.world.IsValid(x, y) && npc.world.IsDoor(x, y) && !npc.world.IsPassable(x, y) {
+				npc.world.SetPassable(x, y, true)
+				npc.world.SetBlocksVision(x, y, false)
+				return
+			}
+		}
+	}
+
 	if len(possibleLocations) > 0 {
 		if npc.overEncumbered() {
 			for _, itm := range npc.inventory {
