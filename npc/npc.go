@@ -30,6 +30,7 @@ type NpcAttributes struct {
 	Str         int
 	Dex         int
 	Encumbrance int
+	Money       int
 	Inventory   []item.ItemDefinition
 }
 
@@ -47,7 +48,7 @@ func fetchNpcData() map[string]NpcAttributes {
 func NewNpc(name string, x, y int, world *worldmap.Map) *Npc {
 	n := npcData[name]
 	location := worldmap.Coordinates{x, y}
-	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location), &Dialogue{false}}
+	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location), &Dialogue{false}}
 	for _, itemDefinition := range n.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm item.Item = nil
@@ -78,7 +79,7 @@ func (npc *Npc) Render() ui.Element {
 func (npc *Npc) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Weapon", "Armour", "Inventory", "MountID", "WaypointSystem", "Dialogue"}
+	keys := []string{"Name", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID", "WaypointSystem", "Dialogue"}
 
 	mountID := ""
 	if npc.mount != nil {
@@ -97,6 +98,7 @@ func (npc *Npc) MarshalJSON() ([]byte, error) {
 		"Dex":            npc.dex,
 		"Encumbrance":    npc.encumbrance,
 		"Crouching":      npc.crouching,
+		"Money":          npc.money,
 		"Weapon":         npc.weapon,
 		"Armour":         npc.armour,
 		"Inventory":      npc.inventory,
@@ -144,6 +146,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 		Dex            int
 		Encumbrance    int
 		Crouching      bool
+		Money          int
 		Weapon         *item.Weapon
 		Armour         *item.Armour
 		Inventory      item.ItemList
@@ -166,6 +169,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 	npc.dex = v.Dex
 	npc.encumbrance = v.Encumbrance
 	npc.crouching = v.Crouching
+	npc.money = v.Money
 	npc.weapon = v.Weapon
 	npc.armour = v.Armour
 	npc.inventory = v.Inventory
@@ -637,6 +641,7 @@ type Npc struct {
 	dex         int
 	encumbrance int
 	crouching   bool
+	money       int
 	weapon      *item.Weapon
 	armour      *item.Armour
 	inventory   []item.Item

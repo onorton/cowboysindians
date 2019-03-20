@@ -30,6 +30,7 @@ type EnemyAttributes struct {
 	Str         int
 	Dex         int
 	Encumbrance int
+	Money       int
 	Inventory   []item.ItemDefinition
 }
 
@@ -46,7 +47,7 @@ func fetchEnemyData() map[string]EnemyAttributes {
 
 func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 	enemy := enemyData[name]
-	e := &Enemy{name, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, false, nil, nil, make([]item.Item, 0), "", nil, world}
+	e := &Enemy{name, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, false, enemy.Money, nil, nil, make([]item.Item, 0), "", nil, world}
 	for _, itemDefinition := range enemy.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm item.Item = nil
@@ -77,7 +78,7 @@ func (e *Enemy) Render() ui.Element {
 func (e *Enemy) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Weapon", "Armour", "Inventory", "MountID"}
+	keys := []string{"Name", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID"}
 
 	mountID := ""
 	if e.mount != nil {
@@ -96,6 +97,7 @@ func (e *Enemy) MarshalJSON() ([]byte, error) {
 		"Dex":         e.dex,
 		"Encumbrance": e.encumbrance,
 		"Crouching":   e.crouching,
+		"Money":       e.money,
 		"Weapon":      e.weapon,
 		"Armour":      e.armour,
 		"Inventory":   e.inventory,
@@ -135,6 +137,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 		Dex         int
 		Encumbrance int
 		Crouching   bool
+		Money       int
 		Weapon      *item.Weapon
 		Armour      *item.Armour
 		Inventory   item.ItemList
@@ -155,6 +158,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 	e.dex = v.Dex
 	e.encumbrance = v.Encumbrance
 	e.crouching = v.Crouching
+	e.money = v.Money
 	e.weapon = v.Weapon
 	e.armour = v.Armour
 	e.inventory = v.Inventory
@@ -737,6 +741,7 @@ type Enemy struct {
 	dex         int
 	encumbrance int
 	crouching   bool
+	money       int
 	weapon      *item.Weapon
 	armour      *item.Armour
 	inventory   []item.Item

@@ -25,7 +25,7 @@ func check(err error) {
 }
 
 func NewPlayer(world *worldmap.Map) *Player {
-	player := &Player{worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, 10, 10, 0, 100, 0, 100, 15, 12, 10, 100, false, nil, nil, make(map[rune]([]item.Item)), "", nil, world}
+	player := &Player{worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, 10, 10, 0, 100, 0, 100, 15, 12, 10, 100, false, 1000, nil, nil, make(map[rune]([]item.Item)), "", nil, world}
 	player.AddItem(item.NewWeapon("shotgun"))
 	player.AddItem(item.NewWeapon("sawn-off shotgun"))
 	player.AddItem(item.NewWeapon("baseball bat"))
@@ -46,7 +46,7 @@ func (p *Player) Render() ui.Element {
 func (p *Player) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Location", "Icon", "Initiative", "Hp", "MaxHp", "Hunger", "MaxHunger", "Thirst", "MaxThirst", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Weapon", "Armour", "Inventory", "MountID"}
+	keys := []string{"Location", "Icon", "Initiative", "Hp", "MaxHp", "Hunger", "MaxHunger", "Thirst", "MaxThirst", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID"}
 
 	mountID := ""
 	if p.mount != nil {
@@ -67,6 +67,7 @@ func (p *Player) MarshalJSON() ([]byte, error) {
 		"Str":         p.str,
 		"Dex":         p.dex,
 		"Encumbrance": p.encumbrance,
+		"Money":       p.money,
 		"Weapon":      p.weapon,
 		"Armour":      p.armour,
 		"Crouching":   p.crouching,
@@ -117,6 +118,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 		Dex         int
 		Encumbrance int
 		Crouching   bool
+		Money       int
 		Weapon      *item.Weapon
 		Armour      *item.Armour
 		Inventory   item.ItemList
@@ -142,6 +144,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 	p.dex = v.Dex
 	p.encumbrance = v.Encumbrance
 	p.crouching = v.Crouching
+	p.money = v.Money
 	p.weapon = v.Weapon
 	p.armour = v.Armour
 	p.mountID = v.MountID
@@ -195,11 +198,12 @@ func (p *Player) TakeDamage(damage int) {
 }
 
 func (p *Player) GetStats() []string {
-	stats := make([]string, 4)
+	stats := make([]string, 5)
 	stats[0] = fmt.Sprintf("HP:%d/%d", p.hp, p.maxHp)
 	stats[1] = fmt.Sprintf("STR:%d(%+d)", p.str, worldmap.GetBonus(p.str))
 	stats[2] = fmt.Sprintf("DEX:%d(%+d)", p.dex, worldmap.GetBonus(p.dex))
 	stats[3] = fmt.Sprintf("AC:%d", p.ac)
+	stats[4] = fmt.Sprintf("$%.2f", float64(p.money)/100)
 	if p.crouching {
 		stats = append(stats, "Crouching")
 	}
@@ -1187,6 +1191,7 @@ type Player struct {
 	dex         int
 	encumbrance int
 	crouching   bool
+	money       int
 	weapon      *item.Weapon
 	armour      *item.Armour
 	inventory   map[rune]([]item.Item)
