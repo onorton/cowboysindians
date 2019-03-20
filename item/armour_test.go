@@ -13,9 +13,9 @@ type armourMarshallingPair struct {
 }
 
 var armourMarshallingTests = []armourMarshallingPair{
-	{Armour{"leather jacket", icon.NewIcon(91, 100), 1, 2}, "{\"Name\":\"leather jacket\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Bonus\":1,\"Weight\":2}"},
-	{Armour{"metal breastplate", icon.NewIcon(91, 50), 3, 5}, "{\"Name\":\"metal breastplate\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Bonus\":3,\"Weight\":5}"},
-	{Armour{"reinforced leather jacket", icon.NewIcon(91, 70), 2, 3}, "{\"Name\":\"reinforced leather jacket\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Bonus\":2,\"Weight\":3}"},
+	{Armour{"leather jacket", icon.NewIcon(91, 100), 1, 2, 1000}, "{\"Name\":\"leather jacket\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Bonus\":1,\"Weight\":2,\"Value\":1000}"},
+	{Armour{"metal breastplate", icon.NewIcon(91, 50), 3, 5, 2000}, "{\"Name\":\"metal breastplate\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Bonus\":3,\"Weight\":5,\"Value\":2000}"},
+	{Armour{"reinforced leather jacket", icon.NewIcon(91, 70), 2, 3, 1500}, "{\"Name\":\"reinforced leather jacket\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Bonus\":2,\"Weight\":3,\"Value\":1500}"},
 }
 
 type armourUnmarshallingPair struct {
@@ -24,9 +24,9 @@ type armourUnmarshallingPair struct {
 }
 
 var armourUnmarshallingTests = []armourUnmarshallingPair{
-	{"{\"Name\":\"leather jacket\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Bonus\":1,\"Weight\":2}", Armour{"leather jacket", icon.NewIcon(91, 100), 1, 2}},
-	{"{\"Name\":\"metal breastplate\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Bonus\":3,\"Weight\":5}", Armour{"metal breastplate", icon.NewIcon(91, 50), 3, 5}},
-	{"{\"Name\":\"reinforced leather jacket\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Bonus\":2,\"Weight\":3}", Armour{"reinforced leather jacket", icon.NewIcon(91, 70), 2, 3}},
+	{"{\"Name\":\"leather jacket\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Bonus\":1,\"Weight\":2,\"Value\":1000}", Armour{"leather jacket", icon.NewIcon(91, 100), 1, 2, 1000}},
+	{"{\"Name\":\"metal breastplate\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Bonus\":3,\"Weight\":5,\"Value\":2000}", Armour{"metal breastplate", icon.NewIcon(91, 50), 3, 5, 2000}},
+	{"{\"Name\":\"reinforced leather jacket\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Bonus\":2,\"Weight\":3,\"Value\":1500}", Armour{"reinforced leather jacket", icon.NewIcon(91, 70), 2, 3, 1500}},
 }
 
 func TestArmourMarshalling(t *testing.T) {
@@ -76,6 +76,14 @@ func TestArmourUnmarshalling(t *testing.T) {
 				"For", "Weight",
 				"expected", pair.armour.w,
 				"got", armour.w,
+			)
+		}
+
+		if armour.v != pair.armour.v {
+			t.Error(
+				"For", "Value",
+				"expected", pair.armour.v,
+				"got", armour.v,
 			)
 		}
 

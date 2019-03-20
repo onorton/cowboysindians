@@ -19,6 +19,7 @@ type WeaponAttributes struct {
 	Type        WeaponType
 	Capacity    int
 	Weight      float64
+	Value       int
 	Probability float64
 }
 
@@ -59,6 +60,7 @@ type Weapon struct {
 	r      int
 	t      WeaponType
 	w      float64
+	v      int
 	wc     *WeaponCapacity
 	damage *Damage
 }
@@ -81,7 +83,7 @@ func NewWeapon(name string) *Weapon {
 	if weapon.Capacity != 0 {
 		weaponCapacity = &WeaponCapacity{weapon.Capacity, 0}
 	}
-	return &Weapon{name, weapon.Icon, weapon.Range, weapon.Type, weapon.Weight, weaponCapacity, &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
+	return &Weapon{name, weapon.Icon, weapon.Range, weapon.Type, weapon.Weight, weapon.Value, weaponCapacity, &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
 }
 
 func GenerateWeapon() Item {
@@ -174,6 +176,7 @@ func (weapon *Weapon) MarshalJSON() ([]byte, error) {
 	}
 
 	buffer.WriteString(fmt.Sprintf("\"Weight\":%s,", weightValue))
+	buffer.WriteString(fmt.Sprintf("\"Value\":%d,", weapon.v))
 
 	if weapon.wc != nil {
 		weaponCapacityValue, err := json.Marshal(weapon.wc)
@@ -240,6 +243,7 @@ func (weapon *Weapon) UnmarshalJSON(data []byte) error {
 		Range          *int
 		Type           *WeaponType
 		Weight         float64
+		Value          int
 		WeaponCapacity *WeaponCapacity
 		Damage         *Damage
 	}
@@ -266,6 +270,7 @@ func (weapon *Weapon) UnmarshalJSON(data []byte) error {
 	weapon.r = *(v.Range)
 	weapon.t = *(v.Type)
 	weapon.w = v.Weight
+	weapon.v = v.Value
 	weapon.wc = v.WeaponCapacity
 	weapon.damage = v.Damage
 

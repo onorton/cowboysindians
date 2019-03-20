@@ -3,6 +3,7 @@
 		"Icon": {"Icon": 91, "Colour": 100},
 		"Bonus": 1,
 		"Weight": 10,
+		"Value": 1000,
 		"Probability": 1.0
 	}
 

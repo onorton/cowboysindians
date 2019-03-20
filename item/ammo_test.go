@@ -13,8 +13,8 @@ type ammoMarshallingPair struct {
 }
 
 var ammoMarshallingTests = []ammoMarshallingPair{
-	{Ammo{"shotgun shell", icon.NewIcon(44, 2), 1, 0.2}, "{\"Name\":\"shotgun shell\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Type\":1,\"Weight\":0.2}"},
-	{Ammo{"pistol bullet", icon.NewIcon(44, 3), 0, 0.01}, "{\"Name\":\"pistol bullet\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Type\":0,\"Weight\":0.01}"},
+	{Ammo{"shotgun shell", icon.NewIcon(44, 2), 1, 0.2, 20}, "{\"Name\":\"shotgun shell\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Type\":1,\"Weight\":0.2,\"Value\":20}"},
+	{Ammo{"pistol bullet", icon.NewIcon(44, 3), 0, 0.01, 10}, "{\"Name\":\"pistol bullet\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Type\":0,\"Weight\":0.01,\"Value\":10}"},
 }
 
 type ammoUnmarshallingPair struct {
@@ -23,8 +23,8 @@ type ammoUnmarshallingPair struct {
 }
 
 var ammoUnmarshallingTests = []ammoUnmarshallingPair{
-	{"{\"Name\":\"shotgun shell\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Type\":1,\"Weight\":0.2}", Ammo{"shotgun shell", icon.NewIcon(44, 2), 1, 0.2}},
-	{"{\"Name\":\"pistol bullet\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Type\":0,\"Weight\":0.01}", Ammo{"pistol bullet", icon.NewIcon(44, 3), 0, 0.01}},
+	{"{\"Name\":\"shotgun shell\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Type\":1,\"Weight\":0.2,\"Value\":20}", Ammo{"shotgun shell", icon.NewIcon(44, 2), 1, 0.2, 20}},
+	{"{\"Name\":\"pistol bullet\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Type\":0,\"Weight\":0.01,\"Value\":10}", Ammo{"pistol bullet", icon.NewIcon(44, 3), 0, 0.01, 10}},
 }
 
 func TestAmmoMarshalling(t *testing.T) {
@@ -82,6 +82,13 @@ func TestAmmoUnmarshalling(t *testing.T) {
 				"For", "Type",
 				"expected", pair.ammo.t,
 				"got", ammo.t,
+			)
+		}
+		if ammo.v != pair.ammo.v {
+			t.Error(
+				"For", "Value",
+				"expected", pair.ammo.v,
+				"got", ammo.v,
 			)
 		}
 	}

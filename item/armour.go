@@ -15,6 +15,7 @@ type ArmourAttributes struct {
 	Icon        icon.Icon
 	Bonus       int
 	Weight      float64
+	Value       int
 	Probability float64
 }
 
@@ -40,11 +41,12 @@ type Armour struct {
 	ic    icon.Icon
 	bonus int
 	w     float64
+	v     int
 }
 
 func NewArmour(name string) *Armour {
 	armour := armourData[name]
-	return &Armour{name, armour.Icon, armour.Bonus, armour.Weight}
+	return &Armour{name, armour.Icon, armour.Bonus, armour.Weight, armour.Value}
 }
 
 func GenerateArmour() Item {
@@ -80,7 +82,8 @@ func (armour *Armour) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"Weight\":%s", weightValue))
+	buffer.WriteString(fmt.Sprintf("\"Weight\":%s,", weightValue))
+	buffer.WriteString(fmt.Sprintf("\"Value\":%d", armour.v))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -93,6 +96,7 @@ func (armour *Armour) UnmarshalJSON(data []byte) error {
 		Icon   icon.Icon
 		Bonus  *int
 		Weight float64
+		Value  int
 	}
 	var v armourJson
 
@@ -108,6 +112,7 @@ func (armour *Armour) UnmarshalJSON(data []byte) error {
 	armour.ic = v.Icon
 	armour.bonus = *(v.Bonus)
 	armour.w = v.Weight
+	armour.v = v.Value
 
 	return nil
 }

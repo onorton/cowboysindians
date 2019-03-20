@@ -14,6 +14,7 @@ import (
 type ConsumableAttributes struct {
 	Icon        icon.Icon
 	Weight      float64
+	Value       int
 	Effects     map[string]int
 	Probability float64
 }
@@ -39,12 +40,13 @@ type Consumable struct {
 	name    string
 	ic      icon.Icon
 	w       float64
+	v       int
 	effects map[string]int
 }
 
 func NewConsumable(name string) Item {
 	consumable := consumableData[name]
-	var itm Item = &Consumable{name, consumable.Icon, consumable.Weight, consumable.Effects}
+	var itm Item = &Consumable{name, consumable.Icon, consumable.Weight, consumable.Value, consumable.Effects}
 	return itm
 }
 
@@ -75,6 +77,7 @@ func (item *Consumable) MarshalJSON() ([]byte, error) {
 	}
 
 	buffer.WriteString(fmt.Sprintf("\"Weight\":%s,", weightValue))
+	buffer.WriteString(fmt.Sprintf("\"Value\":%d,", item.v))
 
 	effectsValue, err := json.Marshal(item.effects)
 	if err != nil {
@@ -93,6 +96,7 @@ func (consumable *Consumable) UnmarshalJSON(data []byte) error {
 		Name    string
 		Icon    icon.Icon
 		Weight  float64
+		Value   int
 		Effects *map[string]int
 	}
 	var v consumableJson
@@ -108,6 +112,7 @@ func (consumable *Consumable) UnmarshalJSON(data []byte) error {
 	consumable.name = v.Name
 	consumable.ic = v.Icon
 	consumable.w = v.Weight
+	consumable.v = v.Value
 	consumable.effects = *(v.Effects)
 
 	return nil

@@ -15,6 +15,7 @@ type AmmoAttributes struct {
 	Icon        icon.Icon
 	Type        WeaponType
 	Weight      float64
+	Value       int
 	Probability float64
 }
 
@@ -40,11 +41,12 @@ type Ammo struct {
 	ic   icon.Icon
 	t    WeaponType
 	w    float64
+	v    int
 }
 
 func NewAmmo(name string) Item {
 	ammo := ammoData[name]
-	var itm Item = &Ammo{name, ammo.Icon, ammo.Type, ammo.Weight}
+	var itm Item = &Ammo{name, ammo.Icon, ammo.Type, ammo.Weight, ammo.Value}
 	return itm
 }
 
@@ -81,7 +83,8 @@ func (ammo *Ammo) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"Weight\":%s", weightValue))
+	buffer.WriteString(fmt.Sprintf("\"Weight\":%s,", weightValue))
+	buffer.WriteString(fmt.Sprintf("\"Value\":%d", ammo.v))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -94,6 +97,7 @@ func (ammo *Ammo) UnmarshalJSON(data []byte) error {
 		Icon   icon.Icon
 		Type   *WeaponType
 		Weight float64
+		Value  int
 	}
 	var v ammoJson
 
@@ -109,6 +113,7 @@ func (ammo *Ammo) UnmarshalJSON(data []byte) error {
 	ammo.ic = v.Icon
 	ammo.t = *(v.Type)
 	ammo.w = v.Weight
+	ammo.v = v.Value
 
 	return nil
 }

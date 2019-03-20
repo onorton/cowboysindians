@@ -2,12 +2,14 @@
 	"gem":{
 		"Icon": {"Icon": 42, "Colour": 4},
 		"Weight": 0.03,
+		"Value": 2000,
 		"Cover": false,
 		"Probability": 0.1
 	},
 	"barrel":{
 		"Icon": {"Icon": 111, "Colour": 8},
 		"Weight": 30,
+		"Value": 200,
 		"Cover": true,
 		"Probability": 1.0
 	}

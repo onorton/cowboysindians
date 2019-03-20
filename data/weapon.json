@@ -5,6 +5,7 @@
 		"Type": 2,
 		"Capacity": 2,
 		"Weight": 20,
+		"Value": 5000,
 		"Damage": {
 			"Dice": 4,
 			"Number": 1,
@@ -20,6 +21,7 @@
 		"Type": 1,
 		"Capacity": 6,
 		"Weight": 10,
+		"Value": 6000,
 		"Damage": {
 			"Dice": 4,
 			"Number": 1,
@@ -35,6 +37,7 @@
 		"Type": 2,
 		"Capacity": 2,
 		"Weight": 15,
+		"Value": 3000,
 		"Damage": {
 			"Dice": 6,
 			"Number": 1,
@@ -49,6 +52,7 @@
 		"Type": 0,
 		"Capacity": 0,
 		"Weight": 10,
+		"Value": 200,
 		"Damage": {
 			"Dice": 6,
 			"Number": 1,

@@ -14,6 +14,7 @@ import (
 type itemAttributes struct {
 	Icon        icon.Icon
 	Weight      float64
+	Value       int
 	Cover       bool
 	Probability float64
 }
@@ -39,12 +40,13 @@ type NormalItem struct {
 	name  string
 	ic    icon.Icon
 	w     float64
+	v     int
 	cover bool
 }
 
 func NewNormalItem(name string) Item {
 	item := normalItemData[name]
-	var itm Item = &NormalItem{name, item.Icon, item.Weight, item.Cover}
+	var itm Item = &NormalItem{name, item.Icon, item.Weight, item.Value, item.Cover}
 	return itm
 }
 
@@ -75,6 +77,7 @@ func (item *NormalItem) MarshalJSON() ([]byte, error) {
 	}
 
 	buffer.WriteString(fmt.Sprintf("\"Weight\":%s,", weightValue))
+	buffer.WriteString(fmt.Sprintf("\"Value\":%d,", item.v))
 
 	coverValue, err := json.Marshal(item.cover)
 	if err != nil {
@@ -93,6 +96,7 @@ func (item *NormalItem) UnmarshalJSON(data []byte) error {
 		Name   string
 		Icon   icon.Icon
 		Weight float64
+		Value  int
 		Cover  bool
 	}
 	var v itemJson
@@ -104,6 +108,7 @@ func (item *NormalItem) UnmarshalJSON(data []byte) error {
 	item.name = v.Name
 	item.ic = v.Icon
 	item.w = v.Weight
+	item.v = v.Value
 	item.cover = v.Cover
 
 	return nil
