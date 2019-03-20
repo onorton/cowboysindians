@@ -342,6 +342,10 @@ func (weapon *Weapon) GetWeight() float64 {
 	return weapon.w
 }
 
+func (weapon *Weapon) GetValue() int {
+	return weapon.v
+}
+
 func (weapon *Weapon) GivesCover() bool {
 	return false
 }

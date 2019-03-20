@@ -139,6 +139,10 @@ func (consumable *Consumable) GetWeight() float64 {
 	return consumable.w
 }
 
+func (consumable *Consumable) GetValue() int {
+	return consumable.v
+}
+
 func (consumable *Consumable) GetEffect(e string) int {
 	return consumable.effects[e]
 }

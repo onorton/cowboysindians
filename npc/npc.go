@@ -536,6 +536,11 @@ func (npc *Npc) EmptyInventory() {
 		npc.armour = nil
 	}
 
+	if npc.money > 0 {
+		npc.world.PlaceItem(npc.location.X, npc.location.Y, item.Money(npc.money))
+		itemTypes["money"]++
+	}
+
 	if npc.world.IsVisible(npc.world.GetPlayer(), npc.location.X, npc.location.Y) {
 		for name, count := range itemTypes {
 			message.Enqueue(fmt.Sprintf("The %s dropped %d %ss.", npc.name, count, name))

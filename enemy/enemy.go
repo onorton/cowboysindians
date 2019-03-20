@@ -639,6 +639,10 @@ func (e *Enemy) EmptyInventory() {
 		e.armour = nil
 	}
 
+	if e.money > 0 {
+		e.world.PlaceItem(e.location.X, e.location.Y, item.Money(e.money))
+	}
+
 	if e.world.IsVisible(e.world.GetPlayer(), e.location.X, e.location.Y) {
 		for name, count := range itemTypes {
 			message.Enqueue(fmt.Sprintf("The %s dropped %d %ss.", e.name, count, name))

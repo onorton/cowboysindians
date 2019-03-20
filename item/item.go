@@ -150,5 +150,6 @@ type Item interface {
 	MarshalJSON() ([]byte, error)
 	UnmarshalJSON([]byte) error
 	GetWeight() float64
+	GetValue() int
 	GivesCover() bool
 }

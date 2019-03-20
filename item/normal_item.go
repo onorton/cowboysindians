@@ -50,6 +50,10 @@ func NewNormalItem(name string) Item {
 	return itm
 }
 
+func Money(amount int) Item {
+	return &NormalItem{"money", icon.NewIcon('$', 4), 0, amount, false}
+}
+
 func GenerateNormalItem() Item {
 	return NewNormalItem(Choose(normalItemProbabilities))
 }
@@ -134,6 +138,10 @@ func (item *NormalItem) GetKey() rune {
 
 func (item *NormalItem) GetWeight() float64 {
 	return item.w
+}
+
+func (item *NormalItem) GetValue() int {
+	return item.v
 }
 
 func (item *NormalItem) GivesCover() bool {

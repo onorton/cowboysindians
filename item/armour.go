@@ -142,6 +142,10 @@ func (armour *Armour) GetWeight() float64 {
 	return armour.w
 }
 
+func (armour *Armour) GetValue() int {
+	return armour.v
+}
+
 func (armour *Armour) GivesCover() bool {
 	return false
 }

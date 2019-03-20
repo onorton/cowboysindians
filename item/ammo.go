@@ -139,6 +139,10 @@ func (ammo *Ammo) GetWeight() float64 {
 	return ammo.w
 }
 
+func (ammo *Ammo) GetValue() int {
+	return ammo.v
+}
+
 func (ammo *Ammo) GivesCover() bool {
 	return false
 }

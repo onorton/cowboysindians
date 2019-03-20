@@ -855,9 +855,17 @@ func (p *Player) PickupItem() bool {
 		return false
 	}
 
+	// find money
+	for i, item := range itemsOnGround {
+		if item.GetName() == "money" {
+			p.money += item.GetValue()
+			message.Enqueue(fmt.Sprintf("You pick up $%.2f.", float64(item.GetValue())/100))
+			itemsOnGround = append(itemsOnGround[:i], itemsOnGround[i+1:]...)
+		}
+	}
+
 	items := make(map[rune]([]item.Item))
 	for _, itm := range itemsOnGround {
-
 		existing := items[itm.GetKey()]
 		if existing == nil {
 			existing = make([]item.Item, 0)
