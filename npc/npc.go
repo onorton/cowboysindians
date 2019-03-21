@@ -64,7 +64,7 @@ func NewNpc(name string, x, y int, world *worldmap.Map) *Npc {
 			case "Weapon":
 				itm = item.NewWeapon(itemDefinition.Name)
 			}
-			npc.pickupItem(itm)
+			npc.PickupItem(itm)
 		}
 	}
 	return npc
@@ -478,7 +478,7 @@ func (npc *Npc) FindAction() {
 	} else {
 		items := npc.world.GetItems(npc.location.X, npc.location.Y)
 		for _, item := range items {
-			npc.pickupItem(item)
+			npc.PickupItem(item)
 		}
 	}
 	return
@@ -559,7 +559,7 @@ func (npc *Npc) getAmmo() *item.Ammo {
 	return nil
 }
 
-func (npc *Npc) pickupItem(item item.Item) {
+func (npc *Npc) PickupItem(item item.Item) {
 	npc.inventory = append(npc.inventory, item)
 }
 
@@ -655,7 +655,15 @@ func (npc *Npc) LoadMount(mounts []*mount.Mount) {
 	}
 }
 
+func (npc Npc) CanBuy(itm item.Item) bool {
+	return itm.GetValue() <= npc.money
+}
+
 func (npc *Npc) AddMoney(amount int) {
+	npc.money += amount
+}
+
+func (npc *Npc) RemoveMoney(amount int) {
 	npc.money += amount
 }
 
