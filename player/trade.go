@@ -12,9 +12,28 @@ func trade(p *Player, npc *npc.Npc) {
 	tradeComplete := false
 	for !tradeComplete {
 		printTradeScreen(p, npc)
+		npcItems := npc.GetItems()
 		action := ui.GetInput()
 		if action == ui.Buy {
-			message.PrintMessage("Buy: ")
+			validSelection := false
+			for !validSelection {
+				message.PrintMessage("Buy: ")
+				_, selection := ui.GetItemSelection()
+				item := npcItems[selection]
+				if item != nil {
+					validSelection = true
+				}
+				if item[0].GetValue() > p.money {
+					ui.WriteText(0, 0, "You don't have enough money for that!")
+				} else {
+					p.money -= item[0].GetValue()
+					npc.AddMoney(item[0].GetValue())
+					p.AddItem(item[0])
+					message.Enqueue(fmt.Sprintf("You bought a %s.", item[0].GetName()))
+					npc.RemoveItem(item[0])
+				}
+			}
+
 		} else if action == ui.Sell {
 			message.PrintMessage("Sell: ")
 		} else if action == ui.Exit || action == ui.CancelAction {

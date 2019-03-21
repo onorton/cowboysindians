@@ -8,6 +8,7 @@
 		"Dex": 13,
 		"Encumbrance": 100,
 		"Money": 1000,
-		"Inventory": []
+		"Inventory": [
+			{"Category": "Consumable", "Name": "beer", "Amount": 2}]
 	}
 }

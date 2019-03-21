@@ -638,6 +638,14 @@ func (npc *Npc) GetItems() map[rune]([]item.Item) {
 	return items
 }
 
+func (npc *Npc) RemoveItem(itm item.Item) {
+	for i, item := range npc.inventory {
+		if itm.GetName() == item.GetName() {
+			npc.inventory = append(npc.inventory[:i], npc.inventory[i+1:]...)
+		}
+	}
+}
+
 func (npc *Npc) LoadMount(mounts []*mount.Mount) {
 	for _, m := range mounts {
 		if npc.mountID == m.GetID() {
@@ -645,6 +653,10 @@ func (npc *Npc) LoadMount(mounts []*mount.Mount) {
 			npc.mount = m
 		}
 	}
+}
+
+func (npc *Npc) AddMoney(amount int) {
+	npc.money += amount
 }
 
 type Npc struct {
