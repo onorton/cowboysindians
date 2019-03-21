@@ -39,6 +39,8 @@ const (
 	Consume
 	Mount
 	Talk
+	Buy
+	Sell
 	Confirm
 	CancelAction
 	NoAction
@@ -112,11 +114,7 @@ func GetInput() (action PlayerAction) {
 			case '9':
 				action = MoveNorthEast
 			case 'c':
-				if e.Mod == termbox.ModAlt {
-					action = Talk
-				} else {
-					action = CloseDoor
-				}
+				action = CloseDoor
 			case 'o':
 				action = OpenDoor
 			case 'C':
@@ -139,6 +137,10 @@ func GetInput() (action PlayerAction) {
 				action = Consume
 			case 'm':
 				action = Mount
+			case 'b':
+				action = Buy
+			case 's':
+				action = Sell
 			case 'y':
 				action = Confirm
 			default:

@@ -625,6 +625,19 @@ func (npc *Npc) GetVisionDistance() int {
 	return 20
 }
 
+func (npc *Npc) GetItems() map[rune]([]item.Item) {
+	items := make(map[rune]([]item.Item))
+	for _, itm := range npc.inventory {
+		existing := items[itm.GetKey()]
+		if existing == nil {
+			existing = make([]item.Item, 0)
+		}
+		existing = append(existing, itm)
+		items[itm.GetKey()] = existing
+	}
+	return items
+}
+
 func (npc *Npc) LoadMount(mounts []*mount.Mount) {
 	for _, m := range mounts {
 		if npc.mountID == m.GetID() {

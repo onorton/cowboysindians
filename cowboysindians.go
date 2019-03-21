@@ -199,12 +199,8 @@ func main() {
 
 			if c.GetAlignment() == worldmap.Player {
 				// Only render when it is the player's turn
-				worldMap.Render()
 				message.PrintMessages()
 				player.Update()
-				stats := player.GetStats()
-				stats = append([]string{fmt.Sprintf("T:%d", state.Time)}, stats...)
-				printStatus(stats)
 
 				// Game over, skip other enemies
 				if player.IsDead() {
@@ -213,6 +209,9 @@ func main() {
 
 				for {
 					worldMap.Render()
+					stats := player.GetStats()
+					stats = append([]string{fmt.Sprintf("T:%d", state.Time)}, stats...)
+					printStatus(stats)
 					if inventory {
 						player.PrintInventory()
 					}
