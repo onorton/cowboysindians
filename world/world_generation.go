@@ -443,7 +443,7 @@ func generateNpcs(m *worldmap.Map, buildings []worldmap.Building, n int) []*npc.
 				continue
 			}
 			usedBuildings = append(usedBuildings, b)
-			npcs[i] = npc.NewShopkeeper("townsman", x, y, m, b)
+			npcs[i] = npc.NewShopkeeper("shopkeeper", x, y, m, b)
 		} else {
 			x, y = rand.Intn(width), rand.Intn(height)
 			if !m.IsPassable(x, y) || m.IsOccupied(x, y) {

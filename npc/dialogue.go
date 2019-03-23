@@ -9,6 +9,21 @@ import (
 	"github.com/onorton/cowboysindians/message"
 )
 
+type dialogueType int
+
+const (
+	Basic dialogueType = iota
+	Shopkeeper
+)
+
+func getDialogue(t dialogueType) dialogue {
+	if t == Basic {
+		return &basicDialogue{false}
+	} else {
+		return &shopkeeperDialogue{false}
+	}
+}
+
 var greetings []string = []string{"Howdy, partner!", "Howdy!", "Howdy, stranger!"}
 var storeGreetings []string = []string{"Welcome to my store.", "Can I interest you in any of my wares?", "Welcome!"}
 

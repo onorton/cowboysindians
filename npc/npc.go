@@ -23,15 +23,16 @@ func check(err error) {
 }
 
 type NpcAttributes struct {
-	Icon        icon.Icon
-	Initiative  int
-	Hp          int
-	Ac          int
-	Str         int
-	Dex         int
-	Encumbrance int
-	Money       int
-	Inventory   []item.ItemDefinition
+	Icon         icon.Icon
+	Initiative   int
+	Hp           int
+	Ac           int
+	Str          int
+	Dex          int
+	Encumbrance  int
+	Money        int
+	Inventory    []item.ItemDefinition
+	DialogueType dialogueType
 }
 
 var npcData map[string]NpcAttributes = fetchNpcData()
@@ -48,7 +49,7 @@ func fetchNpcData() map[string]NpcAttributes {
 func NewNpc(name string, x, y int, world *worldmap.Map) *Npc {
 	n := npcData[name]
 	location := worldmap.Coordinates{x, y}
-	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location), &basicDialogue{false}}
+	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location), getDialogue(n.DialogueType)}
 	npc.initialiseInventory(n.Inventory)
 	return npc
 }
@@ -56,7 +57,7 @@ func NewNpc(name string, x, y int, world *worldmap.Map) *Npc {
 func NewShopkeeper(name string, x, y int, world *worldmap.Map, b worldmap.Building) *Npc {
 	n := npcData[name]
 	location := worldmap.Coordinates{x, y}
-	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewWithinBuilding(world, b, location), &shopkeeperDialogue{false}}
+	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewWithinBuilding(world, b, location), getDialogue(n.DialogueType)}
 	npc.initialiseInventory(n.Inventory)
 	return npc
 }
