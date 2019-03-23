@@ -44,6 +44,8 @@ func GenerateWorld(width, height, viewerWidth, viewerHeight int) (*worldmap.Map,
 	generateBuildingOutsideTown(&grid, &towns, &buildings)
 
 	world := worldmap.NewMap(grid, viewerWidth, viewerHeight)
+	addItemsToBuildings(world, buildings)
+
 	mounts := generateMounts(world, buildings, 5)
 	enemies := generateEnemies(world, 2)
 	npcs := generateNpcs(world, buildings, 5)
@@ -51,24 +53,29 @@ func GenerateWorld(width, height, viewerWidth, viewerHeight int) (*worldmap.Map,
 	return world, mounts, enemies, npcs
 }
 
-func addItemsToBuilding(grid *[][]worldmap.Tile, b worldmap.Building) {
-	// Consider inner area (exclude walls)
-	x1, y1 := b.X1+1, b.Y1+1
-	x2, y2 := b.X2-1, b.Y2-1
+func addItemsToBuildings(world *worldmap.Map, buildings []worldmap.Building) {
+	for _, b := range buildings {
+		// Consider inner area (exclude walls)
+		x1, y1 := b.X1+1, b.Y1+1
+		x2, y2 := b.X2-1, b.Y2-1
 
-	buildingArea := (x2 - x1) * (y2 - y1)
+		buildingArea := (x2 - x1) * (y2 - y1)
 
-	numOfItems := buildingArea / 2
+		numOfItems := buildingArea / 2
 
-	for i := 0; i < numOfItems; i++ {
-		// Select a random item
-		itm := item.GenerateItem()
+		for i := 0; i < numOfItems; i++ {
 
-		// Select a random
-		x := x1 + rand.Intn(x2-x1)
-		y := y1 + rand.Intn(y2-y1)
-		(*grid)[y][x].PlaceItem(itm)
+			// Select a random location
+			x := x1 + rand.Intn(x2-x1)
+			y := y1 + rand.Intn(y2-y1)
 
+			if world.IsPassable(x, y) {
+				world.PlaceItem(x, y, item.GenerateItem())
+			} else {
+				i--
+			}
+
+		}
 	}
 
 }
@@ -110,7 +117,7 @@ func generateBuildingOutsideTown(grid *[][]worldmap.Tile, towns *[]town, buildin
 		x1, y1 := cX-negWidth, cY-negHeight
 		x2, y2 := cX+posWidth, cY+posHeight
 
-		b := worldmap.Building{x1, y1, x2, y2}
+		b := worldmap.Building{x1, y1, x2, y2, worldmap.Residential}
 		validBuilding = isValid(x1, y1, width, height) && isValid(x2, y2, width, height) && !overlap(*buildings, b) && !inTowns(*towns, b)
 
 		if validBuilding {
@@ -171,16 +178,12 @@ func generateBuildingOutsideTown(grid *[][]worldmap.Tile, towns *[]town, buildin
 				}
 
 				// If a door is not in place, add window. Otherwise, try again.
-				if !(*grid)[wY][wX].IsDoor() {
+				if _, ok := (*grid)[wY][wX].(*worldmap.NormalTile); ok {
 					(*grid)[wY][wX] = worldmap.NewTile("window")
 				} else {
 					i--
 				}
-
 			}
-
-			// Finally, add items to the building
-			addItemsToBuilding(grid, b)
 
 			*buildings = append(*buildings, b)
 		}
@@ -192,11 +195,11 @@ func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]worldm
 	validBuilding := false
 	// Keeps trying until a usable building position and size found
 	for !validBuilding {
-		// Must be at least 3 in each dimension
+		// Must be at least 5 in each dimension
 
 		// Width along the street
-		buildingWidth := rand.Intn(3) + 3
-		depth := rand.Intn(3) + 3
+		buildingWidth := rand.Intn(3) + 5
+		depth := rand.Intn(3) + 5
 
 		posWidth := 0
 		negWidth := 0
@@ -238,7 +241,10 @@ func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]worldm
 			}
 		}
 
-		b := worldmap.Building{x1, y1, x2, y2}
+		// 50/50 chance of being residential or commerical
+		buildingType := worldmap.BuildingType(rand.Intn(2))
+
+		b := worldmap.Building{x1, y1, x2, y2, buildingType}
 
 		validBuilding = inTown(t, b) && !overlap(*buildings, b)
 
@@ -272,6 +278,48 @@ func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]worldm
 					(*grid)[doorLocation][x1] = worldmap.NewTile("door")
 				}
 			}
+
+			// If commerical add counter
+			if b.T == worldmap.Commercial {
+				// Choose the side flap will appear
+				flapSide := rand.Intn(2) == 0
+				if t.horizontal {
+					counterY := 0
+					if sideOfStreet {
+						counterY = y1 + 2
+					} else {
+						counterY = y2 - 2
+					}
+
+					for x := x1 + 1; x < x2; x++ {
+						(*grid)[counterY][x] = worldmap.NewTile("counter")
+					}
+
+					if flapSide {
+						(*grid)[counterY][x1+1] = worldmap.NewTile("counter flap")
+					} else {
+						(*grid)[counterY][x2-1] = worldmap.NewTile("counter flap")
+					}
+				} else {
+					counterX := 0
+					if sideOfStreet {
+						counterX = x1 + 2
+					} else {
+						counterX = x2 - 2
+					}
+
+					for y := y1 + 1; y < y2; y++ {
+						(*grid)[y][counterX] = worldmap.NewTile("counter")
+					}
+
+					if flapSide {
+						(*grid)[y1+1][counterX] = worldmap.NewTile("counter flap")
+					} else {
+						(*grid)[y2-1][counterX] = worldmap.NewTile("counter flap")
+					}
+				}
+
+			}
 			// Add number of windows according total perimeter of building
 			perimeter := 2*buildingWidth + 2*depth
 			minNumWindows := perimeter / 5
@@ -299,16 +347,13 @@ func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]worldm
 				}
 
 				// If a door is not in place, add window. Otherwise, try again.
-				if !(*grid)[wY][wX].IsDoor() {
+				if _, ok := (*grid)[wY][wX].(*worldmap.NormalTile); ok {
 					(*grid)[wY][wX] = worldmap.NewTile("window")
 				} else {
 					i--
 				}
 
 			}
-
-			// Finally, add items to the building
-			addItemsToBuilding(grid, b)
 
 			*buildings = append(*buildings, b)
 		}
@@ -443,7 +488,11 @@ func generateNpcs(m *worldmap.Map, buildings []worldmap.Building, n int) []*npc.
 				continue
 			}
 			usedBuildings = append(usedBuildings, b)
-			npcs[i] = npc.NewShopkeeper("shopkeeper", x, y, m, b)
+			if b.T == worldmap.Commercial {
+				npcs[i] = npc.NewShopkeeper("shopkeeper", x, y, m, b)
+			} else {
+				npcs[i] = npc.NewNpc("townsman", x, y, m)
+			}
 		} else {
 			x, y = rand.Intn(width), rand.Intn(height)
 			if !m.IsPassable(x, y) || m.IsOccupied(x, y) {

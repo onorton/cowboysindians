@@ -562,8 +562,7 @@ func (e *Enemy) FindAction() {
 		for j := -1; j <= 1; j++ {
 			x, y := e.location.X+j, e.location.Y+i
 			if e.world.IsValid(x, y) && e.world.IsDoor(x, y) && !e.world.IsPassable(x, y) {
-				e.world.SetPassable(x, y, true)
-				e.world.SetBlocksVision(x, y, false)
+				e.world.ToggleDoor(x, y, true)
 				return
 			}
 		}

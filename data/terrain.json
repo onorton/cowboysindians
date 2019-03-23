@@ -24,6 +24,17 @@
 		"Passable": true,
 		"BlocksVision": false,
 		"Door": false
+	},
+	"counter": {
+		"Icon": {"Icon": 43, "Colour": 6},
+		"Passable": false,
+		"BlocksVision": false,
+		"Door": false
+	},
+	"counter flap": {
+		"Icon": {"Icon": 43, "Colour": 6},
+		"Passable": false,
+		"BlocksVision": false,
+		"Door": true
 	}
-
 }

@@ -154,7 +154,7 @@ func (m *Map) MarshalJSON() ([]byte, error) {
 
 func (m *Map) UnmarshalJSON(data []byte) error {
 	type mapJson struct {
-		Map    [][]Tile
+		Map    [][](map[string]interface{})
 		Viewer *Viewer
 	}
 
@@ -163,7 +163,20 @@ func (m *Map) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &v); err != nil {
 		return err
 	}
-	m.grid = v.Map
+
+	width := len(v.Map[0])
+	height := len(v.Map)
+
+	grid := make([][]Tile, width)
+
+	for y := 0; y < height; y++ {
+		grid[y] = make([]Tile, width)
+		for x := 0; x < width; x++ {
+			grid[y][x] = unmarshalTile(v.Map[y][x])
+		}
+	}
+	m.grid = grid
+
 	m.v = v.Viewer
 
 	return nil
@@ -171,7 +184,7 @@ func (m *Map) UnmarshalJSON(data []byte) error {
 
 func (m Map) HasPlayer(x, y int) bool {
 	if m.IsOccupied(x, y) {
-		return m.grid[y][x].c.GetAlignment() == Player
+		return m.grid[y][x].getCreature().GetAlignment() == Player
 	}
 	return false
 }
@@ -183,19 +196,20 @@ func (m Map) IsValid(x, y int) bool {
 }
 
 func (m Map) IsPassable(x, y int) bool {
-	return m.grid[y][x].passable
+	return m.grid[y][x].isPassable()
 }
 
 func (m Map) blocksVision(x, y int) bool {
-	return m.grid[y][x].blocksV
+	return m.grid[y][x].blocksVision()
 }
 
 func (m Map) IsOccupied(x, y int) bool {
-	return m.grid[y][x].c != nil
+	return m.grid[y][x].isOccupied()
 }
 
 func (m Map) HasItems(x, y int) bool {
-	return len(m.grid[y][x].items) > 0
+	return len(m.GetItems(x, y)) > 0
+
 }
 
 // Bresenham algorithm to check if creature c can see square x1, y1.
@@ -471,7 +485,9 @@ func (m Map) BehindCover(x1, y1 int, a Creature) bool {
 }
 
 func (m Map) PlaceItem(x, y int, item item.Item) {
-	m.grid[y][x].PlaceItem(item)
+	if t, ok := m.grid[y][x].(*NormalTile); ok {
+		t.placeItem(item)
+	}
 }
 
 func (m Map) GetWidth() int {
@@ -507,8 +523,8 @@ func (m Map) AdjustViewer() {
 func (m Map) MoveCreature(c Creature, x, y int) {
 
 	// If occupied by another creature, melee attack
-	if m.grid[y][x].c != nil && m.grid[y][x].c != c {
-		c.MeleeAttack(m.grid[y][x].c)
+	if m.grid[y][x].isOccupied() && m.grid[y][x].getCreature() != c {
+		c.MeleeAttack(m.grid[y][x].getCreature())
 		return
 	}
 
@@ -517,32 +533,38 @@ func (m Map) MoveCreature(c Creature, x, y int) {
 
 func (m Map) Move(c Creature, x, y int) {
 
-	if !m.grid[y][x].passable {
+	if !m.grid[y][x].isPassable() {
 		return
 	}
 
 	cX, cY := c.GetCoordinates()
-	m.grid[cY][cX].c = nil
+	m.grid[cY][cX].setCreature(nil)
 	cX = x
 	cY = y
 	c.SetCoordinates(cX, cY)
-	m.grid[cY][cX].c = c
+	m.grid[cY][cX].setCreature(c)
 }
 
 func (m Map) GetItems(x, y int) []item.Item {
-	items := m.grid[y][x].items
-	m.grid[y][x].items = make([]item.Item, 0)
-	return items
+
+	switch t := m.grid[y][x].(type) {
+	case *NormalTile:
+		items := t.items
+		t.items = make([]item.Item, 0)
+		return items
+	default:
+		return make([]item.Item, 0)
+	}
 }
 
 func (m Map) GetPlayer() Creature {
 	for _, row := range m.grid {
 		for _, tile := range row {
-			if tile.c == nil {
+			if !tile.isOccupied() {
 				continue
 			}
-			if tile.c.GetAlignment() == Player {
-				return tile.c
+			if tile.getCreature().GetAlignment() == Player {
+				return tile.getCreature()
 			}
 		}
 	}
@@ -550,7 +572,7 @@ func (m Map) GetPlayer() Creature {
 }
 
 func (m Map) GetCreature(x, y int) Creature {
-	return m.grid[y][x].c
+	return m.grid[y][x].getCreature()
 }
 
 func (m Map) RenderTile(x, y int) ui.Element {
@@ -559,7 +581,7 @@ func (m Map) RenderTile(x, y int) ui.Element {
 
 func (m Map) DeleteCreature(c Creature) {
 	x, y := c.GetCoordinates()
-	m.grid[y][x].c = nil
+	m.grid[y][x].setCreature(nil)
 }
 
 func (m Map) Render() {
@@ -588,19 +610,24 @@ func (m Map) Render() {
 }
 
 func (m *Map) IsDoor(x, y int) bool {
-	return m.grid[y][x].door
+	_, ok := m.grid[y][x].(*Door)
+	return ok
 }
 
 func (m *Map) GetPassable(x, y int) bool {
-	return m.grid[y][x].passable
+	return m.grid[y][x].isPassable()
 }
 
-func (m *Map) SetPassable(x, y int, passable bool) {
-	m.grid[y][x].passable = passable
-}
-
-func (m *Map) SetBlocksVision(x, y int, blocksV bool) {
-	m.grid[y][x].blocksV = blocksV
+func (m *Map) ToggleDoor(x, y int, open bool) {
+	if d, ok := m.grid[y][x].(*Door); ok {
+		if open {
+			d.passable = true
+			d.blocksV = false
+		} else {
+			d.passable = false
+			d.blocksV = d.blocksVClosed
+		}
+	}
 }
 
 func (m *Map) givesCover(x, y int) bool {
