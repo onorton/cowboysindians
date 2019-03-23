@@ -49,7 +49,7 @@ func fetchWeaponData() {
 	weaponData = wD
 
 	weaponProbabilities = make(map[string]float64)
-	for name, attributes := range armourData {
+	for name, attributes := range weaponData {
 		weaponProbabilities[name] = attributes.Probability
 	}
 }

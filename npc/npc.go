@@ -23,16 +23,17 @@ func check(err error) {
 }
 
 type NpcAttributes struct {
-	Icon         icon.Icon
-	Initiative   int
-	Hp           int
-	Ac           int
-	Str          int
-	Dex          int
-	Encumbrance  int
-	Money        int
-	Inventory    []item.ItemDefinition
-	DialogueType dialogueType
+	Icon          icon.Icon
+	Initiative    int
+	Hp            int
+	Ac            int
+	Str           int
+	Dex           int
+	Encumbrance   int
+	Money         int
+	Inventory     []item.ItemDefinition
+	ShopInventory map[string]int
+	DialogueType  dialogueType
 }
 
 var npcData map[string]NpcAttributes = fetchNpcData()
@@ -58,7 +59,26 @@ func NewShopkeeper(name string, x, y int, world *worldmap.Map, b worldmap.Buildi
 	n := npcData[name]
 	location := worldmap.Coordinates{x, y}
 	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewWithinBuilding(world, b, location), getDialogue(n.DialogueType)}
+	for c, count := range n.ShopInventory {
+
+		for i := 0; i < count; i++ {
+			switch c {
+			case "Ammo":
+				npc.PickupItem(item.GenerateAmmo())
+			case "Armour":
+				npc.PickupItem(item.GenerateArmour())
+			case "Consumable":
+				npc.PickupItem(item.GenerateConsumable())
+			case "Item":
+				npc.PickupItem(item.GenerateItem())
+			case "Weapon":
+				npc.PickupItem(item.GenerateWeapon())
+			}
+		}
+	}
+
 	npc.initialiseInventory(n.Inventory)
+
 	return npc
 }
 

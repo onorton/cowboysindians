@@ -23,7 +23,7 @@
 		"Encumbrance": 100,
 		"Money": 1000,
 		"DialogueType": 1,
-		"Inventory": [
-			{"Category": "Consumable", "Name": "beer", "Amount": 2}]
+		"ShopInventory": {"Weapon":5,  "Ammo": 30},
+		"Inventory": []
 	}
 }
