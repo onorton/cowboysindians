@@ -714,6 +714,7 @@ func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
 	// If occupied by another creature, melee attack
 	if c != nil && c != p {
 		v := c.GetMount()
+
 		if v != nil {
 			m := v.(*mount.Mount)
 			if m != nil {
@@ -721,13 +722,12 @@ func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
 				input := ui.GetInput()
 				if input == ui.Confirm {
 					p.MeleeAttack(m)
-				} else {
-					p.MeleeAttack(c)
+					return true, ui.NoAction
 				}
 			}
-		} else {
-			p.MeleeAttack(c)
 		}
+		p.MeleeAttack(c)
+
 		// Will always be NoAction
 		return true, ui.NoAction
 	}
@@ -827,12 +827,15 @@ func (p *Player) findTarget() worldmap.Creature {
 			if p.world.IsOccupied(x, y) {
 				// If a creature is there, return it.
 				c := p.world.GetCreature(x, y)
-				m := c.GetMount()
-				if m != nil {
-					message.PrintMessage(fmt.Sprintf("The %s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), m.GetName(), m.GetName()))
-					input := ui.GetInput()
-					if input == ui.Confirm {
-						return m
+				v := c.GetMount()
+				if v != nil {
+					m := v.(*mount.Mount)
+					if m != nil {
+						message.PrintMessage(fmt.Sprintf("The %s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), m.GetName(), m.GetName()))
+						input := ui.GetInput()
+						if input == ui.Confirm {
+							return m
+						}
 					}
 				}
 				return c
