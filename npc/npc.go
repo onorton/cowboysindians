@@ -515,8 +515,7 @@ func (npc *Npc) dropItem(item item.Item) {
 func (npc *Npc) Update() (int, int) {
 	// Needs to be fixed
 	x, y := npc.location.X, npc.location.Y
-	pX, pY := npc.world.GetPlayer().GetCoordinates()
-	if npc.world.IsVisible(npc, pX, pY) {
+	if npc.world.InConversationRange(npc, npc.world.GetPlayer()) {
 		npc.dialogue.initialGreeting()
 	}
 	npc.FindAction()

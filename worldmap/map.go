@@ -271,6 +271,74 @@ func (m Map) IsVisible(c Creature, x1, y1 int) bool {
 	return true
 }
 
+// Bresenham algorithm to check if creature c can talk to t
+func (m Map) InConversationRange(c, t Creature) bool {
+
+	x0, y0 := c.GetCoordinates()
+	x1, y1 := t.GetCoordinates()
+
+	// No point talking if they cannot see other
+	if !m.IsVisible(c, x1, y1) || !m.IsVisible(t, x0, y0) {
+		return false
+	}
+
+	var xStep, yStep int
+	x, y := x0, y0
+	dx := float64(x1 - x0)
+	dy := float64(y1 - y0)
+	if dy < 0 {
+		yStep = -1
+		dy *= -1
+	} else if dy > 0 {
+		yStep = 1
+	}
+	if dx < 0 {
+		xStep = -1
+		dx *= -1
+	} else if dx > 0 {
+		xStep = 1
+	}
+
+	// Go down longest delta
+	if dx >= dy {
+		dErr := dy / dx
+		e := dErr - 0.5
+		for i := 0; i < int(dx); i++ {
+			x += xStep
+			e += dErr
+
+			if e >= 0.5 {
+				y += yStep
+				e -= 1
+			}
+
+			// If any square along path is impassable, c cannot talk to t
+			if m.IsValid(x, y) && !(x == x1 && y == y1) && !m.IsPassable(x, y) {
+				return false
+			}
+		}
+	} else {
+		dErr := dx / dy
+		e := dErr - 0.5
+		for i := 0; i < int(dy); i++ {
+			y += yStep
+			e += dErr
+			if e >= 0.5 {
+				x += xStep
+				e -= 1
+			}
+
+			// If any square along path is impassable, c cannot talk to t
+			if m.IsValid(x, y) && !(x == x1 && y == y1) && !m.IsPassable(x, y) {
+				return false
+			}
+
+		}
+	}
+
+	return true
+}
+
 func (m Map) TargetBehindCover(a, t Creature) bool {
 	x0, y0 := a.GetCoordinates()
 	x1, y1 := t.GetCoordinates()
