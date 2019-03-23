@@ -11,13 +11,6 @@ import (
 	"github.com/onorton/cowboysindians/worldmap"
 )
 
-type building struct {
-	x1 int
-	y1 int
-	x2 int
-	y2 int
-}
-
 type town struct {
 	tX1        int
 	tY1        int
@@ -42,7 +35,7 @@ func GenerateWorld(width, height, viewerWidth, viewerHeight int) (*worldmap.Map,
 	}
 
 	towns := make([]town, 0)
-	buildings := make([]building, 0)
+	buildings := make([]worldmap.Building, 0)
 
 	for i := 0; i < 2; i++ {
 		generateTown(&grid, &towns, &buildings)
@@ -58,10 +51,10 @@ func GenerateWorld(width, height, viewerWidth, viewerHeight int) (*worldmap.Map,
 	return world, mounts, enemies, npcs
 }
 
-func addItemsToBuilding(grid *[][]worldmap.Tile, b building) {
+func addItemsToBuilding(grid *[][]worldmap.Tile, b worldmap.Building) {
 	// Consider inner area (exclude walls)
-	x1, y1 := b.x1+1, b.y1+1
-	x2, y2 := b.x2-1, b.y2-1
+	x1, y1 := b.X1+1, b.Y1+1
+	x2, y2 := b.X2-1, b.Y2-1
 
 	buildingArea := (x2 - x1) * (y2 - y1)
 
@@ -81,7 +74,7 @@ func addItemsToBuilding(grid *[][]worldmap.Tile, b building) {
 }
 
 // Generate a rectangular building and place on map
-func generateBuildingOutsideTown(grid *[][]worldmap.Tile, towns *[]town, buildings *[]building) {
+func generateBuildingOutsideTown(grid *[][]worldmap.Tile, towns *[]town, buildings *[]worldmap.Building) {
 	width := len((*grid)[0])
 	height := len(*grid)
 
@@ -117,7 +110,7 @@ func generateBuildingOutsideTown(grid *[][]worldmap.Tile, towns *[]town, buildin
 		x1, y1 := cX-negWidth, cY-negHeight
 		x2, y2 := cX+posWidth, cY+posHeight
 
-		b := building{x1, y1, x2, y2}
+		b := worldmap.Building{x1, y1, x2, y2}
 		validBuilding = isValid(x1, y1, width, height) && isValid(x2, y2, width, height) && !overlap(*buildings, b) && !inTowns(*towns, b)
 
 		if validBuilding {
@@ -194,7 +187,7 @@ func generateBuildingOutsideTown(grid *[][]worldmap.Tile, towns *[]town, buildin
 	}
 }
 
-func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]building) {
+func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]worldmap.Building) {
 
 	validBuilding := false
 	// Keeps trying until a usable building position and size found
@@ -245,7 +238,7 @@ func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]buildi
 			}
 		}
 
-		b := building{x1, y1, x2, y2}
+		b := worldmap.Building{x1, y1, x2, y2}
 
 		validBuilding = inTown(t, b) && !overlap(*buildings, b)
 
@@ -323,7 +316,7 @@ func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]buildi
 }
 
 // Generate small town (single street with buildings)
-func generateTown(grid *[][]worldmap.Tile, towns *[]town, buildings *[]building) {
+func generateTown(grid *[][]worldmap.Tile, towns *[]town, buildings *[]worldmap.Building) {
 	// Generate area of town
 	width := len((*grid)[0])
 	height := len(*grid)
@@ -390,7 +383,7 @@ func generateTown(grid *[][]worldmap.Tile, towns *[]town, buildings *[]building)
 	}
 }
 
-func generateMounts(m *worldmap.Map, buildings []building, n int) []*mount.Mount {
+func generateMounts(m *worldmap.Map, buildings []worldmap.Building, n int) []*mount.Mount {
 	width := m.GetWidth()
 	height := m.GetHeight()
 	mounts := make([]*mount.Mount, n)
@@ -422,10 +415,13 @@ func generateEnemies(m *worldmap.Map, n int) []*enemy.Enemy {
 	return enemies
 }
 
-func generateNpcs(m *worldmap.Map, buildings []building, n int) []*npc.Npc {
+func generateNpcs(m *worldmap.Map, buildings []worldmap.Building, n int) []*npc.Npc {
 	width := m.GetWidth()
 	height := m.GetHeight()
 	npcs := make([]*npc.Npc, n)
+
+	usedBuildings := make([]worldmap.Building, 0)
+
 	for i := 0; i < n; i++ {
 		x, y := 0, 0
 
@@ -433,16 +429,30 @@ func generateNpcs(m *worldmap.Map, buildings []building, n int) []*npc.Npc {
 		insideBuilding := rand.Intn(2) == 0
 		if insideBuilding {
 			b := buildings[rand.Intn(len(buildings))]
-			x = b.x1 + 1 + rand.Intn(b.x2-b.x1-1)
-			y = b.y1 + 1 + rand.Intn(b.y2-b.y1-1)
+			x = b.X1 + 1 + rand.Intn(b.X2-b.X1-1)
+			y = b.Y1 + 1 + rand.Intn(b.Y2-b.Y1-1)
+			usedBefore := false
+			for _, building := range usedBuildings {
+				if b == building {
+					usedBefore = true
+				}
+			}
+
+			if usedBefore || !m.IsPassable(x, y) || m.IsOccupied(x, y) {
+				i--
+				continue
+			}
+			usedBuildings = append(usedBuildings, b)
+			npcs[i] = npc.NewShopkeeper("townsman", x, y, m, b)
 		} else {
 			x, y = rand.Intn(width), rand.Intn(height)
+			if !m.IsPassable(x, y) || m.IsOccupied(x, y) {
+				i--
+				continue
+			}
+			npcs[i] = npc.NewNpc("townsman", x, y, m)
 		}
-		if !m.IsPassable(x, y) || m.IsOccupied(x, y) {
-			i--
-			continue
-		}
-		npcs[i] = npc.NewNpc("townsman", x, y, m)
+
 		m.Move(npcs[i], x, y)
 
 	}
@@ -453,20 +463,20 @@ func isValid(x, y, width, height int) bool {
 	return x >= 0 && y >= 0 && x < width && y < height
 }
 
-func outside(buildings []building, x, y int) bool {
+func outside(buildings []worldmap.Building, x, y int) bool {
 	for _, b := range buildings {
-		if x >= b.x1 && x <= b.x2 && y >= b.x1 && y <= b.x2 {
+		if x >= b.X1 && x <= b.X2 && y >= b.X1 && y <= b.X2 {
 			return false
 		}
 	}
 	return true
 }
 
-func inTown(t town, b building) bool {
-	return b.x1 >= t.tX1 && b.x1 <= t.tX2 && b.x2 >= t.tX1 && b.x2 <= t.tX2 && b.y1 >= t.tY1 && b.y1 <= t.tY2 && b.y2 >= t.tY1 && b.y2 <= t.tY2
+func inTown(t town, b worldmap.Building) bool {
+	return b.X1 >= t.tX1 && b.X1 <= t.tX2 && b.X2 >= t.tX1 && b.X2 <= t.tX2 && b.Y1 >= t.tY1 && b.Y1 <= t.tY2 && b.Y2 >= t.tY1 && b.Y2 <= t.tY2
 }
 
-func inTowns(towns []town, b building) bool {
+func inTowns(towns []town, b worldmap.Building) bool {
 	for _, t := range towns {
 		if inTown(t, b) {
 			return true
@@ -475,12 +485,12 @@ func inTowns(towns []town, b building) bool {
 	return false
 }
 
-func overlap(buildings []building, b building) bool {
+func overlap(buildings []worldmap.Building, b worldmap.Building) bool {
 	for _, otherBuilding := range buildings {
-		x1y1Overlaps := b.x1 >= otherBuilding.x1-1 && b.x1 <= otherBuilding.x2+1 && b.y1 >= otherBuilding.y1-1 && b.y1 <= otherBuilding.y2+1
-		x1y2Overlaps := b.x1 >= otherBuilding.x1-1 && b.x1 <= otherBuilding.x2+1 && b.y2 >= otherBuilding.y1-1 && b.y2 <= otherBuilding.y2+1
-		x2y1Overlaps := b.x2 >= otherBuilding.x1-1 && b.x2 <= otherBuilding.x2+1 && b.y1 >= otherBuilding.y1-1 && b.y1 <= otherBuilding.y2+1
-		x2y2Overlaps := b.x2 >= otherBuilding.x1-1 && b.x2 <= otherBuilding.x2+1 && b.y2 >= otherBuilding.y1-1 && b.y2 <= otherBuilding.y2+1
+		x1y1Overlaps := b.X1 >= otherBuilding.X1-1 && b.X1 <= otherBuilding.X2+1 && b.Y1 >= otherBuilding.Y1-1 && b.Y1 <= otherBuilding.Y2+1
+		x1y2Overlaps := b.X1 >= otherBuilding.X1-1 && b.X1 <= otherBuilding.X2+1 && b.Y2 >= otherBuilding.Y1-1 && b.Y2 <= otherBuilding.Y2+1
+		x2y1Overlaps := b.X2 >= otherBuilding.X1-1 && b.X2 <= otherBuilding.X2+1 && b.Y1 >= otherBuilding.Y1-1 && b.Y1 <= otherBuilding.Y2+1
+		x2y2Overlaps := b.X2 >= otherBuilding.X1-1 && b.X2 <= otherBuilding.X2+1 && b.Y2 >= otherBuilding.Y1-1 && b.Y2 <= otherBuilding.Y2+1
 
 		if x1y1Overlaps || x1y2Overlaps || x2y1Overlaps || x2y2Overlaps {
 			return true

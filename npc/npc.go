@@ -49,7 +49,20 @@ func NewNpc(name string, x, y int, world *worldmap.Map) *Npc {
 	n := npcData[name]
 	location := worldmap.Coordinates{x, y}
 	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location), &Dialogue{false}}
-	for _, itemDefinition := range n.Inventory {
+	npc.initialiseInventory(n.Inventory)
+	return npc
+}
+
+func NewShopkeeper(name string, x, y int, world *worldmap.Map, b worldmap.Building) *Npc {
+	n := npcData[name]
+	location := worldmap.Coordinates{x, y}
+	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewWithinBuilding(world, b, location), &Dialogue{false}}
+	npc.initialiseInventory(n.Inventory)
+	return npc
+}
+
+func (npc *Npc) initialiseInventory(inventory []item.ItemDefinition) {
+	for _, itemDefinition := range inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm item.Item = nil
 			switch itemDefinition.Category {
@@ -67,8 +80,8 @@ func NewNpc(name string, x, y int, world *worldmap.Map) *Npc {
 			npc.PickupItem(itm)
 		}
 	}
-	return npc
 }
+
 func (npc *Npc) Render() ui.Element {
 	if npc.mount != nil {
 		return icon.MergeIcons(npc.icon, npc.mount.GetIcon())
@@ -612,9 +625,15 @@ func (npc *Npc) IsCrouching() bool {
 
 func (npc *Npc) SetMap(world *worldmap.Map) {
 	npc.world = world
-	if w, ok := npc.waypoint.(*worldmap.RandomWaypoint); ok {
+
+	switch w := npc.waypoint.(type) {
+	case *worldmap.RandomWaypoint:
+		w.SetMap(world)
+	case *worldmap.Patrol:
+	case *worldmap.WithinBuilding:
 		w.SetMap(world)
 	}
+
 }
 
 func (npc *Npc) GetMount() worldmap.Creature {

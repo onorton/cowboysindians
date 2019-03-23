@@ -113,9 +113,85 @@ func (p *Patrol) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// WithinBuilding means that creatures move randomly within a given building
+type WithinBuilding struct {
+	world           *Map
+	building        Building
+	currentWaypoint Coordinates
+}
+
+func NewWithinBuilding(world *Map, building Building, location Coordinates) *WithinBuilding {
+	return &WithinBuilding{world, building, location}
+}
+
+func (wb *WithinBuilding) SetMap(world *Map) {
+	wb.world = world
+}
+
+func (wb *WithinBuilding) NextWaypoint(location Coordinates) Coordinates {
+	if wb.currentWaypoint == location {
+		for {
+			newX := wb.building.X1 + rand.Intn(wb.building.X2-wb.building.X1-1) + 1
+			newY := wb.building.Y1 + rand.Intn(wb.building.Y2-wb.building.Y1-1) + 1
+			if wb.world.IsPassable(newX, newY) {
+				wb.currentWaypoint = Coordinates{newX, newY}
+				break
+			}
+		}
+	}
+	return wb.currentWaypoint
+}
+
+func (wb *WithinBuilding) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	buildingValue, err := json.Marshal(wb.building)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Building\":%s,", buildingValue))
+
+	currentWaypointValue, err := json.Marshal(wb.currentWaypoint)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"CurrentWaypoint\":%s", currentWaypointValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (wb *WithinBuilding) UnmarshalJSON(data []byte) error {
+
+	type wbJson struct {
+		Building        Building
+		CurrentWaypoint Coordinates
+	}
+
+	var v wbJson
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	wb.building = v.Building
+	wb.currentWaypoint = v.CurrentWaypoint
+
+	return nil
+}
+
 func UnmarshalWaypointSystem(waypoint map[string]interface{}) WaypointSystem {
 	waypointJson, err := json.Marshal(waypoint)
 	check(err)
+
+	if _, ok := waypoint["Building"]; ok {
+		var wb WithinBuilding
+		err = json.Unmarshal(waypointJson, &wb)
+		check(err)
+		return &wb
+	}
 
 	if _, ok := waypoint["Index"]; ok {
 		var patrol Patrol
