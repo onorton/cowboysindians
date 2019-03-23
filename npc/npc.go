@@ -48,7 +48,7 @@ func fetchNpcData() map[string]NpcAttributes {
 func NewNpc(name string, x, y int, world *worldmap.Map) *Npc {
 	n := npcData[name]
 	location := worldmap.Coordinates{x, y}
-	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location), &Dialogue{false}}
+	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location), &basicDialogue{false}}
 	npc.initialiseInventory(n.Inventory)
 	return npc
 }
@@ -56,7 +56,7 @@ func NewNpc(name string, x, y int, world *worldmap.Map) *Npc {
 func NewShopkeeper(name string, x, y int, world *worldmap.Map, b worldmap.Building) *Npc {
 	n := npcData[name]
 	location := worldmap.Coordinates{x, y}
-	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewWithinBuilding(world, b, location), &Dialogue{false}}
+	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewWithinBuilding(world, b, location), &shopkeeperDialogue{false}}
 	npc.initialiseInventory(n.Inventory)
 	return npc
 }
@@ -141,8 +141,8 @@ func (npc *Npc) MarshalJSON() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func (npc *Npc) Talk() {
-	npc.dialogue.Greet()
+func (npc *Npc) Talk() bool {
+	return npc.dialogue.interact()
 }
 
 func (npc *Npc) UnmarshalJSON(data []byte) error {
@@ -165,7 +165,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 		Inventory      item.ItemList
 		MountID        string
 		WaypointSystem map[string]interface{}
-		Dialogue       *Dialogue
+		Dialogue       map[string]interface{}
 	}
 	var v npcJson
 
@@ -188,7 +188,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 	npc.inventory = v.Inventory
 	npc.mountID = v.MountID
 	npc.waypoint = worldmap.UnmarshalWaypointSystem(v.WaypointSystem)
-	npc.dialogue = v.Dialogue
+	npc.dialogue = unmarshalDialogue(v.Dialogue)
 
 	return nil
 }
@@ -517,7 +517,7 @@ func (npc *Npc) Update() (int, int) {
 	x, y := npc.location.X, npc.location.Y
 	pX, pY := npc.world.GetPlayer().GetCoordinates()
 	if npc.world.IsVisible(npc, pX, pY) {
-		npc.dialogue.InitialGreeting()
+		npc.dialogue.initialGreeting()
 	}
 	npc.FindAction()
 	if npc.mount != nil {
@@ -661,6 +661,7 @@ func (npc *Npc) RemoveItem(itm item.Item) {
 	for i, item := range npc.inventory {
 		if itm.GetName() == item.GetName() {
 			npc.inventory = append(npc.inventory[:i], npc.inventory[i+1:]...)
+			return
 		}
 	}
 }
@@ -706,5 +707,5 @@ type Npc struct {
 	mount       *mount.Mount
 	world       *worldmap.Map
 	waypoint    worldmap.WaypointSystem
-	dialogue    *Dialogue
+	dialogue    dialogue
 }

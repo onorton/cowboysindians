@@ -58,7 +58,7 @@ func trade(p *Player, npc *npc.Npc) {
 			}
 		} else if action == ui.Exit || action == ui.CancelAction {
 			tradeComplete = true
-			message.PrintMessage("")
+			message.PrintMessage("\"Pleasure doing business with you.\"")
 		}
 	}
 }
