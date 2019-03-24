@@ -50,15 +50,21 @@ func fetchNpcData() map[string]NpcAttributes {
 func NewNpc(name string, x, y int, world *worldmap.Map) *Npc {
 	n := npcData[name]
 	location := worldmap.Coordinates{x, y}
-	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location), getDialogue(n.DialogueType)}
+	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location), &basicDialogue{false}}
 	npc.initialiseInventory(n.Inventory)
 	return npc
 }
 
 func NewShopkeeper(name string, x, y int, world *worldmap.Map, b worldmap.Building) *Npc {
 	n := npcData[name]
+	var dialogue dialogue
+	if n.DialogueType == Basic {
+		dialogue = &basicDialogue{false}
+	} else {
+		dialogue = &shopkeeperDialogue{false, world, b}
+	}
 	location := worldmap.Coordinates{x, y}
-	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewWithinBuilding(world, b, location), getDialogue(n.DialogueType)}
+	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewWithinBuilding(world, b, location), dialogue}
 	for c, count := range n.ShopInventory {
 
 		for i := 0; i < count; i++ {
@@ -535,8 +541,12 @@ func (npc *Npc) dropItem(item item.Item) {
 func (npc *Npc) Update() (int, int) {
 	// Needs to be fixed
 	x, y := npc.location.X, npc.location.Y
-	if npc.world.InConversationRange(npc, npc.world.GetPlayer()) {
+	p := npc.world.GetPlayer()
+	pX, pY := p.GetCoordinates()
+	if npc.world.InConversationRange(npc, p) {
 		npc.dialogue.initialGreeting()
+	} else if npc.world.IsVisible(npc, pX, pY) {
+		npc.dialogue.resetSeen()
 	}
 	npc.FindAction()
 	if npc.mount != nil {
@@ -651,6 +661,10 @@ func (npc *Npc) SetMap(world *worldmap.Map) {
 	case *worldmap.Patrol:
 	case *worldmap.WithinBuilding:
 		w.SetMap(world)
+	}
+
+	if d, ok := npc.dialogue.(*shopkeeperDialogue); ok {
+		d.setMap(world)
 	}
 
 }

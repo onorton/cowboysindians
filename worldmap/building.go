@@ -12,5 +12,10 @@ type BuildingType int
 
 const (
 	Residential BuildingType = iota
-	Commercial
+	GunShop
+	Saloon
 )
+
+func (b Building) Inside(x, y int) bool {
+	return x >= b.X1 && x <= b.X2 && y >= b.Y1 && y <= b.Y2
+}

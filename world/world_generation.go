@@ -48,7 +48,7 @@ func GenerateWorld(width, height, viewerWidth, viewerHeight int) (*worldmap.Map,
 
 	mounts := generateMounts(world, buildings, 5)
 	enemies := generateEnemies(world, 2)
-	npcs := generateNpcs(world, buildings, 5)
+	npcs := generateNpcs(world, buildings, 10)
 
 	return world, mounts, enemies, npcs
 }
@@ -241,8 +241,8 @@ func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]worldm
 			}
 		}
 
-		// 50/50 chance of being residential or commerical
-		buildingType := worldmap.BuildingType(rand.Intn(2))
+		// 1/3 chance of being residential
+		buildingType := worldmap.BuildingType(rand.Intn(3))
 
 		b := worldmap.Building{x1, y1, x2, y2, buildingType}
 
@@ -279,8 +279,8 @@ func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]worldm
 				}
 			}
 
-			// If commerical add counter
-			if b.T == worldmap.Commercial {
+			// If not residential add counter
+			if b.T != worldmap.Residential {
 				// Choose the side flap will appear
 				flapSide := rand.Intn(2) == 0
 				if t.horizontal {
@@ -488,10 +488,14 @@ func generateNpcs(m *worldmap.Map, buildings []worldmap.Building, n int) []*npc.
 				continue
 			}
 			usedBuildings = append(usedBuildings, b)
-			if b.T == worldmap.Commercial {
-				npcs[i] = npc.NewShopkeeper("shopkeeper", x, y, m, b)
-			} else {
+			switch b.T {
+			case worldmap.Residential:
 				npcs[i] = npc.NewNpc("townsman", x, y, m)
+			case worldmap.GunShop:
+				npcs[i] = npc.NewShopkeeper("shopkeeper", x, y, m, b)
+			case worldmap.Saloon:
+				npcs[i] = npc.NewShopkeeper("bartender", x, y, m, b)
+
 			}
 		} else {
 			x, y = rand.Intn(width), rand.Intn(height)
@@ -514,7 +518,7 @@ func isValid(x, y, width, height int) bool {
 
 func outside(buildings []worldmap.Building, x, y int) bool {
 	for _, b := range buildings {
-		if x >= b.X1 && x <= b.X2 && y >= b.X1 && y <= b.X2 {
+		if b.Inside(x, y) {
 			return false
 		}
 	}

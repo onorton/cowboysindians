@@ -25,5 +25,20 @@
 		"DialogueType": 1,
 		"ShopInventory": {"Weapon":5,  "Ammo": 30},
 		"Inventory": []
+	},
+	"bartender": {
+		"Icon": {"Icon": 64, "Colour": 4},
+		"Initiative": 1,
+		"Hp": 5,
+		"Ac": 10,
+		"Str": 10,
+		"Dex": 13,
+		"Encumbrance": 100,
+		"Money": 1000,
+		"DialogueType": 1,
+		"ShopInventory": {"Consumable": 30},
+		"Inventory": []
 	}
+
+
 }
