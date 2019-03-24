@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 
 	"github.com/onorton/cowboysindians/message"
@@ -17,8 +18,16 @@ const (
 	Shopkeeper
 )
 
-var greetings []string = []string{"Howdy, partner!", "Howdy!", "Howdy, stranger!"}
-var storeGreetings []string = []string{"Welcome to my store.", "Can I interest you in any of my wares?", "Welcome!"}
+var dialogueData map[string][]string = fetchDialogueData()
+
+func fetchDialogueData() map[string][]string {
+	data, err := ioutil.ReadFile("data/dialogue.json")
+	check(err)
+	var eD map[string][]string
+	err = json.Unmarshal(data, &eD)
+	check(err)
+	return eD
+}
 
 type basicDialogue struct {
 	seenPlayer bool
@@ -26,13 +35,13 @@ type basicDialogue struct {
 
 func (d *basicDialogue) initialGreeting() {
 	if !d.seenPlayer {
-		message.Enqueue(fmt.Sprintf("\"%s\"", greetings[rand.Intn(len(greetings))]))
+		message.Enqueue(fmt.Sprintf("\"%s\"", dialogueData["Greetings"][rand.Intn(len(dialogueData["Greetings"]))]))
 		d.seenPlayer = true
 	}
 }
 
 func (d *basicDialogue) interact() bool {
-	message.PrintMessage(fmt.Sprintf("\"%s\"", greetings[rand.Intn(len(greetings))]))
+	message.PrintMessage(fmt.Sprintf("\"%s\"", dialogueData["Greetings"][rand.Intn(len(dialogueData["Greetings"]))]))
 	return false
 }
 
@@ -79,8 +88,9 @@ type shopkeeperDialogue struct {
 func (d *shopkeeperDialogue) initialGreeting() {
 	pX, pY := d.world.GetPlayer().GetCoordinates()
 
+	storeGreetings := dialogueData[d.b.T.String()]
 	if !d.seenPlayer && d.b.Inside(pX, pY) {
-		message.Enqueue(fmt.Sprintf("\"%s %s\"", greetings[rand.Intn(len(greetings))], storeGreetings[rand.Intn(len(storeGreetings))]))
+		message.Enqueue(fmt.Sprintf("\"%s %s\"", dialogueData["Greetings"][rand.Intn(len(dialogueData["Greetings"]))], storeGreetings[rand.Intn(len(storeGreetings))]))
 		d.seenPlayer = true
 	}
 	if d.seenPlayer && !d.b.Inside(pX, pY) {

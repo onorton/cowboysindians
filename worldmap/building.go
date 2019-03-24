@@ -16,6 +16,10 @@ const (
 	Saloon
 )
 
+func (t BuildingType) String() string {
+	return [...]string{"Residential", "GunShop", "Saloon"}[t]
+}
+
 func (b Building) Inside(x, y int) bool {
 	return x >= b.X1 && x <= b.X2 && y >= b.Y1 && y <= b.Y2
 }
