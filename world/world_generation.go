@@ -55,26 +55,54 @@ func GenerateWorld(width, height, viewerWidth, viewerHeight int) (*worldmap.Map,
 
 func addItemsToBuildings(world *worldmap.Map, buildings []worldmap.Building) {
 	for _, b := range buildings {
+
 		// Consider inner area (exclude walls)
 		x1, y1 := b.X1+1, b.Y1+1
 		x2, y2 := b.X2-1, b.Y2-1
 
-		buildingArea := (x2 - x1) * (y2 - y1)
+		// If Saloon, place chairs and tables
+		if b.T == worldmap.Saloon {
 
-		numOfItems := buildingArea / 2
-
-		for i := 0; i < numOfItems; i++ {
-
-			// Select a random location
-			x := x1 + rand.Intn(x2-x1)
-			y := y1 + rand.Intn(y2-y1)
-
-			if world.IsPassable(x, y) {
-				world.PlaceItem(x, y, item.GenerateItem())
+			// Chairs and tables should not be close to counter or front door
+			if b.Horizontal {
+				y1 += 3
+				y2 -= 3
 			} else {
-				i--
+				x1 += 3
+				x2 -= 3
 			}
 
+			for x := x1; x <= x2; x += 3 {
+				for y := y1; y <= y2; y += 3 {
+					// If a free 3x3 space exists, add a table and four chairs
+					if x >= x1 && x+2 <= x2 && y >= y1 && y+2 <= y2 {
+						world.PlaceItem(x+1, y+1, item.NewNormalItem("table"))
+						world.PlaceItem(x, y+1, item.NewNormalItem("chair"))
+						world.PlaceItem(x+1, y, item.NewNormalItem("chair"))
+						world.PlaceItem(x+2, y+1, item.NewNormalItem("chair"))
+						world.PlaceItem(x+1, y+2, item.NewNormalItem("chair"))
+					}
+				}
+			}
+
+		} else {
+
+			buildingArea := (x2 - x1) * (y2 - y1)
+
+			numOfItems := buildingArea / 2
+
+			for i := 0; i < numOfItems; i++ {
+
+				// Select a random location
+				x := x1 + rand.Intn(x2-x1)
+				y := y1 + rand.Intn(y2-y1)
+
+				if world.IsPassable(x, y) {
+					world.PlaceItem(x, y, item.GenerateItem())
+				} else {
+					i--
+				}
+			}
 		}
 	}
 
@@ -117,7 +145,7 @@ func generateBuildingOutsideTown(grid *[][]worldmap.Tile, towns *[]town, buildin
 		x1, y1 := cX-negWidth, cY-negHeight
 		x2, y2 := cX+posWidth, cY+posHeight
 
-		b := worldmap.Building{x1, y1, x2, y2, worldmap.Residential}
+		b := worldmap.Building{x1, y1, x2, y2, worldmap.Residential, false}
 		validBuilding = isValid(x1, y1, width, height) && isValid(x2, y2, width, height) && !overlap(*buildings, b) && !inTowns(*towns, b)
 
 		if validBuilding {
@@ -198,8 +226,17 @@ func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]worldm
 		// Must be at least 5 in each dimension
 
 		// Width along the street
-		buildingWidth := rand.Intn(3) + 5
-		depth := rand.Intn(3) + 5
+		buildingWidth := rand.Intn(5) + 5
+		depth := rand.Intn(5) + 5
+
+		// 1/3 chance of being residential
+		buildingType := worldmap.BuildingType(rand.Intn(3))
+
+		// Commerical buildings would be larger
+		if buildingType != worldmap.Residential {
+			buildingWidth = rand.Intn(10) + 8
+			depth = rand.Intn(10) + 8
+		}
 
 		posWidth := 0
 		negWidth := 0
@@ -241,10 +278,7 @@ func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]worldm
 			}
 		}
 
-		// 1/3 chance of being residential
-		buildingType := worldmap.BuildingType(rand.Intn(3))
-
-		b := worldmap.Building{x1, y1, x2, y2, buildingType}
+		b := worldmap.Building{x1, y1, x2, y2, buildingType, t.horizontal}
 
 		validBuilding = inTown(t, b) && !overlap(*buildings, b)
 
@@ -369,8 +403,8 @@ func generateTown(grid *[][]worldmap.Tile, towns *[]town, buildings *[]worldmap.
 	validTown := false
 
 	for !validTown {
-		townWidth := 10 + rand.Intn(width)
-		townHeight := 10 + rand.Intn(height)
+		townWidth := 15 + rand.Intn(width)
+		townHeight := 15 + rand.Intn(height)
 
 		posWidth := 0
 		negWidth := 0

@@ -12,5 +12,19 @@
 		"Value": 200,
 		"Cover": true,
 		"Probability": 1.0
+	},
+	"table":{
+		"Icon": {"Icon": 9572, "Colour": 6},
+		"Weight": 25,
+		"Value": 500,
+		"Cover": true,
+		"Probability": 1.0
+	},
+	"chair":{
+		"Icon": {"Icon": 9573, "Colour": 6},
+		"Weight": 20,
+		"Value": 400,
+		"Cover": true,
+		"Probability": 1.0
 	}
 }
