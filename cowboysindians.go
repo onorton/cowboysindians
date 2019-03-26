@@ -225,6 +225,7 @@ func main() {
 
 						if player.OverEncumbered() {
 							message.PrintMessage("You are too encumbered to move.")
+							action = ui.NoAction
 							continue
 						} else {
 							endTurn, action = player.Move(action)
