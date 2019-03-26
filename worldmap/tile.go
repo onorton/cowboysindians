@@ -43,7 +43,7 @@ func NewTile(name string) Tile {
 	blocksV := terrain.BlocksVision
 	door := terrain.Door
 	if door {
-		return &Door{icon, passable, blocksV, blocksV, nil}
+		return &Door{icon, passable, blocksV, blocksV, nil, make([]item.Item, 0)}
 	} else {
 		return &NormalTile{icon, passable, blocksV, nil, make([]item.Item, 0)}
 	}
@@ -115,6 +115,12 @@ func (t *NormalTile) placeItem(itm item.Item) {
 	t.items = append([]item.Item{itm}, t.items...)
 }
 
+func (t *NormalTile) getItems() []item.Item {
+	items := t.items
+	t.items = make([]item.Item, 0)
+	return items
+}
+
 func (t *NormalTile) givesCover() bool {
 	cover := !t.passable
 
@@ -166,17 +172,19 @@ type Door struct {
 	blocksV       bool
 	blocksVClosed bool
 	c             Creature
+	items         []item.Item
 }
 
 func (d *Door) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
-	keys := []string{"Terrain", "Passable", "BlocksVision", "BlocksVisionClosed"}
+	keys := []string{"Terrain", "Passable", "BlocksVision", "BlocksVisionClosed", "Items"}
 
 	tileValues := map[string]interface{}{
 		"Terrain":            d.terrain,
 		"Passable":           d.passable,
 		"BlocksVision":       d.blocksV,
 		"BlocksVisionClosed": d.blocksVClosed,
+		"Items":              d.items,
 	}
 
 	length := len(tileValues)
@@ -205,6 +213,7 @@ func (d *Door) UnmarshalJSON(data []byte) error {
 		Passable           bool
 		BlocksVision       bool
 		BlocksVisionClosed bool
+		Items              item.ItemList
 	}
 	v := doorJson{}
 
@@ -215,7 +224,8 @@ func (d *Door) UnmarshalJSON(data []byte) error {
 	d.terrain = v.Terrain
 	d.passable = v.Passable
 	d.blocksV = v.BlocksVision
-	d.blocksVClosed = v.BlocksVision
+	d.blocksVClosed = v.BlocksVisionClosed
+	d.items = v.Items
 
 	return nil
 
@@ -245,10 +255,32 @@ func (d *Door) setCreature(c Creature) {
 	d.c = c
 }
 
+func (d *Door) getItems() []item.Item {
+	items := d.items
+	d.items = make([]item.Item, 0)
+	return items
+}
+
+func (d *Door) placeItem(itm item.Item) {
+	d.items = append([]item.Item{itm}, d.items...)
+}
+
 func (d *Door) render() ui.Element {
 	if d.c != nil {
 		return d.c.Render()
 	} else if d.passable {
+
+		if len(d.items) != 0 {
+			// pick an item that gives cover if it exists
+			for _, item := range d.items {
+				if item.GivesCover() {
+					return item.Render()
+				}
+			}
+
+			return d.items[0].Render()
+		}
+
 		return terrainData["ground"].Icon.Render()
 	} else {
 		return d.terrain.Render()
@@ -280,4 +312,6 @@ type Tile interface {
 	isOccupied() bool
 	getCreature() Creature
 	setCreature(Creature)
+	getItems() []item.Item
+	placeItem(item.Item)
 }

@@ -485,9 +485,7 @@ func (m Map) BehindCover(x1, y1 int, a Creature) bool {
 }
 
 func (m Map) PlaceItem(x, y int, item item.Item) {
-	if t, ok := m.grid[y][x].(*NormalTile); ok {
-		t.placeItem(item)
-	}
+	m.grid[y][x].placeItem(item)
 }
 
 func (m Map) GetWidth() int {
@@ -546,15 +544,7 @@ func (m Map) Move(c Creature, x, y int) {
 }
 
 func (m Map) GetItems(x, y int) []item.Item {
-
-	switch t := m.grid[y][x].(type) {
-	case *NormalTile:
-		items := t.items
-		t.items = make([]item.Item, 0)
-		return items
-	default:
-		return make([]item.Item, 0)
-	}
+	return m.grid[y][x].getItems()
 }
 
 func (m Map) GetPlayer() Creature {
