@@ -64,16 +64,22 @@ func addItemsToBuildings(world *worldmap.Map, buildings []worldmap.Building) {
 		if b.T == worldmap.Saloon {
 
 			// Chairs and tables should not be close to counter or front door
-			if b.Horizontal {
-				y1 += 3
-				y2 -= 3
-			} else {
-				x1 += 3
+			if b.DoorLocation.X == b.X1 {
+				x1 += 1
 				x2 -= 3
+			} else if b.DoorLocation.X == b.X2 {
+				x1 += 3
+				x2 -= 1
+			} else if b.DoorLocation.Y == b.Y1 {
+				y1 += 1
+				y2 -= 3
+			} else if b.DoorLocation.Y == b.Y2 {
+				y1 += 3
+				y2 -= 1
 			}
 
-			for x := x1; x <= x2; x += 3 {
-				for y := y1; y <= y2; y += 3 {
+			for x := x1; x <= x2; x += 4 {
+				for y := y1; y <= y2; y += 4 {
 					// If a free 3x3 space exists, add a table and four chairs
 					if x >= x1 && x+2 <= x2 && y >= y1 && y+2 <= y2 {
 						world.PlaceItem(x+1, y+1, item.NewNormalItem("table"))
@@ -145,7 +151,7 @@ func generateBuildingOutsideTown(grid *[][]worldmap.Tile, towns *[]town, buildin
 		x1, y1 := cX-negWidth, cY-negHeight
 		x2, y2 := cX+posWidth, cY+posHeight
 
-		b := worldmap.Building{x1, y1, x2, y2, worldmap.Residential, false}
+		b := worldmap.Building{x1, y1, x2, y2, worldmap.Residential, nil}
 		validBuilding = isValid(x1, y1, width, height) && isValid(x2, y2, width, height) && !overlap(*buildings, b) && !inTowns(*towns, b)
 
 		if validBuilding {
@@ -164,22 +170,25 @@ func generateBuildingOutsideTown(grid *[][]worldmap.Tile, towns *[]town, buildin
 			wallSelection := rand.Intn(4)
 
 			// Wall selection is North, South, East, West
+			doorX, doorY := 0, 0
 			switch wallSelection {
 			case 0:
-				doorX := x1 + 1 + rand.Intn(buildingWidth-2)
-				(*grid)[y1][doorX] = worldmap.NewTile("door")
+				doorX = x1 + 1 + rand.Intn(buildingWidth-2)
+				doorY = y1
 			case 1:
-				doorX := x1 + 1 + rand.Intn(buildingWidth-2)
-				(*grid)[y2][doorX] = worldmap.NewTile("door")
+				doorX = x1 + 1 + rand.Intn(buildingWidth-2)
+				doorY = y2
 			case 2:
-				doorY := y1 + 1 + rand.Intn(buildingHeight-2)
-				(*grid)[doorY][x2] = worldmap.NewTile("door")
+				doorY = y1 + 1 + rand.Intn(buildingHeight-2)
+				doorX = x2
 			case 3:
-				doorY := y1 + 1 + rand.Intn(buildingHeight-2)
-				(*grid)[doorY][x1] = worldmap.NewTile("door")
+				doorY = y1 + 1 + rand.Intn(buildingHeight-2)
+				doorX = x1
 			}
+			(*grid)[doorY][doorX] = worldmap.NewTile("door")
+			b.DoorLocation = &worldmap.Coordinates{doorX, doorY}
 
-			// Add number of windows according total perimeter of building
+			// Add number of windows accbording total perimeter of building
 			perimeter := 2*(y2-y1) + 2*(x2-x1)
 			minNumWindows := perimeter / 5
 			maxNumWindows := perimeter / 3
@@ -223,11 +232,11 @@ func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]worldm
 	validBuilding := false
 	// Keeps trying until a usable building position and size found
 	for !validBuilding {
-		// Must be at least 5 in each dimension
+		// Must be at least 3 in each dimension
 
 		// Width along the street
-		buildingWidth := rand.Intn(5) + 5
-		depth := rand.Intn(5) + 5
+		buildingWidth := rand.Intn(5) + 3
+		depth := rand.Intn(5) + 3
 
 		// 1/3 chance of being residential
 		buildingType := worldmap.BuildingType(rand.Intn(3))
@@ -278,7 +287,7 @@ func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]worldm
 			}
 		}
 
-		b := worldmap.Building{x1, y1, x2, y2, buildingType, t.horizontal}
+		b := worldmap.Building{x1, y1, x2, y2, buildingType, nil}
 
 		validBuilding = inTown(t, b) && !overlap(*buildings, b)
 
@@ -296,22 +305,25 @@ func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]worldm
 				(*grid)[y][x2] = worldmap.NewTile("wall")
 			}
 
+			doorX, doorY := 0, 0
 			// Door is on side facing street
 			if t.horizontal {
-				doorLocation := x1 + 1 + rand.Intn(buildingWidth-2)
+				doorX = x1 + 1 + rand.Intn(buildingWidth-2)
 				if sideOfStreet {
-					(*grid)[y2][doorLocation] = worldmap.NewTile("door")
+					doorY = y2
 				} else {
-					(*grid)[y1][doorLocation] = worldmap.NewTile("door")
+					doorY = y1
 				}
 			} else {
-				doorLocation := y1 + 1 + rand.Intn(buildingWidth-2)
+				doorY = y1 + 1 + rand.Intn(buildingWidth-2)
 				if sideOfStreet {
-					(*grid)[doorLocation][x2] = worldmap.NewTile("door")
+					doorX = x2
 				} else {
-					(*grid)[doorLocation][x1] = worldmap.NewTile("door")
+					doorX = x1
 				}
 			}
+			(*grid)[doorY][doorX] = worldmap.NewTile("door")
+			b.DoorLocation = &worldmap.Coordinates{doorX, doorY}
 
 			// If not residential add counter
 			if b.T != worldmap.Residential {

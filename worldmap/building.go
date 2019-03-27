@@ -1,12 +1,12 @@
 package worldmap
 
 type Building struct {
-	X1         int
-	Y1         int
-	X2         int
-	Y2         int
-	T          BuildingType
-	Horizontal bool
+	X1           int
+	Y1           int
+	X2           int
+	Y2           int
+	T            BuildingType
+	DoorLocation *Coordinates
 }
 
 type BuildingType int
