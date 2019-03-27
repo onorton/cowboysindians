@@ -586,12 +586,7 @@ func inTowns(towns []town, b worldmap.Building) bool {
 
 func overlap(buildings []worldmap.Building, b worldmap.Building) bool {
 	for _, otherBuilding := range buildings {
-		x1y1Overlaps := b.X1 >= otherBuilding.X1-1 && b.X1 <= otherBuilding.X2+1 && b.Y1 >= otherBuilding.Y1-1 && b.Y1 <= otherBuilding.Y2+1
-		x1y2Overlaps := b.X1 >= otherBuilding.X1-1 && b.X1 <= otherBuilding.X2+1 && b.Y2 >= otherBuilding.Y1-1 && b.Y2 <= otherBuilding.Y2+1
-		x2y1Overlaps := b.X2 >= otherBuilding.X1-1 && b.X2 <= otherBuilding.X2+1 && b.Y1 >= otherBuilding.Y1-1 && b.Y1 <= otherBuilding.Y2+1
-		x2y2Overlaps := b.X2 >= otherBuilding.X1-1 && b.X2 <= otherBuilding.X2+1 && b.Y2 >= otherBuilding.Y1-1 && b.Y2 <= otherBuilding.Y2+1
-
-		if x1y1Overlaps || x1y2Overlaps || x2y1Overlaps || x2y2Overlaps {
+		if !(b.X2 < otherBuilding.X1-1 || otherBuilding.X2 < b.X1-1 || b.Y2 < otherBuilding.Y1-1 || otherBuilding.Y2 < b.Y1-1) {
 			return true
 		}
 	}
@@ -601,16 +596,15 @@ func overlap(buildings []worldmap.Building, b worldmap.Building) bool {
 
 func townsOverlap(towns []town, t town) bool {
 	for _, otherTown := range towns {
-		x1y1Overlaps := t.tX1 >= otherTown.tX1 && t.tX1 <= otherTown.tX2 && t.tY1 >= otherTown.tY1 && t.tY1 <= otherTown.tY2
-		x1y2Overlaps := t.tX1 >= otherTown.tX1 && t.tX1 <= otherTown.tX2 && t.tY2 >= otherTown.tY1 && t.tY2 <= otherTown.tY2
-		x2y1Overlaps := t.tX2 >= otherTown.tX1 && t.tX2 <= otherTown.tX2 && t.tY1 >= otherTown.tY1 && t.tY1 <= otherTown.tY2
-		x2y2Overlaps := t.tX2 >= otherTown.tX1 && t.tX2 <= otherTown.tX2 && t.tY2 >= otherTown.tY1 && t.tY2 <= otherTown.tY2
+		if !(t.tX2 < otherTown.tX1 || otherTown.tX2 < t.tX1 || t.tY2 < otherTown.tY1 || otherTown.tY2 < t.tY1) {
+			return true
+		}
 
 		t1cX, t1cY := (t.tX1+t.tX2)/2, (t.tY1+t.tY2)/2
 		t2cX, t2cY := (otherTown.tX1+otherTown.tX2)/2, (otherTown.tY1+otherTown.tY2)/2
 		distance := math.Sqrt(math.Pow(float64(t1cX-t2cX), 2) + math.Pow(float64(t1cY-t2cY), 2))
 
-		if x1y1Overlaps || x1y2Overlaps || x2y1Overlaps || x2y2Overlaps || distance < 40 {
+		if distance < 40 {
 			return true
 		}
 	}
