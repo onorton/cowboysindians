@@ -513,15 +513,27 @@ func generateNpcs(m *worldmap.Map, buildings []worldmap.Building, n int) []*npc.
 
 	usedBuildings := make([]worldmap.Building, 0)
 
-	for i := 0; i < n; i++ {
+	commercialBuildings := make([]worldmap.Building, 0)
+	for _, b := range buildings {
+		if b.T != worldmap.Residential {
+			commercialBuildings = append(commercialBuildings, b)
+		}
+	}
+	i := 0
+
+	// Place npcs in commerical buildings first
+	for ; i < n && i < len(commercialBuildings); i++ {
+		npcs[i] = placeNpcInBuilding(m, commercialBuildings[i])
+		usedBuildings = append(usedBuildings, commercialBuildings[i])
+	}
+
+	for ; i < n; i++ {
 		x, y := 0, 0
 
 		// 50/50 chance of being placed inside or outside a building
 		insideBuilding := rand.Intn(2) == 0
 		if insideBuilding {
 			b := buildings[rand.Intn(len(buildings))]
-			x = b.X1 + 1 + rand.Intn(b.X2-b.X1-1)
-			y = b.Y1 + 1 + rand.Intn(b.Y2-b.Y1-1)
 			usedBefore := false
 			for _, building := range usedBuildings {
 				if b == building {
@@ -529,20 +541,13 @@ func generateNpcs(m *worldmap.Map, buildings []worldmap.Building, n int) []*npc.
 				}
 			}
 
-			if usedBefore || !m.IsPassable(x, y) || m.IsOccupied(x, y) {
+			if usedBefore {
 				i--
 				continue
 			}
+			npcs[i] = placeNpcInBuilding(m, b)
 			usedBuildings = append(usedBuildings, b)
-			switch b.T {
-			case worldmap.Residential:
-				npcs[i] = npc.NewNpc("townsman", x, y, m)
-			case worldmap.GunShop:
-				npcs[i] = npc.NewShopkeeper("shopkeeper", x, y, m, b)
-			case worldmap.Saloon:
-				npcs[i] = npc.NewShopkeeper("bartender", x, y, m, b)
 
-			}
 		} else {
 			x, y = rand.Intn(width), rand.Intn(height)
 			if !m.IsPassable(x, y) || m.IsOccupied(x, y) {
@@ -552,10 +557,34 @@ func generateNpcs(m *worldmap.Map, buildings []worldmap.Building, n int) []*npc.
 			npcs[i] = npc.NewNpc("townsman", x, y, m)
 		}
 
-		m.Move(npcs[i], x, y)
-
+	}
+	for _, npc := range npcs {
+		x, y := npc.GetCoordinates()
+		m.Move(npc, x, y)
 	}
 	return npcs
+}
+
+func placeNpcInBuilding(m *worldmap.Map, b worldmap.Building) *npc.Npc {
+	var n *npc.Npc
+	for n == nil {
+		x := b.X1 + 1 + rand.Intn(b.X2-b.X1-1)
+		y := b.Y1 + 1 + rand.Intn(b.Y2-b.Y1-1)
+
+		if !m.IsPassable(x, y) || m.IsOccupied(x, y) {
+			continue
+		}
+
+		switch b.T {
+		case worldmap.Residential:
+			n = npc.NewNpc("townsman", x, y, m)
+		case worldmap.GunShop:
+			n = npc.NewShopkeeper("shopkeeper", x, y, m, b)
+		case worldmap.Saloon:
+			n = npc.NewShopkeeper("bartender", x, y, m, b)
+		}
+	}
+	return n
 }
 
 func isValid(x, y, width, height int) bool {
