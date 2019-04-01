@@ -645,7 +645,7 @@ func (e *Enemy) EmptyInventory() {
 	if e.world.IsVisible(e.world.GetPlayer(), e.location.X, e.location.Y) {
 		for name, count := range itemTypes {
 			if count == 1 {
-				message.Enqueue(fmt.Sprintf("The %s dropped 1 %s.", e.name, count, name))
+				message.Enqueue(fmt.Sprintf("The %s dropped 1 %s.", e.name, name))
 			} else {
 				message.Enqueue(fmt.Sprintf("The %s dropped %d %ss.", e.name, count, name))
 			}
@@ -704,7 +704,7 @@ func (e *Enemy) heal(amount int) {
 }
 
 func (e *Enemy) GetName() string {
-	return e.name
+	return "the " + e.name
 }
 
 func (e *Enemy) GetAlignment() worldmap.Alignment {

@@ -586,7 +586,7 @@ func (npc *Npc) EmptyInventory() {
 	if npc.world.IsVisible(npc.world.GetPlayer(), npc.location.X, npc.location.Y) {
 		for name, count := range itemTypes {
 			if count == 1 {
-				message.Enqueue(fmt.Sprintf("The %s dropped 1 %s.", npc.name, count, name))
+				message.Enqueue(fmt.Sprintf("The %s dropped 1 %s.", npc.name, name))
 			} else {
 				message.Enqueue(fmt.Sprintf("The %s dropped %d %ss.", npc.name, count, name))
 			}
