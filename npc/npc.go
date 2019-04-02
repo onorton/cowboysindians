@@ -36,7 +36,13 @@ type NpcAttributes struct {
 	DialogueType  dialogueType
 }
 
+type nameData struct {
+	FirstNames []string
+	LastNames  []string
+}
+
 var npcData map[string]NpcAttributes = fetchNpcData()
+var names nameData = fetchNameData()
 
 func fetchNpcData() map[string]NpcAttributes {
 	data, err := ioutil.ReadFile("data/npc.json")
@@ -47,16 +53,33 @@ func fetchNpcData() map[string]NpcAttributes {
 	return eD
 }
 
-func NewNpc(name string, x, y int, world *worldmap.Map) *Npc {
-	n := npcData[name]
+func fetchNameData() nameData {
+	data, err := ioutil.ReadFile("data/names.json")
+	check(err)
+	var nD nameData
+	err = json.Unmarshal(data, &nD)
+	check(err)
+	return nD
+}
+
+func generateName() string {
+	firstName := names.FirstNames[rand.Intn(len(names.FirstNames))]
+	lastName := names.LastNames[rand.Intn(len(names.LastNames))]
+
+	return firstName + " " + lastName
+}
+
+func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
+	n := npcData[npcType]
 	location := worldmap.Coordinates{x, y}
+	name := generateName()
 	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location), &basicDialogue{false}}
 	npc.initialiseInventory(n.Inventory)
 	return npc
 }
 
-func NewShopkeeper(name string, x, y int, world *worldmap.Map, b worldmap.Building) *Npc {
-	n := npcData[name]
+func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, b worldmap.Building) *Npc {
+	n := npcData[npcType]
 	var dialogue dialogue
 	if n.DialogueType == Basic {
 		dialogue = &basicDialogue{false}
@@ -64,6 +87,7 @@ func NewShopkeeper(name string, x, y int, world *worldmap.Map, b worldmap.Buildi
 		dialogue = &shopkeeperDialogue{false, world, b}
 	}
 	location := worldmap.Coordinates{x, y}
+	name := generateName()
 	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewWithinBuilding(world, b, location), dialogue}
 	for c, count := range n.ShopInventory {
 
