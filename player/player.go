@@ -175,17 +175,30 @@ func (p *Player) GetInitiative() int {
 
 func (p *Player) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 	if c.AttackHits(rand.Intn(20) + hitBonus + 1) {
-		message.Enqueue(fmt.Sprintf("You hit the %s.", c.GetName()))
+		if _, ok := c.(*npc.Npc); ok {
+			message.Enqueue(fmt.Sprintf("You hit %s.", c.GetName()))
+		} else {
+			message.Enqueue(fmt.Sprintf("You hit the %s.", c.GetName()))
+		}
+
 		if p.weapon != nil {
 			c.TakeDamage(p.weapon.GetDamage() + damageBonus)
 		} else {
 			c.TakeDamage(damageBonus)
 		}
 	} else {
-		message.Enqueue(fmt.Sprintf("You miss the %s.", c.GetName()))
+		if _, ok := c.(*npc.Npc); ok {
+			message.Enqueue(fmt.Sprintf("You miss %s.", c.GetName()))
+		} else {
+			message.Enqueue(fmt.Sprintf("You miss the %s.", c.GetName()))
+		}
 	}
 	if c.IsDead() {
-		message.Enqueue(fmt.Sprintf("The %s died.", c.GetName()))
+		if _, ok := c.(*npc.Npc); ok {
+			message.Enqueue(fmt.Sprintf("%s died.", c.GetName()))
+		} else {
+			message.Enqueue(fmt.Sprintf("The %s died.", c.GetName()))
+		}
 	}
 }
 
@@ -718,7 +731,11 @@ func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
 		if v != nil {
 			m := v.(*mount.Mount)
 			if m != nil {
-				message.PrintMessage(fmt.Sprintf("The %s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), m.GetName(), m.GetName()))
+				if _, ok := c.(*npc.Npc); ok {
+					message.PrintMessage(fmt.Sprintf("%s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), m.GetName(), m.GetName()))
+				} else {
+					message.PrintMessage(fmt.Sprintf("The %s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), m.GetName(), m.GetName()))
+				}
 				input := ui.GetInput()
 				if input == ui.Confirm {
 					p.MeleeAttack(m)
@@ -831,7 +848,12 @@ func (p *Player) findTarget() worldmap.Creature {
 				if v != nil {
 					m := v.(*mount.Mount)
 					if m != nil {
-						message.PrintMessage(fmt.Sprintf("The %s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), m.GetName(), m.GetName()))
+						if _, ok := c.(*npc.Npc); ok {
+							message.PrintMessage(fmt.Sprintf("%s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), m.GetName(), m.GetName()))
+						} else {
+							message.PrintMessage(fmt.Sprintf("The %s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), m.GetName(), m.GetName()))
+						}
+
 						input := ui.GetInput()
 						if input == ui.Confirm {
 							return m

@@ -704,7 +704,7 @@ func (e *Enemy) heal(amount int) {
 }
 
 func (e *Enemy) GetName() string {
-	return "the " + e.name
+	return e.name
 }
 
 func (e *Enemy) GetAlignment() worldmap.Alignment {

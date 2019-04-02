@@ -46,7 +46,7 @@ func trade(p *Player, npc *npc.Npc) {
 					validSelection = true
 					if !npc.CanBuy(item) {
 						p.AddItem(item)
-						message.Enqueue(fmt.Sprintf("The %s cannot afford that!", npc.GetName()))
+						message.Enqueue(fmt.Sprintf("%s cannot afford that!", npc.GetName()))
 					} else {
 						p.money += item.GetValue()
 						npc.RemoveMoney(item.GetValue())

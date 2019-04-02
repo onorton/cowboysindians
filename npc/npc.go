@@ -370,9 +370,9 @@ func (npc *Npc) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 	}
 	if c.GetAlignment() == worldmap.Player {
 		if hits {
-			message.Enqueue(fmt.Sprintf("The %s hit you.", npc.name))
+			message.Enqueue(fmt.Sprintf("%s hit you.", npc.name))
 		} else {
-			message.Enqueue(fmt.Sprintf("The %s missed you.", npc.name))
+			message.Enqueue(fmt.Sprintf("%s missed you.", npc.name))
 		}
 	}
 
@@ -557,7 +557,7 @@ func (npc *Npc) overEncumbered() bool {
 func (npc *Npc) dropItem(item item.Item) {
 	npc.world.PlaceItem(npc.location.X, npc.location.Y, item)
 	if npc.world.IsVisible(npc.world.GetPlayer(), npc.location.X, npc.location.Y) {
-		message.Enqueue(fmt.Sprintf("The %s dropped a %s.", npc.name, item.GetName()))
+		message.Enqueue(fmt.Sprintf("%s dropped a %s.", npc.name, item.GetName()))
 	}
 
 }
@@ -610,9 +610,9 @@ func (npc *Npc) EmptyInventory() {
 	if npc.world.IsVisible(npc.world.GetPlayer(), npc.location.X, npc.location.Y) {
 		for name, count := range itemTypes {
 			if count == 1 {
-				message.Enqueue(fmt.Sprintf("The %s dropped 1 %s.", npc.name, name))
+				message.Enqueue(fmt.Sprintf("%s dropped 1 %s.", npc.name, name))
 			} else {
-				message.Enqueue(fmt.Sprintf("The %s dropped %d %ss.", npc.name, count, name))
+				message.Enqueue(fmt.Sprintf("%s dropped %d %ss.", npc.name, count, name))
 			}
 		}
 	}
