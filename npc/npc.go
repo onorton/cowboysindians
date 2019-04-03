@@ -14,6 +14,7 @@ import (
 	"github.com/onorton/cowboysindians/mount"
 	"github.com/onorton/cowboysindians/ui"
 	"github.com/onorton/cowboysindians/worldmap"
+	"github.com/rs/xid"
 )
 
 func check(err error) {
@@ -71,15 +72,17 @@ func generateName(npcType string) *npcName {
 
 func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 	n := npcData[npcType]
+	id := xid.New()
 	location := worldmap.Coordinates{x, y}
 	name := generateName(npcType)
-	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location), &basicDialogue{false}}
+	npc := &Npc{name, id.String(), worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location), &basicDialogue{false}}
 	npc.initialiseInventory(n.Inventory)
 	return npc
 }
 
 func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, b worldmap.Building) *Npc {
 	n := npcData[npcType]
+	id := xid.New()
 	var dialogue dialogue
 	if n.DialogueType == Basic {
 		dialogue = &basicDialogue{false}
@@ -88,7 +91,7 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, b worldmap.Bui
 	}
 	location := worldmap.Coordinates{x, y}
 	name := generateName(npcType)
-	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewWithinBuilding(world, b, location), dialogue}
+	npc := &Npc{name, id.String(), worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewWithinBuilding(world, b, location), dialogue}
 	for c, count := range n.ShopInventory {
 
 		for i := 0; i < count; i++ {
@@ -143,7 +146,7 @@ func (npc *Npc) Render() ui.Element {
 func (npc *Npc) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID", "WaypointSystem", "Dialogue"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID", "WaypointSystem", "Dialogue"}
 
 	mountID := ""
 	if npc.mount != nil {
@@ -152,6 +155,7 @@ func (npc *Npc) MarshalJSON() ([]byte, error) {
 
 	npcValues := map[string]interface{}{
 		"Name":           npc.name,
+		"Id":             npc.id,
 		"Location":       npc.location,
 		"Icon":           npc.icon,
 		"Initiative":     npc.initiative,
@@ -201,6 +205,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 
 	type npcJson struct {
 		Name           *npcName
+		Id             string
 		Location       worldmap.Coordinates
 		Icon           icon.Icon
 		Initiative     int
@@ -224,6 +229,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 	json.Unmarshal(data, &v)
 
 	npc.name = v.Name
+	npc.id = v.Id
 	npc.location = v.Location
 	npc.icon = v.Icon
 	npc.initiative = v.Initiative
@@ -749,8 +755,17 @@ func (npc *Npc) RemoveMoney(amount int) {
 	npc.money += amount
 }
 
+func (npc *Npc) GetID() string {
+	return npc.id
+}
+
+func (npc *Npc) FullName() string {
+	return npc.name.name
+}
+
 type Npc struct {
 	name        *npcName
+	id          string
 	location    worldmap.Coordinates
 	icon        icon.Icon
 	initiative  int

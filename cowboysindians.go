@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 
 	"github.com/onorton/cowboysindians/enemy"
 	"github.com/onorton/cowboysindians/item"
@@ -40,6 +41,7 @@ type GameState struct {
 	Enemies     []*enemy.Enemy
 	Npcs        []*npc.Npc
 	Player      *player.Player
+	Target      string
 }
 
 func save(state GameState) {
@@ -66,7 +68,11 @@ func save(state GameState) {
 
 	playerValue, err := json.Marshal(state.Player)
 	check(err)
-	buffer.WriteString(fmt.Sprintf("\"Player\":%s\n", playerValue))
+	buffer.WriteString(fmt.Sprintf("\"Player\":%s,\n", playerValue))
+
+	targetValue, err := json.Marshal(state.Target)
+	check(err)
+	buffer.WriteString(fmt.Sprintf("\"Target\":%s\n", targetValue))
 
 	buffer.WriteString("}")
 
@@ -161,6 +167,7 @@ func main() {
 		state.Npcs = npcs
 		state.Time = 1
 		state.PlayerIndex = 0
+		state.Target = npcs[rand.Intn(len(npcs))].GetID()
 	}
 
 	worldMap := state.Map
@@ -324,6 +331,11 @@ func main() {
 				npc.EmptyInventory()
 				worldMap.DeleteCreature(npc)
 				all = append(all[:i], all[i+1:]...)
+				if npc.GetID() == state.Target {
+					message.PrintMessage(fmt.Sprintf("%s is dead! You have been avenged.", npc.FullName()))
+					ui.GetInput()
+					quit = true
+				}
 			}
 
 		}
@@ -333,6 +345,7 @@ func main() {
 			ui.GetInput()
 			break
 		}
+
 		if quit {
 			break
 		}
