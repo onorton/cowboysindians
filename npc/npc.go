@@ -771,33 +771,3 @@ type Npc struct {
 	waypoint    worldmap.WaypointSystem
 	dialogue    dialogue
 }
-
-type npcName struct {
-	name    string
-	npcType string
-	known   bool
-}
-
-func (n npcName) WithDefinite() string {
-	if n.known {
-		return n.name
-	} else {
-		return "the " + n.npcType
-	}
-}
-
-func (n npcName) WithIndefinite() string {
-	if n.known {
-		return n.name
-	} else {
-		return "a " + n.npcType
-	}
-}
-
-func (n npcName) String() string {
-	if n.known {
-		return n.name
-	} else {
-		return n.npcType
-	}
-}
