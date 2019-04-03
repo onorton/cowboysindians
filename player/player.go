@@ -175,30 +175,18 @@ func (p *Player) GetInitiative() int {
 
 func (p *Player) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 	if c.AttackHits(rand.Intn(20) + hitBonus + 1) {
-		if _, ok := c.(*npc.Npc); ok {
-			message.Enqueue(fmt.Sprintf("You hit %s.", c.GetName()))
-		} else {
-			message.Enqueue(fmt.Sprintf("You hit the %s.", c.GetName()))
-		}
-
+		message.Enqueue(fmt.Sprintf("You hit %s.", c.GetName().WithDefinite()))
 		if p.weapon != nil {
 			c.TakeDamage(p.weapon.GetDamage() + damageBonus)
 		} else {
 			c.TakeDamage(damageBonus)
 		}
 	} else {
-		if _, ok := c.(*npc.Npc); ok {
-			message.Enqueue(fmt.Sprintf("You miss %s.", c.GetName()))
-		} else {
-			message.Enqueue(fmt.Sprintf("You miss the %s.", c.GetName()))
-		}
+		message.Enqueue(fmt.Sprintf("You miss %s.", c.GetName().WithDefinite()))
 	}
 	if c.IsDead() {
-		if _, ok := c.(*npc.Npc); ok {
-			message.Enqueue(fmt.Sprintf("%s died.", c.GetName()))
-		} else {
-			message.Enqueue(fmt.Sprintf("The %s died.", c.GetName()))
-		}
+		message.Enqueue(fmt.Sprintf("%s died.", c.GetName().WithDefinite()))
+
 	}
 }
 
@@ -731,11 +719,8 @@ func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
 		if v != nil {
 			m := v.(*mount.Mount)
 			if m != nil {
-				if _, ok := c.(*npc.Npc); ok {
-					message.PrintMessage(fmt.Sprintf("%s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), m.GetName(), m.GetName()))
-				} else {
-					message.PrintMessage(fmt.Sprintf("The %s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), m.GetName(), m.GetName()))
-				}
+				message.PrintMessage(fmt.Sprintf("%s is riding %s. Would you like to target %s instead? [y/n]", c.GetName().WithDefinite(), m.GetName().WithIndefinite(), m.GetName().WithDefinite()))
+
 				input := ui.GetInput()
 				if input == ui.Confirm {
 					p.MeleeAttack(m)
@@ -848,11 +833,7 @@ func (p *Player) findTarget() worldmap.Creature {
 				if v != nil {
 					m := v.(*mount.Mount)
 					if m != nil {
-						if _, ok := c.(*npc.Npc); ok {
-							message.PrintMessage(fmt.Sprintf("%s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), m.GetName(), m.GetName()))
-						} else {
-							message.PrintMessage(fmt.Sprintf("The %s is riding a %s. Would you like to target the %s instead? [y/n]", c.GetName(), m.GetName(), m.GetName()))
-						}
+						message.PrintMessage(fmt.Sprintf("%s is riding %s. Would you like to target %s instead? [y/n]", c.GetName().WithDefinite(), m.GetName().WithIndefinite(), m.GetName().WithDefinite()))
 
 						input := ui.GetInput()
 						if input == ui.Confirm {
@@ -1112,7 +1093,7 @@ func (p *Player) ToggleMount() bool {
 			p.Move(action)
 			p.mount = m
 			p.crouching = false
-			message.Enqueue(fmt.Sprintf("You mount the %s.", m.GetName()))
+			message.Enqueue(fmt.Sprintf("You mount %s.", m.GetName().WithDefinite()))
 			return true
 		}
 		message.PrintMessage("There is no creature to mount here.")
@@ -1122,8 +1103,8 @@ func (p *Player) ToggleMount() bool {
 	return false
 }
 
-func (p *Player) GetName() string {
-	return "you"
+func (p *Player) GetName() ui.Name {
+	return &ui.PlainName{"You"}
 }
 
 func (p *Player) GetAlignment() worldmap.Alignment {
@@ -1165,10 +1146,10 @@ func (p *Player) Talk() {
 					}
 					return
 				case *mount.Mount:
-					message.PrintMessage(fmt.Sprintf("You try to talk to the %s. It doesn't seem to respond.", c.GetName()))
+					message.PrintMessage(fmt.Sprintf("You try to talk to %s. It doesn't seem to respond.", c.GetName().WithDefinite()))
 					return
 				case *enemy.Enemy:
-					message.PrintMessage(fmt.Sprintf("You try to talk to the %s. They don't seem amused.", c.GetName()))
+					message.PrintMessage(fmt.Sprintf("You try to talk to %s. They don't seem amused.", c.GetName().WithDefinite()))
 					return
 				}
 			}

@@ -47,7 +47,7 @@ func fetchEnemyData() map[string]EnemyAttributes {
 
 func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 	enemy := enemyData[name]
-	e := &Enemy{name, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, false, enemy.Money, nil, nil, make([]item.Item, 0), "", nil, world}
+	e := &Enemy{&ui.PlainName{name}, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, false, enemy.Money, nil, nil, make([]item.Item, 0), "", nil, world}
 	for _, itemDefinition := range enemy.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm item.Item = nil
@@ -126,7 +126,7 @@ func (e *Enemy) MarshalJSON() ([]byte, error) {
 func (e *Enemy) UnmarshalJSON(data []byte) error {
 
 	type enemyJson struct {
-		Name        string
+		Name        *ui.PlainName
 		Location    worldmap.Coordinates
 		Icon        icon.Icon
 		Initiative  int
@@ -348,9 +348,9 @@ func (e *Enemy) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 	}
 	if c.GetAlignment() == worldmap.Player {
 		if hits {
-			message.Enqueue(fmt.Sprintf("The %s hit you.", e.name))
+			message.Enqueue(fmt.Sprintf("%s hit you.", e.name.WithDefinite()))
 		} else {
-			message.Enqueue(fmt.Sprintf("The %s missed you.", e.name))
+			message.Enqueue(fmt.Sprintf("%s missed you.", e.name.WithDefinite()))
 		}
 	}
 
@@ -600,7 +600,7 @@ func (e *Enemy) overEncumbered() bool {
 func (e *Enemy) dropItem(item item.Item) {
 	e.world.PlaceItem(e.location.X, e.location.Y, item)
 	if e.world.IsVisible(e.world.GetPlayer(), e.location.X, e.location.Y) {
-		message.Enqueue(fmt.Sprintf("The %s dropped a %s.", e.name, item.GetName()))
+		message.Enqueue(fmt.Sprintf("%s dropped a %s.", e.name.WithDefinite(), item.GetName()))
 	}
 
 }
@@ -645,9 +645,9 @@ func (e *Enemy) EmptyInventory() {
 	if e.world.IsVisible(e.world.GetPlayer(), e.location.X, e.location.Y) {
 		for name, count := range itemTypes {
 			if count == 1 {
-				message.Enqueue(fmt.Sprintf("The %s dropped 1 %s.", e.name, name))
+				message.Enqueue(fmt.Sprintf("%s dropped 1 %s.", e.name.WithDefinite(), name))
 			} else {
-				message.Enqueue(fmt.Sprintf("The %s dropped %d %ss.", e.name, count, name))
+				message.Enqueue(fmt.Sprintf("%s dropped %d %ss.", e.name.WithDefinite(), count, name))
 			}
 		}
 	}
@@ -703,7 +703,7 @@ func (e *Enemy) heal(amount int) {
 	e.hp = int(math.Min(float64(originalHp+amount), float64(e.maxHp)))
 }
 
-func (e *Enemy) GetName() string {
+func (e *Enemy) GetName() ui.Name {
 	return e.name
 }
 
@@ -737,7 +737,7 @@ func (e *Enemy) LoadMount(mounts []*mount.Mount) {
 }
 
 type Enemy struct {
-	name        string
+	name        *ui.PlainName
 	location    worldmap.Coordinates
 	icon        icon.Icon
 	initiative  int

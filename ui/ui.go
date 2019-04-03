@@ -229,3 +229,27 @@ func RenderGrid(x, y int, elems [][]Element) {
 	termbox.Flush()
 
 }
+
+type Name interface {
+	WithDefinite() string
+	WithIndefinite() string
+	String() string
+}
+
+type PlainName struct {
+	Name string
+}
+
+func (n PlainName) WithDefinite() string {
+	return "the " + n.Name
+
+}
+
+func (n PlainName) WithIndefinite() string {
+	return "a " + n.Name
+
+}
+
+func (n PlainName) String() string {
+	return n.Name
+}

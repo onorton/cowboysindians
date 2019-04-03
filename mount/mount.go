@@ -46,7 +46,7 @@ func NewMount(name string, x, y int, world *worldmap.Map) *Mount {
 	mount := mountData[name]
 	id := xid.New()
 	location := worldmap.Coordinates{x, y}
-	m := &Mount{name, id.String(), location, mount.Icon, mount.Initiative, mount.Hp, mount.Hp, mount.Ac, mount.Str, mount.Dex, mount.Encumbrance, nil, world, false, worldmap.NewRandomWaypoint(world, location)}
+	m := &Mount{&ui.PlainName{name}, id.String(), location, mount.Icon, mount.Initiative, mount.Hp, mount.Hp, mount.Ac, mount.Str, mount.Dex, mount.Encumbrance, nil, world, false, worldmap.NewRandomWaypoint(world, location)}
 	return m
 }
 func (m *Mount) Render() ui.Element {
@@ -95,7 +95,7 @@ func (m *Mount) MarshalJSON() ([]byte, error) {
 func (m *Mount) UnmarshalJSON(data []byte) error {
 
 	type mountJson struct {
-		Name           string
+		Name           *ui.PlainName
 		Id             string
 		Location       worldmap.Coordinates
 		Icon           icon.Icon
@@ -233,9 +233,9 @@ func (m *Mount) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 	}
 	if c.GetAlignment() == worldmap.Player {
 		if hits {
-			message.Enqueue(fmt.Sprintf("The %s hit you.", m.name))
+			message.Enqueue(fmt.Sprintf("%s hit you.", m.name.WithDefinite()))
 		} else {
-			message.Enqueue(fmt.Sprintf("The %s missed you.", m.name))
+			message.Enqueue(fmt.Sprintf("%s missed you.", m.name.WithDefinite()))
 		}
 	}
 
@@ -314,7 +314,7 @@ func (m *Mount) heal(amount int) {
 	m.hp = int(math.Min(float64(originalHp+amount), float64(m.maxHp)))
 }
 
-func (m *Mount) GetName() string {
+func (m *Mount) GetName() ui.Name {
 	return m.name
 }
 
@@ -366,7 +366,7 @@ func (m *Mount) GetID() string {
 }
 
 type Mount struct {
-	name        string
+	name        *ui.PlainName
 	id          string
 	location    worldmap.Coordinates
 	icon        icon.Icon

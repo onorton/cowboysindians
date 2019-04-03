@@ -651,7 +651,7 @@ type Creature interface {
 	IsDead() bool
 	IsCrouching() bool
 	AttackHits(int) bool
-	GetName() string
+	GetName() ui.Name
 	GetAlignment() Alignment
 	GetMount() Creature
 	GetVisionDistance() int

@@ -62,17 +62,17 @@ func fetchNameData() nameData {
 	return nD
 }
 
-func generateName() string {
+func generateName(npcType string) *npcName {
 	firstName := names.FirstNames[rand.Intn(len(names.FirstNames))]
 	lastName := names.LastNames[rand.Intn(len(names.LastNames))]
 
-	return firstName + " " + lastName
+	return &npcName{firstName + " " + lastName, npcType, false}
 }
 
 func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 	n := npcData[npcType]
 	location := worldmap.Coordinates{x, y}
-	name := generateName()
+	name := generateName(npcType)
 	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location), &basicDialogue{false}}
 	npc.initialiseInventory(n.Inventory)
 	return npc
@@ -87,7 +87,7 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, b worldmap.Bui
 		dialogue = &shopkeeperDialogue{false, world, b}
 	}
 	location := worldmap.Coordinates{x, y}
-	name := generateName()
+	name := generateName(npcType)
 	npc := &Npc{name, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewWithinBuilding(world, b, location), dialogue}
 	for c, count := range n.ShopInventory {
 
@@ -193,13 +193,14 @@ func (npc *Npc) MarshalJSON() ([]byte, error) {
 }
 
 func (npc *Npc) Talk() bool {
+	npc.name.known = true
 	return npc.dialogue.interact()
 }
 
 func (npc *Npc) UnmarshalJSON(data []byte) error {
 
 	type npcJson struct {
-		Name           string
+		Name           *npcName
 		Location       worldmap.Coordinates
 		Icon           icon.Icon
 		Initiative     int
@@ -370,9 +371,9 @@ func (npc *Npc) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 	}
 	if c.GetAlignment() == worldmap.Player {
 		if hits {
-			message.Enqueue(fmt.Sprintf("%s hit you.", npc.name))
+			message.Enqueue(fmt.Sprintf("%s hit you.", npc.name.WithDefinite()))
 		} else {
-			message.Enqueue(fmt.Sprintf("%s missed you.", npc.name))
+			message.Enqueue(fmt.Sprintf("%s missed you.", npc.name.WithDefinite()))
 		}
 	}
 
@@ -557,7 +558,7 @@ func (npc *Npc) overEncumbered() bool {
 func (npc *Npc) dropItem(item item.Item) {
 	npc.world.PlaceItem(npc.location.X, npc.location.Y, item)
 	if npc.world.IsVisible(npc.world.GetPlayer(), npc.location.X, npc.location.Y) {
-		message.Enqueue(fmt.Sprintf("%s dropped a %s.", npc.name, item.GetName()))
+		message.Enqueue(fmt.Sprintf("%s dropped a %s.", npc.name.WithDefinite(), item.GetName()))
 	}
 
 }
@@ -610,9 +611,9 @@ func (npc *Npc) EmptyInventory() {
 	if npc.world.IsVisible(npc.world.GetPlayer(), npc.location.X, npc.location.Y) {
 		for name, count := range itemTypes {
 			if count == 1 {
-				message.Enqueue(fmt.Sprintf("%s dropped 1 %s.", npc.name, name))
+				message.Enqueue(fmt.Sprintf("%s dropped 1 %s.", npc.name.WithDefinite(), name))
 			} else {
-				message.Enqueue(fmt.Sprintf("%s dropped %d %ss.", npc.name, count, name))
+				message.Enqueue(fmt.Sprintf("%s dropped %d %ss.", npc.name.WithDefinite(), count, name))
 			}
 		}
 	}
@@ -668,7 +669,7 @@ func (npc *Npc) heal(amount int) {
 	npc.hp = int(math.Min(float64(originalHp+amount), float64(npc.maxHp)))
 }
 
-func (npc *Npc) GetName() string {
+func (npc *Npc) GetName() ui.Name {
 	return npc.name
 }
 
@@ -749,7 +750,7 @@ func (npc *Npc) RemoveMoney(amount int) {
 }
 
 type Npc struct {
-	name        string
+	name        *npcName
 	location    worldmap.Coordinates
 	icon        icon.Icon
 	initiative  int
@@ -769,4 +770,34 @@ type Npc struct {
 	world       *worldmap.Map
 	waypoint    worldmap.WaypointSystem
 	dialogue    dialogue
+}
+
+type npcName struct {
+	name    string
+	npcType string
+	known   bool
+}
+
+func (n npcName) WithDefinite() string {
+	if n.known {
+		return n.name
+	} else {
+		return "the " + n.npcType
+	}
+}
+
+func (n npcName) WithIndefinite() string {
+	if n.known {
+		return n.name
+	} else {
+		return "a " + n.npcType
+	}
+}
+
+func (n npcName) String() string {
+	if n.known {
+		return n.name
+	} else {
+		return n.npcType
+	}
 }

@@ -1,6 +1,8 @@
 package message
 
 import (
+	"unicode"
+
 	"github.com/onorton/cowboysindians/structs"
 	"github.com/onorton/cowboysindians/ui"
 )
@@ -40,7 +42,7 @@ func PrintMessages() {
 func PrintMessage(m string) {
 
 	clearMessageBar()
-	ui.WriteText(0, Mq.windowHeight, m)
+	ui.WriteText(0, Mq.windowHeight, capitalise(m))
 }
 
 func SetWindowSize(windowWidth, windowHeight int) {
@@ -49,5 +51,11 @@ func SetWindowSize(windowWidth, windowHeight int) {
 }
 
 func Enqueue(m string) {
-	Mq.queue.Enqueue(m)
+	Mq.queue.Enqueue(capitalise(m))
+}
+
+func capitalise(m string) string {
+	runes := []rune(m)
+	runes[0] = unicode.ToUpper(runes[0])
+	return string(runes)
 }
