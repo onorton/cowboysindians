@@ -49,6 +49,8 @@ const (
 // ItemSelection is a type that represents what item players have selected
 type ItemSelection int
 
+var centre int
+
 const (
 	All ItemSelection = iota
 	AllRelevant
@@ -57,7 +59,8 @@ const (
 )
 
 // Init initialises the termbox instance
-func Init() {
+func Init(width int) {
+	centre = width / 2
 	err := termbox.Init()
 	if err != nil {
 		panic(err)
@@ -211,6 +214,15 @@ func DrawElement(x, y int, elem Element) {
 }
 
 func WriteText(x, y int, msg string) {
+	for _, c := range msg {
+		termbox.SetCell(x, y, c, termbox.ColorWhite, termbox.ColorDefault)
+		x++
+	}
+	termbox.Flush()
+}
+
+func WriteTextCentred(y int, msg string) {
+	x := centre - len(msg)/2
 	for _, c := range msg {
 		termbox.SetCell(x, y, c, termbox.ColorWhite, termbox.ColorDefault)
 		x++

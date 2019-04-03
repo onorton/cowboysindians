@@ -141,8 +141,20 @@ func printStatus(status []string) {
 	ui.WriteText(0, windowHeight+1, statusString)
 
 }
+
+func printOpeningText(name string) {
+	beginning := 4
+	ui.WriteTextCentred(beginning, "You wake up bruised. You feel a dull pain in your head.")
+	ui.WriteTextCentred(beginning+1, "It's beginning to come back to you now. They beat you. They tortured you.")
+	ui.WriteTextCentred(beginning+2, "They took everything from you. Even your family. You don't remember where they went.")
+	ui.WriteTextCentred(beginning+3, "But you remember their name...")
+	ui.GetInput()
+	ui.WriteTextCentred(beginning+5, name)
+	ui.GetInput()
+}
+
 func main() {
-	ui.Init()
+	ui.Init(windowWidth)
 	defer ui.Close()
 	item.LoadAllData()
 	message.SetWindowSize(windowWidth, windowHeight)
@@ -156,6 +168,7 @@ func main() {
 			state = load()
 			loaded = true
 		}
+		ui.ClearScreen()
 	}
 
 	if !loaded {
@@ -167,7 +180,10 @@ func main() {
 		state.Npcs = npcs
 		state.Time = 1
 		state.PlayerIndex = 0
-		state.Target = npcs[rand.Intn(len(npcs))].GetID()
+		target := npcs[rand.Intn(len(npcs))]
+		state.Target = target.GetID()
+
+		printOpeningText(target.FullName())
 	}
 
 	worldMap := state.Map
