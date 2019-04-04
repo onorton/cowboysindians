@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/onorton/cowboysindians/enemy"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/npc"
@@ -37,7 +36,7 @@ type GameState struct {
 	Time        int
 	Map         *worldmap.Map
 	Mounts      []*npc.Mount
-	Enemies     []*enemy.Enemy
+	Enemies     []*npc.Enemy
 	Npcs        []*npc.Npc
 	Player      *player.Player
 	Target      string
@@ -110,7 +109,7 @@ func load() GameState {
 }
 
 // Combine enemies and player into same slice
-func allCreatures(enemies []*enemy.Enemy, mounts []*npc.Mount, npcs []*npc.Npc, p *player.Player) []worldmap.Creature {
+func allCreatures(enemies []*npc.Enemy, mounts []*npc.Mount, npcs []*npc.Npc, p *player.Player) []worldmap.Creature {
 	all := make([]worldmap.Creature, len(enemies)+len(mounts)+len(npcs)+1)
 	i := 0
 	for _, e := range enemies {
@@ -305,7 +304,7 @@ func main() {
 					}
 				}
 			} else if c.GetAlignment() == worldmap.Enemy {
-				e := c.(*enemy.Enemy)
+				e := c.(*npc.Enemy)
 				if e.IsDead() {
 					continue
 				}
@@ -333,7 +332,7 @@ func main() {
 
 		// Remove dead enemies, npcs and mounts
 		for i, c := range all {
-			if e, ok := c.(*enemy.Enemy); ok && e.IsDead() {
+			if e, ok := c.(*npc.Enemy); ok && e.IsDead() {
 				e.EmptyInventory()
 				worldMap.DeleteCreature(e)
 				all = append(all[:i], all[i+1:]...)

@@ -4,7 +4,6 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/onorton/cowboysindians/enemy"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/npc"
 	"github.com/onorton/cowboysindians/worldmap"
@@ -22,7 +21,7 @@ type town struct {
 	horizontal bool
 }
 
-func GenerateWorld(width, height, viewerWidth, viewerHeight int) (*worldmap.Map, []*npc.Mount, []*enemy.Enemy, []*npc.Npc) {
+func GenerateWorld(width, height, viewerWidth, viewerHeight int) (*worldmap.Map, []*npc.Mount, []*npc.Enemy, []*npc.Npc) {
 	grid := make([][]worldmap.Tile, height)
 	for i := 0; i < height; i++ {
 		row := make([]worldmap.Tile, width)
@@ -489,10 +488,10 @@ func generateMounts(m *worldmap.Map, buildings []worldmap.Building, n int) []*np
 	return mounts
 }
 
-func generateEnemies(m *worldmap.Map, n int) []*enemy.Enemy {
+func generateEnemies(m *worldmap.Map, n int) []*npc.Enemy {
 	width := m.GetWidth()
 	height := m.GetHeight()
-	enemies := make([]*enemy.Enemy, n)
+	enemies := make([]*npc.Enemy, n)
 	for i := 0; i < n; i++ {
 		x := rand.Intn(width)
 		y := rand.Intn(height)
@@ -500,7 +499,7 @@ func generateEnemies(m *worldmap.Map, n int) []*enemy.Enemy {
 			i--
 			continue
 		}
-		enemies[i] = enemy.NewEnemy("bandit", x, y, m)
+		enemies[i] = npc.NewEnemy("bandit", x, y, m)
 	}
 	return enemies
 }

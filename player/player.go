@@ -8,7 +8,6 @@ import (
 	"math/rand"
 
 	termbox "github.com/nsf/termbox-go"
-	"github.com/onorton/cowboysindians/enemy"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
@@ -1147,7 +1146,7 @@ func (p *Player) Talk() {
 				case *npc.Mount:
 					message.PrintMessage(fmt.Sprintf("You try to talk to %s. It doesn't seem to respond.", c.GetName().WithDefinite()))
 					return
-				case *enemy.Enemy:
+				case *npc.Enemy:
 					message.PrintMessage(fmt.Sprintf("You try to talk to %s. They don't seem amused.", c.GetName().WithDefinite()))
 					return
 				}

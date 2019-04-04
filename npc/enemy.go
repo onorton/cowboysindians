@@ -1,4 +1,4 @@
-package enemy
+package npc
 
 import (
 	"bytes"
@@ -11,16 +11,9 @@ import (
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
-	"github.com/onorton/cowboysindians/npc"
 	"github.com/onorton/cowboysindians/ui"
 	"github.com/onorton/cowboysindians/worldmap"
 )
-
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
 
 type EnemyAttributes struct {
 	Icon        icon.Icon
@@ -174,17 +167,6 @@ func (e *Enemy) SetCoordinates(x int, y int) {
 	e.location = worldmap.Coordinates{x, y}
 }
 
-func copyMap(o [][]int) [][]int {
-	h := len(o)
-	w := len(o[0])
-	c := make([][]int, h)
-	for i, _ := range o {
-		c[i] = make([]int, w)
-		copy(c[i], o[i])
-	}
-	return c
-}
-
 func (e *Enemy) generateMap(aiMap [][]int) [][]int {
 	width, height := len(aiMap[0]), len(aiMap)
 	prev := make([][]int, height)
@@ -318,7 +300,7 @@ func (e *Enemy) getMountMap() [][]int {
 			wX, wY := e.location.X+j, e.location.Y+i
 			// Looks for mount on its own
 			if e.world.IsValid(wX, wY) && e.world.IsVisible(e, wX, wY) {
-				if m, ok := e.world.GetCreature(wX, wY).(*npc.Mount); ok && m != nil {
+				if m, ok := e.world.GetCreature(wX, wY).(*Mount); ok && m != nil {
 					aiMap[y][x] = 0
 				} else {
 					aiMap[y][x] = width * width
@@ -545,7 +527,7 @@ func (e *Enemy) FindAction() {
 			for j := -1; j <= 1; j++ {
 				x, y := e.location.X+j, e.location.Y+i
 				if e.world.IsValid(x, y) && mountMap[e.GetVisionDistance()+i][e.GetVisionDistance()+j] == 0 {
-					m, _ := e.world.GetCreature(x, y).(*npc.Mount)
+					m, _ := e.world.GetCreature(x, y).(*Mount)
 					m.AddRider(e)
 					e.world.DeleteCreature(m)
 					e.mount = m
@@ -727,7 +709,7 @@ func (e *Enemy) GetVisionDistance() int {
 	return 20
 }
 
-func (e *Enemy) LoadMount(mounts []*npc.Mount) {
+func (e *Enemy) LoadMount(mounts []*Mount) {
 	for _, m := range mounts {
 		if e.mountID == m.GetID() {
 			m.AddRider(e)
@@ -753,6 +735,6 @@ type Enemy struct {
 	armour      *item.Armour
 	inventory   []item.Item
 	mountID     string
-	mount       *npc.Mount
+	mount       *Mount
 	world       *worldmap.Map
 }

@@ -437,18 +437,6 @@ func (npc *Npc) wearArmour() bool {
 	return changed
 }
 
-func compareMaps(m, o [][]int) bool {
-	for i := 0; i < len(m); i++ {
-		for j := 0; j < len(m[0]); j++ {
-			if m[i][j] != o[i][j] {
-				return false
-			}
-		}
-	}
-	return true
-
-}
-
 func (npc *Npc) FindAction() {
 	waypoint := npc.waypoint.NextWaypoint(npc.location)
 	aiMap := npc.getWaypointMap(waypoint)
