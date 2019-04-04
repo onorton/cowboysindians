@@ -1,4 +1,4 @@
-package mount
+package npc
 
 import (
 	"bytes"
@@ -14,12 +14,6 @@ import (
 	"github.com/onorton/cowboysindians/worldmap"
 	"github.com/rs/xid"
 )
-
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
 
 type MountAttributes struct {
 	Icon        icon.Icon
@@ -132,29 +126,6 @@ func (m *Mount) GetCoordinates() (int, int) {
 }
 func (m *Mount) SetCoordinates(x int, y int) {
 	m.location = worldmap.Coordinates{x, y}
-}
-
-func compareMaps(m, o [][]int) bool {
-	for i := 0; i < len(m); i++ {
-		for j := 0; j < len(m[0]); j++ {
-			if m[i][j] != o[i][j] {
-				return false
-			}
-		}
-	}
-	return true
-
-}
-
-func copyMap(o [][]int) [][]int {
-	h := len(o)
-	w := len(o[0])
-	c := make([][]int, h)
-	for i, _ := range o {
-		c[i] = make([]int, w)
-		copy(c[i], o[i])
-	}
-	return c
 }
 
 func (m *Mount) generateMap(aiMap [][]int) [][]int {

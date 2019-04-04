@@ -12,7 +12,6 @@ import (
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
-	"github.com/onorton/cowboysindians/mount"
 	"github.com/onorton/cowboysindians/npc"
 	"github.com/onorton/cowboysindians/ui"
 	"github.com/onorton/cowboysindians/worldmap"
@@ -717,7 +716,7 @@ func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
 		v := c.GetMount()
 
 		if v != nil {
-			m := v.(*mount.Mount)
+			m := v.(*npc.Mount)
 			if m != nil {
 				message.PrintMessage(fmt.Sprintf("%s is riding %s. Would you like to target %s instead? [y/n]", c.GetName().WithDefinite(), m.GetName().WithIndefinite(), m.GetName().WithDefinite()))
 
@@ -831,7 +830,7 @@ func (p *Player) findTarget() worldmap.Creature {
 				c := p.world.GetCreature(x, y)
 				v := c.GetMount()
 				if v != nil {
-					m := v.(*mount.Mount)
+					m := v.(*npc.Mount)
 					if m != nil {
 						message.PrintMessage(fmt.Sprintf("%s is riding %s. Would you like to target %s instead? [y/n]", c.GetName().WithDefinite(), m.GetName().WithIndefinite(), m.GetName().WithDefinite()))
 
@@ -1087,7 +1086,7 @@ func (p *Player) ToggleMount() bool {
 		}
 	} else {
 		c := p.world.GetCreature(x, y)
-		if m, ok := c.(*mount.Mount); c != nil && ok {
+		if m, ok := c.(*npc.Mount); c != nil && ok {
 			m.AddRider(p)
 			p.world.DeleteCreature(m)
 			p.Move(action)
@@ -1145,7 +1144,7 @@ func (p *Player) Talk() {
 						trade(p, c)
 					}
 					return
-				case *mount.Mount:
+				case *npc.Mount:
 					message.PrintMessage(fmt.Sprintf("You try to talk to %s. It doesn't seem to respond.", c.GetName().WithDefinite()))
 					return
 				case *enemy.Enemy:
@@ -1183,7 +1182,7 @@ func (p *Player) Update() {
 	}
 }
 
-func (p *Player) LoadMount(mounts []*mount.Mount) {
+func (p *Player) LoadMount(mounts []*npc.Mount) {
 	for _, m := range mounts {
 		if p.mountID == m.GetID() {
 			m.AddRider(p)
@@ -1212,6 +1211,6 @@ type Player struct {
 	armour      *item.Armour
 	inventory   map[rune]([]item.Item)
 	mountID     string
-	mount       *mount.Mount
+	mount       *npc.Mount
 	world       *worldmap.Map
 }

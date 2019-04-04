@@ -11,7 +11,7 @@ import (
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
-	"github.com/onorton/cowboysindians/mount"
+	"github.com/onorton/cowboysindians/npc"
 	"github.com/onorton/cowboysindians/ui"
 	"github.com/onorton/cowboysindians/worldmap"
 )
@@ -318,7 +318,7 @@ func (e *Enemy) getMountMap() [][]int {
 			wX, wY := e.location.X+j, e.location.Y+i
 			// Looks for mount on its own
 			if e.world.IsValid(wX, wY) && e.world.IsVisible(e, wX, wY) {
-				if m, ok := e.world.GetCreature(wX, wY).(*mount.Mount); ok && m != nil {
+				if m, ok := e.world.GetCreature(wX, wY).(*npc.Mount); ok && m != nil {
 					aiMap[y][x] = 0
 				} else {
 					aiMap[y][x] = width * width
@@ -545,7 +545,7 @@ func (e *Enemy) FindAction() {
 			for j := -1; j <= 1; j++ {
 				x, y := e.location.X+j, e.location.Y+i
 				if e.world.IsValid(x, y) && mountMap[e.GetVisionDistance()+i][e.GetVisionDistance()+j] == 0 {
-					m, _ := e.world.GetCreature(x, y).(*mount.Mount)
+					m, _ := e.world.GetCreature(x, y).(*npc.Mount)
 					m.AddRider(e)
 					e.world.DeleteCreature(m)
 					e.mount = m
@@ -727,7 +727,7 @@ func (e *Enemy) GetVisionDistance() int {
 	return 20
 }
 
-func (e *Enemy) LoadMount(mounts []*mount.Mount) {
+func (e *Enemy) LoadMount(mounts []*npc.Mount) {
 	for _, m := range mounts {
 		if e.mountID == m.GetID() {
 			m.AddRider(e)
@@ -753,6 +753,6 @@ type Enemy struct {
 	armour      *item.Armour
 	inventory   []item.Item
 	mountID     string
-	mount       *mount.Mount
+	mount       *npc.Mount
 	world       *worldmap.Map
 }
