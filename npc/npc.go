@@ -83,11 +83,15 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, b worldmap.Bui
 	n := npcData[npcType]
 	id := xid.New()
 	var dialogue dialogue
-	if n.DialogueType == Basic {
+	switch n.DialogueType {
+	case Basic:
 		dialogue = &basicDialogue{false}
-	} else {
+	case Shopkeeper:
 		dialogue = &shopkeeperDialogue{false, world, b}
+	case Sheriff:
+		dialogue = &sheriffDialogue{false, world, b}
 	}
+
 	location := worldmap.Coordinates{x, y}
 
 	var name *npcName

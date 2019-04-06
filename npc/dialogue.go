@@ -16,6 +16,7 @@ type dialogueType int
 const (
 	Basic dialogueType = iota
 	Shopkeeper
+	Sheriff
 )
 
 var dialogueData map[string][]string = fetchDialogueData()
@@ -137,6 +138,80 @@ func (d *shopkeeperDialogue) MarshalJSON() ([]byte, error) {
 }
 
 func (sd *shopkeeperDialogue) UnmarshalJSON(data []byte) error {
+
+	type sdJson struct {
+		SeenPlayer bool
+		Building   worldmap.Building
+	}
+
+	var v sdJson
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	sd.seenPlayer = v.SeenPlayer
+	sd.b = v.Building
+
+	return nil
+}
+
+type sheriffDialogue struct {
+	seenPlayer bool
+	world      *worldmap.Map
+	b          worldmap.Building
+}
+
+func (d *sheriffDialogue) initialGreeting() {
+	pX, pY := d.world.GetPlayer().GetCoordinates()
+
+	if !d.seenPlayer && d.b.Inside(pX, pY) {
+		message.Enqueue(fmt.Sprintf("\"%s %s\"", dialogueData["Greetings"][rand.Intn(len(dialogueData["Greetings"]))], dialogueData["Sheriff"][rand.Intn(len(dialogueData["Sheriff"]))]))
+		d.seenPlayer = true
+	}
+	if d.seenPlayer && !d.b.Inside(pX, pY) {
+		message.Enqueue("\"Don't be getting into no trouble, now.\"")
+		d.seenPlayer = false
+	}
+}
+
+func (d *sheriffDialogue) interact() bool {
+	message.PrintMessage("\"Yeah. We still got a few varmints to round up.\"")
+	return false
+}
+
+func (d *sheriffDialogue) resetSeen() {
+	pX, pY := d.world.GetPlayer().GetCoordinates()
+
+	// If player has not left the shop but is currently not visible, do not reset
+	if !d.b.Inside(pX, pY) {
+		d.seenPlayer = false
+	}
+}
+
+func (d *sheriffDialogue) setMap(world *worldmap.Map) {
+	d.world = world
+}
+
+func (d *sheriffDialogue) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+	seenPlayerValue, err := json.Marshal(d.seenPlayer)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"SeenPlayer\":%s,", seenPlayerValue))
+
+	buildingValue, err := json.Marshal(d.b)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Building\":%s", buildingValue))
+
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (sd *sheriffDialogue) UnmarshalJSON(data []byte) error {
 
 	type sdJson struct {
 		SeenPlayer bool
