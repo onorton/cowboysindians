@@ -225,20 +225,48 @@ func generateBuildingOutsideTown(grid *[][]worldmap.Tile, towns *[]town, buildin
 	}
 }
 
+func randomBuildingType(buildings *[]worldmap.Building) worldmap.BuildingType {
+	// 1/2 chance of being residential
+	residential := rand.Intn(2) == 0
+
+	if residential {
+		return worldmap.Residential
+	} else {
+		for {
+			commercialType := worldmap.BuildingType(rand.Intn(3) + 1)
+			// Only one sheriff
+			if commercialType == worldmap.Sheriff {
+
+				sheriffExists := false
+				for _, b := range *buildings {
+					if b.T == worldmap.Sheriff {
+						sheriffExists = true
+					}
+				}
+				if !sheriffExists {
+					return commercialType
+				}
+			} else {
+				return commercialType
+			}
+		}
+	}
+}
+
 func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]worldmap.Building) {
 
 	validBuilding := false
+
+	buildingType := randomBuildingType(buildings)
+
 	// Keeps trying until a usable building position and size found
 	for !validBuilding {
+
 		// Must be at least 3 in each dimension
 
 		// Width along the street
 		buildingWidth := rand.Intn(5) + 3
 		depth := rand.Intn(5) + 3
-
-		// 1/3 chance of being residential
-		buildingType := worldmap.BuildingType(rand.Intn(3))
-
 		// Commerical buildings would be larger
 		if buildingType != worldmap.Residential {
 			buildingWidth = rand.Intn(10) + 8
@@ -290,9 +318,7 @@ func generateBuildingInTown(grid *[][]worldmap.Tile, t town, buildings *[]worldm
 		validBuilding = inTown(t, b) && !overlap(*buildings, b)
 
 		if validBuilding {
-
 			// Add walls
-
 			for x := x1; x <= x2; x++ {
 				(*grid)[y1][x] = worldmap.NewTile("wall")
 				(*grid)[y2][x] = worldmap.NewTile("wall")
@@ -413,8 +439,8 @@ func generateTown(grid *[][]worldmap.Tile, towns *[]town, buildings *[]worldmap.
 	validTown := false
 
 	for !validTown {
-		townWidth := 15 + rand.Intn(width)
-		townHeight := 15 + rand.Intn(height)
+		townWidth := 15 + rand.Intn(width/5)
+		townHeight := 15 + rand.Intn(height/5)
 
 		posWidth := 0
 		negWidth := 0
@@ -580,6 +606,8 @@ func placeNpcInBuilding(m *worldmap.Map, b worldmap.Building) *npc.Npc {
 			n = npc.NewShopkeeper("shopkeeper", x, y, m, b)
 		case worldmap.Saloon:
 			n = npc.NewShopkeeper("bartender", x, y, m, b)
+		case worldmap.Sheriff:
+			n = npc.NewShopkeeper("sheriff", x, y, m, b)
 		}
 	}
 	return n

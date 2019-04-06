@@ -5,7 +5,7 @@
 		"Hp": 5,
 		"Ac": 10,
 		"Str": 10,
-		"Dex": 13,
+		"Dex": 10,
 		"Encumbrance": 100,
 		"Money": 1000,
 		"DialogueType": 0,
@@ -19,7 +19,7 @@
 		"Hp": 5,
 		"Ac": 10,
 		"Str": 10,
-		"Dex": 13,
+		"Dex": 12,
 		"Encumbrance": 100,
 		"Money": 1000,
 		"DialogueType": 1,
@@ -32,12 +32,25 @@
 		"Hp": 5,
 		"Ac": 10,
 		"Str": 10,
-		"Dex": 13,
+		"Dex": 10,
 		"Encumbrance": 100,
 		"Money": 1000,
 		"DialogueType": 1,
 		"ShopInventory": {"Consumable": 30},
 		"Inventory": []
+	},
+	"sheriff": {
+		"Icon": {"Icon": 64, "Colour": 4},
+		"Initiative": 1,
+		"Hp": 10,
+		"Ac": 10,
+		"Str": 12,
+		"Dex": 14,
+		"Encumbrance": 100,
+		"Money": 2000,
+		"DialogueType": 1,
+		"Inventory": [{"Category": "Weapon", "Name": "pistol", "Amount": 1},
+			{"Category": "Ammo", "Name": "pistol bullet", "Amount": 10}]
 	}
 
 

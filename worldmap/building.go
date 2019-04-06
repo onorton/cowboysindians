@@ -15,10 +15,11 @@ const (
 	Residential BuildingType = iota
 	GunShop
 	Saloon
+	Sheriff
 )
 
 func (t BuildingType) String() string {
-	return [...]string{"Residential", "GunShop", "Saloon"}[t]
+	return [...]string{"Residential", "GunShop", "Saloon", "Sheriff"}[t]
 }
 
 func (b Building) Inside(x, y int) bool {
