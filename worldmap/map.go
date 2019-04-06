@@ -220,6 +220,11 @@ func (m Map) IsVisible(c Creature, x1, y1 int) bool {
 		return false
 	}
 
+	// If square adjacent, it is visible
+	if math.Abs(float64(x1-x0)) <= 1 && math.Abs(float64(x1-x0)) <= 1 {
+		return true
+	}
+
 	var xStep, yStep int
 	x, y := x0, y0
 	dx := float64(x1 - x0)
