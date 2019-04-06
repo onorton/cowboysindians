@@ -89,7 +89,14 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, b worldmap.Bui
 		dialogue = &shopkeeperDialogue{false, world, b}
 	}
 	location := worldmap.Coordinates{x, y}
-	name := generateName(npcType)
+
+	var name *npcName
+	if npcType == "sheriff" {
+		name = &npcName{fmt.Sprintf("Sheriff %s", names.LastNames[rand.Intn(len(names.LastNames))]), npcType, false}
+	} else {
+		name = generateName(npcType)
+	}
+
 	npc := &Npc{name, id.String(), worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewWithinBuilding(world, b, location), dialogue}
 	for c, count := range n.ShopInventory {
 

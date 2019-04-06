@@ -1,10 +1,10 @@
 package npc
 
 import (
-  "fmt"
-  "encoding/json"
-  "bytes"
-  )
+	"bytes"
+	"encoding/json"
+	"fmt"
+)
 
 type npcName struct {
 	name    string
@@ -53,7 +53,7 @@ func (n npcName) MarshalJSON() ([]byte, error) {
 
 	buffer.WriteString(fmt.Sprintf("\"Type\":%s,", typeValue))
 
-  knownValue, err := json.Marshal(n.known)
+	knownValue, err := json.Marshal(n.known)
 	if err != nil {
 		return nil, err
 	}
@@ -67,9 +67,9 @@ func (n npcName) MarshalJSON() ([]byte, error) {
 func (n *npcName) UnmarshalJSON(data []byte) error {
 
 	type npcNameJson struct {
-		Name string
-		Type string
-    Known bool
+		Name  string
+		Type  string
+		Known bool
 	}
 
 	var v npcNameJson
@@ -80,7 +80,7 @@ func (n *npcName) UnmarshalJSON(data []byte) error {
 
 	n.name = v.Name
 	n.npcType = v.Type
-  n.known = v.Known
+	n.known = v.Known
 
 	return nil
 }
