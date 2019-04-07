@@ -30,6 +30,10 @@ func NewIcon(icon rune, colour termbox.Attribute) Icon {
 	return Icon{icon, colour}
 }
 
+func NewCorpseIcon(icon Icon) Icon {
+	return Icon{'%', icon.colour}
+}
+
 func (i Icon) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 

@@ -139,6 +139,7 @@ func LoadAllData() {
 	fetchAmmoData()
 	fetchArmourData()
 	fetchConsumableData()
+	fetchCorpseData()
 	fetchItemData()
 	fetchWeaponData()
 }

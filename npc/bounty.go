@@ -79,7 +79,7 @@ func (b *bounty) UnmarshalJSON(data []byte) error {
 
 type Bounties []*bounty
 
-func (bounties *Bounties) AddBounty(criminal *Npc, crime string, value int) {
+func (bounties *Bounties) addBounty(criminal *Npc, crime string, value int) {
 
 	for _, b := range *bounties {
 		if b.criminal == criminal.GetID() {
@@ -89,4 +89,14 @@ func (bounties *Bounties) AddBounty(criminal *Npc, crime string, value int) {
 		}
 	}
 	*bounties = append(*bounties, &bounty{criminal.GetID(), criminal.FullName(), []string{crime}, value})
+}
+
+func (bounties *Bounties) RemoveBounty(criminal string) (int, string) {
+	for i, b := range *bounties {
+		if b.criminal == criminal {
+			*bounties = append((*bounties)[:i], (*bounties)[i+1:]...)
+			return b.value, b.criminalName
+		}
+	}
+	return 0, ""
 }

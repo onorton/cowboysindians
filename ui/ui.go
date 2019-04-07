@@ -41,6 +41,7 @@ const (
 	Talk
 	Buy
 	Sell
+	Claim
 	Confirm
 	CancelAction
 	NoAction
@@ -148,6 +149,26 @@ func GetInput() (action PlayerAction) {
 				action = Confirm
 			default:
 				action = Exit
+			}
+		}
+	}
+	return action
+}
+
+func GetBountyInput() (action PlayerAction) {
+	e := termbox.PollEvent()
+
+	switch e.Key {
+	case termbox.KeyEsc:
+		action = Exit
+	case termbox.KeyEnter:
+		action = Exit
+	default:
+		{
+			if e.Ch == 'c' {
+				action = Claim
+			} else {
+				action = NoAction
 			}
 		}
 	}

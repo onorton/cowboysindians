@@ -1,0 +1,10 @@
+{
+  "head":{
+		"Weight": 10.5,
+		"Value": 1000
+	},
+	"body":{
+		"Weight": 140,
+		"Value": 500
+	}
+}

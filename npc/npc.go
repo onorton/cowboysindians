@@ -590,6 +590,10 @@ func (npc *Npc) Update() (int, int) {
 }
 
 func (npc *Npc) EmptyInventory() {
+	// First drop the corpse
+	npc.world.PlaceItem(npc.location.X, npc.location.Y, item.NewCorpse("head", npc.id, npc.name.String(), npc.icon))
+	npc.world.PlaceItem(npc.location.X, npc.location.Y, item.NewCorpse("body", npc.id, npc.name.String(), npc.icon))
+
 	itemTypes := make(map[string]int)
 	for _, item := range npc.inventory {
 		npc.world.PlaceItem(npc.location.X, npc.location.Y, item)
@@ -764,16 +768,16 @@ func (npc *Npc) FullName() string {
 	return npc.name.name
 }
 
-func (npc *Npc) GetBounties() Bounties {
+func (npc *Npc) GetBounties() *Bounties {
 	if d, ok := npc.dialogue.(*sheriffDialogue); ok {
-		return d.bounties
+		return &(d.bounties)
 	}
-	return Bounties{}
+	return &Bounties{}
 }
 
 func (npc *Npc) AddBounty(criminal *Npc, crime string, bounty int) {
 	if d, ok := npc.dialogue.(*sheriffDialogue); ok {
-		d.bounties.AddBounty(criminal, crime, bounty)
+		d.bounties.addBounty(criminal, crime, bounty)
 	}
 }
 
