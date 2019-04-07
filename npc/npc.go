@@ -89,7 +89,7 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, b worldmap.Bui
 	case Shopkeeper:
 		dialogue = &shopkeeperDialogue{false, world, b}
 	case Sheriff:
-		dialogue = &sheriffDialogue{false, world, b}
+		dialogue = &sheriffDialogue{false, world, b, Bounties{}}
 	}
 
 	location := worldmap.Coordinates{x, y}
@@ -206,7 +206,7 @@ func (npc *Npc) MarshalJSON() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func (npc *Npc) Talk() bool {
+func (npc *Npc) Talk() interaction {
 	npc.name.known = true
 	return npc.dialogue.interact()
 }
@@ -696,7 +696,10 @@ func (npc *Npc) SetMap(world *worldmap.Map) {
 		w.SetMap(world)
 	}
 
-	if d, ok := npc.dialogue.(*shopkeeperDialogue); ok {
+	switch d := npc.dialogue.(type) {
+	case *shopkeeperDialogue:
+		d.setMap(world)
+	case *sheriffDialogue:
 		d.setMap(world)
 	}
 
@@ -759,6 +762,19 @@ func (npc *Npc) GetID() string {
 
 func (npc *Npc) FullName() string {
 	return npc.name.name
+}
+
+func (npc *Npc) GetBounties() Bounties {
+	if d, ok := npc.dialogue.(*sheriffDialogue); ok {
+		return d.bounties
+	}
+	return Bounties{}
+}
+
+func (npc *Npc) AddBounty(criminal *Npc, crime string, bounty int) {
+	if d, ok := npc.dialogue.(*sheriffDialogue); ok {
+		d.bounties.AddBounty(criminal, crime, bounty)
+	}
 }
 
 type Npc struct {

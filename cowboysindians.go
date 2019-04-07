@@ -210,6 +210,19 @@ func main() {
 			return all[i].GetInitiative() > all[j].GetInitiative()
 		})
 
+		// 1/10 chance of a npc comitting a crime
+		crimeCommitted := rand.Intn(10) == 0
+		if crimeCommitted {
+			// Select random npc, crime and reward
+			criminal := state.Npcs[rand.Intn(len(state.Npcs))]
+			crime := []string{"Robbery", "Theft", "Murder", "Cattle Theft", "Forgery"}[rand.Intn(5)]
+			bounty := (1 + rand.Intn(10)) * 10000
+			for _, npc := range npcs {
+				npc.AddBounty(criminal, crime, bounty)
+			}
+
+		}
+
 		for i, c := range all {
 			// Used when initially loading, to make sure faster enemies do not move twice
 			if i < state.PlayerIndex {

@@ -19,6 +19,14 @@ const (
 	Sheriff
 )
 
+type interaction int
+
+const (
+	Normal interaction = iota
+	Trade
+	Bounty
+)
+
 var dialogueData map[string][]string = fetchDialogueData()
 
 func fetchDialogueData() map[string][]string {
@@ -41,9 +49,9 @@ func (d *basicDialogue) initialGreeting() {
 	}
 }
 
-func (d *basicDialogue) interact() bool {
+func (d *basicDialogue) interact() interaction {
 	message.PrintMessage(fmt.Sprintf("\"%s\"", dialogueData["Greetings"][rand.Intn(len(dialogueData["Greetings"]))]))
-	return false
+	return Normal
 }
 
 func (d *basicDialogue) resetSeen() {
@@ -100,9 +108,9 @@ func (d *shopkeeperDialogue) initialGreeting() {
 	}
 }
 
-func (d *shopkeeperDialogue) interact() bool {
+func (d *shopkeeperDialogue) interact() interaction {
 	message.PrintMessage("\"Sure. Feel free to look around.\"")
-	return true
+	return Trade
 }
 
 func (d *shopkeeperDialogue) resetSeen() {
@@ -159,6 +167,7 @@ type sheriffDialogue struct {
 	seenPlayer bool
 	world      *worldmap.Map
 	b          worldmap.Building
+	bounties   Bounties
 }
 
 func (d *sheriffDialogue) initialGreeting() {
@@ -174,9 +183,9 @@ func (d *sheriffDialogue) initialGreeting() {
 	}
 }
 
-func (d *sheriffDialogue) interact() bool {
+func (d *sheriffDialogue) interact() interaction {
 	message.PrintMessage("\"Yeah. We still got a few varmints to round up.\"")
-	return false
+	return Bounty
 }
 
 func (d *sheriffDialogue) resetSeen() {
@@ -204,8 +213,13 @@ func (d *sheriffDialogue) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	buffer.WriteString(fmt.Sprintf("\"Building\":%s", buildingValue))
+	buffer.WriteString(fmt.Sprintf("\"Building\":%s,", buildingValue))
 
+	bountiesValue, err := json.Marshal(d.bounties)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Bounties\":%s", bountiesValue))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -216,6 +230,7 @@ func (sd *sheriffDialogue) UnmarshalJSON(data []byte) error {
 	type sdJson struct {
 		SeenPlayer bool
 		Building   worldmap.Building
+		Bounties   Bounties
 	}
 
 	var v sdJson
@@ -225,6 +240,7 @@ func (sd *sheriffDialogue) UnmarshalJSON(data []byte) error {
 	}
 	sd.seenPlayer = v.SeenPlayer
 	sd.b = v.Building
+	sd.bounties = v.Bounties
 
 	return nil
 }
@@ -232,6 +248,13 @@ func (sd *sheriffDialogue) UnmarshalJSON(data []byte) error {
 func unmarshalDialogue(dialogue map[string]interface{}) dialogue {
 	dialogueJson, err := json.Marshal(dialogue)
 	check(err)
+
+	if _, ok := dialogue["Bounties"]; ok {
+		var sd sheriffDialogue
+		err = json.Unmarshal(dialogueJson, &sd)
+		check(err)
+		return &sd
+	}
 
 	if _, ok := dialogue["Building"]; ok {
 		var sd shopkeeperDialogue
@@ -247,6 +270,6 @@ func unmarshalDialogue(dialogue map[string]interface{}) dialogue {
 
 type dialogue interface {
 	initialGreeting()
-	interact() bool
+	interact() interaction
 	resetSeen()
 }

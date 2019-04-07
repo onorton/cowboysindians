@@ -1138,11 +1138,18 @@ func (p *Player) Talk() {
 				creature := p.world.GetCreature(x, y)
 				switch c := creature.(type) {
 				case *npc.Npc:
-					if c.Talk() {
-						ui.GetInput()
-						trade(p, c)
+					{
+						interaction := c.Talk()
+						switch interaction {
+						case npc.Trade:
+							ui.GetInput()
+							trade(p, c)
+						case npc.Bounty:
+							ui.GetInput()
+							claimBounties(p, c)
+						}
+						return
 					}
-					return
 				case *npc.Mount:
 					message.PrintMessage(fmt.Sprintf("You try to talk to %s. It doesn't seem to respond.", c.GetName().WithDefinite()))
 					return
