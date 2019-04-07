@@ -351,6 +351,7 @@ func main() {
 				all = append(all[:i], all[i+1:]...)
 			}
 			if m, ok := c.(*npc.Mount); ok && m.IsDead() {
+				m.DropCorpse()
 				worldMap.DeleteCreature(m)
 				all = append(all[:i], all[i+1:]...)
 			}

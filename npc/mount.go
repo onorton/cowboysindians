@@ -9,6 +9,7 @@ import (
 	"math/rand"
 
 	"github.com/onorton/cowboysindians/icon"
+	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/ui"
 	"github.com/onorton/cowboysindians/worldmap"
@@ -330,6 +331,11 @@ func (m *Mount) GetMount() worldmap.Creature {
 
 func (m *Mount) GetVisionDistance() int {
 	return 20
+}
+
+func (m *Mount) DropCorpse() {
+	m.world.PlaceItem(m.location.X, m.location.Y, item.NewCorpse("head", m.id, m.name.String(), m.icon))
+	m.world.PlaceItem(m.location.X, m.location.Y, item.NewCorpse("body", m.id, m.name.String(), m.icon))
 }
 
 func (m *Mount) GetID() string {

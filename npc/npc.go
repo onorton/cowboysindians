@@ -613,7 +613,9 @@ func (npc *Npc) EmptyInventory() {
 
 	if npc.money > 0 {
 		npc.world.PlaceItem(npc.location.X, npc.location.Y, item.Money(npc.money))
-		itemTypes["money"]++
+		if npc.world.IsVisible(npc.world.GetPlayer(), npc.location.X, npc.location.Y) {
+			message.Enqueue(fmt.Sprintf("%s dropped some money.", npc.name.WithDefinite()))
+		}
 	}
 
 	if npc.world.IsVisible(npc.world.GetPlayer(), npc.location.X, npc.location.Y) {

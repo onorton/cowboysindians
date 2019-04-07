@@ -603,6 +603,10 @@ func (e *Enemy) Update() (int, int) {
 }
 
 func (e *Enemy) EmptyInventory() {
+	// First drop the corpse
+	e.world.PlaceItem(e.location.X, e.location.Y, item.NewCorpse("head", e.name.String(), e.name.String(), e.icon))
+	e.world.PlaceItem(e.location.X, e.location.Y, item.NewCorpse("body", e.name.String(), e.name.String(), e.icon))
+
 	itemTypes := make(map[string]int)
 	for _, item := range e.inventory {
 		e.world.PlaceItem(e.location.X, e.location.Y, item)
@@ -622,6 +626,9 @@ func (e *Enemy) EmptyInventory() {
 
 	if e.money > 0 {
 		e.world.PlaceItem(e.location.X, e.location.Y, item.Money(e.money))
+		if e.world.IsVisible(e.world.GetPlayer(), e.location.X, e.location.Y) {
+			message.Enqueue(fmt.Sprintf("%s dropped some money.", e.name.WithDefinite()))
+		}
 	}
 
 	if e.world.IsVisible(e.world.GetPlayer(), e.location.X, e.location.Y) {
