@@ -125,69 +125,9 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 func (m *Mount) GetCoordinates() (int, int) {
 	return m.location.X, m.location.Y
 }
+
 func (m *Mount) SetCoordinates(x int, y int) {
 	m.location = worldmap.Coordinates{x, y}
-}
-
-func (m *Mount) generateMap(aiMap [][]int) [][]int {
-	width, height := len(aiMap[0]), len(aiMap)
-	prev := make([][]int, height)
-	for i, _ := range prev {
-		prev[i] = make([]int, width)
-	}
-	// While map changes, update
-	for !compareMaps(aiMap, prev) {
-		prev = copyMap(aiMap)
-		for y := 0; y < height; y++ {
-			for x := 0; x < width; x++ {
-				wX, wY := m.location.X+x-m.GetVisionDistance(), m.location.Y+y-m.GetVisionDistance()
-				if !m.world.IsValid(wX, wY) || !m.world.IsPassable(wX, wY) {
-					continue
-				}
-				min := height * width
-				for i := -1; i <= 1; i++ {
-					for j := -1; j <= 1; j++ {
-						nX := x + i
-						nY := y + j
-
-						if nX >= 0 && nX < width && nY >= 0 && nY < height && aiMap[nY][nX] < min {
-							min = aiMap[nY][nX]
-						}
-					}
-				}
-
-				if aiMap[y][x] > min {
-					aiMap[y][x] = min + 1
-				}
-
-			}
-		}
-	}
-	return aiMap
-}
-
-func (m *Mount) getWaypointMap(waypoint worldmap.Coordinates) [][]int {
-	d := m.GetVisionDistance()
-	// Creature will be at location d,d in this AI map
-	width := 2*d + 1
-	aiMap := make([][]int, width)
-
-	// Initialise Dijkstra map with goals.
-	// Max is size of grid.
-	for i := -d; i < d+1; i++ {
-		aiMap[i+d] = make([]int, width)
-		for j := -d; j < d+1; j++ {
-			x := j + d
-			y := i + d
-			location := worldmap.Coordinates{m.location.X + j, m.location.Y + i}
-			if waypoint == location {
-				aiMap[y][x] = 0
-			} else {
-				aiMap[y][x] = width * width
-			}
-		}
-	}
-	return m.generateMap(aiMap)
 }
 
 func (m *Mount) GetInitiative() int {
@@ -234,7 +174,6 @@ func (m *Mount) IsDead() bool {
 }
 
 func (m *Mount) Update() (int, int) {
-	waypoint := m.waypoint.NextWaypoint(m.location)
 	if m.rider != nil {
 		if m.rider.IsDead() {
 			m.RemoveRider()
@@ -242,6 +181,7 @@ func (m *Mount) Update() (int, int) {
 			m.location.X, m.location.Y = m.rider.GetCoordinates()
 		}
 	} else {
+		waypoint := m.waypoint.NextWaypoint(m.location)
 		aiMap := m.getWaypointMap(waypoint)
 		current := aiMap[m.GetVisionDistance()][m.GetVisionDistance()]
 		possibleLocations := make([]worldmap.Coordinates, 0)
@@ -264,8 +204,6 @@ func (m *Mount) Update() (int, int) {
 		}
 
 	}
-
-	// For now do nothing
 	return m.location.X, m.location.Y
 }
 
