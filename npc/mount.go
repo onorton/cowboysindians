@@ -182,7 +182,7 @@ func (m *Mount) Update() (int, int) {
 		}
 	} else {
 		waypoint := m.waypoint.NextWaypoint(m.location)
-		aiMap := m.getWaypointMap(waypoint)
+		aiMap := getWaypointMap(waypoint, m.world, m.location, m.GetVisionDistance())
 		current := aiMap[m.GetVisionDistance()][m.GetVisionDistance()]
 		possibleLocations := make([]worldmap.Coordinates, 0)
 		// Find adjacent locations closer to the goal

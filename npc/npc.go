@@ -350,7 +350,7 @@ func (npc *Npc) wearArmour() bool {
 
 func (npc *Npc) FindAction() {
 	waypoint := npc.waypoint.NextWaypoint(npc.location)
-	aiMap := npc.getWaypointMap(waypoint)
+	aiMap := getWaypointMap(waypoint, npc.world, npc.location, npc.GetVisionDistance())
 	mountMap := npc.getMountMap()
 
 	current := aiMap[npc.GetVisionDistance()][npc.GetVisionDistance()]

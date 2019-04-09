@@ -39,8 +39,8 @@ func generateMap(aiMap [][]int, world *worldmap.Map, location worldmap.Coordinat
 	return aiMap
 }
 
-func (m *Mount) getWaypointMap(waypoint worldmap.Coordinates) [][]int {
-	d := m.GetVisionDistance()
+func getWaypointMap(waypoint worldmap.Coordinates, world *worldmap.Map, location worldmap.Coordinates, d int) [][]int {
+
 	// Creature will be at location d,d in this AI map
 	width := 2*d + 1
 	aiMap := make([][]int, width)
@@ -52,15 +52,15 @@ func (m *Mount) getWaypointMap(waypoint worldmap.Coordinates) [][]int {
 		for j := -d; j < d+1; j++ {
 			x := j + d
 			y := i + d
-			location := worldmap.Coordinates{m.location.X + j, m.location.Y + i}
-			if waypoint == location {
+			loc := worldmap.Coordinates{location.X + j, location.Y + i}
+			if waypoint == loc {
 				aiMap[y][x] = 0
 			} else {
 				aiMap[y][x] = width * width
 			}
 		}
 	}
-	return generateMap(aiMap, m.world, m.location)
+	return generateMap(aiMap, world, location)
 }
 
 func compareMaps(m, o [][]int) bool {
@@ -101,30 +101,6 @@ func copyMap(o [][]int) [][]int {
 		copy(c[i], o[i])
 	}
 	return c
-}
-
-func (npc *Npc) getWaypointMap(waypoint worldmap.Coordinates) [][]int {
-	d := npc.GetVisionDistance()
-	// Creature will be at location d,d in this AI map
-	width := 2*d + 1
-	aiMap := make([][]int, width)
-
-	// Initialise Dijkstra map with goals.
-	// Max is size of grid.
-	for i := -d; i < d+1; i++ {
-		aiMap[i+d] = make([]int, width)
-		for j := -d; j < d+1; j++ {
-			x := j + d
-			y := i + d
-			location := worldmap.Coordinates{npc.location.X + j, npc.location.Y + i}
-			if waypoint == location {
-				aiMap[y][x] = 0
-			} else {
-				aiMap[y][x] = width * width
-			}
-		}
-	}
-	return generateMap(aiMap, npc.world, npc.location)
 }
 
 func (npc *Npc) getMountMap() [][]int {
