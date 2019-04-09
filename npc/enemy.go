@@ -255,7 +255,7 @@ func (e *Enemy) findAction() {
 		coefficients = []float64{0.3, 0.2, 0.1, 0.4}
 	}
 	coverMap := e.getCoverMap()
-	mountMap := e.getMountMap()
+	mountMap := getMountMap(e, e.world)
 	aiMap := addMaps([][][]int{e.getChaseMap(), e.getItemMap(), coverMap, mountMap}, coefficients)
 
 	current := aiMap[e.GetVisionDistance()][e.GetVisionDistance()]

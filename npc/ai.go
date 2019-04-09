@@ -63,48 +63,10 @@ func getWaypointMap(waypoint worldmap.Coordinates, world *worldmap.Map, location
 	return generateMap(aiMap, world, location)
 }
 
-func compareMaps(m, o [][]int) bool {
-	for i := 0; i < len(m); i++ {
-		for j := 0; j < len(m[0]); j++ {
-			if m[i][j] != o[i][j] {
-				return false
-			}
-		}
-	}
-	return true
-
-}
-
-func addMaps(maps [][][]int, weights []float64) [][]float64 {
-	result := make([][]float64, len(maps[0]))
-
-	for y, row := range maps[0] {
-		result[y] = make([]float64, len(row))
-	}
-
-	for i, _ := range maps {
-		for y, row := range maps[i] {
-			for x, location := range row {
-				result[y][x] += weights[i] * float64(location)
-			}
-		}
-	}
-	return result
-}
-
-func copyMap(o [][]int) [][]int {
-	h := len(o)
-	w := len(o[0])
-	c := make([][]int, h)
-	for i, _ := range o {
-		c[i] = make([]int, w)
-		copy(c[i], o[i])
-	}
-	return c
-}
-
-func (npc *Npc) getMountMap() [][]int {
-	d := npc.GetVisionDistance()
+func getMountMap(c worldmap.Creature, world *worldmap.Map) [][]int {
+	d := c.GetVisionDistance()
+	cX, cY := c.GetCoordinates()
+	location := worldmap.Coordinates{cX, cY}
 	// Creature will be at location d,d in this AI map
 	width := 2*d + 1
 	aiMap := make([][]int, width)
@@ -117,10 +79,10 @@ func (npc *Npc) getMountMap() [][]int {
 			x := j + d
 			y := i + d
 			// Translate location into world coordinates
-			wX, wY := npc.location.X+j, npc.location.Y+i
+			wX, wY := location.X+j, location.Y+i
 			// Looks for mount on its own
-			if npc.world.IsValid(wX, wY) && npc.world.IsVisible(npc, wX, wY) {
-				if m, ok := npc.world.GetCreature(wX, wY).(*Mount); ok && m != nil {
+			if world.IsValid(wX, wY) && world.IsVisible(c, wX, wY) {
+				if m, ok := world.GetCreature(wX, wY).(*Mount); ok && m != nil {
 					aiMap[y][x] = 0
 				} else {
 					aiMap[y][x] = width * width
@@ -128,7 +90,7 @@ func (npc *Npc) getMountMap() [][]int {
 			}
 		}
 	}
-	return generateMap(aiMap, npc.world, npc.location)
+	return generateMap(aiMap, world, location)
 }
 
 func (e *Enemy) getChaseMap() [][]int {
@@ -210,30 +172,42 @@ func (e *Enemy) getCoverMap() [][]int {
 	return generateMap(aiMap, e.world, e.location)
 }
 
-func (e *Enemy) getMountMap() [][]int {
-	d := e.GetVisionDistance()
-	// Creature will be at location d,d in this AI map
-	width := 2*d + 1
-	aiMap := make([][]int, width)
-
-	// Initialise Dijkstra map with goals.
-	// Max is size of grid.
-	for i := -d; i < d+1; i++ {
-		aiMap[i+d] = make([]int, width)
-		for j := -d; j < d+1; j++ {
-			x := j + d
-			y := i + d
-			// Translate location into world coordinates
-			wX, wY := e.location.X+j, e.location.Y+i
-			// Looks for mount on its own
-			if e.world.IsValid(wX, wY) && e.world.IsVisible(e, wX, wY) {
-				if m, ok := e.world.GetCreature(wX, wY).(*Mount); ok && m != nil {
-					aiMap[y][x] = 0
-				} else {
-					aiMap[y][x] = width * width
-				}
+func compareMaps(m, o [][]int) bool {
+	for i := 0; i < len(m); i++ {
+		for j := 0; j < len(m[0]); j++ {
+			if m[i][j] != o[i][j] {
+				return false
 			}
 		}
 	}
-	return generateMap(aiMap, e.world, e.location)
+	return true
+
+}
+
+func addMaps(maps [][][]int, weights []float64) [][]float64 {
+	result := make([][]float64, len(maps[0]))
+
+	for y, row := range maps[0] {
+		result[y] = make([]float64, len(row))
+	}
+
+	for i, _ := range maps {
+		for y, row := range maps[i] {
+			for x, location := range row {
+				result[y][x] += weights[i] * float64(location)
+			}
+		}
+	}
+	return result
+}
+
+func copyMap(o [][]int) [][]int {
+	h := len(o)
+	w := len(o[0])
+	c := make([][]int, h)
+	for i, _ := range o {
+		c[i] = make([]int, w)
+		copy(c[i], o[i])
+	}
+	return c
 }
