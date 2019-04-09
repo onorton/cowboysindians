@@ -147,13 +147,15 @@ func getItemMap(c worldmap.Creature, world *worldmap.Map) [][]int {
 	return generateMap(aiMap, world, location)
 }
 
-func (e *Enemy) getCoverMap() [][]int {
-	d := e.GetVisionDistance()
+func getCoverMap(c worldmap.Creature, world *worldmap.Map) [][]int {
+	d := c.GetVisionDistance()
+	cX, cY := c.GetCoordinates()
+	location := worldmap.Coordinates{cX, cY}
 	// Creature will be at location d,d in this AI map
 	width := 2*d + 1
 	aiMap := make([][]int, width)
 
-	player := e.world.GetPlayer()
+	player := world.GetPlayer()
 	pX, pY := player.GetCoordinates()
 
 	// Initialise Dijkstra map with goals.
@@ -164,16 +166,16 @@ func (e *Enemy) getCoverMap() [][]int {
 			x := j + d
 			y := i + d
 			// Translate location into world coordinates
-			wX, wY := e.location.X+j, e.location.Y+i
+			wX, wY := location.X+j, location.Y+i
 			// Enemy must be able to see player in order to know it would be behind cover
-			if e.world.IsValid(wX, wY) && e.world.IsVisible(e, wX, wY) && e.world.IsVisible(e, pX, pY) && e.world.BehindCover(wX, wY, player) {
+			if world.IsValid(wX, wY) && world.IsVisible(c, wX, wY) && world.IsVisible(c, pX, pY) && world.BehindCover(wX, wY, player) {
 				aiMap[y][x] = 0
 			} else {
 				aiMap[y][x] = width * width
 			}
 		}
 	}
-	return generateMap(aiMap, e.world, e.location)
+	return generateMap(aiMap, world, location)
 }
 
 func compareMaps(m, o [][]int) bool {

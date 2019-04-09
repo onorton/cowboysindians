@@ -254,7 +254,7 @@ func (e *Enemy) findAction() {
 	if e.mount == nil {
 		coefficients = []float64{0.3, 0.2, 0.1, 0.4}
 	}
-	coverMap := e.getCoverMap()
+	coverMap := getCoverMap(e, e.world)
 	mountMap := getMountMap(e, e.world)
 	aiMap := addMaps([][][]int{getChaseMap(e, e.world), getItemMap(e, e.world), coverMap, mountMap}, coefficients)
 
