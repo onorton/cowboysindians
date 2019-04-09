@@ -256,7 +256,7 @@ func (e *Enemy) findAction() {
 	}
 	coverMap := e.getCoverMap()
 	mountMap := getMountMap(e, e.world)
-	aiMap := addMaps([][][]int{getChaseMap(e, e.world), e.getItemMap(), coverMap, mountMap}, coefficients)
+	aiMap := addMaps([][][]int{getChaseMap(e, e.world), getItemMap(e, e.world), coverMap, mountMap}, coefficients)
 
 	current := aiMap[e.GetVisionDistance()][e.GetVisionDistance()]
 	possibleLocations := make([]worldmap.Coordinates, 0)

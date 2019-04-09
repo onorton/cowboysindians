@@ -120,8 +120,10 @@ func getChaseMap(c worldmap.Creature, world *worldmap.Map) [][]int {
 	return generateMap(aiMap, world, location)
 }
 
-func (e *Enemy) getItemMap() [][]int {
-	d := e.GetVisionDistance()
+func getItemMap(c worldmap.Creature, world *worldmap.Map) [][]int {
+	d := c.GetVisionDistance()
+	cX, cY := c.GetCoordinates()
+	location := worldmap.Coordinates{cX, cY}
 	// Creature will be at location d,d in this AI map
 	width := 2*d + 1
 	aiMap := make([][]int, width)
@@ -134,15 +136,15 @@ func (e *Enemy) getItemMap() [][]int {
 			x := j + d
 			y := i + d
 			// Translate location into world coordinates
-			wX, wY := e.location.X+j, e.location.Y+i
-			if e.world.IsValid(wX, wY) && e.world.IsVisible(e, wX, wY) && e.world.HasItems(wX, wY) {
+			wX, wY := location.X+j, location.Y+i
+			if world.IsValid(wX, wY) && world.IsVisible(c, wX, wY) && world.HasItems(wX, wY) {
 				aiMap[y][x] = 0
 			} else {
 				aiMap[y][x] = width * width
 			}
 		}
 	}
-	return generateMap(aiMap, e.world, e.location)
+	return generateMap(aiMap, world, location)
 }
 
 func (e *Enemy) getCoverMap() [][]int {
