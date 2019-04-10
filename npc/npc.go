@@ -74,7 +74,7 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 	id := xid.New()
 	location := worldmap.Coordinates{x, y}
 	name := generateName(npcType)
-	npc := &Npc{name, id.String(), worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewRandomWaypoint(world, location), &basicDialogue{false}}
+	npc := &Npc{name, id.String(), worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, npcAi{worldmap.NewRandomWaypoint(world, location)}, &basicDialogue{false}}
 	npc.initialiseInventory(n.Inventory)
 	return npc
 }
@@ -101,7 +101,7 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, b worldmap.Bui
 		name = generateName(npcType)
 	}
 
-	npc := &Npc{name, id.String(), worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, worldmap.NewWithinBuilding(world, b, location), dialogue}
+	npc := &Npc{name, id.String(), worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, npcAi{worldmap.NewWithinBuilding(world, b, location)}, dialogue}
 	for c, count := range n.ShopInventory {
 
 		for i := 0; i < count; i++ {
@@ -156,7 +156,7 @@ func (npc *Npc) Render() ui.Element {
 func (npc *Npc) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID", "WaypointSystem", "Dialogue"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID", "Ai", "Dialogue"}
 
 	mountID := ""
 	if npc.mount != nil {
@@ -164,25 +164,25 @@ func (npc *Npc) MarshalJSON() ([]byte, error) {
 	}
 
 	npcValues := map[string]interface{}{
-		"Name":           npc.name,
-		"Id":             npc.id,
-		"Location":       npc.location,
-		"Icon":           npc.icon,
-		"Initiative":     npc.initiative,
-		"Hp":             npc.hp,
-		"MaxHp":          npc.maxHp,
-		"AC":             npc.ac,
-		"Str":            npc.str,
-		"Dex":            npc.dex,
-		"Encumbrance":    npc.encumbrance,
-		"Crouching":      npc.crouching,
-		"Money":          npc.money,
-		"Weapon":         npc.weapon,
-		"Armour":         npc.armour,
-		"Inventory":      npc.inventory,
-		"MountID":        mountID,
-		"WaypointSystem": npc.waypoint,
-		"Dialogue":       npc.dialogue,
+		"Name":        npc.name,
+		"Id":          npc.id,
+		"Location":    npc.location,
+		"Icon":        npc.icon,
+		"Initiative":  npc.initiative,
+		"Hp":          npc.hp,
+		"MaxHp":       npc.maxHp,
+		"AC":          npc.ac,
+		"Str":         npc.str,
+		"Dex":         npc.dex,
+		"Encumbrance": npc.encumbrance,
+		"Crouching":   npc.crouching,
+		"Money":       npc.money,
+		"Weapon":      npc.weapon,
+		"Armour":      npc.armour,
+		"Inventory":   npc.inventory,
+		"MountID":     mountID,
+		"Ai":          npc.ai,
+		"Dialogue":    npc.dialogue,
 	}
 
 	length := len(npcValues)
@@ -214,25 +214,25 @@ func (npc *Npc) Talk() interaction {
 func (npc *Npc) UnmarshalJSON(data []byte) error {
 
 	type npcJson struct {
-		Name           *npcName
-		Id             string
-		Location       worldmap.Coordinates
-		Icon           icon.Icon
-		Initiative     int
-		Hp             int
-		MaxHp          int
-		AC             int
-		Str            int
-		Dex            int
-		Encumbrance    int
-		Crouching      bool
-		Money          int
-		Weapon         *item.Weapon
-		Armour         *item.Armour
-		Inventory      item.ItemList
-		MountID        string
-		WaypointSystem map[string]interface{}
-		Dialogue       map[string]interface{}
+		Name        *npcName
+		Id          string
+		Location    worldmap.Coordinates
+		Icon        icon.Icon
+		Initiative  int
+		Hp          int
+		MaxHp       int
+		AC          int
+		Str         int
+		Dex         int
+		Encumbrance int
+		Crouching   bool
+		Money       int
+		Weapon      *item.Weapon
+		Armour      *item.Armour
+		Inventory   item.ItemList
+		MountID     string
+		Ai          npcAi
+		Dialogue    map[string]interface{}
 	}
 	var v npcJson
 
@@ -255,7 +255,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 	npc.armour = v.Armour
 	npc.inventory = v.Inventory
 	npc.mountID = v.MountID
-	npc.waypoint = worldmap.UnmarshalWaypointSystem(v.WaypointSystem)
+	npc.ai = v.Ai
 	npc.dialogue = unmarshalDialogue(v.Dialogue)
 
 	return nil
@@ -348,110 +348,6 @@ func (npc *Npc) wearArmour() bool {
 	return changed
 }
 
-func (npc *Npc) FindAction() {
-	waypoint := npc.waypoint.NextWaypoint(npc.location)
-	aiMap := getWaypointMap(waypoint, npc.world, npc.location, npc.GetVisionDistance())
-	mountMap := getMountMap(npc, npc.world)
-
-	current := aiMap[npc.GetVisionDistance()][npc.GetVisionDistance()]
-	possibleLocations := make([]worldmap.Coordinates, 0)
-
-	// Find adjacent locations closer to the goal
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			nX := npc.location.X + i
-			nY := npc.location.Y + j
-			if aiMap[nY-npc.location.Y+npc.GetVisionDistance()][nX-npc.location.X+npc.GetVisionDistance()] < current {
-				// Add if not occupied
-				if npc.world.IsValid(nX, nY) && !npc.world.IsOccupied(nX, nY) {
-					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
-				}
-			}
-		}
-	}
-	// If mounted, can move first before executing another action
-	if npc.mount != nil && !npc.mount.Moved() {
-		if len(possibleLocations) > 0 {
-			if npc.overEncumbered() {
-				for _, itm := range npc.inventory {
-					if itm.GetWeight() > 1 {
-						npc.dropItem(itm)
-						return
-					}
-				}
-			} else {
-				l := possibleLocations[rand.Intn(len(possibleLocations))]
-				npc.mount.Move()
-				npc.location = l
-				// Can choose new action again
-				npc.FindAction()
-				return
-			}
-		}
-	}
-
-	// If at half health heal up
-	if npc.hp <= npc.maxHp/2 {
-		for i, itm := range npc.inventory {
-			if con, ok := itm.(*item.Consumable); ok && con.GetEffect("hp") > 0 {
-				npc.heal(con.GetEffect("hp"))
-				npc.inventory = append(npc.inventory[:i], npc.inventory[i+1:]...)
-				return
-			}
-		}
-	}
-
-	// If adjacent to mount, attempt to mount it
-	if npc.mount == nil {
-		for i := -1; i <= 1; i++ {
-			for j := -1; j <= 1; j++ {
-				x, y := npc.location.X+j, npc.location.Y+i
-				if npc.world.IsValid(x, y) && mountMap[npc.GetVisionDistance()+i][npc.GetVisionDistance()+j] == 0 {
-					m, _ := npc.world.GetCreature(x, y).(*Mount)
-					m.AddRider(npc)
-					npc.world.DeleteCreature(m)
-					npc.mount = m
-					npc.crouching = false
-					npc.location = worldmap.Coordinates{x, y}
-					return
-				}
-			}
-		}
-	}
-
-	// If adjacent to closed door attempt to open it
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			x, y := npc.location.X+j, npc.location.Y+i
-			if npc.world.IsValid(x, y) && npc.world.IsDoor(x, y) && !npc.world.IsPassable(x, y) {
-				npc.world.ToggleDoor(x, y, true)
-				return
-			}
-		}
-	}
-
-	if len(possibleLocations) > 0 {
-		if npc.overEncumbered() {
-			for _, itm := range npc.inventory {
-				if itm.GetWeight() > 1 {
-					npc.dropItem(itm)
-					return
-				}
-			}
-		} else if npc.mount == nil || (npc.mount != nil && !npc.mount.Moved()) {
-			l := possibleLocations[rand.Intn(len(possibleLocations))]
-			npc.location = l
-			return
-		}
-	} else {
-		items := npc.world.GetItems(npc.location.X, npc.location.Y)
-		for _, item := range items {
-			npc.PickupItem(item)
-		}
-	}
-	return
-}
-
 func (npc *Npc) overEncumbered() bool {
 	weight := 0.0
 	for _, item := range npc.inventory {
@@ -477,14 +373,13 @@ func (npc *Npc) Update() (int, int) {
 	} else if npc.world.IsVisible(npc, pX, pY) {
 		npc.dialogue.resetSeen()
 	}
-	npc.FindAction()
+	newX, newY := npc.ai.update(npc, npc.world)
 	if npc.mount != nil {
 		npc.mount.ResetMoved()
 		if npc.mount.IsDead() {
 			npc.mount = nil
 		}
 	}
-	newX, newY := npc.location.X, npc.location.Y
 	npc.location = worldmap.Coordinates{x, y}
 	return newX, newY
 }
@@ -594,13 +489,7 @@ func (npc *Npc) IsCrouching() bool {
 func (npc *Npc) SetMap(world *worldmap.Map) {
 	npc.world = world
 
-	switch w := npc.waypoint.(type) {
-	case *worldmap.RandomWaypoint:
-		w.SetMap(world)
-	case *worldmap.Patrol:
-	case *worldmap.WithinBuilding:
-		w.SetMap(world)
-	}
+	npc.ai.setMap(world)
 
 	switch d := npc.dialogue.(type) {
 	case *shopkeeperDialogue:
@@ -703,6 +592,6 @@ type Npc struct {
 	mountID     string
 	mount       *Mount
 	world       *worldmap.Map
-	waypoint    worldmap.WaypointSystem
+	ai          npcAi
 	dialogue    dialogue
 }

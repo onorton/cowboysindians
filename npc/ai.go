@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/worldmap"
 )
 
@@ -41,8 +42,12 @@ func (ai mountAi) update(c worldmap.Creature, world *worldmap.Map) (int, int) {
 	return c.GetCoordinates()
 }
 
-func (ai mountAi) SetMap(world *worldmap.Map) {
-	if w, ok := ai.waypoint.(*worldmap.RandomWaypoint); ok {
+func (ai mountAi) setMap(world *worldmap.Map) {
+	switch w := ai.waypoint.(type) {
+	case *worldmap.RandomWaypoint:
+		w.SetMap(world)
+	case *worldmap.Patrol:
+	case *worldmap.WithinBuilding:
 		w.SetMap(world)
 	}
 }
@@ -61,6 +66,151 @@ func (ai mountAi) MarshalJSON() ([]byte, error) {
 }
 
 func (ai *mountAi) UnmarshalJSON(data []byte) error {
+	type mountAiJson struct {
+		Waypoint map[string]interface{}
+	}
+
+	var v mountAiJson
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	ai.waypoint = worldmap.UnmarshalWaypointSystem(v.Waypoint)
+	return nil
+}
+
+type npcAi struct {
+	waypoint worldmap.WaypointSystem
+}
+
+func (ai npcAi) update(c *Npc, world *worldmap.Map) (int, int) {
+	cX, cY := c.GetCoordinates()
+	location := worldmap.Coordinates{cX, cY}
+	waypoint := ai.waypoint.NextWaypoint(location)
+	aiMap := getWaypointMap(waypoint, world, location, c.GetVisionDistance())
+	mountMap := getMountMap(c, world)
+
+	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
+	possibleLocations := make([]worldmap.Coordinates, 0)
+
+	// Find adjacent locations closer to the goal
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			nX := location.X + i
+			nY := location.Y + j
+			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] < current {
+				// Add if not occupied
+				if world.IsValid(nX, nY) && !world.IsOccupied(nX, nY) {
+					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
+				}
+			}
+		}
+	}
+
+	// If mounted, can move first before executing another action
+	if c.GetMount() != nil && c.GetMount().(*Mount) != nil && c.GetMount().(*Mount).Moved() {
+		if len(possibleLocations) > 0 {
+			if c.overEncumbered() {
+				for _, itm := range c.inventory {
+					if itm.GetWeight() > 1 {
+						c.dropItem(itm)
+						return cX, cY
+					}
+				}
+			} else {
+				l := possibleLocations[rand.Intn(len(possibleLocations))]
+				c.GetMount().(*Mount).Move()
+				c.SetCoordinates(l.X, l.Y)
+				// Can choose new action again
+				return ai.update(c, world)
+			}
+		}
+	}
+
+	// If at half health heal up
+	if c.hp <= c.maxHp/2 {
+		for i, itm := range c.inventory {
+			if con, ok := itm.(*item.Consumable); ok && con.GetEffect("hp") > 0 {
+				c.heal(con.GetEffect("hp"))
+				c.inventory = append(c.inventory[:i], c.inventory[i+1:]...)
+				return cX, cY
+			}
+		}
+	}
+
+	// If adjacent to mount, attempt to mount it
+	if c.GetMount() == nil {
+		for i := -1; i <= 1; i++ {
+			for j := -1; j <= 1; j++ {
+				x, y := location.X+j, location.Y+i
+				if world.IsValid(x, y) && mountMap[c.GetVisionDistance()+i][c.GetVisionDistance()+j] == 0 {
+					m, _ := c.world.GetCreature(x, y).(*Mount)
+					m.AddRider(c)
+					world.DeleteCreature(m)
+					c.mount = m
+					c.crouching = false
+					return x, y
+				}
+			}
+		}
+	}
+
+	// If adjacent to closed door attempt to open it
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			x, y := location.X+j, location.Y+i
+			if world.IsValid(x, y) && world.IsDoor(x, y) && !world.IsPassable(x, y) {
+				world.ToggleDoor(x, y, true)
+				return x, y
+			}
+		}
+	}
+
+	if len(possibleLocations) > 0 {
+
+		if c.overEncumbered() {
+			for _, itm := range c.inventory {
+				if itm.GetWeight() > 1 {
+					c.dropItem(itm)
+					return cX, cY
+				}
+			}
+		} else if c.GetMount() == nil || c.GetMount() != nil && c.GetMount().(*Mount) == nil || (c.GetMount() != nil && c.GetMount().(*Mount) != nil && !c.GetMount().(*Mount).Moved()) {
+			l := possibleLocations[rand.Intn(len(possibleLocations))]
+			return l.X, l.Y
+		}
+	} else {
+		items := world.GetItems(location.X, location.Y)
+		for _, item := range items {
+			c.PickupItem(item)
+		}
+	}
+	return cX, cY
+}
+
+func (ai npcAi) setMap(world *worldmap.Map) {
+	switch w := ai.waypoint.(type) {
+	case *worldmap.RandomWaypoint:
+		w.SetMap(world)
+	case *worldmap.Patrol:
+	case *worldmap.WithinBuilding:
+		w.SetMap(world)
+	}
+}
+
+func (ai npcAi) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+	waypointValue, err := json.Marshal(ai.waypoint)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Waypoint\":%s", waypointValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (ai *npcAi) UnmarshalJSON(data []byte) error {
 	type mountAiJson struct {
 		Waypoint map[string]interface{}
 	}

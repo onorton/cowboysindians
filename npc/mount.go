@@ -228,7 +228,7 @@ func (m *Mount) IsMounted() bool {
 
 func (m *Mount) SetMap(world *worldmap.Map) {
 	m.world = world
-	m.ai.SetMap(world)
+	m.ai.setMap(world)
 }
 
 func (m *Mount) GetIcon() icon.Icon {
