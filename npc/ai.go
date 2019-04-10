@@ -1,6 +1,77 @@
 package npc
 
-import "github.com/onorton/cowboysindians/worldmap"
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"math/rand"
+
+	"github.com/onorton/cowboysindians/worldmap"
+)
+
+type mountAi struct {
+	waypoint worldmap.WaypointSystem
+}
+
+func (ai mountAi) update(c worldmap.Creature, world *worldmap.Map) (int, int) {
+	x, y := c.GetCoordinates()
+	location := worldmap.Coordinates{x, y}
+	waypoint := ai.waypoint.NextWaypoint(location)
+	aiMap := getWaypointMap(waypoint, world, location, c.GetVisionDistance())
+	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
+	possibleLocations := make([]worldmap.Coordinates, 0)
+	// Find adjacent locations closer to the goal
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			nX := location.X + i
+			nY := location.Y + j
+			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] <= current {
+				// Add if not occupied
+				if world.IsValid(nX, nY) && !world.IsOccupied(nX, nY) {
+					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
+				}
+			}
+		}
+	}
+	if len(possibleLocations) > 0 {
+		l := possibleLocations[rand.Intn(len(possibleLocations))]
+		return l.X, l.Y
+	}
+
+	return c.GetCoordinates()
+}
+
+func (ai mountAi) SetMap(world *worldmap.Map) {
+	if w, ok := ai.waypoint.(*worldmap.RandomWaypoint); ok {
+		w.SetMap(world)
+	}
+}
+
+func (ai mountAi) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+	waypointValue, err := json.Marshal(ai.waypoint)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Waypoint\":%s", waypointValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (ai *mountAi) UnmarshalJSON(data []byte) error {
+	type mountAiJson struct {
+		Waypoint map[string]interface{}
+	}
+
+	var v mountAiJson
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	ai.waypoint = worldmap.UnmarshalWaypointSystem(v.Waypoint)
+	return nil
+}
 
 func generateMap(aiMap [][]int, world *worldmap.Map, location worldmap.Coordinates) [][]int {
 	width, height := len(aiMap[0]), len(aiMap)

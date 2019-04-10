@@ -41,7 +41,8 @@ func NewMount(name string, x, y int, world *worldmap.Map) *Mount {
 	mount := mountData[name]
 	id := xid.New()
 	location := worldmap.Coordinates{x, y}
-	m := &Mount{&ui.PlainName{name}, id.String(), location, mount.Icon, mount.Initiative, mount.Hp, mount.Hp, mount.Ac, mount.Str, mount.Dex, mount.Encumbrance, nil, world, false, worldmap.NewRandomWaypoint(world, location)}
+	ai := mountAi{worldmap.NewRandomWaypoint(world, location)}
+	m := &Mount{&ui.PlainName{name}, id.String(), location, mount.Icon, mount.Initiative, mount.Hp, mount.Hp, mount.Ac, mount.Str, mount.Dex, mount.Encumbrance, nil, world, false, ai}
 	return m
 }
 func (m *Mount) Render() ui.Element {
@@ -51,21 +52,21 @@ func (m *Mount) Render() ui.Element {
 func (m *Mount) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "WaypointSystem"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Ai"}
 
 	mountValues := map[string]interface{}{
-		"Name":           m.name,
-		"Id":             m.id,
-		"Location":       m.location,
-		"Icon":           m.icon,
-		"Initiative":     m.initiative,
-		"Hp":             m.hp,
-		"MaxHp":          m.maxHp,
-		"AC":             m.ac,
-		"Str":            m.str,
-		"Dex":            m.dex,
-		"Encumbrance":    m.encumbrance,
-		"WaypointSystem": m.waypoint,
+		"Name":        m.name,
+		"Id":          m.id,
+		"Location":    m.location,
+		"Icon":        m.icon,
+		"Initiative":  m.initiative,
+		"Hp":          m.hp,
+		"MaxHp":       m.maxHp,
+		"AC":          m.ac,
+		"Str":         m.str,
+		"Dex":         m.dex,
+		"Encumbrance": m.encumbrance,
+		"Ai":          m.ai,
 	}
 
 	length := len(mountValues)
@@ -90,18 +91,18 @@ func (m *Mount) MarshalJSON() ([]byte, error) {
 func (m *Mount) UnmarshalJSON(data []byte) error {
 
 	type mountJson struct {
-		Name           *ui.PlainName
-		Id             string
-		Location       worldmap.Coordinates
-		Icon           icon.Icon
-		Initiative     int
-		Hp             int
-		MaxHp          int
-		AC             int
-		Str            int
-		Dex            int
-		Encumbrance    int
-		WaypointSystem map[string]interface{}
+		Name        *ui.PlainName
+		Id          string
+		Location    worldmap.Coordinates
+		Icon        icon.Icon
+		Initiative  int
+		Hp          int
+		MaxHp       int
+		AC          int
+		Str         int
+		Dex         int
+		Encumbrance int
+		Ai          mountAi
 	}
 	var v mountJson
 
@@ -118,7 +119,7 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 	m.str = v.Str
 	m.dex = v.Dex
 	m.encumbrance = v.Encumbrance
-	m.waypoint = worldmap.UnmarshalWaypointSystem(v.WaypointSystem)
+	m.ai = v.Ai
 	return nil
 }
 
@@ -178,33 +179,10 @@ func (m *Mount) Update() (int, int) {
 		if m.rider.IsDead() {
 			m.RemoveRider()
 		} else {
-			m.location.X, m.location.Y = m.rider.GetCoordinates()
+			return m.rider.GetCoordinates()
 		}
-	} else {
-		waypoint := m.waypoint.NextWaypoint(m.location)
-		aiMap := getWaypointMap(waypoint, m.world, m.location, m.GetVisionDistance())
-		current := aiMap[m.GetVisionDistance()][m.GetVisionDistance()]
-		possibleLocations := make([]worldmap.Coordinates, 0)
-		// Find adjacent locations closer to the goal
-		for i := -1; i <= 1; i++ {
-			for j := -1; j <= 1; j++ {
-				nX := m.location.X + i
-				nY := m.location.Y + j
-				if aiMap[nY-m.location.Y+m.GetVisionDistance()][nX-m.location.X+m.GetVisionDistance()] <= current {
-					// Add if not occupied
-					if m.world.IsValid(nX, nY) && !m.world.IsOccupied(nX, nY) {
-						possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
-					}
-				}
-			}
-		}
-		if len(possibleLocations) > 0 {
-			l := possibleLocations[rand.Intn(len(possibleLocations))]
-			return l.X, l.Y
-		}
-
 	}
-	return m.location.X, m.location.Y
+	return m.ai.update(m, m.world)
 }
 
 func (m *Mount) ResetMoved() {
@@ -250,9 +228,7 @@ func (m *Mount) IsMounted() bool {
 
 func (m *Mount) SetMap(world *worldmap.Map) {
 	m.world = world
-	if w, ok := m.waypoint.(*worldmap.RandomWaypoint); ok {
-		w.SetMap(world)
-	}
+	m.ai.SetMap(world)
 }
 
 func (m *Mount) GetIcon() icon.Icon {
@@ -295,5 +271,5 @@ type Mount struct {
 	rider       worldmap.Creature
 	world       *worldmap.Map
 	moved       bool
-	waypoint    worldmap.WaypointSystem
+	ai          mountAi
 }
