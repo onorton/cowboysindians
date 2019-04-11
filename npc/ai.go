@@ -107,7 +107,7 @@ func (ai npcAi) update(c *Npc, world *worldmap.Map) (int, int) {
 	}
 
 	// If mounted, can move first before executing another action
-	if c.GetMount() != nil && c.GetMount().(*Mount) != nil && c.GetMount().(*Mount).Moved() {
+	if c.GetMount() != nil && c.GetMount().(*Mount).Moved() {
 		if len(possibleLocations) > 0 {
 			if c.overEncumbered() {
 				for _, itm := range c.inventory {
@@ -166,7 +166,6 @@ func (ai npcAi) update(c *Npc, world *worldmap.Map) (int, int) {
 	}
 
 	if len(possibleLocations) > 0 {
-
 		if c.overEncumbered() {
 			for _, itm := range c.inventory {
 				if itm.GetWeight() > 1 {
@@ -174,16 +173,32 @@ func (ai npcAi) update(c *Npc, world *worldmap.Map) (int, int) {
 					return cX, cY
 				}
 			}
-		} else if c.GetMount() == nil || c.GetMount() != nil && c.GetMount().(*Mount) == nil || (c.GetMount() != nil && c.GetMount().(*Mount) != nil && !c.GetMount().(*Mount).Moved()) {
+		} else if c.GetMount() == nil || !c.GetMount().(*Mount).Moved() {
 			l := possibleLocations[rand.Intn(len(possibleLocations))]
 			return l.X, l.Y
 		}
-	} else {
-		items := world.GetItems(location.X, location.Y)
+	} else if items := world.GetItems(location.X, location.Y); len(items) > 0 {
 		for _, item := range items {
 			c.PickupItem(item)
 		}
+		return cX, cY
 	}
+
+	// If the npc can do nothing else, try moving randomly
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			x, y := cX+j, cY+i
+			if world.IsValid(x, y) && world.IsPassable(x, y) && !world.IsOccupied(x, y) {
+				possibleLocations = append(possibleLocations, worldmap.Coordinates{x, y})
+			}
+		}
+	}
+
+	if len(possibleLocations) > 0 {
+		l := possibleLocations[rand.Intn(len(possibleLocations))]
+		return l.X, l.Y
+	}
+
 	return cX, cY
 }
 
