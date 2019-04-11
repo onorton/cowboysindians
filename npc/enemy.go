@@ -40,7 +40,7 @@ func fetchEnemyData() map[string]EnemyAttributes {
 
 func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 	enemy := enemyData[name]
-	e := &Enemy{&ui.PlainName{name}, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, false, enemy.Money, nil, nil, make([]item.Item, 0), "", nil, world}
+	e := &Enemy{&ui.PlainName{name}, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, false, enemy.Money, nil, nil, make([]item.Item, 0), "", nil, world, enemyAi{}}
 	for _, itemDefinition := range enemy.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm item.Item = nil
@@ -71,7 +71,7 @@ func (e *Enemy) Render() ui.Element {
 func (e *Enemy) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID"}
+	keys := []string{"Name", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "Ai", "MountID"}
 
 	mountID := ""
 	if e.mount != nil {
@@ -94,6 +94,7 @@ func (e *Enemy) MarshalJSON() ([]byte, error) {
 		"Weapon":      e.weapon,
 		"Armour":      e.armour,
 		"Inventory":   e.inventory,
+		"Ai":          e.ai,
 		"MountID":     mountID,
 	}
 
@@ -247,157 +248,6 @@ func (e *Enemy) wearArmour() bool {
 	return changed
 }
 
-func (e *Enemy) findAction() {
-
-	coefficients := []float64{0.5, 0.2, 0.3, 0.0}
-	// Focus on getting a mount if possible
-	if e.mount == nil {
-		coefficients = []float64{0.3, 0.2, 0.1, 0.4}
-	}
-	coverMap := getCoverMap(e, e.world)
-	mountMap := getMountMap(e, e.world)
-	aiMap := addMaps([][][]int{getChaseMap(e, e.world), getItemMap(e, e.world), coverMap, mountMap}, coefficients)
-
-	current := aiMap[e.GetVisionDistance()][e.GetVisionDistance()]
-	possibleLocations := make([]worldmap.Coordinates, 0)
-	// Find adjacent locations closer to the goal
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			nX := e.location.X + i
-			nY := e.location.Y + j
-			if aiMap[nY-e.location.Y+e.GetVisionDistance()][nX-e.location.X+e.GetVisionDistance()] < current {
-				// Add if not occupied by another enemy
-				if e.world.IsValid(nX, nY) && (e.world.HasPlayer(nX, nY) || !e.world.IsOccupied(nX, nY)) {
-					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
-				}
-			}
-		}
-	}
-	// If mounted, can move first before executing another action
-	if e.mount != nil && !e.mount.Moved() {
-		if len(possibleLocations) > 0 {
-			if e.overEncumbered() {
-				for _, itm := range e.inventory {
-					if itm.GetWeight() > 1 {
-						e.dropItem(itm)
-						return
-					}
-				}
-			} else {
-				l := possibleLocations[rand.Intn(len(possibleLocations))]
-				e.mount.Move()
-				e.location = l
-				// Can choose new action again
-				e.findAction()
-				return
-			}
-		}
-	}
-
-	// If at half health heal up
-	if e.hp <= e.maxHp/2 {
-		for i, itm := range e.inventory {
-			if con, ok := itm.(*item.Consumable); ok && con.GetEffect("hp") > 0 {
-				e.heal(con.GetEffect("hp"))
-				e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
-				return
-			}
-		}
-	}
-
-	// If moving into or out of cover and not mounted toggle crouch
-	if e.mount == nil {
-		if coverMap[e.GetVisionDistance()][e.GetVisionDistance()] == 0 && !e.crouching {
-			e.crouching = true
-			return
-		} else if coverMap[e.GetVisionDistance()][e.GetVisionDistance()] > 0 && e.crouching {
-			e.crouching = false
-			return
-		}
-	}
-
-	// Try and wield best weapon
-	if e.wieldItem() {
-		return
-	}
-	// Try and wear best armour
-	if e.wearArmour() {
-		return
-	}
-
-	target := e.world.GetPlayer()
-	tX, tY := target.GetCoordinates()
-
-	if distance := math.Sqrt(math.Pow(float64(e.location.X-tX), 2) + math.Pow(float64(e.location.Y-tY), 2)); e.ranged() && distance < float64(e.weapon.GetRange()) && e.world.IsVisible(e, tX, tY) {
-		// if weapon loaded, shoot at target else if enemy has ammo, load weapon
-		if e.weaponLoaded() {
-			e.weapon.Fire()
-			coverPenalty := 0
-			if e.world.TargetBehindCover(e, target) {
-				coverPenalty = 5
-			}
-			e.attack(target, worldmap.GetBonus(e.dex)-coverPenalty, 0)
-			return
-		} else if e.hasAmmo() {
-			for !e.weaponFullyLoaded() && e.hasAmmo() {
-				e.getAmmo()
-				e.weapon.Load()
-			}
-			return
-		}
-
-	}
-
-	// If adjacent to mount, attempt to mount it
-	if e.mount == nil {
-		for i := -1; i <= 1; i++ {
-			for j := -1; j <= 1; j++ {
-				x, y := e.location.X+j, e.location.Y+i
-				if e.world.IsValid(x, y) && mountMap[e.GetVisionDistance()+i][e.GetVisionDistance()+j] == 0 {
-					m, _ := e.world.GetCreature(x, y).(*Mount)
-					m.AddRider(e)
-					e.world.DeleteCreature(m)
-					e.mount = m
-					e.crouching = false
-					e.location = worldmap.Coordinates{x, y}
-					return
-				}
-			}
-		}
-	}
-
-	// If adjacent to closed door attempt to open it
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			x, y := e.location.X+j, e.location.Y+i
-			if e.world.IsValid(x, y) && e.world.IsDoor(x, y) && !e.world.IsPassable(x, y) {
-				e.world.ToggleDoor(x, y, true)
-				return
-			}
-		}
-	}
-
-	if len(possibleLocations) > 0 {
-		if e.overEncumbered() {
-			for _, itm := range e.inventory {
-				if itm.GetWeight() > 1 {
-					e.dropItem(itm)
-					return
-				}
-			}
-		} else if e.mount == nil || (e.mount != nil && !e.mount.Moved()) {
-			l := possibleLocations[rand.Intn(len(possibleLocations))]
-			e.location = l
-			return
-		}
-	} else {
-		items := e.world.GetItems(e.location.X, e.location.Y)
-		for _, item := range items {
-			e.pickupItem(item)
-		}
-	}
-	return
-}
 
 func (e *Enemy) overEncumbered() bool {
 	weight := 0.0
@@ -417,14 +267,13 @@ func (e *Enemy) dropItem(item item.Item) {
 func (e *Enemy) Update() (int, int) {
 	// Needs to be fixed
 	x, y := e.location.X, e.location.Y
-	e.findAction()
+	newX, newY := e.ai.update(e, e.world)
 	if e.mount != nil {
 		e.mount.ResetMoved()
 		if e.mount.IsDead() {
 			e.mount = nil
 		}
 	}
-	newX, newY := e.location.X, e.location.Y
 	e.location = worldmap.Coordinates{x, y}
 	return newX, newY
 }
@@ -574,4 +423,5 @@ type Enemy struct {
 	mountID     string
 	mount       *Mount
 	world       *worldmap.Map
+	ai          enemyAi
 }
