@@ -368,6 +368,10 @@ func (e *Enemy) heal(amount int) {
 	e.hp = int(math.Min(float64(originalHp+amount), float64(e.maxHp)))
 }
 
+func (e *Enemy) bloodied() bool {
+	return e.hp <= e.maxHp/2
+}
+
 func (e *Enemy) GetName() ui.Name {
 	return e.name
 }
@@ -380,12 +384,20 @@ func (e *Enemy) IsCrouching() bool {
 	return e.crouching
 }
 
+func (e *Enemy) Standup() {
+	e.crouching = false
+}
+
 func (e *Enemy) SetMap(world *worldmap.Map) {
 	e.world = world
 }
 
 func (e *Enemy) Mount() *Mount {
 	return e.mount
+}
+
+func (e *Enemy) AddMount(m *Mount) {
+	e.mount = m
 }
 
 func (e *Enemy) GetVisionDistance() int {

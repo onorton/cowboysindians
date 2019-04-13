@@ -276,4 +276,5 @@ type Rider interface {
 	GetAlignment() worldmap.Alignment
 	GetCoordinates() (int, int)
 	Mount() *Mount
+	AddMount(*Mount)
 }

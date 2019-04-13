@@ -1176,6 +1176,10 @@ func (p *Player) Mount() *npc.Mount {
 	return p.mount
 }
 
+func (p *Player) AddMount(m *npc.Mount) {
+	p.mount = m
+}
+
 func (p *Player) GetVisionDistance() int {
 	return 20
 }

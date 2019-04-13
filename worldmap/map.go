@@ -213,11 +213,16 @@ func (m Map) HasItems(x, y int) bool {
 }
 
 // Bresenham algorithm to check if creature c can see square x1, y1.
-func (m Map) IsVisible(c Creature, x1, y1 int) bool {
+func (m Map) IsVisible(c CanSee, x1, y1 int) bool {
 	x0, y0 := c.GetCoordinates()
 	distance := math.Sqrt(math.Pow(float64(x1-x0), 2) + math.Pow(float64(y1-y0), 2))
 	if distance > float64(c.GetVisionDistance()) {
 		return false
+	}
+
+	crouching := false
+	if canCrouch, ok := c.(CanCrouch); ok {
+		crouching = canCrouch.IsCrouching()
 	}
 
 	// If square adjacent, it is visible
@@ -260,7 +265,7 @@ func (m Map) IsVisible(c Creature, x1, y1 int) bool {
 			}
 
 			// If square in path gives cover, is adjacent to the target square and c is crouching then target square is invisible
-			if m.IsValid(x, y) && m.givesCover(x, y) && m.isAdjacent(x, y, x1, y1) && c.IsCrouching() {
+			if m.IsValid(x, y) && m.givesCover(x, y) && m.isAdjacent(x, y, x1, y1) && crouching {
 				return false
 			}
 		}
@@ -280,7 +285,7 @@ func (m Map) IsVisible(c Creature, x1, y1 int) bool {
 			}
 
 			// If square in path gives cover, is adjacent to the target square and c is crouching then target square is invisible
-			if m.IsValid(x, y) && m.givesCover(x, y) && m.isAdjacent(x, y, x1, y1) && c.IsCrouching() {
+			if m.IsValid(x, y) && m.givesCover(x, y) && m.isAdjacent(x, y, x1, y1) && crouching {
 				return false
 			}
 
@@ -645,10 +650,9 @@ type Coordinates struct {
 	Y int
 }
 
-// Interface shared by Player and Enemy
+// Interface shared by Player, Npc and Enemy
 type Creature interface {
-	GetCoordinates() (int, int)
-	SetCoordinates(int, int)
+	CanSee
 	Render() ui.Element
 	GetInitiative() int
 	MeleeAttack(Creature)
@@ -658,5 +662,19 @@ type Creature interface {
 	AttackHits(int) bool
 	GetName() ui.Name
 	GetAlignment() Alignment
+}
+
+type hasPosition interface {
+	GetCoordinates() (int, int)
+	SetCoordinates(int, int)
+}
+
+type CanSee interface {
 	GetVisionDistance() int
+	hasPosition
+}
+
+type CanCrouch interface {
+	IsCrouching() bool
+	Standup()
 }

@@ -11,6 +11,25 @@ import (
 	"github.com/onorton/cowboysindians/worldmap"
 )
 
+type hasAi interface {
+	heal(int)
+	damageable
+	worldmap.CanSee
+	worldmap.CanCrouch
+}
+
+type holdsItems interface {
+	dropItem(item.Item)
+	pickupItem(item.Item)
+	inventory() []item.Item
+	overEncumbered() bool
+	removeItem(item.Item)
+}
+
+type damageable interface {
+	bloodied() bool
+}
+
 type mountAi struct {
 	waypoint worldmap.WaypointSystem
 }
@@ -83,7 +102,7 @@ type npcAi struct {
 	waypoint worldmap.WaypointSystem
 }
 
-func (ai npcAi) update(c *Npc, world *worldmap.Map) (int, int) {
+func (ai npcAi) update(c hasAi, world *worldmap.Map) (int, int) {
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
 	waypoint := ai.waypoint.NextWaypoint(location)
@@ -107,19 +126,19 @@ func (ai npcAi) update(c *Npc, world *worldmap.Map) (int, int) {
 		}
 	}
 
-	// If mounted, can move first before executing another action
-	if c.Mount() != nil && c.Mount().Moved() {
+	// If can ride things and mounted, can move first before executing another action
+	if r, ok := c.(Rider); ok && r.Mount() != nil && r.Mount().Moved() {
 		if len(possibleLocations) > 0 {
-			if c.overEncumbered() {
-				for _, itm := range c.inventory {
+			if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
+				for _, itm := range itemHolder.inventory() {
 					if itm.GetWeight() > 1 {
-						c.dropItem(itm)
+						itemHolder.dropItem(itm)
 						return cX, cY
 					}
 				}
 			} else {
 				l := possibleLocations[rand.Intn(len(possibleLocations))]
-				c.Mount().Move()
+				r.Mount().Move()
 				c.SetCoordinates(l.X, l.Y)
 				// Can choose new action again
 				return ai.update(c, world)
@@ -128,27 +147,27 @@ func (ai npcAi) update(c *Npc, world *worldmap.Map) (int, int) {
 	}
 
 	// If at half health heal up
-	if c.hp <= c.maxHp/2 {
-		for i, itm := range c.inventory {
+	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
+		for _, itm := range itemHolder.inventory() {
 			if con, ok := itm.(*item.Consumable); ok && con.GetEffect("hp") > 0 {
 				c.heal(con.GetEffect("hp"))
-				c.inventory = append(c.inventory[:i], c.inventory[i+1:]...)
+				itemHolder.removeItem(con)
 				return cX, cY
 			}
 		}
 	}
 
 	// If adjacent to mount, attempt to mount it
-	if c.Mount() == nil {
+	if r, ok := c.(Rider); ok && r.Mount() == nil {
 		for i := -1; i <= 1; i++ {
 			for j := -1; j <= 1; j++ {
 				x, y := location.X+j, location.Y+i
 				if world.IsValid(x, y) && mountMap[c.GetVisionDistance()+i][c.GetVisionDistance()+j] == 0 {
-					m, _ := c.world.GetCreature(x, y).(*Mount)
-					m.AddRider(c)
+					m, _ := world.GetCreature(x, y).(*Mount)
+					m.AddRider(r)
 					world.DeleteCreature(m)
-					c.mount = m
-					c.crouching = false
+					r.AddMount(m)
+					c.Standup()
 					return x, y
 				}
 			}
@@ -167,22 +186,24 @@ func (ai npcAi) update(c *Npc, world *worldmap.Map) (int, int) {
 	}
 
 	if len(possibleLocations) > 0 {
-		if c.overEncumbered() {
-			for _, itm := range c.inventory {
+		if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
+			for _, itm := range itemHolder.inventory() {
 				if itm.GetWeight() > 1 {
-					c.dropItem(itm)
+					itemHolder.dropItem(itm)
 					return cX, cY
 				}
 			}
-		} else if c.Mount() == nil || !c.Mount().Moved() {
+		} else if r, ok := c.(Rider); ok && r.Mount() == nil || !r.Mount().Moved() {
 			l := possibleLocations[rand.Intn(len(possibleLocations))]
 			return l.X, l.Y
 		}
-	} else if items := world.GetItems(location.X, location.Y); len(items) > 0 {
-		for _, item := range items {
-			c.PickupItem(item)
+	} else if itemHolder, ok := c.(holdsItems); ok {
+		if items := world.GetItems(location.X, location.Y); len(items) > 0 {
+			for _, item := range items {
+				itemHolder.pickupItem(item)
+			}
+			return cX, cY
 		}
-		return cX, cY
 	}
 
 	// If the npc can do nothing else, try moving randomly
@@ -454,7 +475,7 @@ func getWaypointMap(waypoint worldmap.Coordinates, world *worldmap.Map, location
 	return generateMap(aiMap, world, location)
 }
 
-func getMountMap(c worldmap.Creature, world *worldmap.Map) [][]int {
+func getMountMap(c hasAi, world *worldmap.Map) [][]int {
 	d := c.GetVisionDistance()
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}

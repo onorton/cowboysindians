@@ -474,6 +474,10 @@ func (npc *Npc) heal(amount int) {
 	npc.hp = int(math.Min(float64(originalHp+amount), float64(npc.maxHp)))
 }
 
+func (npc *Npc) bloodied() bool {
+	return npc.hp <= npc.maxHp/2
+}
+
 func (npc *Npc) GetName() ui.Name {
 	return npc.name
 }
@@ -484,6 +488,10 @@ func (npc *Npc) GetAlignment() worldmap.Alignment {
 
 func (npc *Npc) IsCrouching() bool {
 	return npc.crouching
+}
+
+func (npc *Npc) Standup() {
+	npc.crouching = false
 }
 
 func (npc *Npc) SetMap(world *worldmap.Map) {
@@ -502,6 +510,10 @@ func (npc *Npc) SetMap(world *worldmap.Map) {
 
 func (npc *Npc) Mount() *Mount {
 	return npc.mount
+}
+
+func (npc *Npc) AddMount(m *Mount) {
+	npc.mount = m
 }
 
 func (npc *Npc) GetVisionDistance() int {
