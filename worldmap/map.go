@@ -658,6 +658,5 @@ type Creature interface {
 	AttackHits(int) bool
 	GetName() ui.Name
 	GetAlignment() Alignment
-	GetMount() Creature
 	GetVisionDistance() int
 }

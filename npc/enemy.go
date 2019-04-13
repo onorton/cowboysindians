@@ -384,11 +384,8 @@ func (e *Enemy) SetMap(world *worldmap.Map) {
 	e.world = world
 }
 
-func (e *Enemy) GetMount() worldmap.Creature {
-	if e.mount != nil {
-		return e.mount
-	}
-	return nil
+func (e *Enemy) Mount() *Mount {
+	return e.mount
 }
 
 func (e *Enemy) GetVisionDistance() int {

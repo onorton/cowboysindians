@@ -712,20 +712,21 @@ func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
 	c := p.world.GetCreature(newX, newY)
 	// If occupied by another creature, melee attack
 	if c != nil && c != p {
-		v := c.GetMount()
+		var m *npc.Mount
+		if r, ok := c.(npc.Rider); ok {
+			m = r.Mount()
+		}
 
-		if v != nil {
-			m := v.(*npc.Mount)
-			if m != nil {
-				message.PrintMessage(fmt.Sprintf("%s is riding %s. Would you like to target %s instead? [y/n]", c.GetName().WithDefinite(), m.GetName().WithIndefinite(), m.GetName().WithDefinite()))
+		if m != nil {
+			message.PrintMessage(fmt.Sprintf("%s is riding %s. Would you like to target %s instead? [y/n]", c.GetName().WithDefinite(), m.GetName().WithIndefinite(), m.GetName().WithDefinite()))
 
-				input := ui.GetInput()
-				if input == ui.Confirm {
-					p.MeleeAttack(m)
-					return true, ui.NoAction
-				}
+			input := ui.GetInput()
+			if input == ui.Confirm {
+				p.MeleeAttack(m)
+				return true, ui.NoAction
 			}
 		}
+
 		p.MeleeAttack(c)
 
 		// Will always be NoAction
@@ -827,18 +828,21 @@ func (p *Player) findTarget() worldmap.Creature {
 			if p.world.IsOccupied(x, y) {
 				// If a creature is there, return it.
 				c := p.world.GetCreature(x, y)
-				v := c.GetMount()
-				if v != nil {
-					m := v.(*npc.Mount)
-					if m != nil {
-						message.PrintMessage(fmt.Sprintf("%s is riding %s. Would you like to target %s instead? [y/n]", c.GetName().WithDefinite(), m.GetName().WithIndefinite(), m.GetName().WithDefinite()))
 
-						input := ui.GetInput()
-						if input == ui.Confirm {
-							return m
-						}
+				var m *npc.Mount
+				if r, ok := c.(npc.Rider); ok {
+					m = r.Mount()
+				}
+
+				if m != nil {
+					message.PrintMessage(fmt.Sprintf("%s is riding %s. Would you like to target %s instead? [y/n]", c.GetName().WithDefinite(), m.GetName().WithIndefinite(), m.GetName().WithDefinite()))
+
+					input := ui.GetInput()
+					if input == ui.Confirm {
+						return m
 					}
 				}
+
 				return c
 			} else {
 				message.PrintMessage("Never mind...")
@@ -1168,7 +1172,7 @@ func (p *Player) SetMap(world *worldmap.Map) {
 	p.world = world
 }
 
-func (p *Player) GetMount() worldmap.Creature {
+func (p *Player) Mount() *npc.Mount {
 	return p.mount
 }
 

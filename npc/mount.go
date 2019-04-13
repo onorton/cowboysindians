@@ -214,7 +214,7 @@ func (m *Mount) IsCrouching() bool {
 	return false
 }
 
-func (m *Mount) AddRider(r rider) {
+func (m *Mount) AddRider(r Rider) {
 	m.rider = r
 }
 
@@ -237,10 +237,6 @@ func (m *Mount) GetIcon() icon.Icon {
 
 func (m *Mount) GetEncumbrance() int {
 	return m.encumbrance
-}
-
-func (m *Mount) GetMount() worldmap.Creature {
-	return nil
 }
 
 func (m *Mount) GetVisionDistance() int {
@@ -268,15 +264,16 @@ type Mount struct {
 	str         int
 	dex         int
 	encumbrance int
-	rider       rider
+	rider       Rider
 	world       *worldmap.Map
 	moved       bool
 	ai          mountAi
 }
 
-type rider interface {
+type Rider interface {
 	IsDead() bool
 	TakeDamage(int)
 	GetAlignment() worldmap.Alignment
 	GetCoordinates() (int, int)
+	Mount() *Mount
 }

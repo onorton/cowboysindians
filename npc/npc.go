@@ -500,11 +500,8 @@ func (npc *Npc) SetMap(world *worldmap.Map) {
 
 }
 
-func (npc *Npc) GetMount() worldmap.Creature {
-	if npc.mount != nil {
-		return npc.mount
-	}
-	return nil
+func (npc *Npc) Mount() *Mount {
+	return npc.mount
 }
 
 func (npc *Npc) GetVisionDistance() int {

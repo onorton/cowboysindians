@@ -108,7 +108,7 @@ func (ai npcAi) update(c *Npc, world *worldmap.Map) (int, int) {
 	}
 
 	// If mounted, can move first before executing another action
-	if c.GetMount() != nil && c.GetMount().(*Mount).Moved() {
+	if c.Mount() != nil && c.Mount().Moved() {
 		if len(possibleLocations) > 0 {
 			if c.overEncumbered() {
 				for _, itm := range c.inventory {
@@ -119,7 +119,7 @@ func (ai npcAi) update(c *Npc, world *worldmap.Map) (int, int) {
 				}
 			} else {
 				l := possibleLocations[rand.Intn(len(possibleLocations))]
-				c.GetMount().(*Mount).Move()
+				c.Mount().Move()
 				c.SetCoordinates(l.X, l.Y)
 				// Can choose new action again
 				return ai.update(c, world)
@@ -139,7 +139,7 @@ func (ai npcAi) update(c *Npc, world *worldmap.Map) (int, int) {
 	}
 
 	// If adjacent to mount, attempt to mount it
-	if c.GetMount() == nil {
+	if c.Mount() == nil {
 		for i := -1; i <= 1; i++ {
 			for j := -1; j <= 1; j++ {
 				x, y := location.X+j, location.Y+i
@@ -174,7 +174,7 @@ func (ai npcAi) update(c *Npc, world *worldmap.Map) (int, int) {
 					return cX, cY
 				}
 			}
-		} else if c.GetMount() == nil || !c.GetMount().(*Mount).Moved() {
+		} else if c.Mount() == nil || !c.Mount().Moved() {
 			l := possibleLocations[rand.Intn(len(possibleLocations))]
 			return l.X, l.Y
 		}
@@ -283,7 +283,7 @@ func (ai enemyAi) update(c *Enemy, world *worldmap.Map) (int, int) {
 				}
 			} else {
 				l := possibleLocations[rand.Intn(len(possibleLocations))]
-				c.GetMount().(*Mount).Move()
+				c.Mount().Move()
 				c.SetCoordinates(l.X, l.Y)
 				// Can choose new action again
 				return ai.update(c, world)
@@ -303,7 +303,7 @@ func (ai enemyAi) update(c *Enemy, world *worldmap.Map) (int, int) {
 	}
 
 	// If moving into or out of cover and not mounted toggle crouch
-	if c.GetMount() == nil {
+	if c.Mount() == nil {
 		if coverMap[c.GetVisionDistance()][c.GetVisionDistance()] == 0 && !c.crouching {
 			c.crouching = true
 			return cX, cY
@@ -346,7 +346,7 @@ func (ai enemyAi) update(c *Enemy, world *worldmap.Map) (int, int) {
 	}
 
 	// If adjacent to mount, attempt to mount it
-	if c.GetMount() == nil {
+	if c.Mount() == nil {
 		for i := -1; i <= 1; i++ {
 			for j := -1; j <= 1; j++ {
 				x, y := location.X+j, location.Y+i
