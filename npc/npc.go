@@ -275,6 +275,11 @@ func (npc *Npc) GetInitiative() int {
 func (npc *Npc) MeleeAttack(c worldmap.Creature) {
 	npc.attack(c, worldmap.GetBonus(npc.str), worldmap.GetBonus(npc.str))
 }
+
+func (npc *Npc) rangedAttack(c worldmap.Creature, environmentBonus int) {
+	npc.attack(c, worldmap.GetBonus(npc.dex)+environmentBonus, 0)
+}
+
 func (npc *Npc) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 
 	hits := c.AttackHits(rand.Intn(20) + hitBonus + 1)
@@ -492,6 +497,10 @@ func (npc *Npc) IsCrouching() bool {
 
 func (npc *Npc) Standup() {
 	npc.crouching = false
+}
+
+func (npc *Npc) Crouch() {
+	npc.crouching = true
 }
 
 func (npc *Npc) SetMap(world *worldmap.Map) {

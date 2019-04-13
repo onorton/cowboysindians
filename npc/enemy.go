@@ -175,6 +175,12 @@ func (e *Enemy) GetInitiative() int {
 func (e *Enemy) MeleeAttack(c worldmap.Creature) {
 	e.attack(c, worldmap.GetBonus(e.str), worldmap.GetBonus(e.str))
 }
+
+func (e *Enemy) rangedAttack(c worldmap.Creature, environmentBonus int) {
+	e.attack(c, worldmap.GetBonus(e.dex)+environmentBonus, 0)
+}
+
+
 func (e *Enemy) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 
 	hits := c.AttackHits(rand.Intn(20) + hitBonus + 1)
@@ -333,6 +339,10 @@ func (e *Enemy) pickupItem(item item.Item) {
 	e.inventory = append(e.inventory, item)
 }
 
+func (e *Enemy) Weapon() *item.Weapon {
+	return e.weapon
+}
+
 func (e *Enemy) ranged() bool {
 	if e.weapon != nil {
 		return e.weapon.GetRange() > 0
@@ -386,6 +396,10 @@ func (e *Enemy) IsCrouching() bool {
 
 func (e *Enemy) Standup() {
 	e.crouching = false
+}
+
+func (e *Enemy) Crouch() {
+	e.crouching = true
 }
 
 func (e *Enemy) SetMap(world *worldmap.Map) {

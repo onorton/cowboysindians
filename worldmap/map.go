@@ -363,7 +363,7 @@ func (m Map) InConversationRange(c, t Creature) bool {
 	return true
 }
 
-func (m Map) TargetBehindCover(a, t Creature) bool {
+func (m Map) TargetBehindCover(a hasPosition, t Creature) bool {
 	x0, y0 := a.GetCoordinates()
 	x1, y1 := t.GetCoordinates()
 	var xStep, yStep int
@@ -677,4 +677,5 @@ type CanSee interface {
 type CanCrouch interface {
 	IsCrouching() bool
 	Standup()
+	Crouch()
 }

@@ -13,6 +13,7 @@ import (
 
 type hasAi interface {
 	heal(int)
+	rangedAttack(worldmap.Creature, int)
 	damageable
 	worldmap.CanSee
 	worldmap.CanCrouch
@@ -26,8 +27,20 @@ type holdsItems interface {
 	removeItem(item.Item)
 }
 
+type usesItems interface {
+	wieldItem() bool
+	wearArmour() bool
+	ranged() bool
+	Weapon() *item.Weapon
+	weaponLoaded() bool
+	weaponFullyLoaded() bool
+	hasAmmo() bool
+	getAmmo() *item.Ammo
+}
+
 type damageable interface {
 	bloodied() bool
+	AttackHits(int) bool
 }
 
 type mountAi struct {
@@ -193,7 +206,7 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) (int, int) {
 					return cX, cY
 				}
 			}
-		} else if r, ok := c.(Rider); ok && r.Mount() == nil || !r.Mount().Moved() {
+		} else if r, ok := c.(Rider); ok && (r.Mount() == nil || !r.Mount().Moved()) {
 			l := possibleLocations[rand.Intn(len(possibleLocations))]
 			return l.X, l.Y
 		}
@@ -264,13 +277,14 @@ type enemyAi struct {
 	waypoint worldmap.WaypointSystem
 }
 
-func (ai enemyAi) update(c *Enemy, world *worldmap.Map) (int, int) {
+func (ai enemyAi) update(c hasAi, world *worldmap.Map) (int, int) {
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
 
 	coefficients := []float64{0.5, 0.2, 0.3, 0.0}
+
 	// Focus on getting a mount if possible
-	if c.mount == nil {
+	if r, ok := c.(Rider); ok && r.Mount() == nil {
 		coefficients = []float64{0.3, 0.2, 0.1, 0.4}
 	}
 	coverMap := getCoverMap(c, world)
@@ -293,18 +307,18 @@ func (ai enemyAi) update(c *Enemy, world *worldmap.Map) (int, int) {
 		}
 	}
 	// If mounted, can move first before executing another action
-	if c.mount != nil && !c.mount.Moved() {
+	if r, ok := c.(Rider); ok && r.Mount() != nil && !r.Mount().Moved() {
 		if len(possibleLocations) > 0 {
-			if c.overEncumbered() {
-				for _, itm := range c.inventory {
+			if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
+				for _, itm := range itemHolder.inventory() {
 					if itm.GetWeight() > 1 {
-						c.dropItem(itm)
+						itemHolder.dropItem(itm)
 						return cX, cY
 					}
 				}
 			} else {
 				l := possibleLocations[rand.Intn(len(possibleLocations))]
-				c.Mount().Move()
+				r.Mount().Move()
 				c.SetCoordinates(l.X, l.Y)
 				// Can choose new action again
 				return ai.update(c, world)
@@ -313,70 +327,72 @@ func (ai enemyAi) update(c *Enemy, world *worldmap.Map) (int, int) {
 	}
 
 	// If at half health heal up
-	if c.hp <= c.maxHp/2 {
-		for i, itm := range c.inventory {
+	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
+		for _, itm := range itemHolder.inventory() {
 			if con, ok := itm.(*item.Consumable); ok && con.GetEffect("hp") > 0 {
 				c.heal(con.GetEffect("hp"))
-				c.inventory = append(c.inventory[:i], c.inventory[i+1:]...)
+				itemHolder.removeItem(con)
 				return cX, cY
 			}
 		}
 	}
 
 	// If moving into or out of cover and not mounted toggle crouch
-	if c.Mount() == nil {
-		if coverMap[c.GetVisionDistance()][c.GetVisionDistance()] == 0 && !c.crouching {
-			c.crouching = true
+	if r, ok := c.(Rider); ok && r.Mount() == nil {
+		if coverMap[c.GetVisionDistance()][c.GetVisionDistance()] == 0 && !c.IsCrouching() {
+			c.Crouch()
 			return cX, cY
-		} else if coverMap[c.GetVisionDistance()][c.GetVisionDistance()] > 0 && c.crouching {
-			c.crouching = false
+		} else if coverMap[c.GetVisionDistance()][c.GetVisionDistance()] > 0 && c.IsCrouching() {
+			c.Standup()
 			return cX, cY
 		}
 	}
 
 	// Try and wield best weapon
-	if c.wieldItem() {
+	if itemUser, ok := c.(usesItems); ok && itemUser.wieldItem() {
 		return cX, cY
 	}
 	// Try and wear best armour
-	if c.wearArmour() {
+	if itemUser, ok := c.(usesItems); ok && itemUser.wearArmour() {
 		return cX, cY
 	}
 
 	target := world.GetPlayer()
 	tX, tY := target.GetCoordinates()
 
-	if distance := math.Sqrt(math.Pow(float64(location.X-tX), 2) + math.Pow(float64(location.Y-tY), 2)); c.ranged() && distance < float64(c.weapon.GetRange()) && world.IsVisible(c, tX, tY) {
-		// if weapon loaded, shoot at target else if enemy has ammo, load weapon
-		if c.weaponLoaded() {
-			c.weapon.Fire()
-			coverPenalty := 0
-			if world.TargetBehindCover(c, target) {
-				coverPenalty = 5
+	if itemUser, ok := c.(usesItems); ok {
+		if distance := math.Sqrt(math.Pow(float64(location.X-tX), 2) + math.Pow(float64(location.Y-tY), 2)); itemUser.ranged() && distance < float64(itemUser.Weapon().GetRange()) && world.IsVisible(c, tX, tY) {
+			// if weapon loaded, shoot at target else if enemy has ammo, load weapon
+			if itemUser.weaponLoaded() {
+				itemUser.Weapon().Fire()
+				coverPenalty := 0
+				if world.TargetBehindCover(c, target) {
+					coverPenalty = 5
+				}
+				c.rangedAttack(target, -coverPenalty)
+				return cX, cY
+			} else if itemUser.hasAmmo() {
+				for !itemUser.weaponFullyLoaded() && itemUser.hasAmmo() {
+					itemUser.getAmmo()
+					itemUser.Weapon().Load()
+				}
+				return cX, cY
 			}
-			c.attack(target, worldmap.GetBonus(c.dex)-coverPenalty, 0)
-			return cX, cY
-		} else if c.hasAmmo() {
-			for !c.weaponFullyLoaded() && c.hasAmmo() {
-				c.getAmmo()
-				c.weapon.Load()
-			}
-			return cX, cY
 		}
 
 	}
 
 	// If adjacent to mount, attempt to mount it
-	if c.Mount() == nil {
+	if r, ok := c.(Rider); ok && r.Mount() == nil {
 		for i := -1; i <= 1; i++ {
 			for j := -1; j <= 1; j++ {
 				x, y := location.X+j, location.Y+i
 				if world.IsValid(x, y) && mountMap[c.GetVisionDistance()+i][c.GetVisionDistance()+j] == 0 {
-					m, _ := c.world.GetCreature(x, y).(*Mount)
-					m.AddRider(c)
+					m, _ := world.GetCreature(x, y).(*Mount)
+					m.AddRider(r)
 					world.DeleteCreature(m)
-					c.mount = m
-					c.crouching = false
+					r.AddMount(m)
+					c.Standup()
 					return x, y
 				}
 			}
@@ -395,20 +411,22 @@ func (ai enemyAi) update(c *Enemy, world *worldmap.Map) (int, int) {
 	}
 
 	if len(possibleLocations) > 0 {
-		if c.overEncumbered() {
-			for _, itm := range c.inventory {
+		if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
+			for _, itm := range itemHolder.inventory() {
 				if itm.GetWeight() > 1 {
-					c.dropItem(itm)
+					itemHolder.dropItem(itm)
 					return cX, cY
 				}
 			}
-		} else if c.mount == nil || !c.mount.Moved() {
+		} else if r, ok := c.(Rider); ok && (r.Mount() == nil || !r.Mount().Moved()) {
 			l := possibleLocations[rand.Intn(len(possibleLocations))]
 			return l.X, l.Y
 		}
-	} else if items := world.GetItems(location.X, location.Y); len(items) > 0 {
-		for _, item := range items {
-			c.pickupItem(item)
+	} else if itemHolder, ok := c.(holdsItems); ok {
+		if items := world.GetItems(location.X, location.Y); len(items) > 0 {
+			for _, item := range items {
+				itemHolder.pickupItem(item)
+			}
 		}
 	}
 	return cX, cY
@@ -505,7 +523,7 @@ func getMountMap(c hasAi, world *worldmap.Map) [][]int {
 	return generateMap(aiMap, world, location)
 }
 
-func getChaseMap(c worldmap.Creature, world *worldmap.Map) [][]int {
+func getChaseMap(c hasAi, world *worldmap.Map) [][]int {
 	d := c.GetVisionDistance()
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
@@ -532,7 +550,7 @@ func getChaseMap(c worldmap.Creature, world *worldmap.Map) [][]int {
 	return generateMap(aiMap, world, location)
 }
 
-func getItemMap(c worldmap.Creature, world *worldmap.Map) [][]int {
+func getItemMap(c hasAi, world *worldmap.Map) [][]int {
 	d := c.GetVisionDistance()
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
@@ -559,7 +577,7 @@ func getItemMap(c worldmap.Creature, world *worldmap.Map) [][]int {
 	return generateMap(aiMap, world, location)
 }
 
-func getCoverMap(c worldmap.Creature, world *worldmap.Map) [][]int {
+func getCoverMap(c hasAi, world *worldmap.Map) [][]int {
 	d := c.GetVisionDistance()
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
