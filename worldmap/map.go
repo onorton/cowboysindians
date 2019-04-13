@@ -660,6 +660,4 @@ type Creature interface {
 	GetAlignment() Alignment
 	GetMount() Creature
 	GetVisionDistance() int
-	MarshalJSON() ([]byte, error)
-	UnmarshalJSON([]byte) error
 }

@@ -214,8 +214,8 @@ func (m *Mount) IsCrouching() bool {
 	return false
 }
 
-func (m *Mount) AddRider(c worldmap.Creature) {
-	m.rider = c
+func (m *Mount) AddRider(r rider) {
+	m.rider = r
 }
 
 func (m *Mount) RemoveRider() {
@@ -268,8 +268,15 @@ type Mount struct {
 	str         int
 	dex         int
 	encumbrance int
-	rider       worldmap.Creature
+	rider       rider
 	world       *worldmap.Map
 	moved       bool
 	ai          mountAi
+}
+
+type rider interface {
+	IsDead() bool
+	TakeDamage(int)
+	GetAlignment() worldmap.Alignment
+	GetCoordinates() (int, int)
 }
