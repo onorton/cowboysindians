@@ -231,7 +231,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 		Armour      *item.Armour
 		Inventory   item.ItemList
 		MountID     string
-		Ai          npcAi
+		Ai          map[string]interface{}
 		Dialogue    map[string]interface{}
 	}
 	var v npcJson
@@ -255,7 +255,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 	npc.armour = v.Armour
 	npc.inventory = v.Inventory
 	npc.mountID = v.MountID
-	npc.ai = v.Ai
+	npc.ai = unmarshalAi(v.Ai)
 	npc.dialogue = unmarshalDialogue(v.Dialogue)
 
 	return nil
@@ -506,7 +506,12 @@ func (npc *Npc) Crouch() {
 func (npc *Npc) SetMap(world *worldmap.Map) {
 	npc.world = world
 
-	npc.ai.setMap(world)
+	switch ai := npc.ai.(type) {
+	case mountAi:
+		ai.setMap(world)
+	case npcAi:
+		ai.setMap(world)
+	}
 
 	switch d := npc.dialogue.(type) {
 	case *shopkeeperDialogue:
@@ -613,6 +618,6 @@ type Npc struct {
 	mountID     string
 	mount       *Mount
 	world       *worldmap.Map
-	ai          npcAi
+	ai          ai
 	dialogue    dialogue
 }

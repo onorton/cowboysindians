@@ -13,7 +13,6 @@ import (
 
 type hasAi interface {
 	heal(int)
-	rangedAttack(worldmap.Creature, int)
 	damageable
 	worldmap.CanSee
 	worldmap.CanCrouch
@@ -31,6 +30,7 @@ type usesItems interface {
 	wieldItem() bool
 	wearArmour() bool
 	ranged() bool
+	rangedAttack(worldmap.Creature, int)
 	Weapon() *item.Weapon
 	weaponLoaded() bool
 	weaponFullyLoaded() bool
@@ -43,11 +43,15 @@ type damageable interface {
 	AttackHits(int) bool
 }
 
+type ai interface {
+	update(hasAi, *worldmap.Map) (int, int)
+}
+
 type mountAi struct {
 	waypoint worldmap.WaypointSystem
 }
 
-func (ai mountAi) update(c worldmap.Creature, world *worldmap.Map) (int, int) {
+func (ai mountAi) update(c hasAi, world *worldmap.Map) (int, int) {
 	x, y := c.GetCoordinates()
 	location := worldmap.Coordinates{x, y}
 	waypoint := ai.waypoint.NextWaypoint(location)
@@ -87,6 +91,9 @@ func (ai mountAi) setMap(world *worldmap.Map) {
 
 func (ai mountAi) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString("\"Type\":\"mount\",")
+
 	waypointValue, err := json.Marshal(ai.waypoint)
 	if err != nil {
 		return nil, err
@@ -249,6 +256,9 @@ func (ai npcAi) setMap(world *worldmap.Map) {
 
 func (ai npcAi) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString("\"Type\":\"npc\",")
+
 	waypointValue, err := json.Marshal(ai.waypoint)
 	if err != nil {
 		return nil, err
@@ -274,7 +284,6 @@ func (ai *npcAi) UnmarshalJSON(data []byte) error {
 }
 
 type enemyAi struct {
-	waypoint worldmap.WaypointSystem
 }
 
 func (ai enemyAi) update(c hasAi, world *worldmap.Map) (int, int) {
@@ -369,7 +378,7 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) (int, int) {
 				if world.TargetBehindCover(c, target) {
 					coverPenalty = 5
 				}
-				c.rangedAttack(target, -coverPenalty)
+				itemUser.rangedAttack(target, -coverPenalty)
 				return cX, cY
 			} else if itemUser.hasAmmo() {
 				for !itemUser.weaponFullyLoaded() && itemUser.hasAmmo() {
@@ -430,6 +439,39 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) (int, int) {
 		}
 	}
 	return cX, cY
+}
+
+func unmarshalAi(ai map[string]interface{}) ai {
+	aiJson, err := json.Marshal(ai)
+	check(err)
+
+	switch ai["Type"] {
+	case "mount":
+		var mAi mountAi
+		err = json.Unmarshal(aiJson, &mAi)
+		check(err)
+		return mAi
+	case "npc":
+		var nAi npcAi
+		err = json.Unmarshal(aiJson, &nAi)
+		check(err)
+		return nAi
+	case "enemy":
+		var eAi enemyAi
+		err = json.Unmarshal(aiJson, &eAi)
+		check(err)
+		return eAi
+	}
+	return nil
+}
+
+func (ai enemyAi) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString("\"Type\":\"enemy\"")
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
 }
 
 func generateMap(aiMap [][]int, world *worldmap.Map, location worldmap.Coordinates) [][]int {

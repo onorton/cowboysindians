@@ -136,6 +136,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 		Armour      *item.Armour
 		Inventory   item.ItemList
 		MountID     string
+		Ai map[string]interface{}
 	}
 	var v enemyJson
 
@@ -157,6 +158,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 	e.armour = v.Armour
 	e.inventory = v.Inventory
 	e.mountID = v.MountID
+	e.ai = unmarshalAi(v.Ai)
 
 	return nil
 }
@@ -404,6 +406,13 @@ func (e *Enemy) Crouch() {
 
 func (e *Enemy) SetMap(world *worldmap.Map) {
 	e.world = world
+
+	switch ai := e.ai.(type) {
+	case mountAi:
+		ai.setMap(world)
+	case npcAi:
+		ai.setMap(world)
+	}
 }
 
 func (e *Enemy) Mount() *Mount {
@@ -446,5 +455,5 @@ type Enemy struct {
 	mountID     string
 	mount       *Mount
 	world       *worldmap.Map
-	ai          enemyAi
+	ai          ai
 }

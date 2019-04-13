@@ -102,7 +102,7 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 		Str         int
 		Dex         int
 		Encumbrance int
-		Ai          mountAi
+		Ai          map[string]interface{}
 	}
 	var v mountJson
 
@@ -119,7 +119,7 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 	m.str = v.Str
 	m.dex = v.Dex
 	m.encumbrance = v.Encumbrance
-	m.ai = v.Ai
+	m.ai = unmarshalAi(v.Ai)
 	return nil
 }
 
@@ -202,6 +202,10 @@ func (m *Mount) heal(amount int) {
 	m.hp = int(math.Min(float64(originalHp+amount), float64(m.maxHp)))
 }
 
+func (m *Mount) bloodied() bool {
+	return m.hp <= m.maxHp/2
+}
+
 func (m *Mount) GetName() ui.Name {
 	return m.name
 }
@@ -212,6 +216,12 @@ func (m *Mount) GetAlignment() worldmap.Alignment {
 
 func (m *Mount) IsCrouching() bool {
 	return false
+}
+
+func (m *Mount) Crouch() {
+}
+
+func (m *Mount) Standup() {
 }
 
 func (m *Mount) AddRider(r Rider) {
@@ -228,7 +238,13 @@ func (m *Mount) IsMounted() bool {
 
 func (m *Mount) SetMap(world *worldmap.Map) {
 	m.world = world
-	m.ai.setMap(world)
+
+	switch ai := m.ai.(type) {
+	case mountAi:
+		ai.setMap(world)
+	case npcAi:
+		ai.setMap(world)
+	}
 }
 
 func (m *Mount) GetIcon() icon.Icon {
@@ -267,7 +283,7 @@ type Mount struct {
 	rider       Rider
 	world       *worldmap.Map
 	moved       bool
-	ai          mountAi
+	ai          ai
 }
 
 type Rider interface {
