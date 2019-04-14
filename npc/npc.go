@@ -361,6 +361,7 @@ func (npc *Npc) overEncumbered() bool {
 	return weight > float64(npc.encumbrance)
 }
 func (npc *Npc) dropItem(item item.Item) {
+	npc.RemoveItem(item)
 	npc.world.PlaceItem(npc.location.X, npc.location.Y, item)
 	if npc.world.IsVisible(npc.world.GetPlayer(), npc.location.X, npc.location.Y) {
 		message.Enqueue(fmt.Sprintf("%s dropped a %s.", npc.name.WithDefinite(), item.GetName()))
@@ -368,9 +369,7 @@ func (npc *Npc) dropItem(item item.Item) {
 
 }
 
-func (npc *Npc) Update() (int, int) {
-	// Needs to be fixed
-	x, y := npc.location.X, npc.location.Y
+func (npc *Npc) Update() {
 	p := npc.world.GetPlayer()
 	pX, pY := p.GetCoordinates()
 	if npc.world.InConversationRange(npc, p) {
@@ -378,15 +377,20 @@ func (npc *Npc) Update() (int, int) {
 	} else if npc.world.IsVisible(npc, pX, pY) {
 		npc.dialogue.resetSeen()
 	}
-	newX, newY := npc.ai.update(npc, npc.world)
+	action := npc.ai.update(npc, npc.world)
+	action.execute()
+
+	if _, ok := action.(MountedMoveAction); ok {
+		// Gets another action
+		npc.ai.update(npc, npc.world).execute()
+	}
+
 	if npc.mount != nil {
 		npc.mount.ResetMoved()
 		if npc.mount.IsDead() {
 			npc.mount = nil
 		}
 	}
-	npc.location = worldmap.Coordinates{x, y}
-	return newX, newY
 }
 
 func (npc *Npc) EmptyInventory() {
@@ -442,6 +446,10 @@ func (npc *Npc) getAmmo() *item.Ammo {
 
 func (npc *Npc) PickupItem(item item.Item) {
 	npc.inventory = append(npc.inventory, item)
+}
+
+func (npc *Npc) Inventory() []item.Item {
+	return npc.inventory
 }
 
 func (npc *Npc) ranged() bool {
@@ -528,6 +536,7 @@ func (npc *Npc) Mount() *Mount {
 
 func (npc *Npc) AddMount(m *Mount) {
 	npc.mount = m
+	npc.Standup()
 }
 
 func (npc *Npc) GetVisionDistance() int {

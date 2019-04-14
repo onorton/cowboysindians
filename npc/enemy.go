@@ -56,7 +56,7 @@ func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 			case "Weapon":
 				itm = item.NewWeapon(itemDefinition.Name)
 			}
-			e.pickupItem(itm)
+			e.PickupItem(itm)
 		}
 	}
 	return e
@@ -136,7 +136,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 		Armour      *item.Armour
 		Inventory   item.ItemList
 		MountID     string
-		Ai map[string]interface{}
+		Ai          map[string]interface{}
 	}
 	var v enemyJson
 
@@ -181,7 +181,6 @@ func (e *Enemy) MeleeAttack(c worldmap.Creature) {
 func (e *Enemy) rangedAttack(c worldmap.Creature, environmentBonus int) {
 	e.attack(c, worldmap.GetBonus(e.dex)+environmentBonus, 0)
 }
-
 
 func (e *Enemy) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 
@@ -256,7 +255,6 @@ func (e *Enemy) wearArmour() bool {
 	return changed
 }
 
-
 func (e *Enemy) overEncumbered() bool {
 	weight := 0.0
 	for _, item := range e.inventory {
@@ -265,6 +263,7 @@ func (e *Enemy) overEncumbered() bool {
 	return weight > float64(e.encumbrance)
 }
 func (e *Enemy) dropItem(item item.Item) {
+	e.RemoveItem(item)
 	e.world.PlaceItem(e.location.X, e.location.Y, item)
 	if e.world.IsVisible(e.world.GetPlayer(), e.location.X, e.location.Y) {
 		message.Enqueue(fmt.Sprintf("%s dropped a %s.", e.name.WithDefinite(), item.GetName()))
@@ -272,18 +271,19 @@ func (e *Enemy) dropItem(item item.Item) {
 
 }
 
-func (e *Enemy) Update() (int, int) {
-	// Needs to be fixed
-	x, y := e.location.X, e.location.Y
-	newX, newY := e.ai.update(e, e.world)
+func (e *Enemy) Update() {
+	action := e.ai.update(e, e.world)
+	action.execute()
+	if _, ok := action.(MountedMoveAction); ok {
+		// Gets another action
+		e.ai.update(e, e.world).execute()
+	}
 	if e.mount != nil {
 		e.mount.ResetMoved()
 		if e.mount.IsDead() {
 			e.mount = nil
 		}
 	}
-	e.location = worldmap.Coordinates{x, y}
-	return newX, newY
 }
 
 func (e *Enemy) EmptyInventory() {
@@ -337,8 +337,21 @@ func (e *Enemy) getAmmo() *item.Ammo {
 	return nil
 }
 
-func (e *Enemy) pickupItem(item item.Item) {
+func (e *Enemy) PickupItem(item item.Item) {
 	e.inventory = append(e.inventory, item)
+}
+
+func (e *Enemy) RemoveItem(itm item.Item) {
+	for i, item := range e.inventory {
+		if itm.GetName() == item.GetName() {
+			e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
+			return
+		}
+	}
+}
+
+func (e *Enemy) Inventory() []item.Item {
+	return e.inventory
 }
 
 func (e *Enemy) Weapon() *item.Weapon {
@@ -421,6 +434,7 @@ func (e *Enemy) Mount() *Mount {
 
 func (e *Enemy) AddMount(m *Mount) {
 	e.mount = m
+	e.Standup()
 }
 
 func (e *Enemy) GetVisionDistance() int {

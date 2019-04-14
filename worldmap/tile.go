@@ -121,6 +121,10 @@ func (t *NormalTile) getItems() []item.Item {
 	return items
 }
 
+func (t *NormalTile) hasItems() bool {
+	return len(t.items) > 0
+}
+
 func (t *NormalTile) givesCover() bool {
 	cover := !t.passable
 
@@ -261,6 +265,10 @@ func (d *Door) getItems() []item.Item {
 	return items
 }
 
+func (d *Door) hasItems() bool {
+	return len(d.items) > 0
+}
+
 func (d *Door) placeItem(itm item.Item) {
 	d.items = append([]item.Item{itm}, d.items...)
 }
@@ -313,5 +321,6 @@ type Tile interface {
 	getCreature() Creature
 	setCreature(Creature)
 	getItems() []item.Item
+	hasItems() bool
 	placeItem(item.Item)
 }

@@ -174,15 +174,18 @@ func (m *Mount) IsDead() bool {
 	return m.hp <= 0
 }
 
-func (m *Mount) Update() (int, int) {
+func (m *Mount) Update() {
 	if m.rider != nil {
 		if m.rider.IsDead() {
 			m.RemoveRider()
 		} else {
-			return m.rider.GetCoordinates()
+			rX, rY := m.rider.GetCoordinates()
+			m.location = worldmap.Coordinates{rX, rY}
+			return
 		}
 	}
-	return m.ai.update(m, m.world)
+	action := m.ai.update(m, m.world)
+	action.execute()
 }
 
 func (m *Mount) ResetMoved() {

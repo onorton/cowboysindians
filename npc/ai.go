@@ -20,10 +20,10 @@ type hasAi interface {
 
 type holdsItems interface {
 	dropItem(item.Item)
-	pickupItem(item.Item)
-	inventory() []item.Item
+	PickupItem(item.Item)
+	Inventory() []item.Item
 	overEncumbered() bool
-	removeItem(item.Item)
+	RemoveItem(item.Item)
 }
 
 type usesItems interface {
@@ -44,14 +44,14 @@ type damageable interface {
 }
 
 type ai interface {
-	update(hasAi, *worldmap.Map) (int, int)
+	update(hasAi, *worldmap.Map) Action
 }
 
 type mountAi struct {
 	waypoint worldmap.WaypointSystem
 }
 
-func (ai mountAi) update(c hasAi, world *worldmap.Map) (int, int) {
+func (ai mountAi) update(c hasAi, world *worldmap.Map) Action {
 	x, y := c.GetCoordinates()
 	location := worldmap.Coordinates{x, y}
 	waypoint := ai.waypoint.NextWaypoint(location)
@@ -73,10 +73,10 @@ func (ai mountAi) update(c hasAi, world *worldmap.Map) (int, int) {
 	}
 	if len(possibleLocations) > 0 {
 		l := possibleLocations[rand.Intn(len(possibleLocations))]
-		return l.X, l.Y
+		return MoveAction{c, world, l.X, l.Y}
 	}
 
-	return c.GetCoordinates()
+	return NoAction{}
 }
 
 func (ai mountAi) setMap(world *worldmap.Map) {
@@ -122,7 +122,8 @@ type npcAi struct {
 	waypoint worldmap.WaypointSystem
 }
 
-func (ai npcAi) update(c hasAi, world *worldmap.Map) (int, int) {
+func (ai npcAi) update(c hasAi, world *worldmap.Map) Action {
+
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
 	waypoint := ai.waypoint.NextWaypoint(location)
@@ -150,29 +151,21 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) (int, int) {
 	if r, ok := c.(Rider); ok && r.Mount() != nil && r.Mount().Moved() {
 		if len(possibleLocations) > 0 {
 			if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
-				for _, itm := range itemHolder.inventory() {
-					if itm.GetWeight() > 1 {
-						itemHolder.dropItem(itm)
-						return cX, cY
-					}
+				for _, itm := range itemHolder.Inventory() {
+					return DropAction{itemHolder, itm}
 				}
 			} else {
 				l := possibleLocations[rand.Intn(len(possibleLocations))]
-				r.Mount().Move()
-				c.SetCoordinates(l.X, l.Y)
-				// Can choose new action again
-				return ai.update(c, world)
+				return MountedMoveAction{r, world, l.X, l.Y}
 			}
 		}
 	}
 
 	// If at half health heal up
 	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
-		for _, itm := range itemHolder.inventory() {
+		for _, itm := range itemHolder.Inventory() {
 			if con, ok := itm.(*item.Consumable); ok && con.GetEffect("hp") > 0 {
-				c.heal(con.GetEffect("hp"))
-				itemHolder.removeItem(con)
-				return cX, cY
+				return HealAction{c, con}
 			}
 		}
 	}
@@ -183,12 +176,7 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) (int, int) {
 			for j := -1; j <= 1; j++ {
 				x, y := location.X+j, location.Y+i
 				if world.IsValid(x, y) && mountMap[c.GetVisionDistance()+i][c.GetVisionDistance()+j] == 0 {
-					m, _ := world.GetCreature(x, y).(*Mount)
-					m.AddRider(r)
-					world.DeleteCreature(m)
-					r.AddMount(m)
-					c.Standup()
-					return x, y
+					return MountAction{r, world, x, y}
 				}
 			}
 		}
@@ -199,30 +187,23 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) (int, int) {
 		for j := -1; j <= 1; j++ {
 			x, y := location.X+j, location.Y+i
 			if world.IsValid(x, y) && world.IsDoor(x, y) && !world.IsPassable(x, y) {
-				world.ToggleDoor(x, y, true)
-				return x, y
+				return OpenAction{world, x, y}
 			}
 		}
 	}
 
 	if len(possibleLocations) > 0 {
 		if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
-			for _, itm := range itemHolder.inventory() {
-				if itm.GetWeight() > 1 {
-					itemHolder.dropItem(itm)
-					return cX, cY
-				}
+			for _, itm := range itemHolder.Inventory() {
+				return DropAction{itemHolder, itm}
 			}
 		} else if r, ok := c.(Rider); ok && (r.Mount() == nil || !r.Mount().Moved()) {
 			l := possibleLocations[rand.Intn(len(possibleLocations))]
-			return l.X, l.Y
+			return MoveAction{c, world, l.X, l.Y}
 		}
 	} else if itemHolder, ok := c.(holdsItems); ok {
-		if items := world.GetItems(location.X, location.Y); len(items) > 0 {
-			for _, item := range items {
-				itemHolder.pickupItem(item)
-			}
-			return cX, cY
+		if world.HasItems(location.X, location.Y) {
+			return PickupAction{itemHolder, world, location.X, location.Y}
 		}
 	}
 
@@ -238,10 +219,10 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) (int, int) {
 
 	if len(possibleLocations) > 0 {
 		l := possibleLocations[rand.Intn(len(possibleLocations))]
-		return l.X, l.Y
+		return MoveAction{c, world, l.X, l.Y}
 	}
 
-	return cX, cY
+	return NoAction{}
 }
 
 func (ai npcAi) setMap(world *worldmap.Map) {
@@ -286,7 +267,7 @@ func (ai *npcAi) UnmarshalJSON(data []byte) error {
 type enemyAi struct {
 }
 
-func (ai enemyAi) update(c hasAi, world *worldmap.Map) (int, int) {
+func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
 
@@ -319,29 +300,21 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) (int, int) {
 	if r, ok := c.(Rider); ok && r.Mount() != nil && !r.Mount().Moved() {
 		if len(possibleLocations) > 0 {
 			if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
-				for _, itm := range itemHolder.inventory() {
-					if itm.GetWeight() > 1 {
-						itemHolder.dropItem(itm)
-						return cX, cY
-					}
+				for _, itm := range itemHolder.Inventory() {
+					return DropAction{itemHolder, itm}
 				}
 			} else {
 				l := possibleLocations[rand.Intn(len(possibleLocations))]
-				r.Mount().Move()
-				c.SetCoordinates(l.X, l.Y)
-				// Can choose new action again
-				return ai.update(c, world)
+				return MountedMoveAction{r, world, l.X, l.Y}
 			}
 		}
 	}
 
 	// If at half health heal up
 	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
-		for _, itm := range itemHolder.inventory() {
+		for _, itm := range itemHolder.Inventory() {
 			if con, ok := itm.(*item.Consumable); ok && con.GetEffect("hp") > 0 {
-				c.heal(con.GetEffect("hp"))
-				itemHolder.removeItem(con)
-				return cX, cY
+				return HealAction{c, con}
 			}
 		}
 	}
@@ -350,20 +323,20 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) (int, int) {
 	if r, ok := c.(Rider); ok && r.Mount() == nil {
 		if coverMap[c.GetVisionDistance()][c.GetVisionDistance()] == 0 && !c.IsCrouching() {
 			c.Crouch()
-			return cX, cY
+			return NoAction{}
 		} else if coverMap[c.GetVisionDistance()][c.GetVisionDistance()] > 0 && c.IsCrouching() {
 			c.Standup()
-			return cX, cY
+			return NoAction{}
 		}
 	}
 
 	// Try and wield best weapon
 	if itemUser, ok := c.(usesItems); ok && itemUser.wieldItem() {
-		return cX, cY
+		return NoAction{}
 	}
 	// Try and wear best armour
 	if itemUser, ok := c.(usesItems); ok && itemUser.wearArmour() {
-		return cX, cY
+		return NoAction{}
 	}
 
 	target := world.GetPlayer()
@@ -373,19 +346,9 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) (int, int) {
 		if distance := math.Sqrt(math.Pow(float64(location.X-tX), 2) + math.Pow(float64(location.Y-tY), 2)); itemUser.ranged() && distance < float64(itemUser.Weapon().GetRange()) && world.IsVisible(c, tX, tY) {
 			// if weapon loaded, shoot at target else if enemy has ammo, load weapon
 			if itemUser.weaponLoaded() {
-				itemUser.Weapon().Fire()
-				coverPenalty := 0
-				if world.TargetBehindCover(c, target) {
-					coverPenalty = 5
-				}
-				itemUser.rangedAttack(target, -coverPenalty)
-				return cX, cY
+				return RangedAttackAction{c, world, target}
 			} else if itemUser.hasAmmo() {
-				for !itemUser.weaponFullyLoaded() && itemUser.hasAmmo() {
-					itemUser.getAmmo()
-					itemUser.Weapon().Load()
-				}
-				return cX, cY
+				return LoadAction{itemUser}
 			}
 		}
 
@@ -397,12 +360,7 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) (int, int) {
 			for j := -1; j <= 1; j++ {
 				x, y := location.X+j, location.Y+i
 				if world.IsValid(x, y) && mountMap[c.GetVisionDistance()+i][c.GetVisionDistance()+j] == 0 {
-					m, _ := world.GetCreature(x, y).(*Mount)
-					m.AddRider(r)
-					world.DeleteCreature(m)
-					r.AddMount(m)
-					c.Standup()
-					return x, y
+					return MountAction{r, world, x, y}
 				}
 			}
 		}
@@ -413,32 +371,26 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) (int, int) {
 		for j := -1; j <= 1; j++ {
 			x, y := location.X+j, location.Y+i
 			if world.IsValid(x, y) && world.IsDoor(x, y) && !world.IsPassable(x, y) {
-				world.ToggleDoor(x, y, true)
-				return cX, cY
+				return OpenAction{world, x, y}
 			}
 		}
 	}
 
 	if len(possibleLocations) > 0 {
 		if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
-			for _, itm := range itemHolder.inventory() {
-				if itm.GetWeight() > 1 {
-					itemHolder.dropItem(itm)
-					return cX, cY
-				}
+			for _, itm := range itemHolder.Inventory() {
+				return DropAction{itemHolder, itm}
 			}
 		} else if r, ok := c.(Rider); ok && (r.Mount() == nil || !r.Mount().Moved()) {
 			l := possibleLocations[rand.Intn(len(possibleLocations))]
-			return l.X, l.Y
+			return MoveAction{c, world, l.X, l.Y}
 		}
 	} else if itemHolder, ok := c.(holdsItems); ok {
-		if items := world.GetItems(location.X, location.Y); len(items) > 0 {
-			for _, item := range items {
-				itemHolder.pickupItem(item)
-			}
+		if world.HasItems(location.X, location.Y) {
+			return PickupAction{itemHolder, world, location.X, location.Y}
 		}
 	}
-	return cX, cY
+	return NoAction{}
 }
 
 func unmarshalAi(ai map[string]interface{}) ai {

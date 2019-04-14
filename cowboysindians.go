@@ -316,30 +316,11 @@ func main() {
 						break
 					}
 				}
-			} else if c.GetAlignment() == worldmap.Enemy {
-				e := c.(*npc.Enemy)
-				if e.IsDead() {
-					continue
-				}
-				eX, eY := e.Update()
-				worldMap.MoveCreature(e, eX, eY)
-			} else if m, ok := c.(*npc.Mount); ok {
-				if m.IsDead() {
-					continue
-				}
-
-				mX, mY := m.Update()
-				// If mounted, controlled by rider
-				if !m.IsMounted() {
-					worldMap.MoveCreature(m, mX, mY)
-				}
 			} else {
-				npc := c.(*npc.Npc)
-				if npc.IsDead() {
+				if c.IsDead() {
 					continue
 				}
-				nX, nY := npc.Update()
-				worldMap.MoveCreature(npc, nX, nY)
+				c.Update()
 			}
 		}
 

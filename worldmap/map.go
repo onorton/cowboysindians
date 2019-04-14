@@ -208,8 +208,7 @@ func (m Map) IsOccupied(x, y int) bool {
 }
 
 func (m Map) HasItems(x, y int) bool {
-	return len(m.GetItems(x, y)) > 0
-
+	return m.grid[y][x].hasItems()
 }
 
 // Bresenham algorithm to check if creature c can see square x1, y1.
@@ -662,6 +661,7 @@ type Creature interface {
 	AttackHits(int) bool
 	GetName() ui.Name
 	GetAlignment() Alignment
+	Update()
 }
 
 type hasPosition interface {
