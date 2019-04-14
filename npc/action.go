@@ -115,6 +115,22 @@ func (a MountedMoveAction) execute() {
 	a.world.MoveCreature(c, a.x, a.y)
 }
 
+type CrouchAction struct {
+	c worldmap.CanCrouch
+}
+
+func (a CrouchAction) execute() {
+	a.c.Crouch()
+}
+
+type StandupAction struct {
+	c worldmap.CanCrouch
+}
+
+func (a StandupAction) execute() {
+	a.c.Standup()
+}
+
 type NoAction struct{}
 
 func (a NoAction) execute() {}

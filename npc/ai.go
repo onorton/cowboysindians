@@ -322,11 +322,9 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 	// If moving into or out of cover and not mounted toggle crouch
 	if r, ok := c.(Rider); ok && r.Mount() == nil {
 		if coverMap[c.GetVisionDistance()][c.GetVisionDistance()] == 0 && !c.IsCrouching() {
-			c.Crouch()
-			return NoAction{}
+			return CrouchAction{}
 		} else if coverMap[c.GetVisionDistance()][c.GetVisionDistance()] > 0 && c.IsCrouching() {
-			c.Standup()
-			return NoAction{}
+			return StandupAction{}
 		}
 	}
 
