@@ -10,6 +10,7 @@ import (
 	termbox "github.com/nsf/termbox-go"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
+	"github.com/onorton/cowboysindians/event"
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/npc"
 	"github.com/onorton/cowboysindians/ui"
@@ -185,6 +186,10 @@ func (p *Player) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 	if c.IsDead() {
 		message.Enqueue(fmt.Sprintf("%s died.", c.GetName().WithDefinite()))
 
+		// If non-enemy dead, send murder event
+		if c.GetAlignment() == worldmap.Neutral {
+			event.Emit(event.CrimeEvent{p, p.location, "Murder"})
+		}
 	}
 }
 
@@ -1107,6 +1112,10 @@ func (p *Player) ToggleMount() bool {
 
 func (p *Player) GetName() ui.Name {
 	return &ui.PlainName{"You"}
+}
+
+func (p *Player) GetID() string {
+	return "Player"
 }
 
 func (p *Player) GetAlignment() worldmap.Alignment {

@@ -662,6 +662,7 @@ type Creature interface {
 	GetName() ui.Name
 	GetAlignment() Alignment
 	Update()
+	GetID() string
 }
 
 type hasPosition interface {

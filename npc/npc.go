@@ -8,6 +8,7 @@ import (
 	"math"
 	"math/rand"
 
+	"github.com/onorton/cowboysindians/event"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
@@ -71,17 +72,17 @@ func generateName(npcType string) *npcName {
 
 func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 	n := npcData[npcType]
-	id := xid.New()
+	id := xid.New().String()
 	location := worldmap.Coordinates{x, y}
 	name := generateName(npcType)
-	npc := &Npc{name, id.String(), worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, npcAi{worldmap.NewRandomWaypoint(world, location)}, &basicDialogue{false}}
+	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, npcAi{worldmap.NewRandomWaypoint(world, location)}, &basicDialogue{false}}
 	npc.initialiseInventory(n.Inventory)
 	return npc
 }
 
-func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, b worldmap.Building) *Npc {
+func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Town, b worldmap.Building) *Npc {
 	n := npcData[npcType]
-	id := xid.New()
+	id := xid.New().String()
 	var dialogue dialogue
 	switch n.DialogueType {
 	case Basic:
@@ -89,7 +90,8 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, b worldmap.Bui
 	case Shopkeeper:
 		dialogue = &shopkeeperDialogue{false, world, b}
 	case Sheriff:
-		dialogue = &sheriffDialogue{false, world, b, Bounties{}}
+		dialogue = &sheriffDialogue{false, world, t, b, Bounties{}}
+		event.Subscribe(dialogue.(*sheriffDialogue))
 	}
 
 	location := worldmap.Coordinates{x, y}
@@ -101,7 +103,7 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, b worldmap.Bui
 		name = generateName(npcType)
 	}
 
-	npc := &Npc{name, id.String(), worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, npcAi{worldmap.NewWithinBuilding(world, b, location)}, dialogue}
+	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, npcAi{worldmap.NewWithinBuilding(world, b, location)}, dialogue}
 	for c, count := range n.ShopInventory {
 
 		for i := 0; i < count; i++ {
@@ -289,6 +291,11 @@ func (npc *Npc) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 		} else {
 			c.TakeDamage(damageBonus)
 		}
+		// If non-enemy dead, send murder event
+		if c.IsDead() && c.GetAlignment() == worldmap.Neutral {
+			event.Emit(event.CrimeEvent{npc, npc.location, "Murder"})
+		}
+
 	}
 	if c.GetAlignment() == worldmap.Player {
 		if hits {
@@ -588,10 +595,6 @@ func (npc *Npc) RemoveMoney(amount int) {
 
 func (npc *Npc) GetID() string {
 	return npc.id
-}
-
-func (npc *Npc) FullName() string {
-	return npc.name.name
 }
 
 func (npc *Npc) GetBounties() *Bounties {

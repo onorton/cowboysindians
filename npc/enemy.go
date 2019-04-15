@@ -8,11 +8,13 @@ import (
 	"math"
 	"math/rand"
 
+	"github.com/onorton/cowboysindians/event"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/ui"
 	"github.com/onorton/cowboysindians/worldmap"
+	"github.com/rs/xid"
 )
 
 type EnemyAttributes struct {
@@ -40,7 +42,8 @@ func fetchEnemyData() map[string]EnemyAttributes {
 
 func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 	enemy := enemyData[name]
-	e := &Enemy{&ui.PlainName{name}, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, false, enemy.Money, nil, nil, make([]item.Item, 0), "", nil, world, enemyAi{}}
+	id := xid.New().String()
+	e := &Enemy{&ui.PlainName{name}, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, false, enemy.Money, nil, nil, make([]item.Item, 0), "", nil, world, enemyAi{}}
 	for _, itemDefinition := range enemy.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm item.Item = nil
@@ -71,7 +74,7 @@ func (e *Enemy) Render() ui.Element {
 func (e *Enemy) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "Ai", "MountID"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "Ai", "MountID"}
 
 	mountID := ""
 	if e.mount != nil {
@@ -80,6 +83,7 @@ func (e *Enemy) MarshalJSON() ([]byte, error) {
 
 	enemyValues := map[string]interface{}{
 		"Name":        e.name,
+		"Id":          e.id,
 		"Location":    e.location,
 		"Icon":        e.icon,
 		"Initiative":  e.initiative,
@@ -121,6 +125,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 
 	type enemyJson struct {
 		Name        *ui.PlainName
+		Id          string
 		Location    worldmap.Coordinates
 		Icon        icon.Icon
 		Initiative  int
@@ -143,6 +148,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 	json.Unmarshal(data, &v)
 
 	e.name = v.Name
+	e.id = v.Id
 	e.location = v.Location
 	e.icon = v.Icon
 	e.initiative = v.Initiative
@@ -191,7 +197,12 @@ func (e *Enemy) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 		} else {
 			c.TakeDamage(damageBonus)
 		}
+		// If non-enemy dead, send murder event
+		if c.IsDead() && c.GetAlignment() == worldmap.Neutral {
+			event.Emit(event.CrimeEvent{e, e.location, "Murder"})
+		}
 	}
+
 	if c.GetAlignment() == worldmap.Player {
 		if hits {
 			message.Enqueue(fmt.Sprintf("%s hit you.", e.name.WithDefinite()))
@@ -401,6 +412,10 @@ func (e *Enemy) GetName() ui.Name {
 	return e.name
 }
 
+func (e *Enemy) GetID() string {
+	return e.id
+}
+
 func (e *Enemy) GetAlignment() worldmap.Alignment {
 	return worldmap.Enemy
 }
@@ -452,6 +467,7 @@ func (e *Enemy) LoadMount(mounts []*Mount) {
 
 type Enemy struct {
 	name        *ui.PlainName
+	id          string
 	location    worldmap.Coordinates
 	icon        icon.Icon
 	initiative  int

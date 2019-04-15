@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 
+	"github.com/onorton/cowboysindians/event"
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/worldmap"
 )
@@ -166,6 +167,7 @@ func (sd *shopkeeperDialogue) UnmarshalJSON(data []byte) error {
 type sheriffDialogue struct {
 	seenPlayer bool
 	world      *worldmap.Map
+	t          worldmap.Town
 	b          worldmap.Building
 	bounties   Bounties
 }
@@ -201,6 +203,12 @@ func (d *sheriffDialogue) setMap(world *worldmap.Map) {
 	d.world = world
 }
 
+func (d *sheriffDialogue) ProcessEvent(e event.CrimeEvent) {
+	if e.Location.X >= d.t.TX1 && e.Location.X <= d.t.TX2 && e.Location.Y >= d.t.TY1 && e.Location.Y <= d.t.TY2 {
+		d.bounties.addBounty(e.Perpetrator, e.Crime, (1+rand.Intn(10))*10000)
+	}
+}
+
 func (d *sheriffDialogue) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 	seenPlayerValue, err := json.Marshal(d.seenPlayer)
@@ -208,6 +216,12 @@ func (d *sheriffDialogue) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 	buffer.WriteString(fmt.Sprintf("\"SeenPlayer\":%s,", seenPlayerValue))
+
+	townValue, err := json.Marshal(d.t)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Town\":%s,", townValue))
 
 	buildingValue, err := json.Marshal(d.b)
 	if err != nil {
@@ -231,6 +245,7 @@ func (sd *sheriffDialogue) UnmarshalJSON(data []byte) error {
 		SeenPlayer bool
 		Building   worldmap.Building
 		Bounties   Bounties
+		Town       worldmap.Town
 	}
 
 	var v sdJson
@@ -239,8 +254,11 @@ func (sd *sheriffDialogue) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	sd.seenPlayer = v.SeenPlayer
+	sd.t = v.Town
 	sd.b = v.Building
 	sd.bounties = v.Bounties
+
+	event.Subscribe(sd)
 
 	return nil
 }

@@ -39,10 +39,10 @@ func fetchMountData() map[string]MountAttributes {
 
 func NewMount(name string, x, y int, world *worldmap.Map) *Mount {
 	mount := mountData[name]
-	id := xid.New()
+	id := xid.New().String()
 	location := worldmap.Coordinates{x, y}
 	ai := mountAi{worldmap.NewRandomWaypoint(world, location)}
-	m := &Mount{&ui.PlainName{name}, id.String(), location, mount.Icon, mount.Initiative, mount.Hp, mount.Hp, mount.Ac, mount.Str, mount.Dex, mount.Encumbrance, nil, world, false, ai}
+	m := &Mount{&ui.PlainName{name}, id, location, mount.Icon, mount.Initiative, mount.Hp, mount.Hp, mount.Ac, mount.Str, mount.Dex, mount.Encumbrance, nil, world, false, ai}
 	return m
 }
 func (m *Mount) Render() ui.Element {

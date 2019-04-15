@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/onorton/cowboysindians/worldmap"
 )
 
 type bounty struct {
@@ -79,7 +81,7 @@ func (b *bounty) UnmarshalJSON(data []byte) error {
 
 type Bounties []*bounty
 
-func (bounties *Bounties) addBounty(criminal *Npc, crime string, value int) {
+func (bounties *Bounties) addBounty(criminal worldmap.Creature, crime string, value int) {
 
 	for _, b := range *bounties {
 		if b.criminal == criminal.GetID() {
@@ -88,7 +90,7 @@ func (bounties *Bounties) addBounty(criminal *Npc, crime string, value int) {
 			return
 		}
 	}
-	*bounties = append(*bounties, &bounty{criminal.GetID(), criminal.FullName(), []string{crime}, value})
+	*bounties = append(*bounties, &bounty{criminal.GetID(), criminal.GetName().FullName(), []string{crime}, value})
 }
 
 func (bounties *Bounties) RemoveBounty(criminal string) (int, string) {

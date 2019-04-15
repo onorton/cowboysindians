@@ -266,6 +266,7 @@ func RenderGrid(x, y int, elems [][]Element) {
 type Name interface {
 	WithDefinite() string
 	WithIndefinite() string
+	FullName() string
 	String() string
 }
 
@@ -285,4 +286,8 @@ func (n PlainName) WithIndefinite() string {
 
 func (n PlainName) String() string {
 	return n.Name
+}
+
+func (n PlainName) FullName() string {
+	return n.String()
 }

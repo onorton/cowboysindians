@@ -36,6 +36,10 @@ func (n npcName) String() string {
 	}
 }
 
+func (n npcName) FullName() string {
+	return n.name
+}
+
 func (n npcName) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 

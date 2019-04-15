@@ -181,7 +181,7 @@ func main() {
 		target := npcs[rand.Intn(len(npcs))]
 		state.Target = target.GetID()
 
-		printOpeningText(target.FullName())
+		printOpeningText(target.GetName().FullName())
 	}
 
 	worldMap := state.Map
@@ -209,19 +209,6 @@ func main() {
 		sort.Slice(all, func(i, j int) bool {
 			return all[i].GetInitiative() > all[j].GetInitiative()
 		})
-
-		// 1/10 chance of a npc comitting a crime
-		crimeCommitted := rand.Intn(10) == 0
-		if crimeCommitted {
-			// Select random npc, crime and reward
-			criminal := state.Npcs[rand.Intn(len(state.Npcs))]
-			crime := []string{"Robbery", "Theft", "Murder", "Cattle Theft", "Forgery"}[rand.Intn(5)]
-			bounty := (1 + rand.Intn(10)) * 10000
-			for _, npc := range npcs {
-				npc.AddBounty(criminal, crime, bounty)
-			}
-
-		}
 
 		for i, c := range all {
 			// Used when initially loading, to make sure faster enemies do not move twice
@@ -341,7 +328,7 @@ func main() {
 				worldMap.DeleteCreature(npc)
 				all = append(all[:i], all[i+1:]...)
 				if npc.GetID() == state.Target {
-					message.PrintMessage(fmt.Sprintf("%s is dead! You have been avenged.", npc.FullName()))
+					message.PrintMessage(fmt.Sprintf("%s is dead! You have been avenged.", npc.GetName().FullName()))
 					ui.GetInput()
 					quit = true
 				}
