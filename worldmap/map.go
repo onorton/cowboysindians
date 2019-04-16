@@ -225,7 +225,7 @@ func (m Map) IsVisible(c CanSee, x1, y1 int) bool {
 	}
 
 	// If square adjacent, it is visible
-	if math.Abs(float64(x1-x0)) <= 1 && math.Abs(float64(x1-x0)) <= 1 {
+	if math.Abs(float64(x1-x0)) <= 1 && math.Abs(float64(y1-y0)) <= 1 {
 		return true
 	}
 
