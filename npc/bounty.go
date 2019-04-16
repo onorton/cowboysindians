@@ -13,13 +13,18 @@ import (
 type bounty struct {
 	criminal     string
 	criminalName string
-	crimes       []string
+	crimes       map[string]struct{}
 	value        int
 }
 
 func (b bounty) String() string {
 
-	return fmt.Sprintf("%s - %s - $%.2f", b.criminalName, strings.Join(b.crimes, ", "), float64(b.value)/100)
+	crimes := make([]string, 0)
+	for c := range b.crimes {
+		crimes = append(crimes, c)
+	}
+
+	return fmt.Sprintf("%s - %s - $%.2f", b.criminalName, strings.Join(crimes, ", "), float64(b.value)/100)
 }
 
 func (b bounty) MarshalJSON() ([]byte, error) {
@@ -62,7 +67,7 @@ func (b *bounty) UnmarshalJSON(data []byte) error {
 	type bountyJson struct {
 		Criminal     string
 		CriminalName string
-		Crimes       []string
+		Crimes       map[string]struct{}
 		Value        int
 	}
 
@@ -99,12 +104,12 @@ func (bounties *Bounties) addBounty(e event.CrimeEvent) {
 
 	for _, b := range bounties.bounties {
 		if b.criminal == e.Perpetrator.GetID() {
-			b.crimes = append(b.crimes, e.Crime)
+			b.crimes[e.Crime] = struct{}{}
 			b.value += value
 			return
 		}
 	}
-	bounties.bounties = append(bounties.bounties, bounty{e.Perpetrator.GetID(), e.Perpetrator.GetName().FullName(), []string{e.Crime}, value})
+	bounties.bounties = append(bounties.bounties, bounty{e.Perpetrator.GetID(), e.Perpetrator.GetName().FullName(), map[string]struct{}{e.Crime: struct{}{}}, value})
 }
 
 func (bounties *Bounties) RemoveBounty(criminal string) (int, string) {
