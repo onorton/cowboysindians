@@ -203,10 +203,17 @@ func (d *sheriffDialogue) setMap(world *worldmap.Map) {
 	d.world = world
 }
 
-func (d *sheriffDialogue) ProcessEvent(e event.CrimeEvent) {
-	if e.Location.X >= d.t.TX1 && e.Location.X <= d.t.TX2 && e.Location.Y >= d.t.TY1 && e.Location.Y <= d.t.TY2 {
-		d.bounties.addBounty(e.Perpetrator, e.Crime, (1+rand.Intn(10))*10000)
+func (d *sheriffDialogue) ProcessEvent(e event.Event) {
+	switch ev := e.(type) {
+	case event.WitnessedCrimeEvent:
+		{
+			crime := ev.Crime
+			if crime.Location.X >= d.t.TX1 && crime.Location.X <= d.t.TX2 && crime.Location.Y >= d.t.TY1 && crime.Location.Y <= d.t.TY2 {
+				d.bounties.addBounty(crime)
+			}
+		}
 	}
+
 }
 
 func (d *sheriffDialogue) MarshalJSON() ([]byte, error) {

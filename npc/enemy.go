@@ -199,7 +199,7 @@ func (e *Enemy) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 		}
 		// If non-enemy dead, send murder event
 		if c.IsDead() && c.GetAlignment() == worldmap.Neutral {
-			event.Emit(event.CrimeEvent{e, e.location, "Murder"})
+			event.Emit(event.NewCrime(e, c, e.location, "Murder"))
 		}
 	}
 

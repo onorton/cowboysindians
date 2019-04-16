@@ -8,9 +8,9 @@ import (
 	"math/rand"
 
 	termbox "github.com/nsf/termbox-go"
+	"github.com/onorton/cowboysindians/event"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
-	"github.com/onorton/cowboysindians/event"
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/npc"
 	"github.com/onorton/cowboysindians/ui"
@@ -32,6 +32,7 @@ func NewPlayer(world *worldmap.Map) *Player {
 	player.AddItem(item.NewAmmo("shotgun shell"))
 	player.AddItem(item.NewConsumable("standard ration"))
 	player.AddItem(item.NewConsumable("beer"))
+	event.Subscribe(player)
 	return player
 }
 
@@ -188,7 +189,7 @@ func (p *Player) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 
 		// If non-enemy dead, send murder event
 		if c.GetAlignment() == worldmap.Neutral {
-			event.Emit(event.CrimeEvent{p, p.location, "Murder"})
+			event.Emit(event.NewCrime(p, c, p.location, "Murder"))
 		}
 	}
 }
@@ -1183,6 +1184,17 @@ func (p *Player) Talk() {
 	}
 	message.PrintMessage("You talk to yourself.")
 
+}
+
+func (p *Player) ProcessEvent(e event.Event) {
+	switch ev := e.(type) {
+	case event.CrimeEvent:
+		{
+			if ev.Perpetrator != p && p.world.IsVisible(p, ev.Location.X, ev.Location.Y) {
+				event.Emit(event.WitnessedCrimeEvent{ev})
+			}
+		}
+	}
 }
 
 func (p *Player) SetMap(world *worldmap.Map) {

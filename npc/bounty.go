@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"strings"
 
-	"github.com/onorton/cowboysindians/worldmap"
+	"github.com/onorton/cowboysindians/event"
 )
 
 type bounty struct {
@@ -79,26 +80,83 @@ func (b *bounty) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type Bounties []*bounty
+type Bounties struct {
+	bounties   []bounty
+	seenCrimes []string
+}
 
-func (bounties *Bounties) addBounty(criminal worldmap.Creature, crime string, value int) {
+func (bounties *Bounties) addBounty(e event.CrimeEvent) {
 
-	for _, b := range *bounties {
-		if b.criminal == criminal.GetID() {
-			b.crimes = append(b.crimes, crime)
+	// Check if event has already been seen
+	for _, eventId := range bounties.seenCrimes {
+		if e.Id == eventId {
+			return
+		}
+	}
+	bounties.seenCrimes = append(bounties.seenCrimes, e.Id)
+
+	value := (1 + rand.Intn(10)) * 10000
+
+	for _, b := range bounties.bounties {
+		if b.criminal == e.Perpetrator.GetID() {
+			b.crimes = append(b.crimes, e.Crime)
 			b.value += value
 			return
 		}
 	}
-	*bounties = append(*bounties, &bounty{criminal.GetID(), criminal.GetName().FullName(), []string{crime}, value})
+	bounties.bounties = append(bounties.bounties, bounty{e.Perpetrator.GetID(), e.Perpetrator.GetName().FullName(), []string{e.Crime}, value})
 }
 
 func (bounties *Bounties) RemoveBounty(criminal string) (int, string) {
-	for i, b := range *bounties {
+	for i, b := range bounties.bounties {
 		if b.criminal == criminal {
-			*bounties = append((*bounties)[:i], (*bounties)[i+1:]...)
+			bounties.bounties = append((bounties.bounties)[:i], (bounties.bounties)[i+1:]...)
 			return b.value, b.criminalName
 		}
 	}
 	return 0, ""
+}
+
+func (bounties *Bounties) Bounties() []bounty {
+	return bounties.bounties
+}
+
+func (bounties Bounties) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	bountiesValue, err := json.Marshal(bounties.bounties)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Bounties\":%s,", bountiesValue))
+
+	seenCrimesValue, err := json.Marshal(bounties.seenCrimes)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"SeenCrimes\":%s", seenCrimesValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (bounties *Bounties) UnmarshalJSON(data []byte) error {
+
+	type bountiesJson struct {
+		Bounties   []bounty
+		SeenCrimes []string
+	}
+
+	var v bountiesJson
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	bounties.bounties = v.Bounties
+	bounties.seenCrimes = v.SeenCrimes
+
+	return nil
 }

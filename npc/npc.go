@@ -77,6 +77,7 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 	name := generateName(npcType)
 	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, npcAi{worldmap.NewRandomWaypoint(world, location)}, &basicDialogue{false}}
 	npc.initialiseInventory(n.Inventory)
+	event.Subscribe(npc)
 	return npc
 }
 
@@ -123,7 +124,7 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 	}
 
 	npc.initialiseInventory(n.Inventory)
-
+	event.Subscribe(npc)
 	return npc
 }
 
@@ -293,7 +294,7 @@ func (npc *Npc) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 		}
 		// If non-enemy dead, send murder event
 		if c.IsDead() && c.GetAlignment() == worldmap.Neutral {
-			event.Emit(event.CrimeEvent{npc, npc.location, "Murder"})
+			event.Emit(event.NewCrime(npc, c, npc.location, "Murder"))
 		}
 
 	}
@@ -604,9 +605,14 @@ func (npc *Npc) GetBounties() *Bounties {
 	return &Bounties{}
 }
 
-func (npc *Npc) AddBounty(criminal *Npc, crime string, bounty int) {
-	if d, ok := npc.dialogue.(*sheriffDialogue); ok {
-		d.bounties.addBounty(criminal, crime, bounty)
+func (npc *Npc) ProcessEvent(e event.Event) {
+	switch ev := e.(type) {
+	case event.CrimeEvent:
+		{
+			if ev.Perpetrator.GetID() != npc.id && ev.Victim.GetID() != npc.id && npc.world.IsVisible(npc, ev.Location.X, ev.Location.Y) {
+				event.Emit(event.WitnessedCrimeEvent{ev})
+			}
+		}
 	}
 }
 

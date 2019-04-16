@@ -13,7 +13,7 @@ func claimBounties(p *Player, npc *npc.Npc) {
 	dialogueComplete := false
 	collectedBounty := false
 	for !dialogueComplete {
-		printBountyScreen(*(npc.GetBounties()))
+		printBountyScreen(npc.GetBounties())
 		message.PrintMessages()
 		action := ui.GetBountyInput()
 		if action == ui.Claim {
@@ -47,13 +47,13 @@ func claimBounties(p *Player, npc *npc.Npc) {
 	}
 }
 
-func printBountyScreen(bounties npc.Bounties) {
+func printBountyScreen(bounties *npc.Bounties) {
 	ui.ClearScreen()
 	padding := 2
 
 	ui.WriteText(0, 0, "Bounties")
 
-	for i, bounty := range bounties {
+	for i, bounty := range bounties.Bounties() {
 		ui.WriteText(0, padding+i, fmt.Sprintf("%d. %s", i+1, bounty))
 	}
 }
