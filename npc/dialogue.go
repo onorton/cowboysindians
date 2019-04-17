@@ -208,7 +208,8 @@ func (d *sheriffDialogue) ProcessEvent(e event.Event) {
 	case event.WitnessedCrimeEvent:
 		{
 			crime := ev.Crime
-			if crime.Location.X >= d.t.TX1 && crime.Location.X <= d.t.TX2 && crime.Location.Y >= d.t.TY1 && crime.Location.Y <= d.t.TY2 {
+			location := crime.Location()
+			if location.X >= d.t.TX1 && location.X <= d.t.TX2 && location.Y >= d.t.TY1 && location.Y <= d.t.TY2 {
 				d.bounties.addBounty(crime)
 			}
 		}

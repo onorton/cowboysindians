@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"strings"
 
 	"github.com/onorton/cowboysindians/event"
@@ -94,22 +93,20 @@ func (bounties *Bounties) addBounty(e event.CrimeEvent) {
 
 	// Check if event has already been seen
 	for _, eventId := range bounties.seenCrimes {
-		if e.Id == eventId {
+		if e.Id() == eventId {
 			return
 		}
 	}
-	bounties.seenCrimes = append(bounties.seenCrimes, e.Id)
-
-	value := (1 + rand.Intn(10)) * 10000
+	bounties.seenCrimes = append(bounties.seenCrimes, e.Id())
 
 	for _, b := range bounties.bounties {
-		if b.criminal == e.Perpetrator.GetID() {
-			b.crimes[e.Crime] = struct{}{}
-			b.value += value
+		if b.criminal == e.Perpetrator() {
+			b.crimes[e.Crime()] = struct{}{}
+			b.value += e.Value()
 			return
 		}
 	}
-	bounties.bounties = append(bounties.bounties, bounty{e.Perpetrator.GetID(), e.Perpetrator.GetName().FullName(), map[string]struct{}{e.Crime: struct{}{}}, value})
+	bounties.bounties = append(bounties.bounties, bounty{e.Perpetrator(), e.PerpetratorName(), map[string]struct{}{e.Crime(): struct{}{}}, e.Value()})
 }
 
 func (bounties *Bounties) RemoveBounty(criminal string) (int, string) {

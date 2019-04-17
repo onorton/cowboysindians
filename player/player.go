@@ -189,7 +189,7 @@ func (p *Player) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 
 		// If non-enemy dead, send murder event
 		if c.GetAlignment() == worldmap.Neutral {
-			event.Emit(event.NewCrime(p, c, p.location, "Murder"))
+			event.Emit(event.NewMurder(p, c, p.location))
 		}
 	}
 }
@@ -1189,11 +1189,7 @@ func (p *Player) Talk() {
 func (p *Player) ProcessEvent(e event.Event) {
 	switch ev := e.(type) {
 	case event.CrimeEvent:
-		{
-			if ev.Perpetrator != p && p.world.IsVisible(p, ev.Location.X, ev.Location.Y) {
-				event.Emit(event.WitnessedCrimeEvent{ev})
-			}
-		}
+		ev.Witness(p.world, p)
 	}
 }
 

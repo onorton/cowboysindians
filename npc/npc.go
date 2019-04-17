@@ -294,7 +294,7 @@ func (npc *Npc) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 		}
 		// If non-enemy dead, send murder event
 		if c.IsDead() && c.GetAlignment() == worldmap.Neutral {
-			event.Emit(event.NewCrime(npc, c, npc.location, "Murder"))
+			event.Emit(event.NewMurder(npc, c, npc.location))
 		}
 
 	}
@@ -606,13 +606,8 @@ func (npc *Npc) GetBounties() *Bounties {
 }
 
 func (npc *Npc) ProcessEvent(e event.Event) {
-	switch ev := e.(type) {
-	case event.CrimeEvent:
-		{
-			if ev.Perpetrator.GetID() != npc.id && ev.Victim.GetID() != npc.id && npc.world.IsVisible(npc, ev.Location.X, ev.Location.Y) {
-				event.Emit(event.WitnessedCrimeEvent{ev})
-			}
-		}
+	if ev, ok := e.(event.CrimeEvent); ok {
+		ev.Witness(npc.world, npc)
 	}
 }
 
