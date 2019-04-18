@@ -354,6 +354,11 @@ func (p *Player) AddItem(itm item.Item) {
 	}
 	existing = append(existing, itm)
 	p.inventory[itm.GetKey()] = existing
+	// If item had previous owner, send theft event
+	if !itm.Owned(p.GetID()) {
+		event.Emit(event.NewTheft(p, itm, p.location))
+	}
+	itm.TransferOwner(p.GetID())
 }
 
 func (p *Player) GetWeaponKeys() string {
@@ -872,14 +877,14 @@ func (p *Player) PickupItem() bool {
 	// find money
 	for i, item := range itemsOnGround {
 		if item.GetName() == "money" {
-			p.money += item.GetValue()
-			message.Enqueue(fmt.Sprintf("You pick up $%.2f.", float64(item.GetValue())/100))
-			itemsOnGround = append(itemsOnGround[:i], itemsOnGround[i+1:]...)
 			// If item had previous owner, send theft event
 			if !item.Owned(p.GetID()) {
 				event.Emit(event.NewTheft(p, item, p.location))
 			}
-			item.TransferOwner(p.GetID())
+			p.money += item.GetValue()
+			message.Enqueue(fmt.Sprintf("You pick up $%.2f.", float64(item.GetValue())/100))
+			itemsOnGround = append(itemsOnGround[:i], itemsOnGround[i+1:]...)
+
 		}
 	}
 
@@ -896,11 +901,6 @@ func (p *Player) PickupItem() bool {
 	for k := range items {
 		for _, item := range items[k] {
 			p.AddItem(item)
-			// If item had previous owner, send theft event
-			if !item.Owned(p.GetID()) {
-				event.Emit(event.NewTheft(p, item, p.location))
-			}
-			item.TransferOwner(p.GetID())
 		}
 		if len(items[k]) == 1 {
 			message.Enqueue(fmt.Sprintf("You pick up 1 %s.", items[k][0].GetName()))
