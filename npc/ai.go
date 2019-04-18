@@ -287,8 +287,16 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
 	waypoint := ai.waypoint.NextWaypoint(location)
-	aiMap := getWaypointMap(waypoint, world, location, c.GetVisionDistance())
+
+	coefficients := []float64{0.2, 0.5, 0.3, 0.0}
+
+	// Focus on getting a mount if possible
+	if r, ok := c.(Rider); ok && r.Mount() == nil {
+		coefficients = []float64{0.1, 0.3, 0.2, 0.4}
+	}
+	coverMap := getCoverMap(c, world)
 	mountMap := getMountMap(c, world)
+	aiMap := addMaps([][][]int{getChaseMap(c, world), getWaypointMap(waypoint, world, location, c.GetVisionDistance()), coverMap, mountMap}, coefficients)
 
 	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
 	possibleLocations := make([]worldmap.Coordinates, 0)
@@ -330,6 +338,53 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 		}
 	}
 
+	// If moving into or out of cover and not mounted toggle crouch
+	if r, ok := c.(Rider); ok && r.Mount() == nil {
+		if coverMap[c.GetVisionDistance()][c.GetVisionDistance()] == 0 && !c.IsCrouching() {
+			return CrouchAction{c}
+		} else if coverMap[c.GetVisionDistance()][c.GetVisionDistance()] > 0 && c.IsCrouching() {
+			return StandupAction{c}
+		}
+	}
+
+	// Try and wield best weapon
+	if itemUser, ok := c.(usesItems); ok && itemUser.wieldItem() {
+		return NoAction{}
+	}
+	// Try and wear best armour
+	if itemUser, ok := c.(usesItems); ok && itemUser.wearArmour() {
+		return NoAction{}
+	}
+
+	targets := getEnemies(c, world)
+
+	if len(targets) > 0 {
+		closestTarget := targets[0]
+		tX, tY := targets[0].GetCoordinates()
+		min := world.Distance(location.X, location.Y, tX, tY)
+
+		for _, e := range targets {
+			tX, tY = e.GetCoordinates()
+			d := world.Distance(location.X, location.Y, tX, tY)
+			if d < min {
+				min = d
+				closestTarget = e
+			}
+		}
+
+		if itemUser, ok := c.(usesItems); ok {
+			if itemUser.ranged() && min < float64(itemUser.Weapon().GetRange()) {
+
+				// if weapon loaded, shoot at target else if enemy has ammo, load weapon
+				if itemUser.weaponLoaded() {
+					return RangedAttackAction{c, world, closestTarget}
+				} else if itemUser.hasAmmo() {
+					return LoadAction{itemUser}
+				}
+			}
+		}
+	}
+
 	// If adjacent to mount, attempt to mount it
 	if r, ok := c.(Rider); ok && r.Mount() == nil {
 		for i := -1; i <= 1; i++ {
@@ -365,21 +420,6 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 		if world.HasItems(location.X, location.Y) {
 			return PickupAction{itemHolder, world, location.X, location.Y}
 		}
-	}
-
-	// If the npc can do nothing else, try moving randomly
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			x, y := cX+j, cY+i
-			if world.IsValid(x, y) && world.IsPassable(x, y) && !world.IsOccupied(x, y) {
-				possibleLocations = append(possibleLocations, worldmap.Coordinates{x, y})
-			}
-		}
-	}
-
-	if len(possibleLocations) > 0 {
-		l := possibleLocations[rand.Intn(len(possibleLocations))]
-		return MoveAction{c, world, l.X, l.Y}
 	}
 
 	return NoAction{}
@@ -793,4 +833,24 @@ func copyMap(o [][]int) [][]int {
 		copy(c[i], o[i])
 	}
 	return c
+}
+
+func getEnemies(c hasAi, world *worldmap.Map) []worldmap.Creature {
+	d := c.GetVisionDistance()
+	cX, cY := c.GetCoordinates()
+	location := worldmap.Coordinates{cX, cY}
+
+	enemies := make([]worldmap.Creature, 0)
+
+	for i := -d; i < d+1; i++ {
+		for j := -d; j < d+1; j++ {
+			// Translate location into world coordinates
+			wX, wY := location.X+j, location.Y+i
+			if world.IsValid(wX, wY) && world.IsVisible(c, wX, wY) && world.GetCreature(wX, wY) != nil && world.GetCreature(wX, wY).GetAlignment() == worldmap.Enemy {
+				enemies = append(enemies, world.GetCreature(wX, wY))
+			}
+		}
+	}
+
+	return enemies
 }

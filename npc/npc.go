@@ -479,6 +479,10 @@ func (npc *Npc) ranged() bool {
 	return false
 }
 
+func (npc *Npc) Weapon() *item.Weapon {
+	return npc.weapon
+}
+
 // Check whether npc is carrying a fully loaded weapon
 func (npc *Npc) weaponFullyLoaded() bool {
 	return npc.weapon.IsFullyLoaded()
