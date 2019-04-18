@@ -296,7 +296,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	if r, ok := c.(Rider); ok && r.Mount() == nil {
 		coefficients = []float64{0.1, 0.3, 0.2, 0.4}
 	}
-	coverMap := getCoverMap(c, world)
+	coverMap := getCoverMap(c, world, targets)
 	mountMap := getMountMap(c, world)
 	aiMap := addMaps([][][]int{getChaseMap(c, world, targets), getWaypointMap(waypoint, world, location, c.GetVisionDistance()), coverMap, mountMap}, coefficients)
 
@@ -467,7 +467,7 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 	if r, ok := c.(Rider); ok && r.Mount() == nil {
 		coefficients = []float64{0.3, 0.2, 0.1, 0.4}
 	}
-	coverMap := getCoverMap(c, world)
+	coverMap := getCoverMap(c, world, []worldmap.Creature{world.GetPlayer()})
 	mountMap := getMountMap(c, world)
 	aiMap := addMaps([][][]int{getChaseMap(c, world, []worldmap.Creature{world.GetPlayer()}), getItemMap(c, world), coverMap, mountMap}, coefficients)
 
@@ -764,7 +764,7 @@ func getItemMap(c hasAi, world *worldmap.Map) [][]int {
 	return generateMap(aiMap, world, location)
 }
 
-func getCoverMap(c hasAi, world *worldmap.Map) [][]int {
+func getCoverMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]int {
 	d := c.GetVisionDistance()
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
@@ -786,7 +786,13 @@ func getCoverMap(c hasAi, world *worldmap.Map) [][]int {
 			wX, wY := location.X+j, location.Y+i
 			// Enemy must be able to see player in order to know it would be behind cover
 			if world.IsValid(wX, wY) && world.IsVisible(c, wX, wY) && world.IsVisible(c, pX, pY) && world.BehindCover(wX, wY, player) {
-				aiMap[y][x] = 0
+				for _, t := range targets {
+					tX, tY := t.GetCoordinates()
+					if world.IsVisible(c, tX, tY) && world.BehindCover(wX, wY, t) {
+						aiMap[y][x] = 0
+						break
+					}
+				}
 			} else {
 				aiMap[y][x] = width * width
 			}
