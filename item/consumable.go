@@ -4,11 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"hash/fnv"
 	"io/ioutil"
 
 	"github.com/onorton/cowboysindians/icon"
-	"github.com/onorton/cowboysindians/ui"
 )
 
 type ConsumableAttributes struct {
@@ -37,16 +35,13 @@ func fetchConsumableData() {
 }
 
 type Consumable struct {
-	name    string
-	ic      icon.Icon
-	w       float64
-	v       int
+	baseItem
 	effects map[string]int
 }
 
 func NewConsumable(name string) Item {
 	consumable := consumableData[name]
-	var itm Item = &Consumable{name, consumable.Icon, consumable.Weight, consumable.Value, consumable.Effects}
+	var itm Item = &Consumable{baseItem{name, "", consumable.Icon, consumable.Weight, consumable.Value}, consumable.Effects}
 	return itm
 }
 
@@ -63,6 +58,13 @@ func (item *Consumable) MarshalJSON() ([]byte, error) {
 	}
 
 	buffer.WriteString(fmt.Sprintf("\"Name\":%s,", nameValue))
+
+	ownerValue, err := json.Marshal(item.owner)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Owner\":%s,", ownerValue))
 
 	iconValue, err := json.Marshal(item.ic)
 	if err != nil {
@@ -94,6 +96,7 @@ func (consumable *Consumable) UnmarshalJSON(data []byte) error {
 
 	type consumableJson struct {
 		Name    string
+		Owner   string
 		Icon    icon.Icon
 		Weight  float64
 		Value   int
@@ -110,37 +113,13 @@ func (consumable *Consumable) UnmarshalJSON(data []byte) error {
 	}
 
 	consumable.name = v.Name
+	consumable.owner = v.Owner
 	consumable.ic = v.Icon
 	consumable.w = v.Weight
 	consumable.v = v.Value
 	consumable.effects = *(v.Effects)
 
 	return nil
-}
-
-func (consumable *Consumable) GetName() string {
-	return consumable.name
-}
-func (consumable *Consumable) Render() ui.Element {
-	return consumable.ic.Render()
-}
-
-func (consumable *Consumable) GetKey() rune {
-	h := fnv.New32()
-	h.Write([]byte(consumable.name))
-	key := rune(33 + h.Sum32()%93)
-	if key == '*' {
-		key++
-	}
-	return key
-}
-
-func (consumable *Consumable) GetWeight() float64 {
-	return consumable.w
-}
-
-func (consumable *Consumable) GetValue() int {
-	return consumable.v
 }
 
 func (consumable *Consumable) GetEffect(e string) int {

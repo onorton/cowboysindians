@@ -13,8 +13,8 @@ type corpseMarshallingPair struct {
 }
 
 var corpseMarshallingTests = []corpseMarshallingPair{
-	{Corpse{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000}, "{\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000}"},
-	{Corpse{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500}, "{\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500}"},
+	{Corpse{baseItem{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000}}, "{\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000}"},
+	{Corpse{baseItem{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500}}, "{\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500}"},
 }
 
 type corpseUnmarshallingPair struct {
@@ -23,8 +23,8 @@ type corpseUnmarshallingPair struct {
 }
 
 var corpseUnmarshallingTests = []corpseUnmarshallingPair{
-	{Corpse{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000}, "{\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000}"},
-	{Corpse{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500}, "{\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500}"},
+	{"{\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000}", Corpse{baseItem{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000}}},
+	{"{\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500}", Corpse{baseItem{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500}}},
 }
 
 func TestCorpseMarshalling(t *testing.T) {

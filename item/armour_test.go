@@ -13,9 +13,9 @@ type armourMarshallingPair struct {
 }
 
 var armourMarshallingTests = []armourMarshallingPair{
-	{Armour{"leather jacket", icon.NewIcon(91, 100), 1, 2, 1000}, "{\"Name\":\"leather jacket\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Bonus\":1,\"Weight\":2,\"Value\":1000}"},
-	{Armour{"metal breastplate", icon.NewIcon(91, 50), 3, 5, 2000}, "{\"Name\":\"metal breastplate\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Bonus\":3,\"Weight\":5,\"Value\":2000}"},
-	{Armour{"reinforced leather jacket", icon.NewIcon(91, 70), 2, 3, 1500}, "{\"Name\":\"reinforced leather jacket\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Bonus\":2,\"Weight\":3,\"Value\":1500}"},
+	{Armour{baseItem{"leather jacket", "bandit", icon.NewIcon(91, 100), 2, 1000}, 1}, "{\"Name\":\"leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Bonus\":1,\"Weight\":2,\"Value\":1000}"},
+	{Armour{baseItem{"metal breastplate", "bandit", icon.NewIcon(91, 50), 5, 2000}, 3}, "{\"Name\":\"metal breastplate\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Bonus\":3,\"Weight\":5,\"Value\":2000}"},
+	{Armour{baseItem{"reinforced leather jacket", "bandit", icon.NewIcon(91, 70), 3, 1500}, 2}, "{\"Name\":\"reinforced leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Bonus\":2,\"Weight\":3,\"Value\":1500}"},
 }
 
 type armourUnmarshallingPair struct {
@@ -24,9 +24,9 @@ type armourUnmarshallingPair struct {
 }
 
 var armourUnmarshallingTests = []armourUnmarshallingPair{
-	{"{\"Name\":\"leather jacket\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Bonus\":1,\"Weight\":2,\"Value\":1000}", Armour{"leather jacket", icon.NewIcon(91, 100), 1, 2, 1000}},
-	{"{\"Name\":\"metal breastplate\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Bonus\":3,\"Weight\":5,\"Value\":2000}", Armour{"metal breastplate", icon.NewIcon(91, 50), 3, 5, 2000}},
-	{"{\"Name\":\"reinforced leather jacket\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Bonus\":2,\"Weight\":3,\"Value\":1500}", Armour{"reinforced leather jacket", icon.NewIcon(91, 70), 2, 3, 1500}},
+	{"{\"Name\":\"leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Bonus\":1,\"Weight\":2,\"Value\":1000}", Armour{baseItem{"leather jacket", "bandit", icon.NewIcon(91, 100), 2, 1000}, 1}},
+	{"{\"Name\":\"metal breastplate\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Bonus\":3,\"Weight\":5,\"Value\":2000}", Armour{baseItem{"metal breastplate", "bandit", icon.NewIcon(91, 50), 5, 2000}, 3}},
+	{"{\"Name\":\"reinforced leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Bonus\":2,\"Weight\":3,\"Value\":1500}", Armour{baseItem{"reinforced leather jacket", "bandit", icon.NewIcon(91, 70), 3, 1500}, 2}},
 }
 
 func TestArmourMarshalling(t *testing.T) {

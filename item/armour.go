@@ -4,11 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"hash/fnv"
 	"io/ioutil"
 
 	"github.com/onorton/cowboysindians/icon"
-	"github.com/onorton/cowboysindians/ui"
 )
 
 type ArmourAttributes struct {
@@ -37,16 +35,13 @@ func fetchArmourData() {
 }
 
 type Armour struct {
-	name  string
-	ic    icon.Icon
+	baseItem
 	bonus int
-	w     float64
-	v     int
 }
 
 func NewArmour(name string) *Armour {
 	armour := armourData[name]
-	return &Armour{name, armour.Icon, armour.Bonus, armour.Weight, armour.Value}
+	return &Armour{baseItem{name, "", armour.Icon, armour.Weight, armour.Value}, armour.Bonus}
 }
 
 func GenerateArmour() Item {
@@ -62,6 +57,13 @@ func (armour *Armour) MarshalJSON() ([]byte, error) {
 	}
 
 	buffer.WriteString(fmt.Sprintf("\"Name\":%s,", nameValue))
+
+	ownerValue, err := json.Marshal(armour.owner)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Owner\":%s,", ownerValue))
 
 	iconValue, err := json.Marshal(armour.ic)
 	if err != nil {
@@ -93,6 +95,7 @@ func (armour *Armour) UnmarshalJSON(data []byte) error {
 
 	type armourJson struct {
 		Name   string
+		Owner  string
 		Icon   icon.Icon
 		Bonus  *int
 		Weight float64
@@ -109,6 +112,7 @@ func (armour *Armour) UnmarshalJSON(data []byte) error {
 	}
 
 	armour.name = v.Name
+	armour.owner = v.Owner
 	armour.ic = v.Icon
 	armour.bonus = *(v.Bonus)
 	armour.w = v.Weight
@@ -117,33 +121,8 @@ func (armour *Armour) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (armour *Armour) GetName() string {
-	return armour.name
-}
-func (armour *Armour) Render() ui.Element {
-	return armour.ic.Render()
-}
-
 func (armour *Armour) GetACBonus() int {
 	return armour.bonus
-}
-
-func (armour *Armour) GetKey() rune {
-	h := fnv.New32()
-	h.Write([]byte(armour.name))
-	key := rune(33 + h.Sum32()%93)
-	if key == '*' {
-		key++
-	}
-	return key
-}
-
-func (armour *Armour) GetWeight() float64 {
-	return armour.w
-}
-
-func (armour *Armour) GetValue() int {
-	return armour.v
 }
 
 func (armour *Armour) GivesCover() bool {

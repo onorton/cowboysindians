@@ -4,11 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"hash/fnv"
 	"io/ioutil"
 
 	"github.com/onorton/cowboysindians/icon"
-	"github.com/onorton/cowboysindians/ui"
 )
 
 type AmmoAttributes struct {
@@ -37,16 +35,13 @@ func fetchAmmoData() {
 }
 
 type Ammo struct {
-	name string
-	ic   icon.Icon
-	t    WeaponType
-	w    float64
-	v    int
+	baseItem
+	t WeaponType
 }
 
 func NewAmmo(name string) Item {
 	ammo := ammoData[name]
-	var itm Item = &Ammo{name, ammo.Icon, ammo.Type, ammo.Weight, ammo.Value}
+	var itm Item = &Ammo{baseItem{name, "", ammo.Icon, ammo.Weight, ammo.Value}, ammo.Type}
 	return itm
 }
 
@@ -63,6 +58,13 @@ func (ammo *Ammo) MarshalJSON() ([]byte, error) {
 	}
 
 	buffer.WriteString(fmt.Sprintf("\"Name\":%s,", nameValue))
+
+	ownerValue, err := json.Marshal(ammo.owner)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Owner\":%s,", ownerValue))
 
 	iconValue, err := json.Marshal(ammo.ic)
 	if err != nil {
@@ -94,6 +96,7 @@ func (ammo *Ammo) UnmarshalJSON(data []byte) error {
 
 	type ammoJson struct {
 		Name   string
+		Owner  string
 		Icon   icon.Icon
 		Type   *WeaponType
 		Weight float64
@@ -110,6 +113,7 @@ func (ammo *Ammo) UnmarshalJSON(data []byte) error {
 	}
 
 	ammo.name = v.Name
+	ammo.owner = v.Owner
 	ammo.ic = v.Icon
 	ammo.t = *(v.Type)
 	ammo.w = v.Weight
@@ -118,29 +122,11 @@ func (ammo *Ammo) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (ammo *Ammo) GetName() string {
-	return ammo.name
-}
-func (ammo *Ammo) Render() ui.Element {
-	return ammo.ic.Render()
-}
-
-func (ammo *Ammo) GetKey() rune {
-	h := fnv.New32()
-	h.Write([]byte(ammo.name))
-	key := rune(33 + h.Sum32()%93)
-	if key == '*' {
-		key++
+func (ammo *Ammo) Owned(id string) bool {
+	if ammo.owner == "" {
+		return true
 	}
-	return key
-}
-
-func (ammo *Ammo) GetWeight() float64 {
-	return ammo.w
-}
-
-func (ammo *Ammo) GetValue() int {
-	return ammo.v
+	return ammo.owner == id
 }
 
 func (ammo *Ammo) GivesCover() bool {

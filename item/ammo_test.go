@@ -13,8 +13,8 @@ type ammoMarshallingPair struct {
 }
 
 var ammoMarshallingTests = []ammoMarshallingPair{
-	{Ammo{"shotgun shell", icon.NewIcon(44, 2), 1, 0.2, 20}, "{\"Name\":\"shotgun shell\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Type\":1,\"Weight\":0.2,\"Value\":20}"},
-	{Ammo{"pistol bullet", icon.NewIcon(44, 3), 0, 0.01, 10}, "{\"Name\":\"pistol bullet\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Type\":0,\"Weight\":0.01,\"Value\":10}"},
+	{Ammo{baseItem{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20}, 2}, "{\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Type\":2,\"Weight\":0.2,\"Value\":20}"},
+	{Ammo{baseItem{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10}, 1}, "{\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Type\":1,\"Weight\":0.01,\"Value\":10}"},
 }
 
 type ammoUnmarshallingPair struct {
@@ -23,8 +23,8 @@ type ammoUnmarshallingPair struct {
 }
 
 var ammoUnmarshallingTests = []ammoUnmarshallingPair{
-	{"{\"Name\":\"shotgun shell\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Type\":1,\"Weight\":0.2,\"Value\":20}", Ammo{"shotgun shell", icon.NewIcon(44, 2), 1, 0.2, 20}},
-	{"{\"Name\":\"pistol bullet\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Type\":0,\"Weight\":0.01,\"Value\":10}", Ammo{"pistol bullet", icon.NewIcon(44, 3), 0, 0.01, 10}},
+	{"{\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Type\":2,\"Weight\":0.2,\"Value\":20}", Ammo{baseItem{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20}, 2}},
+	{"{\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Type\":1,\"Weight\":0.01,\"Value\":10}", Ammo{baseItem{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10}, 1}},
 }
 
 func TestAmmoMarshalling(t *testing.T) {
@@ -58,6 +58,14 @@ func TestAmmoUnmarshalling(t *testing.T) {
 				"For", "Name",
 				"expected", pair.ammo.name,
 				"got", ammo.name,
+			)
+		}
+
+		if ammo.owner != pair.ammo.owner {
+			t.Error(
+				"For", "Owner",
+				"expected", pair.ammo.owner,
+				"got", ammo.owner,
 			)
 		}
 

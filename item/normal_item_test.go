@@ -13,10 +13,10 @@ type marshallingPair struct {
 }
 
 var marshallingTests = []marshallingPair{
-	{NormalItem{"gem", icon.NewIcon(42, 4), 2, 2000, false}, "{\"Name\":\"gem\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":2,\"Value\":2000,\"Cover\":false}"},
-	{NormalItem{"stick", icon.NewIcon(30, 7), 5, 2, false}, "{\"Name\":\"stick\",\"Icon\":{\"Icon\":30,\"Colour\":7},\"Weight\":5,\"Value\":2,\"Cover\":false}"},
-	{NormalItem{"bowl", icon.NewIcon(66, 10), 3, 10, false}, "{\"Name\":\"bowl\",\"Icon\":{\"Icon\":66,\"Colour\":10},\"Weight\":3,\"Value\":10,\"Cover\":false}"},
-	{NormalItem{"barrel", icon.NewIcon(111, 0), 30, 200, true}, "{\"Name\":\"barrel\",\"Icon\":{\"Icon\":111,\"Colour\":0},\"Weight\":30,\"Value\":200,\"Cover\":true}"},
+	{NormalItem{baseItem{"gem", "bandit", icon.NewIcon(42, 4), 2, 2000}, false}, "{\"Name\":\"gem\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":2,\"Value\":2000,\"Cover\":false}"},
+	{NormalItem{baseItem{"stick", "townsman", icon.NewIcon(30, 7), 5, 2}, false}, "{\"Name\":\"stick\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":30,\"Colour\":7},\"Weight\":5,\"Value\":2,\"Cover\":false}"},
+	{NormalItem{baseItem{"bowl", "bandit", icon.NewIcon(66, 10), 3, 10}, false}, "{\"Name\":\"bowl\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":66,\"Colour\":10},\"Weight\":3,\"Value\":10,\"Cover\":false}"},
+	{NormalItem{baseItem{"barrel", "townsman", icon.NewIcon(111, 0), 30, 200}, true}, "{\"Name\":\"barrel\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":111,\"Colour\":0},\"Weight\":30,\"Value\":200,\"Cover\":true}"},
 }
 
 type unmarshallingPair struct {
@@ -25,10 +25,10 @@ type unmarshallingPair struct {
 }
 
 var unmarshallingTests = []unmarshallingPair{
-	{"{\"Name\":\"gem\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":2,\"Value\":2000,\"Cover\":false}", NormalItem{"gem", icon.NewIcon(42, 4), 2, 2000, false}},
-	{"{\"Name\":\"stick\",\"Icon\":{\"Icon\":30,\"Colour\":7},\"Weight\":5,\"Value\":2,\"Cover\":false}", NormalItem{"stick", icon.NewIcon(30, 7), 5, 2, false}},
-	{"{\"Name\":\"bowl\",\"Icon\":{\"Icon\":66,\"Colour\":10},\"Weight\":3,\"Value\":10,\"Cover\":false}", NormalItem{"bowl", icon.NewIcon(66, 10), 3, 10, false}},
-	{"{\"Name\":\"barrel\",\"Icon\":{\"Icon\":111,\"Colour\":0},\"Weight\":30,\"Value\":200,\"Cover\":true}", NormalItem{"barrel", icon.NewIcon(111, 0), 30, 200, true}},
+	{"{\"Name\":\"gem\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":2,\"Value\":2000,\"Cover\":false}", NormalItem{baseItem{"gem", "bandit", icon.NewIcon(42, 4), 2, 2000}, false}},
+	{"{\"Name\":\"stick\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":30,\"Colour\":7},\"Weight\":5,\"Value\":2,\"Cover\":false}", NormalItem{baseItem{"stick", "townsman", icon.NewIcon(30, 7), 5, 2}, false}},
+	{"{\"Name\":\"bowl\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":66,\"Colour\":10},\"Weight\":3,\"Value\":10,\"Cover\":false}", NormalItem{baseItem{"bowl", "bandit", icon.NewIcon(66, 10), 3, 10}, false}},
+	{"{\"Name\":\"barrel\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":111,\"Colour\":0},\"Weight\":30,\"Value\":200,\"Cover\":true}", NormalItem{baseItem{"barrel", "townsman", icon.NewIcon(111, 0), 30, 200}, true}},
 }
 
 func TestMarshalling(t *testing.T) {
@@ -62,6 +62,14 @@ func TestUnmarshalling(t *testing.T) {
 				"For", "Name",
 				"expected", pair.item.name,
 				"got", item.name,
+			)
+		}
+
+		if item.owner != pair.item.owner {
+			t.Error(
+				"For", "Owner",
+				"expected", pair.item.owner,
+				"got", item.owner,
 			)
 		}
 

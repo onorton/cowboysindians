@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"hash/fnv"
 	"io/ioutil"
 	"math/rand"
 
 	"github.com/onorton/cowboysindians/icon"
-	"github.com/onorton/cowboysindians/ui"
 )
 
 type WeaponAttributes struct {
@@ -55,12 +53,9 @@ func fetchWeaponData() {
 }
 
 type Weapon struct {
-	name   string
-	ic     icon.Icon
+	baseItem
 	r      int
 	t      WeaponType
-	w      float64
-	v      int
 	wc     *WeaponCapacity
 	damage *Damage
 }
@@ -83,7 +78,7 @@ func NewWeapon(name string) *Weapon {
 	if weapon.Capacity != 0 {
 		weaponCapacity = &WeaponCapacity{weapon.Capacity, 0}
 	}
-	return &Weapon{name, weapon.Icon, weapon.Range, weapon.Type, weapon.Weight, weapon.Value, weaponCapacity, &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
+	return &Weapon{baseItem{name, "", weapon.Icon, weapon.Weight, weapon.Value}, weapon.Range, weapon.Type, weaponCapacity, &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
 }
 
 func GenerateWeapon() Item {
@@ -148,6 +143,13 @@ func (weapon *Weapon) MarshalJSON() ([]byte, error) {
 	}
 
 	buffer.WriteString(fmt.Sprintf("\"Name\":%s,", nameValue))
+
+	ownerValue, err := json.Marshal(weapon.owner)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Owner\":%s,", ownerValue))
 
 	iconValue, err := json.Marshal(weapon.ic)
 	if err != nil {
@@ -239,6 +241,7 @@ func (weapon *Weapon) UnmarshalJSON(data []byte) error {
 
 	type weaponJson struct {
 		Name           string
+		Owner          string
 		Icon           icon.Icon
 		Range          *int
 		Type           *WeaponType
@@ -266,6 +269,7 @@ func (weapon *Weapon) UnmarshalJSON(data []byte) error {
 	}
 
 	weapon.name = v.Name
+	weapon.owner = v.Owner
 	weapon.ic = v.Icon
 	weapon.r = *(v.Range)
 	weapon.t = *(v.Type)
@@ -275,13 +279,6 @@ func (weapon *Weapon) UnmarshalJSON(data []byte) error {
 	weapon.damage = v.Damage
 
 	return nil
-}
-
-func (weapon *Weapon) GetName() string {
-	return weapon.name
-}
-func (weapon *Weapon) Render() ui.Element {
-	return weapon.ic.Render()
 }
 
 func (weapon *Weapon) GetRange() int {
@@ -326,24 +323,6 @@ func (weapon *Weapon) Fire() {
 	if weapon.wc != nil && weapon.wc.loaded > 0 {
 		weapon.wc.loaded--
 	}
-}
-
-func (weapon *Weapon) GetKey() rune {
-	h := fnv.New32()
-	h.Write([]byte(weapon.name))
-	key := rune(33 + h.Sum32()%93)
-	if key == '*' {
-		key++
-	}
-	return key
-}
-
-func (weapon *Weapon) GetWeight() float64 {
-	return weapon.w
-}
-
-func (weapon *Weapon) GetValue() int {
-	return weapon.v
 }
 
 func (weapon *Weapon) GivesCover() bool {

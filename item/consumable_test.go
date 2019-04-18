@@ -14,9 +14,9 @@ type consumableMarshallingPair struct {
 }
 
 var consumableMarshallingTests = []consumableMarshallingPair{
-	{Consumable{"beer", icon.NewIcon(98, 2), 0.01, 20, map[string]int{"hp": 1, "thirst": 10}}, "{\"Name\":\"beer\",\"Icon\":{\"Icon\":98,\"Colour\":2},\"Weight\":0.01,\"Value\":20,\"Effects\":{\"hp\":1,\"thirst\":10}}"},
-	{Consumable{"standard ration", icon.NewIcon(42, 4), 0.1, 40, map[string]int{"hp": 10, "hunger": 10}}, "{\"Name\":\"standard ration\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":0.1,\"Value\":40,\"Effects\":{\"hp\":10,\"hunger\":10}}"},
-	{Consumable{"healing potion", icon.NewIcon(112, 4), 0.1, 100, map[string]int{"hp": 20}}, "{\"Name\":\"healing potion\",\"Icon\":{\"Icon\":112,\"Colour\":4},\"Weight\":0.1,\"Value\":100,\"Effects\":{\"hp\":20}}"},
+	{Consumable{baseItem{"beer", "townsman", icon.NewIcon(98, 2), 0.01, 20}, map[string]int{"hp": 1, "thirst": 10}}, "{\"Name\":\"beer\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":2},\"Weight\":0.01,\"Value\":20,\"Effects\":{\"hp\":1,\"thirst\":10}}"},
+	{Consumable{baseItem{"standard ration", "bandit", icon.NewIcon(42, 4), 0.1, 40}, map[string]int{"hp": 10, "hunger": 10}}, "{\"Name\":\"standard ration\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":0.1,\"Value\":40,\"Effects\":{\"hp\":10,\"hunger\":10}}"},
+	{Consumable{baseItem{"healing potion", "townsman", icon.NewIcon(112, 4), 0.1, 100}, map[string]int{"hp": 20}}, "{\"Name\":\"healing potion\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":112,\"Colour\":4},\"Weight\":0.1,\"Value\":100,\"Effects\":{\"hp\":20}}"},
 }
 
 type consumableUnmarshallingPair struct {
@@ -25,9 +25,9 @@ type consumableUnmarshallingPair struct {
 }
 
 var consumableUnmarshallingTests = []consumableUnmarshallingPair{
-	{"{\"Name\":\"beer\",\"Icon\":{\"Icon\":98,\"Colour\":2},\"Weight\":0.01,\"Value\":20,\"Effects\":{\"hp\":1,\"thirst\":10}}", Consumable{"beer", icon.NewIcon(98, 2), 0.01, 20, map[string]int{"hp": 1, "thirst": 10}}},
-	{"{\"Name\":\"standard ration\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":0.1,\"Value\":40,\"Effects\":{\"hp\":10,\"hunger\":10}}", Consumable{"standard ration", icon.NewIcon(42, 4), 0.1, 40, map[string]int{"hp": 10, "hunger": 10}}},
-	{"{\"Name\":\"healing potion\",\"Icon\":{\"Icon\":112,\"Colour\":4},\"Weight\":0.1,\"Value\":100,\"Effects\":{\"hp\":20}}", Consumable{"healing potion", icon.NewIcon(112, 4), 0.1, 100, map[string]int{"hp": 20}}},
+	{"{\"Name\":\"beer\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":2},\"Weight\":0.01,\"Value\":20,\"Effects\":{\"hp\":1,\"thirst\":10}}", Consumable{baseItem{"beer", "townsman", icon.NewIcon(98, 2), 0.01, 20}, map[string]int{"hp": 1, "thirst": 10}}},
+	{"{\"Name\":\"standard ration\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":0.1,\"Value\":40,\"Effects\":{\"hp\":10,\"hunger\":10}}", Consumable{baseItem{"standard ration", "bandit", icon.NewIcon(42, 4), 0.1, 40}, map[string]int{"hp": 10, "hunger": 10}}},
+	{"{\"Name\":\"healing potion\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":112,\"Colour\":4},\"Weight\":0.1,\"Value\":100,\"Effects\":{\"hp\":20}}", Consumable{baseItem{"healing potion", "townsman", icon.NewIcon(112, 4), 0.1, 100}, map[string]int{"hp": 20}}},
 }
 
 func TestConsumableMarshalling(t *testing.T) {
@@ -61,6 +61,14 @@ func TestConsumableUnmarshalling(t *testing.T) {
 				"For", "Name",
 				"expected", pair.consumable.name,
 				"got", consumable.name,
+			)
+		}
+
+		if consumable.owner != pair.consumable.owner {
+			t.Error(
+				"For", "Owner",
+				"expected", pair.consumable.owner,
+				"got", consumable.owner,
 			)
 		}
 

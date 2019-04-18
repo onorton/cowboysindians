@@ -4,11 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"hash/fnv"
 	"io/ioutil"
 
 	"github.com/onorton/cowboysindians/icon"
-	"github.com/onorton/cowboysindians/ui"
 )
 
 type corpseAttributes struct {
@@ -31,17 +29,13 @@ func fetchCorpseData() {
 }
 
 type Corpse struct {
-	name  string
-	owner string
-	ic    icon.Icon
-	w     float64
-	v     int
+	baseItem
 }
 
 func NewCorpse(corpseType string, owner string, ownerName string, ownerIcon icon.Icon) Item {
 	corpse := corpseData[corpseType]
 	name := fmt.Sprintf("%s's %s", ownerName, corpseType)
-	var itm Item = &Corpse{name, owner, icon.NewCorpseIcon(ownerIcon), corpse.Weight, corpse.Value}
+	var itm Item = &Corpse{baseItem{name, owner, icon.NewCorpseIcon(ownerIcon), corpse.Weight, corpse.Value}}
 	return itm
 }
 
@@ -104,36 +98,6 @@ func (corpse *Corpse) UnmarshalJSON(data []byte) error {
 	corpse.v = v.Value
 
 	return nil
-}
-
-func (corpse *Corpse) Render() ui.Element {
-	return corpse.ic.Render()
-}
-
-func (corpse *Corpse) GetName() string {
-	return corpse.name
-}
-
-func (corpse *Corpse) GetKey() rune {
-	h := fnv.New32()
-	h.Write([]byte(corpse.name))
-	key := rune(33 + h.Sum32()%93)
-	if key == '*' {
-		key++
-	}
-	return key
-}
-
-func (corpse *Corpse) GetWeight() float64 {
-	return corpse.w
-}
-
-func (corpse *Corpse) GetValue() int {
-	return corpse.v
-}
-
-func (corpse *Corpse) Owner() string {
-	return corpse.owner
 }
 
 func (corpse *Corpse) GivesCover() bool {

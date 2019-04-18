@@ -2,8 +2,10 @@ package item
 
 import (
 	"encoding/json"
+	"hash/fnv"
 	"math/rand"
 
+	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/ui"
 )
 
@@ -153,4 +155,42 @@ type Item interface {
 	GetWeight() float64
 	GetValue() int
 	GivesCover() bool
+}
+
+func (item *baseItem) Render() ui.Element {
+	return item.ic.Render()
+}
+
+func (item *baseItem) GetName() string {
+	return item.name
+}
+
+func (item *baseItem) Owner() string {
+	return item.owner
+}
+
+func (item *baseItem) GetKey() rune {
+	h := fnv.New32()
+	h.Write([]byte(item.name))
+	key := rune(33 + h.Sum32()%93)
+	if key == '*' {
+		key++
+	}
+	return key
+}
+
+func (item *baseItem) GetWeight() float64 {
+	return item.w
+}
+
+func (item *baseItem) GetValue() int {
+	return item.v
+}
+
+type baseItem struct {
+	name  string
+	owner string
+	ic    icon.Icon
+	w     float64
+	v     int
 }

@@ -4,11 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"hash/fnv"
 	"io/ioutil"
 
 	"github.com/onorton/cowboysindians/icon"
-	"github.com/onorton/cowboysindians/ui"
 )
 
 type itemAttributes struct {
@@ -37,21 +35,18 @@ func fetchItemData() {
 }
 
 type NormalItem struct {
-	name  string
-	ic    icon.Icon
-	w     float64
-	v     int
+	baseItem
 	cover bool
 }
 
 func NewNormalItem(name string) Item {
 	item := normalItemData[name]
-	var itm Item = &NormalItem{name, item.Icon, item.Weight, item.Value, item.Cover}
+	var itm Item = &NormalItem{baseItem{name, "", item.Icon, item.Weight, item.Value}, item.Cover}
 	return itm
 }
 
 func Money(amount int) Item {
-	return &NormalItem{"money", icon.NewIcon('$', 4), 0, amount, false}
+	return &NormalItem{baseItem{"money", "", icon.NewIcon('$', 4), 0, amount}, false}
 }
 
 func GenerateNormalItem() Item {
@@ -67,6 +62,13 @@ func (item *NormalItem) MarshalJSON() ([]byte, error) {
 	}
 
 	buffer.WriteString(fmt.Sprintf("\"Name\":%s,", nameValue))
+
+	ownerValue, err := json.Marshal(item.owner)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Owner\":%s,", ownerValue))
 
 	iconValue, err := json.Marshal(item.ic)
 	if err != nil {
@@ -98,6 +100,7 @@ func (item *NormalItem) UnmarshalJSON(data []byte) error {
 
 	type itemJson struct {
 		Name   string
+		Owner  string
 		Icon   icon.Icon
 		Weight float64
 		Value  int
@@ -110,38 +113,13 @@ func (item *NormalItem) UnmarshalJSON(data []byte) error {
 	}
 
 	item.name = v.Name
+	item.owner = v.Owner
 	item.ic = v.Icon
 	item.w = v.Weight
 	item.v = v.Value
 	item.cover = v.Cover
 
 	return nil
-}
-
-func (item *NormalItem) Render() ui.Element {
-	return item.ic.Render()
-}
-
-func (item *NormalItem) GetName() string {
-	return item.name
-}
-
-func (item *NormalItem) GetKey() rune {
-	h := fnv.New32()
-	h.Write([]byte(item.name))
-	key := rune(33 + h.Sum32()%93)
-	if key == '*' {
-		key++
-	}
-	return key
-}
-
-func (item *NormalItem) GetWeight() float64 {
-	return item.w
-}
-
-func (item *NormalItem) GetValue() int {
-	return item.v
 }
 
 func (item *NormalItem) GivesCover() bool {
