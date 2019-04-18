@@ -149,6 +149,8 @@ func LoadAllData() {
 type Item interface {
 	GetKey() rune
 	GetName() string
+	Owned(string) bool
+	TransferOwner(string)
 	Render() ui.Element
 	MarshalJSON() ([]byte, error)
 	UnmarshalJSON([]byte) error
@@ -163,10 +165,6 @@ func (item *baseItem) Render() ui.Element {
 
 func (item *baseItem) GetName() string {
 	return item.name
-}
-
-func (item *baseItem) Owner() string {
-	return item.owner
 }
 
 func (item *baseItem) GetKey() rune {

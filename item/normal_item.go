@@ -122,6 +122,20 @@ func (item *NormalItem) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (item *NormalItem) Owned(id string) bool {
+	if item.owner == "" {
+		return true
+	}
+	return item.owner == id
+}
+
+func (item *NormalItem) TransferOwner(newOwner string) {
+	// Only assign owner if item not owned
+	if item.owner == "" {
+		item.owner = newOwner
+	}
+}
+
 func (item *NormalItem) GivesCover() bool {
 	return item.cover
 }

@@ -350,6 +350,10 @@ func (e *Enemy) getAmmo() *item.Ammo {
 
 func (e *Enemy) PickupItem(item item.Item) {
 	e.inventory = append(e.inventory, item)
+	// If item had previous owner, send theft event
+	if !item.Owned(e.id) {
+		event.Emit(event.NewTheft(e, item, e.location))
+	}
 }
 
 func (e *Enemy) RemoveItem(itm item.Item) {

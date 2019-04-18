@@ -100,6 +100,16 @@ func (corpse *Corpse) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (corpse *Corpse) Owned(id string) bool {
+	return true
+}
+
+func (corpse *Corpse) TransferOwner(newOwner string) {}
+
+func (corpse *Corpse) Owner() string {
+	return corpse.owner
+}
+
 func (corpse *Corpse) GivesCover() bool {
 	return false
 }

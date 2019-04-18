@@ -121,6 +121,20 @@ func (armour *Armour) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (armour *Armour) Owned(id string) bool {
+	if armour.owner == "" {
+		return true
+	}
+	return armour.owner == id
+}
+
+func (armour *Armour) TransferOwner(newOwner string) {
+	// Only assign owner if item not owned
+	if armour.owner == "" {
+		armour.owner = newOwner
+	}
+}
+
 func (armour *Armour) GetACBonus() int {
 	return armour.bonus
 }

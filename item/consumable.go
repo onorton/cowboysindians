@@ -122,6 +122,20 @@ func (consumable *Consumable) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (consumable *Consumable) Owned(id string) bool {
+	if consumable.owner == "" {
+		return true
+	}
+	return consumable.owner == id
+}
+
+func (consumable *Consumable) TransferOwner(newOwner string) {
+	// Only assign owner if item not owned
+	if consumable.owner == "" {
+		consumable.owner = newOwner
+	}
+}
+
 func (consumable *Consumable) GetEffect(e string) int {
 	return consumable.effects[e]
 }

@@ -281,6 +281,20 @@ func (weapon *Weapon) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (weapon *Weapon) Owned(id string) bool {
+	if weapon.owner == "" {
+		return true
+	}
+	return weapon.owner == id
+}
+
+func (weapon *Weapon) TransferOwner(newOwner string) {
+	// Only assign owner if item not owned
+	if weapon.owner == "" {
+		weapon.owner = newOwner
+	}
+}
+
 func (weapon *Weapon) GetRange() int {
 	return weapon.r
 }

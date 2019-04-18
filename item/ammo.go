@@ -129,6 +129,13 @@ func (ammo *Ammo) Owned(id string) bool {
 	return ammo.owner == id
 }
 
+func (ammo *Ammo) TransferOwner(newOwner string) {
+	// Only assign owner if item not owned
+	if ammo.owner == "" {
+		ammo.owner = newOwner
+	}
+}
+
 func (ammo *Ammo) GivesCover() bool {
 	return false
 }

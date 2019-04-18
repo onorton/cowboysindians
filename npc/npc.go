@@ -454,6 +454,11 @@ func (npc *Npc) getAmmo() *item.Ammo {
 
 func (npc *Npc) PickupItem(item item.Item) {
 	npc.inventory = append(npc.inventory, item)
+	// If item had previous owner, send theft event
+	if !item.Owned(npc.id) {
+		event.Emit(event.NewTheft(npc, item, npc.location))
+	}
+	item.TransferOwner(npc.id)
 }
 
 func (npc *Npc) Inventory() []item.Item {

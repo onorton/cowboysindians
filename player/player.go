@@ -875,6 +875,11 @@ func (p *Player) PickupItem() bool {
 			p.money += item.GetValue()
 			message.Enqueue(fmt.Sprintf("You pick up $%.2f.", float64(item.GetValue())/100))
 			itemsOnGround = append(itemsOnGround[:i], itemsOnGround[i+1:]...)
+			// If item had previous owner, send theft event
+			if !item.Owned(p.GetID()) {
+				event.Emit(event.NewTheft(p, item, p.location))
+			}
+			item.TransferOwner(p.GetID())
 		}
 	}
 
@@ -891,6 +896,11 @@ func (p *Player) PickupItem() bool {
 	for k := range items {
 		for _, item := range items[k] {
 			p.AddItem(item)
+			// If item had previous owner, send theft event
+			if !item.Owned(p.GetID()) {
+				event.Emit(event.NewTheft(p, item, p.location))
+			}
+			item.TransferOwner(p.GetID())
 		}
 		if len(items[k]) == 1 {
 			message.Enqueue(fmt.Sprintf("You pick up 1 %s.", items[k][0].GetName()))
