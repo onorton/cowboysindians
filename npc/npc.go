@@ -104,7 +104,14 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 		name = generateName(npcType)
 	}
 
-	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, npcAi{worldmap.NewWithinBuilding(world, b, location)}, dialogue}
+	var ai ai
+	if npcType == "sheriff" {
+		ai = newSheriffAi(location, t)
+	} else {
+		ai = npcAi{worldmap.NewWithinBuilding(world, b, location)}
+	}
+
+	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, ai, dialogue}
 	for c, count := range n.ShopInventory {
 
 		for i := 0; i < count; i++ {

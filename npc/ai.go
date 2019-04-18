@@ -264,6 +264,156 @@ func (ai *npcAi) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type sheriffAi struct {
+	waypoint *worldmap.Patrol
+}
+
+func newSheriffAi(l worldmap.Coordinates, t worldmap.Town) sheriffAi {
+	// Patrol between ends of the town and sheriff's office
+	points := make([]worldmap.Coordinates, 3)
+	points[0] = l
+	if t.Horizontal {
+		points[1] = worldmap.Coordinates{t.TX1, (t.SY1 + t.SY2) / 2}
+		points[2] = worldmap.Coordinates{t.TX2, (t.SY1 + t.SY2) / 2}
+	} else {
+		points[1] = worldmap.Coordinates{(t.SX1 + t.SX2) / 2, t.SY1}
+		points[2] = worldmap.Coordinates{(t.SX1 + t.SX2) / 2, t.SY1}
+	}
+	return sheriffAi{worldmap.NewPatrol(points)}
+}
+
+func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
+
+	cX, cY := c.GetCoordinates()
+	location := worldmap.Coordinates{cX, cY}
+	waypoint := ai.waypoint.NextWaypoint(location)
+	aiMap := getWaypointMap(waypoint, world, location, c.GetVisionDistance())
+	mountMap := getMountMap(c, world)
+
+	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
+	possibleLocations := make([]worldmap.Coordinates, 0)
+
+	// Find adjacent locations closer to the goal
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			nX := location.X + i
+			nY := location.Y + j
+			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] < current {
+				// Add if not occupied
+				if world.IsValid(nX, nY) && !world.IsOccupied(nX, nY) {
+					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
+				}
+			}
+		}
+	}
+
+	// If can ride things and mounted, can move first before executing another action
+	if r, ok := c.(Rider); ok && r.Mount() != nil && r.Mount().Moved() {
+		if len(possibleLocations) > 0 {
+			if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
+				for _, itm := range itemHolder.Inventory() {
+					return DropAction{itemHolder, itm}
+				}
+			} else {
+				l := possibleLocations[rand.Intn(len(possibleLocations))]
+				return MountedMoveAction{r, world, l.X, l.Y}
+			}
+		}
+	}
+
+	// If at half health heal up
+	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
+		for _, itm := range itemHolder.Inventory() {
+			if con, ok := itm.(*item.Consumable); ok && con.GetEffect("hp") > 0 {
+				return HealAction{c, con}
+			}
+		}
+	}
+
+	// If adjacent to mount, attempt to mount it
+	if r, ok := c.(Rider); ok && r.Mount() == nil {
+		for i := -1; i <= 1; i++ {
+			for j := -1; j <= 1; j++ {
+				x, y := location.X+j, location.Y+i
+				if world.IsValid(x, y) && mountMap[c.GetVisionDistance()+i][c.GetVisionDistance()+j] == 0 {
+					return MountAction{r, world, x, y}
+				}
+			}
+		}
+	}
+
+	// If adjacent to closed door attempt to open it
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			x, y := location.X+j, location.Y+i
+			if world.IsValid(x, y) && world.IsDoor(x, y) && !world.IsPassable(x, y) {
+				return OpenAction{world, x, y}
+			}
+		}
+	}
+
+	if len(possibleLocations) > 0 {
+		if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
+			for _, itm := range itemHolder.Inventory() {
+				return DropAction{itemHolder, itm}
+			}
+		} else if r, ok := c.(Rider); ok && (r.Mount() == nil || !r.Mount().Moved()) {
+			l := possibleLocations[rand.Intn(len(possibleLocations))]
+			return MoveAction{c, world, l.X, l.Y}
+		}
+	} else if itemHolder, ok := c.(holdsItems); ok {
+		if world.HasItems(location.X, location.Y) {
+			return PickupAction{itemHolder, world, location.X, location.Y}
+		}
+	}
+
+	// If the npc can do nothing else, try moving randomly
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			x, y := cX+j, cY+i
+			if world.IsValid(x, y) && world.IsPassable(x, y) && !world.IsOccupied(x, y) {
+				possibleLocations = append(possibleLocations, worldmap.Coordinates{x, y})
+			}
+		}
+	}
+
+	if len(possibleLocations) > 0 {
+		l := possibleLocations[rand.Intn(len(possibleLocations))]
+		return MoveAction{c, world, l.X, l.Y}
+	}
+
+	return NoAction{}
+}
+
+func (ai sheriffAi) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString("\"Type\":\"sheriff\",")
+
+	waypointValue, err := json.Marshal(ai.waypoint)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Waypoint\":%s", waypointValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
+	type sheriffAiJson struct {
+		Waypoint *worldmap.Patrol
+	}
+
+	var v sheriffAiJson
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	ai.waypoint = v.Waypoint
+	return nil
+}
+
 type enemyAi struct {
 }
 
@@ -406,6 +556,11 @@ func unmarshalAi(ai map[string]interface{}) ai {
 		err = json.Unmarshal(aiJson, &nAi)
 		check(err)
 		return nAi
+	case "sheriff":
+		var sAi sheriffAi
+		err = json.Unmarshal(aiJson, &sAi)
+		check(err)
+		return sAi
 	case "enemy":
 		var eAi enemyAi
 		err = json.Unmarshal(aiJson, &eAi)
