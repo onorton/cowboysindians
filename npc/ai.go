@@ -288,6 +288,8 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	location := worldmap.Coordinates{cX, cY}
 	waypoint := ai.waypoint.NextWaypoint(location)
 
+	targets := getEnemies(c, world)
+
 	coefficients := []float64{0.2, 0.5, 0.3, 0.0}
 
 	// Focus on getting a mount if possible
@@ -296,7 +298,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	}
 	coverMap := getCoverMap(c, world)
 	mountMap := getMountMap(c, world)
-	aiMap := addMaps([][][]int{getChaseMap(c, world), getWaypointMap(waypoint, world, location, c.GetVisionDistance()), coverMap, mountMap}, coefficients)
+	aiMap := addMaps([][][]int{getChaseMap(c, world, targets), getWaypointMap(waypoint, world, location, c.GetVisionDistance()), coverMap, mountMap}, coefficients)
 
 	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
 	possibleLocations := make([]worldmap.Coordinates, 0)
@@ -355,8 +357,6 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	if itemUser, ok := c.(usesItems); ok && itemUser.wearArmour() {
 		return NoAction{}
 	}
-
-	targets := getEnemies(c, world)
 
 	if len(targets) > 0 {
 		closestTarget := targets[0]
@@ -469,7 +469,7 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 	}
 	coverMap := getCoverMap(c, world)
 	mountMap := getMountMap(c, world)
-	aiMap := addMaps([][][]int{getChaseMap(c, world), getItemMap(c, world), coverMap, mountMap}, coefficients)
+	aiMap := addMaps([][][]int{getChaseMap(c, world, []worldmap.Creature{world.GetPlayer()}), getItemMap(c, world), coverMap, mountMap}, coefficients)
 
 	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
 	possibleLocations := make([]worldmap.Coordinates, 0)
@@ -710,7 +710,7 @@ func getMountMap(c hasAi, world *worldmap.Map) [][]int {
 	return generateMap(aiMap, world, location)
 }
 
-func getChaseMap(c hasAi, world *worldmap.Map) [][]int {
+func getChaseMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]int {
 	d := c.GetVisionDistance()
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
@@ -720,20 +720,20 @@ func getChaseMap(c hasAi, world *worldmap.Map) [][]int {
 
 	// Initialise Dijkstra map with goals.
 	// Max is size of grid.
-	for i := -d; i < d+1; i++ {
-		aiMap[i+d] = make([]int, width)
-		for j := -d; j < d+1; j++ {
-			x := j + d
-			y := i + d
-			// Translate location into world coordinates
-			wX, wY := location.X+j, location.Y+i
-			if world.IsValid(wX, wY) && world.IsVisible(c, wX, wY) && world.HasPlayer(wX, wY) {
-				aiMap[y][x] = 0
-			} else {
-				aiMap[y][x] = width * width
-			}
+	for y := 0; y < width; y++ {
+		aiMap[y] = make([]int, width)
+		for x := 0; x < width; x++ {
+			aiMap[y][x] = width * width
 		}
 	}
+
+	for _, t := range targets {
+		x, y := t.GetCoordinates()
+		if world.IsVisible(c, x, y) {
+			aiMap[y-location.Y+d][x-location.X+d] = 0
+		}
+	}
+
 	return generateMap(aiMap, world, location)
 }
 
