@@ -491,6 +491,7 @@ func generateMounts(m *worldmap.Map, buildings []worldmap.Building, n int) []*np
 			continue
 		}
 		mounts[i] = npc.NewMount("horse", x, y, m)
+		m.Move(mounts[i], x, y)
 	}
 	return mounts
 }
@@ -507,6 +508,8 @@ func generateEnemies(m *worldmap.Map, n int) []*npc.Enemy {
 			continue
 		}
 		enemies[i] = npc.NewEnemy("bandit", x, y, m)
+		m.Move(enemies[i], x, y)
+
 	}
 	return enemies
 }
@@ -530,6 +533,8 @@ func generateNpcs(m *worldmap.Map, towns []worldmap.Town, buildings []worldmap.B
 	for ; i < n && i < len(commercialBuildings); i++ {
 		b := commercialBuildings[i]
 		npcs[i] = placeNpcInBuilding(m, findTown(towns, b), b)
+		x, y := npcs[i].GetCoordinates()
+		m.Move(npcs[i], x, y)
 		usedBuildings = append(usedBuildings, b)
 	}
 
@@ -562,11 +567,9 @@ func generateNpcs(m *worldmap.Map, towns []worldmap.Town, buildings []worldmap.B
 			}
 			npcs[i] = npc.NewNpc("townsman", x, y, m)
 		}
+		x, y = npcs[i].GetCoordinates()
+		m.Move(npcs[i], x, y)
 
-	}
-	for _, npc := range npcs {
-		x, y := npc.GetCoordinates()
-		m.Move(npc, x, y)
 	}
 	return npcs
 }

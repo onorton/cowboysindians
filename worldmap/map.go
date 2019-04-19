@@ -518,10 +518,8 @@ func (m Map) Move(c Creature, x, y int) {
 
 	cX, cY := c.GetCoordinates()
 	m.grid.c[cY][cX] = nil
-	cX = x
-	cY = y
-	c.SetCoordinates(cX, cY)
-	m.grid.c[cY][cX] = c
+	c.SetCoordinates(x, y)
+	m.grid.c[y][x] = c
 }
 
 func (m Map) GetItems(x, y int) []item.Item {
