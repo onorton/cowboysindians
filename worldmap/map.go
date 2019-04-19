@@ -640,7 +640,7 @@ func (m *Map) isAdjacent(x1, y1, x2, y2 int) bool {
 	return math.Abs(float64(x1-x2)) <= 1 && math.Abs(float64(y1-y2)) <= 1
 }
 
-func (m *Map) Distance(x1, y1, x2, y2 int) float64 {
+func Distance(x1, y1, x2, y2 int) float64 {
 	return math.Sqrt(math.Pow(float64(x2-x1), 2) + math.Pow(float64(y2-y1), 2))
 }
 

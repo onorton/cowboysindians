@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"math/rand"
 
-	"github.com/onorton/cowboysindians/event"
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/worldmap"
 )
@@ -61,6 +60,12 @@ func (d *basicDialogue) resetSeen() {
 
 func (d *basicDialogue) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
+
+	typeValue, err := json.Marshal(Basic)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Type\":%s,", typeValue))
 
 	seenPlayerValue, err := json.Marshal(d.seenPlayer)
 	if err != nil {
@@ -129,6 +134,13 @@ func (d *shopkeeperDialogue) setMap(world *worldmap.Map) {
 
 func (d *shopkeeperDialogue) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
+
+	typeValue, err := json.Marshal(Shopkeeper)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Type\":%s,", typeValue))
+
 	seenPlayerValue, err := json.Marshal(d.seenPlayer)
 	if err != nil {
 		return nil, err
@@ -167,9 +179,7 @@ func (sd *shopkeeperDialogue) UnmarshalJSON(data []byte) error {
 type sheriffDialogue struct {
 	seenPlayer bool
 	world      *worldmap.Map
-	t          worldmap.Town
 	b          worldmap.Building
-	bounties   Bounties
 }
 
 func (d *sheriffDialogue) initialGreeting() {
@@ -203,45 +213,26 @@ func (d *sheriffDialogue) setMap(world *worldmap.Map) {
 	d.world = world
 }
 
-func (d *sheriffDialogue) ProcessEvent(e event.Event) {
-	switch ev := e.(type) {
-	case event.WitnessedCrimeEvent:
-		{
-			crime := ev.Crime
-			location := crime.Location()
-			if location.X >= d.t.TX1 && location.X <= d.t.TX2 && location.Y >= d.t.TY1 && location.Y <= d.t.TY2 {
-				d.bounties.addBounty(crime)
-			}
-		}
-	}
-
-}
-
 func (d *sheriffDialogue) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
+
+	typeValue, err := json.Marshal(Sheriff)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Type\":%s,", typeValue))
+
 	seenPlayerValue, err := json.Marshal(d.seenPlayer)
 	if err != nil {
 		return nil, err
 	}
 	buffer.WriteString(fmt.Sprintf("\"SeenPlayer\":%s,", seenPlayerValue))
 
-	townValue, err := json.Marshal(d.t)
-	if err != nil {
-		return nil, err
-	}
-	buffer.WriteString(fmt.Sprintf("\"Town\":%s,", townValue))
-
 	buildingValue, err := json.Marshal(d.b)
 	if err != nil {
 		return nil, err
 	}
-	buffer.WriteString(fmt.Sprintf("\"Building\":%s,", buildingValue))
-
-	bountiesValue, err := json.Marshal(d.bounties)
-	if err != nil {
-		return nil, err
-	}
-	buffer.WriteString(fmt.Sprintf("\"Bounties\":%s", bountiesValue))
+	buffer.WriteString(fmt.Sprintf("\"Building\":%s", buildingValue))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -262,12 +253,7 @@ func (sd *sheriffDialogue) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	sd.seenPlayer = v.SeenPlayer
-	sd.t = v.Town
 	sd.b = v.Building
-	sd.bounties = v.Bounties
-
-	event.Subscribe(sd)
-
 	return nil
 }
 
@@ -275,23 +261,26 @@ func unmarshalDialogue(dialogue map[string]interface{}) dialogue {
 	dialogueJson, err := json.Marshal(dialogue)
 	check(err)
 
-	if _, ok := dialogue["Bounties"]; ok {
+	switch dialogueType(int(dialogue["Type"].(float64))) {
+	case Basic:
+		var bd basicDialogue
+		err = json.Unmarshal(dialogueJson, &bd)
+		check(err)
+		return &bd
+	case Shopkeeper:
+		var sd shopkeeperDialogue
+		err = json.Unmarshal(dialogueJson, &sd)
+		check(err)
+		return &sd
+	case Sheriff:
 		var sd sheriffDialogue
 		err = json.Unmarshal(dialogueJson, &sd)
 		check(err)
 		return &sd
 	}
 
-	if _, ok := dialogue["Building"]; ok {
-		var sd shopkeeperDialogue
-		err = json.Unmarshal(dialogueJson, &sd)
-		check(err)
-		return &sd
-	}
-	var bd basicDialogue
-	err = json.Unmarshal(dialogueJson, &bd)
-	check(err)
-	return &bd
+	return nil
+
 }
 
 type dialogue interface {

@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"math"
 	"math/rand"
 
+	"github.com/onorton/cowboysindians/event"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/worldmap"
 )
@@ -266,9 +266,11 @@ func (ai *npcAi) UnmarshalJSON(data []byte) error {
 
 type sheriffAi struct {
 	waypoint *worldmap.Patrol
+	t        worldmap.Town
+	bounties *Bounties
 }
 
-func newSheriffAi(l worldmap.Coordinates, t worldmap.Town) sheriffAi {
+func newSheriffAi(l worldmap.Coordinates, t worldmap.Town) *sheriffAi {
 	// Patrol between ends of the town and sheriff's office
 	points := make([]worldmap.Coordinates, 3)
 	points[0] = l
@@ -279,7 +281,23 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town) sheriffAi {
 		points[1] = worldmap.Coordinates{(t.SX1 + t.SX2) / 2, t.SY1}
 		points[2] = worldmap.Coordinates{(t.SX1 + t.SX2) / 2, t.SY1}
 	}
-	return sheriffAi{worldmap.NewPatrol(points)}
+	ai := &sheriffAi{worldmap.NewPatrol(points), t, &Bounties{}}
+	event.Subscribe(ai)
+	return ai
+}
+
+func (ai sheriffAi) ProcessEvent(e event.Event) {
+	switch ev := e.(type) {
+	case event.WitnessedCrimeEvent:
+		{
+			crime := ev.Crime
+			location := crime.Location()
+			if location.X >= ai.t.TX1 && location.X <= ai.t.TX2 && location.Y >= ai.t.TY1 && location.Y <= ai.t.TY2 {
+				ai.bounties.addBounty(crime)
+			}
+		}
+	}
+
 }
 
 func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
@@ -361,11 +379,11 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	if len(targets) > 0 {
 		closestTarget := targets[0]
 		tX, tY := targets[0].GetCoordinates()
-		min := world.Distance(location.X, location.Y, tX, tY)
+		min := worldmap.Distance(location.X, location.Y, tX, tY)
 
 		for _, e := range targets {
 			tX, tY = e.GetCoordinates()
-			d := world.Distance(location.X, location.Y, tX, tY)
+			d := worldmap.Distance(location.X, location.Y, tX, tY)
 			if d < min {
 				min = d
 				closestTarget = e
@@ -435,7 +453,19 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"Waypoint\":%s", waypointValue))
+	buffer.WriteString(fmt.Sprintf("\"Waypoint\":%s,", waypointValue))
+
+	townValue, err := json.Marshal(ai.t)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Town\":%s,", townValue))
+
+	bountiesValue, err := json.Marshal(ai.bounties)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Bounties\":%s", bountiesValue))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -444,6 +474,8 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	type sheriffAiJson struct {
 		Waypoint *worldmap.Patrol
+		Town     worldmap.Town
+		Bounties *Bounties
 	}
 
 	var v sheriffAiJson
@@ -451,6 +483,10 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	ai.waypoint = v.Waypoint
+	ai.t = v.Town
+	ai.bounties = v.Bounties
+
+	event.Subscribe(ai)
 	return nil
 }
 
@@ -531,7 +567,7 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 	tX, tY := target.GetCoordinates()
 
 	if itemUser, ok := c.(usesItems); ok {
-		if distance := math.Sqrt(math.Pow(float64(location.X-tX), 2) + math.Pow(float64(location.Y-tY), 2)); itemUser.ranged() && distance < float64(itemUser.Weapon().GetRange()) && world.IsVisible(c, tX, tY) {
+		if distance := worldmap.Distance(location.X, location.Y, tX, tY); itemUser.ranged() && distance < float64(itemUser.Weapon().GetRange()) && world.IsVisible(c, tX, tY) {
 			// if weapon loaded, shoot at target else if enemy has ammo, load weapon
 			if itemUser.weaponLoaded() {
 				return RangedAttackAction{c, world, target}

@@ -91,8 +91,7 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 	case Shopkeeper:
 		dialogue = &shopkeeperDialogue{false, world, b}
 	case Sheriff:
-		dialogue = &sheriffDialogue{false, world, t, b, Bounties{}}
-		event.Subscribe(dialogue.(*sheriffDialogue))
+		dialogue = &sheriffDialogue{false, world, b}
 	}
 
 	location := worldmap.Coordinates{x, y}
@@ -615,8 +614,8 @@ func (npc *Npc) GetID() string {
 }
 
 func (npc *Npc) GetBounties() *Bounties {
-	if d, ok := npc.dialogue.(*sheriffDialogue); ok {
-		return &(d.bounties)
+	if ai, ok := npc.ai.(*sheriffAi); ok {
+		return ai.bounties
 	}
 	return &Bounties{}
 }
