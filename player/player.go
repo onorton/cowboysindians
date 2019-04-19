@@ -323,7 +323,7 @@ func (p *Player) RangedAttack() bool {
 	}
 
 	tX, tY := target.GetCoordinates()
-	distance := math.Sqrt(math.Pow(float64(p.location.X-tX), 2) + math.Pow(float64(p.location.Y-tY), 2))
+	distance := worldmap.Distance(p.location.X, p.location.Y, tX, tY)
 	if distance < float64(p.weapon.GetRange()) {
 		coverPenalty := 0
 		if p.world.TargetBehindCover(p, target) {
