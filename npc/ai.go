@@ -8,6 +8,7 @@ import (
 
 	"github.com/onorton/cowboysindians/event"
 	"github.com/onorton/cowboysindians/item"
+	"github.com/onorton/cowboysindians/structs"
 	"github.com/onorton/cowboysindians/worldmap"
 )
 
@@ -655,37 +656,55 @@ func (ai enemyAi) MarshalJSON() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func generateMap(aiMap [][]int, world *worldmap.Map, location worldmap.Coordinates) [][]int {
-	width, height := len(aiMap[0]), len(aiMap)
-	prev := make([][]int, height)
-	for i := range prev {
-		prev[i] = make([]int, width)
+func generateMap(world *worldmap.Map, goals []worldmap.Coordinates, location worldmap.Coordinates, d int) [][]int {
+	visitedNodes := make(map[worldmap.Coordinates]int)
+
+	type nodeValue struct {
+		location worldmap.Coordinates
+		value    int
 	}
-	// While map changes, update
-	for !compareMaps(aiMap, prev) {
-		copyMap(prev, aiMap)
-		for y := 0; y < height; y++ {
-			for x := 0; x < width; x++ {
-				wX, wY := location.X+x-width/2, location.Y+y-height/2
-				if !world.IsValid(wX, wY) || !world.IsPassable(wX, wY) {
-					continue
-				}
-				min := height * width
+
+	nodes := structs.Queue{}
+	for _, goal := range goals {
+		nodes.Enqueue(nodeValue{goal, 0})
+	}
+
+	npcFound := false
+	width := 2*d + 1
+
+	for !nodes.IsEmpty() {
+		node := nodes.Dequeue().(nodeValue)
+
+		if _, ok := visitedNodes[node.location]; !ok {
+			if node.location == location {
+				npcFound = true
+			}
+			visitedNodes[node.location] = node.value
+			if !npcFound {
+				// Add adjacent
 				for i := -1; i <= 1; i++ {
 					for j := -1; j <= 1; j++ {
-						nX := x + i
-						nY := y + j
-
-						if nX >= 0 && nX < width && nY >= 0 && nY < height && aiMap[nY][nX] < min {
-							min = aiMap[nY][nX]
+						x, y := node.location.X+i, node.location.Y+j
+						aiX, aiY := x+d-location.X, y+d-location.Y
+						if aiX >= 0 && aiX <= width && aiY >= 0 && aiY <= width && world.IsValid(x, y) && world.IsPassable(x, y) && !(i == 0 && j == 0) {
+							nodes.Enqueue(nodeValue{worldmap.Coordinates{x, y}, node.value + 1})
 						}
 					}
 				}
+			}
+		}
+	}
 
-				if aiMap[y][x] > min {
-					aiMap[y][x] = min + 1
-				}
+	aiMap := make([][]int, width)
 
+	for y := 0; y < width; y++ {
+		aiMap[y] = make([]int, width)
+		for x := 0; x < width; x++ {
+
+			if v, ok := visitedNodes[worldmap.Coordinates{x - d + location.X, y - d + location.Y}]; ok {
+				aiMap[y][x] = v
+			} else {
+				aiMap[y][x] = width * width
 			}
 		}
 	}
@@ -693,131 +712,80 @@ func generateMap(aiMap [][]int, world *worldmap.Map, location worldmap.Coordinat
 }
 
 func getWaypointMap(waypoint worldmap.Coordinates, world *worldmap.Map, location worldmap.Coordinates, d int) [][]int {
-
-	// Creature will be at location d,d in this AI map
-	width := 2*d + 1
-	aiMap := make([][]int, width)
-
-	// Initialise Dijkstra map with goals.
-	// Max is size of grid.
-	for i := -d; i < d+1; i++ {
-		aiMap[i+d] = make([]int, width)
-		for j := -d; j < d+1; j++ {
-			x := j + d
-			y := i + d
-			loc := worldmap.Coordinates{location.X + j, location.Y + i}
-			if waypoint == loc {
-				aiMap[y][x] = 0
-			} else {
-				aiMap[y][x] = width * width
-			}
-		}
-	}
-	return generateMap(aiMap, world, location)
+	return generateMap(world, []worldmap.Coordinates{waypoint}, location, d)
 }
 
 func getMountMap(c hasAi, world *worldmap.Map) [][]int {
 	d := c.GetVisionDistance()
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
-	// Creature will be at location d,d in this AI map
-	width := 2*d + 1
-	aiMap := make([][]int, width)
 
-	// Initialise Dijkstra map with goals.
-	// Max is size of grid.
-	for i := -d; i < d+1; i++ {
-		aiMap[i+d] = make([]int, width)
+	mountLocations := make([]worldmap.Coordinates, 0)
+
+	for i := 0; i < d+1; i++ {
 		for j := -d; j < d+1; j++ {
-			x := j + d
-			y := i + d
 			// Translate location into world coordinates
 			wX, wY := location.X+j, location.Y+i
 			// Looks for mount on its own
 			if world.IsValid(wX, wY) && world.IsVisible(c, wX, wY) {
 				if m, ok := world.GetCreature(wX, wY).(*Mount); ok && m != nil {
-					aiMap[y][x] = 0
-				} else {
-					aiMap[y][x] = width * width
+					mountLocations = append(mountLocations, worldmap.Coordinates{wX, wY})
 				}
 			}
 		}
 	}
-	return generateMap(aiMap, world, location)
+	return generateMap(world, mountLocations, location, d)
 }
 
 func getChaseMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]int {
 	d := c.GetVisionDistance()
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
-	// Creature will be at location d,d in this AI map
-	width := 2*d + 1
-	aiMap := make([][]int, width)
 
-	// Initialise Dijkstra map with goals.
-	// Max is size of grid.
-	for y := 0; y < width; y++ {
-		aiMap[y] = make([]int, width)
-		for x := 0; x < width; x++ {
-			aiMap[y][x] = width * width
-		}
-	}
+	targetLocations := make([]worldmap.Coordinates, 0)
 
 	for _, t := range targets {
 		x, y := t.GetCoordinates()
 		if world.IsVisible(c, x, y) {
-			aiMap[y-location.Y+d][x-location.X+d] = 0
+			targetLocations = append(targetLocations, worldmap.Coordinates{x, y})
 		}
 	}
 
-	return generateMap(aiMap, world, location)
+	return generateMap(world, targetLocations, location, d)
 }
 
 func getItemMap(c hasAi, world *worldmap.Map) [][]int {
 	d := c.GetVisionDistance()
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
-	// Creature will be at location d,d in this AI map
-	width := 2*d + 1
-	aiMap := make([][]int, width)
 
-	// Initialise Dijkstra map with goals.
-	// Max is size of grid.
+	itemLocations := make([]worldmap.Coordinates, 0)
+
 	for i := -d; i < d+1; i++ {
-		aiMap[i+d] = make([]int, width)
 		for j := -d; j < d+1; j++ {
-			x := j + d
-			y := i + d
 			// Translate location into world coordinates
 			wX, wY := location.X+j, location.Y+i
 			if world.IsValid(wX, wY) && world.IsVisible(c, wX, wY) && world.HasItems(wX, wY) {
-				aiMap[y][x] = 0
-			} else {
-				aiMap[y][x] = width * width
+				itemLocations = append(itemLocations, worldmap.Coordinates{wX, wY})
 			}
 		}
 	}
-	return generateMap(aiMap, world, location)
+	return generateMap(world, itemLocations, location, d)
 }
 
 func getCoverMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]int {
 	d := c.GetVisionDistance()
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
-	// Creature will be at location d,d in this AI map
-	width := 2*d + 1
-	aiMap := make([][]int, width)
 
 	player := world.GetPlayer()
 	pX, pY := player.GetCoordinates()
 
-	// Initialise Dijkstra map with goals.
-	// Max is size of grid.
+	coverLocations := make([]worldmap.Coordinates, 0)
+
 	for i := -d; i < d+1; i++ {
-		aiMap[i+d] = make([]int, width)
 		for j := -d; j < d+1; j++ {
-			x := j + d
-			y := i + d
+
 			// Translate location into world coordinates
 			wX, wY := location.X+j, location.Y+i
 			// Enemy must be able to see player in order to know it would be behind cover
@@ -825,28 +793,14 @@ func getCoverMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]
 				for _, t := range targets {
 					tX, tY := t.GetCoordinates()
 					if world.IsVisible(c, tX, tY) && world.BehindCover(wX, wY, t) {
-						aiMap[y][x] = 0
+						coverLocations = append(coverLocations, worldmap.Coordinates{wX, wY})
 						break
 					}
 				}
-			} else {
-				aiMap[y][x] = width * width
 			}
 		}
 	}
-	return generateMap(aiMap, world, location)
-}
-
-func compareMaps(m, o [][]int) bool {
-	for i := 0; i < len(m); i++ {
-		for j := 0; j < len(m[0]); j++ {
-			if m[i][j] != o[i][j] {
-				return false
-			}
-		}
-	}
-	return true
-
+	return generateMap(world, coverLocations, location, d)
 }
 
 func addMaps(maps [][][]int, weights []float64) [][]float64 {
@@ -864,12 +818,6 @@ func addMaps(maps [][][]int, weights []float64) [][]float64 {
 		}
 	}
 	return result
-}
-
-func copyMap(c [][]int, o [][]int) {
-	for i := range o {
-		copy(c[i], o[i])
-	}
 }
 
 func visibleBounties(c hasAi, world *worldmap.Map, bounties *Bounties) []worldmap.Creature {
