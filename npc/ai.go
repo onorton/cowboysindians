@@ -663,7 +663,7 @@ func generateMap(aiMap [][]int, world *worldmap.Map, location worldmap.Coordinat
 	}
 	// While map changes, update
 	for !compareMaps(aiMap, prev) {
-		prev = copyMap(aiMap)
+		copyMap(prev, aiMap)
 		for y := 0; y < height; y++ {
 			for x := 0; x < width; x++ {
 				wX, wY := location.X+x-width/2, location.Y+y-height/2
@@ -866,15 +866,10 @@ func addMaps(maps [][][]int, weights []float64) [][]float64 {
 	return result
 }
 
-func copyMap(o [][]int) [][]int {
-	h := len(o)
-	w := len(o[0])
-	c := make([][]int, h)
-	for i, _ := range o {
-		c[i] = make([]int, w)
+func copyMap(c [][]int, o [][]int) {
+	for i := range o {
 		copy(c[i], o[i])
 	}
-	return c
 }
 
 func visibleBounties(c hasAi, world *worldmap.Map, bounties *Bounties) []worldmap.Creature {
