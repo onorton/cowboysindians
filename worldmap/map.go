@@ -236,7 +236,7 @@ func (m Map) IsVisible(c CanSee, x1, y1 int) bool {
 			}
 
 			// If square in path gives cover, is adjacent to the target square and c is crouching then target square is invisible
-			if m.IsValid(x, y) && m.givesCover(x, y) && m.isAdjacent(x, y, x1, y1) && crouching {
+			if m.IsValid(x, y) && m.isAdjacent(x, y, x1, y1) && crouching && m.givesCover(x, y) {
 				return false
 			}
 		}
@@ -256,7 +256,7 @@ func (m Map) IsVisible(c CanSee, x1, y1 int) bool {
 			}
 
 			// If square in path gives cover, is adjacent to the target square and c is crouching then target square is invisible
-			if m.IsValid(x, y) && m.givesCover(x, y) && m.isAdjacent(x, y, x1, y1) && crouching {
+			if m.IsValid(x, y) && m.isAdjacent(x, y, x1, y1) && crouching && m.givesCover(x, y) {
 				return false
 			}
 
@@ -372,7 +372,7 @@ func (m Map) TargetBehindCover(a hasPosition, t Creature) bool {
 			}
 
 			// If square in path gives cover, is adjacent to the target square and target is crouching then target is behind cover
-			if m.IsValid(x, y) && m.givesCover(x, y) && m.isAdjacent(x, y, x1, y1) && t.IsCrouching() {
+			if m.IsValid(x, y) && m.isAdjacent(x, y, x1, y1) && t.IsCrouching() && m.givesCover(x, y) {
 				return true
 			}
 		}
@@ -392,7 +392,7 @@ func (m Map) TargetBehindCover(a hasPosition, t Creature) bool {
 			}
 
 			// If square in path gives cover, is adjacent to the target square and target is crouching then target is behind cover
-			if m.IsValid(x, y) && m.givesCover(x, y) && m.isAdjacent(x, y, x1, y1) && t.IsCrouching() {
+			if m.IsValid(x, y) && m.isAdjacent(x, y, x1, y1) && t.IsCrouching() && m.givesCover(x, y) {
 				return true
 			}
 		}
@@ -437,7 +437,7 @@ func (m Map) BehindCover(x1, y1 int, a Creature) bool {
 			}
 
 			// If square in path gives cover, is adjacent to the target square then target square would be behind cover
-			if m.IsValid(x, y) && m.givesCover(x, y) && m.isAdjacent(x, y, x1, y1) {
+			if m.IsValid(x, y) && m.isAdjacent(x, y, x1, y1) && m.givesCover(x, y) {
 				return true
 			}
 		}
@@ -457,7 +457,7 @@ func (m Map) BehindCover(x1, y1 int, a Creature) bool {
 			}
 
 			// If square in path gives cover, is adjacent to the target square then target square would be behind cover
-			if m.IsValid(x, y) && m.givesCover(x, y) && m.isAdjacent(x, y, x1, y1) {
+			if m.IsValid(x, y) && m.isAdjacent(x, y, x1, y1) && m.givesCover(x, y) {
 				return true
 			}
 		}
