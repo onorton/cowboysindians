@@ -306,7 +306,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	location := worldmap.Coordinates{cX, cY}
 	waypoint := ai.waypoint.NextWaypoint(location)
 
-	targets := getEnemies(c, world)
+	targets := append(getEnemies(c, world), visibleBounties(c, world, ai.bounties)...)
 
 	coefficients := []float64{0.2, 0.5, 0.3, 0.0}
 
@@ -875,6 +875,25 @@ func copyMap(o [][]int) [][]int {
 		copy(c[i], o[i])
 	}
 	return c
+}
+
+func visibleBounties(c hasAi, world *worldmap.Map, bounties *Bounties) []worldmap.Creature {
+	d := c.GetVisionDistance()
+	cX, cY := c.GetCoordinates()
+	location := worldmap.Coordinates{cX, cY}
+
+	targets := make([]worldmap.Creature, 0)
+
+	for i := -d; i < d+1; i++ {
+		for j := -d; j < d+1; j++ {
+			// Translate location into world coordinates
+			wX, wY := location.X+j, location.Y+i
+			if world.IsValid(wX, wY) && world.IsVisible(c, wX, wY) && world.GetCreature(wX, wY) != nil && bounties.hasBounty(world.GetCreature(wX, wY).GetID()) {
+				targets = append(targets, world.GetCreature(wX, wY))
+			}
+		}
+	}
+	return targets
 }
 
 func getEnemies(c hasAi, world *worldmap.Map) []worldmap.Creature {

@@ -119,6 +119,15 @@ func (bounties *Bounties) RemoveBounty(criminal string) (int, string) {
 	return 0, ""
 }
 
+func (bounties *Bounties) hasBounty(suspect string) bool {
+	for _, b := range bounties.bounties {
+		if b.criminal == suspect {
+			return true
+		}
+	}
+	return false
+}
+
 func (bounties *Bounties) Bounties() []bounty {
 	return bounties.bounties
 }
