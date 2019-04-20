@@ -293,6 +293,8 @@ func main() {
 							endTurn = player.ToggleMount()
 						case ui.Talk:
 							player.Talk()
+						case ui.Read:
+							player.Read()
 						default:
 							quit = true
 						}

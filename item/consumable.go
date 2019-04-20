@@ -52,6 +52,8 @@ func GenerateConsumable() Item {
 func (item *Consumable) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
+	buffer.WriteString("\"Type\":\"consumable\",")
+
 	nameValue, err := json.Marshal(item.name)
 	if err != nil {
 		return nil, err
@@ -100,7 +102,7 @@ func (consumable *Consumable) UnmarshalJSON(data []byte) error {
 		Icon    icon.Icon
 		Weight  float64
 		Value   int
-		Effects *map[string]int
+		Effects map[string]int
 	}
 	var v consumableJson
 
@@ -108,16 +110,12 @@ func (consumable *Consumable) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	if v.Effects == nil {
-		return fmt.Errorf("The Effects field is required")
-	}
-
 	consumable.name = v.Name
 	consumable.owner = v.Owner
 	consumable.ic = v.Icon
 	consumable.w = v.Weight
 	consumable.v = v.Value
-	consumable.effects = *(v.Effects)
+	consumable.effects = v.Effects
 
 	return nil
 }

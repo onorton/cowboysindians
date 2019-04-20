@@ -52,6 +52,8 @@ func GenerateAmmo() Item {
 func (ammo *Ammo) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
+	buffer.WriteString("\"Type\":\"ammo\",")
+
 	nameValue, err := json.Marshal(ammo.name)
 	if err != nil {
 		return nil, err
@@ -73,12 +75,12 @@ func (ammo *Ammo) MarshalJSON() ([]byte, error) {
 
 	buffer.WriteString(fmt.Sprintf("\"Icon\":%s,", iconValue))
 
-	typeValue, err := json.Marshal(ammo.t)
+	ammoTypeValue, err := json.Marshal(ammo.t)
 	if err != nil {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"Type\":%s,", typeValue))
+	buffer.WriteString(fmt.Sprintf("\"AmmoType\":%s,", ammoTypeValue))
 
 	weightValue, err := json.Marshal(ammo.w)
 	if err != nil {
@@ -95,12 +97,12 @@ func (ammo *Ammo) MarshalJSON() ([]byte, error) {
 func (ammo *Ammo) UnmarshalJSON(data []byte) error {
 
 	type ammoJson struct {
-		Name   string
-		Owner  string
-		Icon   icon.Icon
-		Type   *WeaponType
-		Weight float64
-		Value  int
+		Name     string
+		Owner    string
+		Icon     icon.Icon
+		AmmoType WeaponType
+		Weight   float64
+		Value    int
 	}
 	var v ammoJson
 
@@ -108,14 +110,10 @@ func (ammo *Ammo) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	if v.Type == nil {
-		return fmt.Errorf("The Type field is required")
-	}
-
 	ammo.name = v.Name
 	ammo.owner = v.Owner
 	ammo.ic = v.Icon
-	ammo.t = *(v.Type)
+	ammo.t = v.AmmoType
 	ammo.w = v.Weight
 	ammo.v = v.Value
 

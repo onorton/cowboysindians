@@ -1,6 +1,7 @@
 package worldmap
 
 type Town struct {
+	Name       string
 	TX1        int
 	TY1        int
 	TX2        int

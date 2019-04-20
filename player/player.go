@@ -295,6 +295,22 @@ func (p *Player) PrintConsumables() {
 		position++
 	}
 }
+
+func (p *Player) PrintReadables() {
+	position := 0
+	for k, items := range p.inventory {
+		if _, ok := p.inventory[k][0].(*item.Readable); !ok {
+			continue
+		}
+		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
+		if len(items) > 1 {
+			itemString += fmt.Sprintf(" x%d", len(items))
+		}
+		ui.WriteText(0, position, itemString)
+		position++
+	}
+}
+
 func (p *Player) IsDead() bool {
 	return p.hp <= 0 || p.hunger > p.maxHunger || p.thirst > p.maxThirst
 }
@@ -435,6 +451,32 @@ func (p *Player) GetConsumableKeys() string {
 	}
 	return keys
 }
+
+func (p *Player) GetReadableKeys() string {
+	keysSet := make([]bool, 128)
+	for k := range p.inventory {
+
+		if _, ok := p.inventory[k][0].(*item.Readable); ok {
+			keysSet[k] = true
+		}
+	}
+	keys := ""
+	for i, _ := range keysSet {
+		if i < 33 || i == 127 || !keysSet[i] {
+			continue
+		}
+
+		if keysSet[i-1] && !keysSet[i+1] {
+			keys += string(rune(i))
+		} else if !keysSet[i-1] {
+			keys += string(rune(i))
+		} else if keysSet[i-1] && !keysSet[i-2] && keysSet[i+1] {
+			keys += "-"
+		}
+	}
+	return keys
+}
+
 func (p *Player) GetInventoryKeys() string {
 	keysSet := make([]bool, 128)
 	for k := range p.inventory {
@@ -729,7 +771,7 @@ func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
 		}
 
 		if m != nil {
-			message.PrintMessage(fmt.Sprintf("%s is riding %s. Would you like to target %s instead? [y/n]", c.GetName().WithDefinite(), m.GetName().WithIndefinite(), m.GetName().WithDefinite()))
+			message.PrintMessage(fmt.Sprintf("%s is riding %s. Would you like to target %s instead? [yn]", c.GetName().WithDefinite(), m.GetName().WithIndefinite(), m.GetName().WithDefinite()))
 
 			input := ui.GetInput()
 			if input == ui.Confirm {
@@ -846,7 +888,7 @@ func (p *Player) findTarget() worldmap.Creature {
 				}
 
 				if m != nil {
-					message.PrintMessage(fmt.Sprintf("%s is riding %s. Would you like to target %s instead? [y/n]", c.GetName().WithDefinite(), m.GetName().WithIndefinite(), m.GetName().WithDefinite()))
+					message.PrintMessage(fmt.Sprintf("%s is riding %s. Would you like to target %s instead? [yn]", c.GetName().WithDefinite(), m.GetName().WithIndefinite(), m.GetName().WithDefinite()))
 
 					input := ui.GetInput()
 					if input == ui.Confirm {
@@ -1194,6 +1236,68 @@ func (p *Player) Talk() {
 	}
 	message.PrintMessage("You talk to yourself.")
 
+}
+func (p *Player) Read() {
+	items := p.world.GetItems(p.location.X, p.location.Y)
+
+	readables := make([]item.Readable, 0)
+
+	for _, itm := range items {
+		if readable, ok := itm.(*item.Readable); ok {
+			readables = append(readables, *readable)
+		}
+	}
+
+	// Put the items back
+	for i := len(items) - 1; i >= 0; i-- {
+		p.world.PlaceItem(p.location.X, p.location.Y, items[i])
+	}
+
+	if len(readables) > 0 {
+		for i, readable := range readables {
+			message.PrintMessage(fmt.Sprintf("Would you like to read the %s on the ground? [yn]", readable.GetName()))
+			selection := ui.GetInput()
+			if selection == ui.Confirm {
+				message.PrintMessage(readable.Read())
+				// if last item don't bother waiting for input
+				if i != len(readables)-1 {
+					ui.GetInput()
+				}
+			}
+		}
+		return
+	}
+
+	for {
+		message.PrintMessage(fmt.Sprintf("What item do you want to read? [%s or ?*]", p.GetReadableKeys()))
+		s, c := ui.GetItemSelection()
+
+		switch s {
+		case ui.All:
+			p.PrintInventory()
+			continue
+		case ui.AllRelevant:
+			p.PrintReadables()
+			continue
+		case ui.Cancel:
+			message.PrintMessage("Never mind.")
+			return
+		case ui.SpecificItem:
+			itm := p.GetItem(c)
+			if itm == nil {
+				message.PrintMessage("You don't have that to read.")
+				ui.GetInput()
+			} else {
+				if r, ok := itm.(*item.Readable); ok {
+					message.PrintMessage(r.Read())
+					return
+				} else {
+					message.PrintMessage("That is not something that you can read.")
+				}
+			}
+
+		}
+	}
 }
 
 func (p *Player) ProcessEvent(e event.Event) {

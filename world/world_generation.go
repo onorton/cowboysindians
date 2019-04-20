@@ -18,10 +18,12 @@ func GenerateWorld(width, height, viewerWidth, viewerHeight int) (*worldmap.Map,
 	for i := 0; i < 2; i++ {
 		generateTown(grid, &towns, &buildings)
 	}
+
 	// Generate building outside town
 	generateBuildingOutsideTown(grid, &towns, &buildings)
 
 	world := worldmap.NewMap(grid, viewerWidth, viewerHeight)
+	placeSignposts(world, towns)
 	addItemsToBuildings(world, buildings)
 
 	mounts := generateMounts(world, buildings, 5)
@@ -461,7 +463,7 @@ func generateTown(grid *worldmap.Grid, towns *[]worldmap.Town, buildings *[]worl
 			streetX2, streetY2 = cX+(streetBreadth+1)/2, y2
 		}
 
-		t := &worldmap.Town{x1, y1, x2, y2, streetX1, streetY1, streetX2, streetY2, horizontalStreet, make([]worldmap.Building, 0)}
+		t := &worldmap.Town{"Deadwood", x1, y1, x2, y2, streetX1, streetY1, streetX2, streetY2, horizontalStreet, make([]worldmap.Building, 0)}
 
 		validTown := isValid(x1, y1, width, height) && isValid(x2, y2, width, height) && !townsOverlap(*towns, *t)
 		if validTown {
@@ -476,6 +478,22 @@ func generateTown(grid *worldmap.Grid, towns *[]worldmap.Town, buildings *[]worl
 			*towns = append(*towns, *t)
 			break
 		}
+	}
+}
+
+func placeSignposts(m *worldmap.Map, towns []worldmap.Town) {
+	for _, t := range towns {
+		sX, sY := 0, 0
+
+		if t.Horizontal {
+			sY = [2]int{t.SY1 - 2, t.SY2 + 2}[rand.Intn(2)]
+			sX = [2]int{t.SX1, t.SX2}[rand.Intn(2)]
+		} else {
+			sX = [2]int{t.SX1 - 2, t.SX2 + 2}[rand.Intn(2)]
+			sY = [2]int{t.SY1, t.SY2}[rand.Intn(2)]
+		}
+		m.PlaceItem(sX, sY, item.NewReadable("signpost", map[string]string{"town": t.Name}))
+
 	}
 }
 

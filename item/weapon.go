@@ -137,6 +137,8 @@ func (damage *Damage) MarshalJSON() ([]byte, error) {
 func (weapon *Weapon) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
+	buffer.WriteString("\"Type\":\"weapon\",")
+
 	nameValue, err := json.Marshal(weapon.name)
 	if err != nil {
 		return nil, err
@@ -165,12 +167,12 @@ func (weapon *Weapon) MarshalJSON() ([]byte, error) {
 
 	buffer.WriteString(fmt.Sprintf("\"Range\":%s,", rangeValue))
 
-	typeValue, err := json.Marshal(weapon.t)
+	weaponTypeValue, err := json.Marshal(weapon.t)
 	if err != nil {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"Type\":%s,", typeValue))
+	buffer.WriteString(fmt.Sprintf("\"WeaponType\":%s,", weaponTypeValue))
 
 	weightValue, err := json.Marshal(weapon.w)
 	if err != nil {
@@ -243,8 +245,8 @@ func (weapon *Weapon) UnmarshalJSON(data []byte) error {
 		Name           string
 		Owner          string
 		Icon           icon.Icon
-		Range          *int
-		Type           *WeaponType
+		Range          int
+		WeaponType     WeaponType
 		Weight         float64
 		Value          int
 		WeaponCapacity *WeaponCapacity
@@ -256,23 +258,11 @@ func (weapon *Weapon) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	if v.Range == nil {
-		return fmt.Errorf("The Range field is required")
-	}
-
-	if v.Type == nil {
-		return fmt.Errorf("The Type field is required")
-	}
-
-	if v.Damage == nil {
-		return fmt.Errorf("The Damage field is required")
-	}
-
 	weapon.name = v.Name
 	weapon.owner = v.Owner
 	weapon.ic = v.Icon
-	weapon.r = *(v.Range)
-	weapon.t = *(v.Type)
+	weapon.r = v.Range
+	weapon.t = v.WeaponType
 	weapon.w = v.Weight
 	weapon.v = v.Value
 	weapon.wc = v.WeaponCapacity

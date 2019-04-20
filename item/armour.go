@@ -50,6 +50,7 @@ func GenerateArmour() Item {
 
 func (armour *Armour) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
+	buffer.WriteString("\"Type\":\"armour\",")
 
 	nameValue, err := json.Marshal(armour.name)
 	if err != nil {
@@ -97,7 +98,7 @@ func (armour *Armour) UnmarshalJSON(data []byte) error {
 		Name   string
 		Owner  string
 		Icon   icon.Icon
-		Bonus  *int
+		Bonus  int
 		Weight float64
 		Value  int
 	}
@@ -107,14 +108,10 @@ func (armour *Armour) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	if v.Bonus == nil {
-		return fmt.Errorf("The Bonus field is required")
-	}
-
 	armour.name = v.Name
 	armour.owner = v.Owner
 	armour.ic = v.Icon
-	armour.bonus = *(v.Bonus)
+	armour.bonus = v.Bonus
 	armour.w = v.Weight
 	armour.v = v.Value
 

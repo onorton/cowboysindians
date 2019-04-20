@@ -42,6 +42,8 @@ func NewCorpse(corpseType string, owner string, ownerName string, ownerIcon icon
 func (corpse *Corpse) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
+	buffer.WriteString("\"Type\":\"corpse\",")
+
 	nameValue, err := json.Marshal(corpse.name)
 	if err != nil {
 		return nil, err

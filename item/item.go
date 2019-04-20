@@ -17,10 +17,11 @@ func check(err error) {
 
 var typeProbabilities = map[string]float64{
 	"armour":      0.1,
-	"ammo":        0.5,
+	"ammo":        0.45,
 	"consumable":  0.2,
 	"normal item": 0.1,
 	"weapon":      0.1,
+	"readable":    0.05,
 }
 
 type ItemDefinition struct {
@@ -33,9 +34,11 @@ func Choose(probabilites map[string]float64) string {
 	max := 0.0
 
 	for _, probability := range probabilites {
-		inverse := 1.0 / probability
-		if inverse > max {
-			max = inverse
+		if probability > 0 {
+			inverse := 1.0 / probability
+			if inverse > max {
+				max = inverse
+			}
 		}
 	}
 	items := make([]string, 0)
@@ -46,6 +49,7 @@ func Choose(probabilites map[string]float64) string {
 			items = append(items, name)
 		}
 	}
+
 	n := rand.Intn(len(items))
 	return items[n]
 }
@@ -53,7 +57,7 @@ func Choose(probabilites map[string]float64) string {
 type ItemList []Item
 
 func (itemList *ItemList) UnmarshalJSON(data []byte) error {
-	var rawItems []interface{}
+	var rawItems []map[string]interface{}
 
 	if err := json.Unmarshal(data, &rawItems); err != nil {
 		return err
@@ -66,53 +70,46 @@ func (itemList *ItemList) UnmarshalJSON(data []byte) error {
 		itemJson, err := json.Marshal(rawItem)
 		check(err)
 
-		//Tying unmarshalling for each item type
+		switch rawItem["Type"] {
 
-		//armour
-		armour := &Armour{}
-		err = json.Unmarshal(itemJson, armour)
-		if err == nil {
-			items = append(items, armour)
-			continue
-		}
-
-		//consumable
-		consumable := &Consumable{}
-		err = json.Unmarshal(itemJson, consumable)
-		if err == nil {
-			items = append(items, consumable)
-			continue
-		}
-
-		//weapon
-		weapon := &Weapon{}
-		err = json.Unmarshal(itemJson, weapon)
-		if err == nil {
-			items = append(items, weapon)
-			continue
-		}
-
-		//ammo
-		ammo := &Ammo{}
-		err = json.Unmarshal(itemJson, ammo)
-		if err == nil {
+		case "ammo":
+			ammo := &Ammo{}
+			err = json.Unmarshal(itemJson, ammo)
+			check(err)
 			items = append(items, ammo)
-			continue
-		}
-
-		//Must be a plain ordinary item
-		item := &NormalItem{}
-		err = json.Unmarshal(itemJson, item)
-		if err == nil {
+		case "armour":
+			armour := &Armour{}
+			err = json.Unmarshal(itemJson, armour)
+			check(err)
+			items = append(items, armour)
+		case "consumable":
+			consumable := &Consumable{}
+			err = json.Unmarshal(itemJson, consumable)
+			check(err)
+			items = append(items, consumable)
+		case "corpse":
+			corpse := &Corpse{}
+			err = json.Unmarshal(itemJson, corpse)
+			check(err)
+			items = append(items, corpse)
+		case "normal":
+			item := &NormalItem{}
+			err = json.Unmarshal(itemJson, item)
+			check(err)
 			items = append(items, item)
-			continue
-		} else {
-			return err
+		case "readable":
+			readable := &Readable{}
+			err = json.Unmarshal(itemJson, readable)
+			check(err)
+			items = append(items, readable)
+		case "weapon":
+			weapon := &Weapon{}
+			err = json.Unmarshal(itemJson, weapon)
+			check(err)
+			items = append(items, weapon)
 		}
 	}
-
 	*itemList = ItemList(items)
-
 	return nil
 }
 
@@ -132,6 +129,8 @@ func GenerateItem() Item {
 		itm = GenerateNormalItem()
 	case "weapon":
 		itm = GenerateWeapon()
+	case "readable":
+		itm = GenerateReadable()
 	}
 
 	return itm
@@ -144,6 +143,7 @@ func LoadAllData() {
 	fetchCorpseData()
 	fetchItemData()
 	fetchWeaponData()
+	fetchReadableData()
 }
 
 type Item interface {

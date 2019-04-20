@@ -13,8 +13,8 @@ type ammoMarshallingPair struct {
 }
 
 var ammoMarshallingTests = []ammoMarshallingPair{
-	{Ammo{baseItem{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20}, 2}, "{\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Type\":2,\"Weight\":0.2,\"Value\":20}"},
-	{Ammo{baseItem{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10}, 1}, "{\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Type\":1,\"Weight\":0.01,\"Value\":10}"},
+	{Ammo{baseItem{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20}, 2}, "{\"Type\":\"ammo\",\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"AmmoType\":2,\"Weight\":0.2,\"Value\":20}"},
+	{Ammo{baseItem{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10}, 1}, "{\"Type\":\"ammo\",\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"AmmoType\":1,\"Weight\":0.01,\"Value\":10}"},
 }
 
 type ammoUnmarshallingPair struct {
@@ -23,8 +23,8 @@ type ammoUnmarshallingPair struct {
 }
 
 var ammoUnmarshallingTests = []ammoUnmarshallingPair{
-	{"{\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Type\":2,\"Weight\":0.2,\"Value\":20}", Ammo{baseItem{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20}, 2}},
-	{"{\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Type\":1,\"Weight\":0.01,\"Value\":10}", Ammo{baseItem{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10}, 1}},
+	{"{\"Type\":\"ammo\",\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"AmmoType\":2,\"Weight\":0.2,\"Value\":20}", Ammo{baseItem{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20}, 2}},
+	{"{\"Type\":\"ammo\",\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"AmmoType\":1,\"Weight\":0.01,\"Value\":10}", Ammo{baseItem{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10}, 1}},
 }
 
 func TestAmmoMarshalling(t *testing.T) {
@@ -87,7 +87,7 @@ func TestAmmoUnmarshalling(t *testing.T) {
 
 		if ammo.t != pair.ammo.t {
 			t.Error(
-				"For", "Type",
+				"For", "AmmoType",
 				"expected", pair.ammo.t,
 				"got", ammo.t,
 			)

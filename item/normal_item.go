@@ -56,6 +56,8 @@ func GenerateNormalItem() Item {
 func (item *NormalItem) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
+	buffer.WriteString("\"Type\":\"normal\",")
+
 	nameValue, err := json.Marshal(item.name)
 	if err != nil {
 		return nil, err
