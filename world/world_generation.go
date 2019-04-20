@@ -3,6 +3,7 @@ package world
 import (
 	"math"
 	"math/rand"
+	"strings"
 
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/npc"
@@ -463,7 +464,7 @@ func generateTown(grid *worldmap.Grid, towns *[]worldmap.Town, buildings *[]worl
 			streetX2, streetY2 = cX+(streetBreadth+1)/2, y2
 		}
 
-		t := &worldmap.Town{"Deadwood", x1, y1, x2, y2, streetX1, streetY1, streetX2, streetY2, horizontalStreet, make([]worldmap.Building, 0)}
+		t := &worldmap.Town{generateTownName(), x1, y1, x2, y2, streetX1, streetY1, streetX2, streetY2, horizontalStreet, make([]worldmap.Building, 0)}
 
 		validTown := isValid(x1, y1, width, height) && isValid(x2, y2, width, height) && !townsOverlap(*towns, *t)
 		if validTown {
@@ -479,6 +480,25 @@ func generateTown(grid *worldmap.Grid, towns *[]worldmap.Town, buildings *[]worl
 			break
 		}
 	}
+}
+
+func generateTownName() string {
+	noun := npc.Names.Towns["Nouns"][rand.Intn(len(npc.Names.Towns["Nouns"]))]
+	withAdjective := rand.Intn(2) == 0
+	if withAdjective {
+		adjective := npc.Names.Towns["Adjectives"][rand.Intn(len(npc.Names.Towns["Adjectives"]))]
+		name := noun
+
+		joined := rand.Intn(2) == 0
+		if joined {
+			name = adjective + strings.ToLower(noun)
+		} else {
+			name = adjective + " " + noun
+		}
+
+		return name
+	}
+	return noun
 }
 
 func placeSignposts(m *worldmap.Map, towns []worldmap.Town) {

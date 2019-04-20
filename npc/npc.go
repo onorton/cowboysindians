@@ -37,13 +37,7 @@ type NpcAttributes struct {
 	DialogueType  dialogueType
 }
 
-type nameData struct {
-	FirstNames []string
-	LastNames  []string
-}
-
 var npcData map[string]NpcAttributes = fetchNpcData()
-var names nameData = fetchNameData()
 
 func fetchNpcData() map[string]NpcAttributes {
 	data, err := ioutil.ReadFile("data/npc.json")
@@ -54,18 +48,9 @@ func fetchNpcData() map[string]NpcAttributes {
 	return eD
 }
 
-func fetchNameData() nameData {
-	data, err := ioutil.ReadFile("data/names.json")
-	check(err)
-	var nD nameData
-	err = json.Unmarshal(data, &nD)
-	check(err)
-	return nD
-}
-
 func generateName(npcType string) *npcName {
-	firstName := names.FirstNames[rand.Intn(len(names.FirstNames))]
-	lastName := names.LastNames[rand.Intn(len(names.LastNames))]
+	firstName := Names.FirstNames[rand.Intn(len(Names.FirstNames))]
+	lastName := Names.LastNames[rand.Intn(len(Names.LastNames))]
 
 	return &npcName{firstName + " " + lastName, npcType, false}
 }
@@ -98,7 +83,7 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 
 	var name *npcName
 	if npcType == "sheriff" {
-		name = &npcName{fmt.Sprintf("Sheriff %s", names.LastNames[rand.Intn(len(names.LastNames))]), npcType, false}
+		name = &npcName{fmt.Sprintf("Sheriff %s", Names.LastNames[rand.Intn(len(Names.LastNames))]), npcType, false}
 	} else {
 		name = generateName(npcType)
 	}

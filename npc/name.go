@@ -4,7 +4,25 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 )
+
+type nameData struct {
+	FirstNames []string
+	LastNames  []string
+	Towns      map[string][]string
+}
+
+var Names nameData = fetchNameData()
+
+func fetchNameData() nameData {
+	data, err := ioutil.ReadFile("data/names.json")
+	check(err)
+	var nD nameData
+	err = json.Unmarshal(data, &nD)
+	check(err)
+	return nD
+}
 
 type npcName struct {
 	name    string
