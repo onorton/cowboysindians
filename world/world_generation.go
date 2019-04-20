@@ -512,7 +512,12 @@ func placeSignposts(m *worldmap.Map, towns []worldmap.Town) {
 			sX = [2]int{t.SX1 - 2, t.SX2 + 2}[rand.Intn(2)]
 			sY = [2]int{t.SY1, t.SY2}[rand.Intn(2)]
 		}
-		m.PlaceItem(sX, sY, item.NewReadable("signpost", map[string]string{"town": t.Name}))
+
+		signpost := item.NewReadable("signpost", map[string]string{"town": t.Name})
+		// Make it belong to the town so if it's stolen the character who has done it has committed a CrimeEvent
+		signpost.TransferOwner(t.Name)
+
+		m.PlaceItem(sX, sY, signpost)
 
 	}
 }
