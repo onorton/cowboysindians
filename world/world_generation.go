@@ -7,6 +7,7 @@ import (
 
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/npc"
+	"github.com/onorton/cowboysindians/structs"
 	"github.com/onorton/cowboysindians/worldmap"
 )
 
@@ -19,11 +20,13 @@ func GenerateWorld(width, height, viewerWidth, viewerHeight int) (*worldmap.Map,
 	for i := 0; i < 2; i++ {
 		generateTown(grid, &towns, &buildings)
 	}
+	generatePaths(grid, towns)
 
 	// Generate building outside town
 	generateBuildingOutsideTown(grid, &towns, &buildings)
 
 	world := worldmap.NewMap(grid, viewerWidth, viewerHeight)
+
 	placeSignposts(world, towns)
 	addItemsToBuildings(world, buildings)
 
@@ -423,8 +426,8 @@ func generateTown(grid *worldmap.Grid, towns *[]worldmap.Town, buildings *[]worl
 	validTown := false
 
 	for !validTown {
-		townWidth := 15 + rand.Intn(width/5)
-		townHeight := 15 + rand.Intn(height/5)
+		townWidth := 15 + rand.Intn(30)
+		townHeight := 15 + rand.Intn(30)
 
 		posWidth := 0
 		negWidth := 0
@@ -499,6 +502,191 @@ func generateTownName() string {
 		return name
 	}
 	return noun
+}
+
+type path struct {
+	curves []func(float64) worldmap.Coordinates
+	width  int
+}
+
+func generatePaths(grid *worldmap.Grid, towns []worldmap.Town) {
+	// Create tiles in towns
+	for _, t := range towns {
+		for y := t.SY1; y <= t.SY2; y++ {
+			for x := t.SX1; x <= t.SX2; x++ {
+				grid.NewTile("path", x, y)
+			}
+		}
+	}
+
+	// Determine which towns should be connected
+
+	type connection struct {
+		first  int
+		second int
+	}
+
+	connections := make([]connection, 0)
+	visitedTowns := structs.Initialise()
+	queue := structs.Queue{}
+
+	// choose a starting town
+	queue.Enqueue(rand.Intn(len(towns)))
+
+	for !queue.IsEmpty() {
+		t := queue.Dequeue().(int)
+		if !visitedTowns.Exists(t) {
+			visitedTowns.Add(t)
+			// Choose up to 3 towns to connect to
+			num := 1 + rand.Intn(3)
+			for i := 0; i < num; i++ {
+				newT := rand.Intn(len(towns))
+				if newT != t {
+					connectionExists := false
+					for _, c := range connections {
+						if (c.first == t && c.second == newT) || (c.first == newT && c.second == t) {
+							connectionExists = true
+							break
+						}
+					}
+
+					if connectionExists {
+						continue
+					}
+
+					connections = append(connections, connection{t, newT})
+					queue.Enqueue(newT)
+				} else {
+					i--
+				}
+			}
+		}
+	}
+
+	// Define paths mathematically
+	paths := make([]path, len(connections))
+
+	for i, c := range connections {
+		t1 := towns[c.first]
+		t2 := towns[c.second]
+
+		t1StreetPoints := make([]worldmap.Coordinates, 2)
+		t2StreetPoints := make([]worldmap.Coordinates, 2)
+		t1Width, t2Width := 0, 0
+
+		if t1.Horizontal {
+			t1StreetPoints[0] = worldmap.Coordinates{t1.SX1, (t1.SY1 + t1.SY2) / 2}
+			t1StreetPoints[1] = worldmap.Coordinates{t1.SX2, (t1.SY1 + t1.SY2) / 2}
+			t1Width = t1.SY2 - t1.SY1 + 1
+		} else {
+			t1StreetPoints[0] = worldmap.Coordinates{(t1.SX1 + t1.SX2) / 2, t1.SY1}
+			t1StreetPoints[1] = worldmap.Coordinates{(t1.SX1 + t1.SX2) / 2, t1.SY2}
+			t1Width = t1.SX2 - t1.SX1 + 1
+		}
+
+		if t2.Horizontal {
+			t2StreetPoints[0] = worldmap.Coordinates{t2.SX1, (t2.SY1 + t2.SY2) / 2}
+			t2StreetPoints[1] = worldmap.Coordinates{t2.SX2, (t2.SY1 + t2.SY2) / 2}
+			t2Width = t2.SY2 - t2.SY1 + 1
+		} else {
+			t2StreetPoints[0] = worldmap.Coordinates{(t2.SX1 + t2.SX2) / 2, t2.SY1}
+			t2StreetPoints[1] = worldmap.Coordinates{(t2.SX1 + t2.SX2) / 2, t2.SY2}
+			t2Width = t2.SX2 - t2.SX1 + 1
+		}
+
+		width := (t1Width + t2Width) / 2
+
+		intersects := true
+		curves := make([]func(float64) worldmap.Coordinates, width+1)
+		for intersects {
+			intersects = false
+
+			start := t1StreetPoints[rand.Intn(2)]
+			end := t2StreetPoints[rand.Intn(2)]
+
+			// Calculate all start and end points
+			startPoints := make([]worldmap.Coordinates, width+1)
+			endPoints := make([]worldmap.Coordinates, width+1)
+
+			// Pick control points of the bezier curve
+			// They should be close enough to the line to not have too tight corners
+			r := int(worldmap.Distance(start.X, start.Y, end.X, end.Y) / 2)
+			centre := worldmap.Coordinates{(start.X + end.X) / 2, (start.Y + end.Y) / 2}
+			c1 := worldmap.Coordinates{centre.X + int(math.Pow(-1.0, float64(rand.Intn(2)))*float64(rand.Intn(r))),
+				centre.Y + int(math.Pow(-1.0, float64(rand.Intn(2)))*float64(rand.Intn(r)))}
+			c2 := worldmap.Coordinates{centre.X + int(math.Pow(-1.0, float64(rand.Intn(2)))*float64(rand.Intn(r))),
+				centre.Y + int(math.Pow(-1.0, float64(rand.Intn(2)))*float64(rand.Intn(r)))}
+
+			for j := 0; j <= width; j++ {
+				if t1.Horizontal {
+					startPoints[j] = worldmap.Coordinates{start.X, start.Y + j - width/2}
+				} else {
+					startPoints[j] = worldmap.Coordinates{start.X + j - width/2, start.Y}
+				}
+
+				if t2.Horizontal {
+					endPoints[j] = worldmap.Coordinates{end.X, end.Y + j - width/2}
+				} else {
+					endPoints[j] = worldmap.Coordinates{end.X + j - width/2, end.Y}
+				}
+			}
+
+			curve := func(start, end worldmap.Coordinates) func(t float64) worldmap.Coordinates {
+				return func(t float64) worldmap.Coordinates {
+					// This is just definition of a cubic bezier curve
+					x := int(math.Pow(1-t, 3)*float64(start.X) + 3*(1-t)*(1-t)*t*float64(c1.X) + 3*(1-t)*t*t*float64(c2.X) + math.Pow(t, 3)*float64(end.X))
+					y := int(math.Pow(1-t, 3)*float64(start.Y) + 3*(1-t)*(1-t)*t*float64(c1.Y) + 3*(1-t)*t*t*float64(c2.Y) + math.Pow(t, 3)*float64(end.Y))
+					return worldmap.Coordinates{x, y}
+				}
+			}
+
+			// check that path does not intersect towns
+			minStep := 1.0 / (2 * math.Max(math.Abs(float64(end.X-start.X)), math.Abs(float64(end.Y-start.Y))))
+
+			for t := 0.0; t <= 1.0; t += minStep {
+				point := curve(start, end)(t)
+				for _, town := range towns {
+					if point.X > town.TX1 && point.X < town.TX2 && point.Y > town.TY1 && point.Y < town.TY2 {
+						intersects = true
+					}
+				}
+				if intersects {
+					break
+				}
+
+			}
+
+			if !intersects {
+				for j := 0; j <= width; j++ {
+					curves[j] = curve(startPoints[j], endPoints[j])
+				}
+			}
+		}
+		paths[i] = path{curves, width}
+	}
+
+	// Create tiles for paths
+
+	for _, path := range paths {
+		generatePath(grid, path)
+	}
+
+}
+
+func generatePath(grid *worldmap.Grid, path path) {
+	start := path.curves[0](0.0)
+	end := path.curves[0](1.0)
+
+	minStep := 1.0 / (10 * math.Max(math.Abs(float64(end.X-start.X)), math.Abs(float64(end.Y-start.Y))))
+
+	for _, curve := range path.curves {
+		for t := 0.0; t <= 1.0; t += minStep {
+			curr := curve(t)
+			if curr.X >= 0 && curr.X < grid.Width() && curr.Y >= 0 && curr.Y < grid.Height() {
+				grid.NewTile("path", curr.X, curr.Y)
+			}
+		}
+	}
 }
 
 func placeSignposts(m *worldmap.Map, towns []worldmap.Town) {

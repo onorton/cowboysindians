@@ -10,7 +10,6 @@
 		"Passable": false,
 		"BlocksVision": true,
 		"Door": false
-
 	},
 	"window": {
 		"Icon": {"Icon": 35, "Colour": 8},
@@ -21,6 +20,12 @@
 	},
 	"ground": {
 		"Icon": {"Icon": 46, "Colour": 8},
+		"Passable": true,
+		"BlocksVision": false,
+		"Door": false
+	},
+	"path": {
+		"Icon": {"Icon": 46, "Colour": 4},
 		"Passable": true,
 		"BlocksVision": false,
 		"Door": false
