@@ -274,7 +274,7 @@ func generateBuildingInTown(grid *worldmap.Grid, t *worldmap.Town, buildings *[]
 		sideOfStreet := rand.Intn(2) == 0
 
 		if t.Horizontal {
-			centreAlongStreet := t.SX1 + rand.Intn(t.SX2-t.SX1)
+			centreAlongStreet := t.SX1 + 1 + rand.Intn(t.SX2-t.SX1-2)
 			x1 = centreAlongStreet - negWidth
 			x2 = centreAlongStreet + posWidth
 
@@ -286,7 +286,7 @@ func generateBuildingInTown(grid *worldmap.Grid, t *worldmap.Town, buildings *[]
 				y2 = y1 + depth
 			}
 		} else {
-			centreAlongStreet := t.SY1 + rand.Intn(t.SY2-t.SY1)
+			centreAlongStreet := t.SY1 + 1 + rand.Intn(t.SY2-t.SY1-2)
 			y1 = centreAlongStreet - negWidth
 			y2 = centreAlongStreet + posWidth
 
