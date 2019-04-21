@@ -295,8 +295,6 @@ func main() {
 							player.Talk()
 						case ui.Read:
 							player.Read()
-						default:
-							quit = true
 						}
 						action = ui.NoAction
 					}

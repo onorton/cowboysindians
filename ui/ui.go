@@ -151,7 +151,7 @@ func GetInput() (action PlayerAction) {
 			case 'y':
 				action = Confirm
 			default:
-				action = Exit
+				action = NoAction
 			}
 		}
 	}
