@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"math"
 	"math/rand"
 
 	termbox "github.com/nsf/termbox-go"
@@ -24,7 +23,12 @@ func check(err error) {
 }
 
 func NewPlayer(world *worldmap.Map) *Player {
-	player := &Player{worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, 10, 10, 0, 100, 0, 100, 15, 12, 10, 100, false, 1000, nil, nil, make(map[rune]([]item.Item)), "", nil, world}
+	attributes := map[string]*worldmap.Attribute{
+		"hp":     worldmap.NewAttribute(10, 10),
+		"hunger": worldmap.NewAttribute(0, 100),
+		"thirst": worldmap.NewAttribute(0, 100)}
+
+	player := &Player{worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, attributes, 15, 12, 10, 100, false, 1000, nil, nil, make(map[rune]([]item.Item)), "", nil, world}
 	player.AddItem(item.NewWeapon("shotgun"))
 	player.AddItem(item.NewWeapon("sawn-off shotgun"))
 	player.AddItem(item.NewWeapon("baseball bat"))
@@ -46,7 +50,7 @@ func (p *Player) Render() ui.Element {
 func (p *Player) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Location", "Icon", "Initiative", "Hp", "MaxHp", "Hunger", "MaxHunger", "Thirst", "MaxThirst", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID"}
+	keys := []string{"Location", "Icon", "Initiative", "Attributes", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID"}
 
 	mountID := ""
 	if p.mount != nil {
@@ -57,12 +61,7 @@ func (p *Player) MarshalJSON() ([]byte, error) {
 		"Location":    p.location,
 		"Icon":        p.icon,
 		"Initiative":  p.initiative,
-		"Hp":          p.hp,
-		"MaxHp":       p.maxHp,
-		"Hunger":      p.hunger,
-		"MaxHunger":   p.maxHunger,
-		"Thirst":      p.thirst,
-		"MaxThirst":   p.maxThirst,
+		"Attributes":  p.attributes,
 		"AC":          p.ac,
 		"Str":         p.str,
 		"Dex":         p.dex,
@@ -107,12 +106,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 		Location    worldmap.Coordinates
 		Icon        icon.Icon
 		Initiative  int
-		Hp          int
-		MaxHp       int
-		Hunger      int
-		MaxHunger   int
-		Thirst      int
-		MaxThirst   int
+		Attributes  map[string]*worldmap.Attribute
 		AC          int
 		Str         int
 		Dex         int
@@ -133,12 +127,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 	p.location = v.Location
 	p.icon = v.Icon
 	p.initiative = v.Initiative
-	p.hp = v.Hp
-	p.maxHp = v.MaxHp
-	p.hunger = v.Hunger
-	p.maxHunger = v.MaxHunger
-	p.thirst = v.Thirst
-	p.maxThirst = v.MaxThirst
+	p.attributes = v.Attributes
 	p.ac = v.AC
 	p.str = v.Str
 	p.dex = v.Dex
@@ -199,12 +188,12 @@ func (p *Player) MeleeAttack(c worldmap.Creature) {
 }
 
 func (p *Player) TakeDamage(damage int) {
-	p.hp -= damage
+	p.attributes["hp"].Modify(-damage)
 }
 
 func (p *Player) GetStats() []string {
 	stats := make([]string, 5)
-	stats[0] = fmt.Sprintf("HP:%d/%d", p.hp, p.maxHp)
+	stats[0] = fmt.Sprintf("HP:%s", p.attributes["hp"].Status())
 	stats[1] = fmt.Sprintf("STR:%d(%+d)", p.str, worldmap.GetBonus(p.str))
 	stats[2] = fmt.Sprintf("DEX:%d(%+d)", p.dex, worldmap.GetBonus(p.dex))
 	stats[3] = fmt.Sprintf("AC:%d", p.ac)
@@ -212,10 +201,10 @@ func (p *Player) GetStats() []string {
 	if p.crouching {
 		stats = append(stats, "Crouching")
 	}
-	if p.hunger > p.maxHunger/2 {
+	if p.attributes["hunger"].Value() > p.attributes["hunger"].Maximum()/2 {
 		stats = append(stats, "Hungry")
 	}
-	if p.thirst > p.maxThirst/2 {
+	if p.attributes["thirst"].Value() > p.attributes["thirst"].Maximum()/2 {
 		stats = append(stats, "Thirsty")
 	}
 
@@ -312,7 +301,7 @@ func (p *Player) PrintReadables() {
 }
 
 func (p *Player) IsDead() bool {
-	return p.hp <= 0 || p.hunger > p.maxHunger || p.thirst > p.maxThirst
+	return p.attributes["hp"].Value() == 0 || p.attributes["hunger"].Value() == p.attributes["hunger"].Maximum() || p.attributes["thirst"].Value() == p.attributes["thirst"].Maximum()
 }
 
 func (p *Player) AttackHits(roll int) bool {
@@ -708,27 +697,28 @@ func (p *Player) weaponLoaded() bool {
 }
 
 func (p *Player) heal(amount int) {
-	originalHp := p.hp
-	p.hp = int(math.Min(float64(originalHp+amount), float64(p.maxHp)))
-	message.Enqueue(fmt.Sprintf("You healed for %d hit points.", p.hp-originalHp))
+	originalHp := p.attributes["hp"].Value()
+	p.attributes["hp"].Modify(amount)
+	message.Enqueue(fmt.Sprintf("You healed for %d hit points.", p.attributes["hp"].Value()-originalHp))
 }
 
 func (p *Player) eat(amount int) {
-	originalHunger := p.hunger
-	p.hunger = int(math.Max(float64(originalHunger-amount), 0.0))
-	if originalHunger > p.maxHunger/2 && p.hp <= p.maxHunger/2 {
+	originalHunger := p.attributes["hunger"].Value()
+	p.attributes["hunger"].Modify(-amount)
+	threshold := p.attributes["hunger"].Maximum() / 2
+	if originalHunger > threshold && p.attributes["hunger"].Value() <= threshold {
 		message.Enqueue("You are no longer hungry.")
 	}
 
 }
 
 func (p *Player) drink(amount int) {
-	originalThirst := p.thirst
-	p.thirst = int(math.Max(float64(originalThirst-amount), 0.0))
-	if originalThirst > p.maxThirst/2 && p.hp <= p.maxThirst/2 {
-		message.Enqueue("You are no longer thirsty.")
+	originalThirst := p.attributes["thirst"].Value()
+	p.attributes["thirst"].Modify(-amount)
+	threshold := p.attributes["thirst"].Maximum() / 2
+	if originalThirst > threshold && p.attributes["thirst"].Value() <= threshold {
+		message.Enqueue("You are no longer hungry.")
 	}
-
 }
 
 func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
@@ -1324,8 +1314,8 @@ func (p *Player) GetVisionDistance() int {
 }
 
 func (p *Player) Update() {
-	p.hunger++
-	p.thirst++
+	p.attributes["hunger"].Modify(1)
+	p.attributes["thirst"].Modify(1)
 	if p.mount != nil {
 		p.mount.ResetMoved()
 		p.mount.SetCoordinates(p.location.X, p.location.Y)
@@ -1348,12 +1338,7 @@ type Player struct {
 	location    worldmap.Coordinates
 	icon        icon.Icon
 	initiative  int
-	maxHp       int
-	hp          int
-	hunger      int
-	maxHunger   int
-	thirst      int
-	maxThirst   int
+	attributes  map[string]*worldmap.Attribute
 	ac          int
 	str         int
 	dex         int

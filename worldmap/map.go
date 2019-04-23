@@ -647,35 +647,3 @@ type Coordinates struct {
 	X int
 	Y int
 }
-
-// Interface shared by Player, Npc and Enemy
-type Creature interface {
-	CanSee
-	Render() ui.Element
-	GetInitiative() int
-	MeleeAttack(Creature)
-	TakeDamage(int)
-	IsDead() bool
-	IsCrouching() bool
-	AttackHits(int) bool
-	GetName() ui.Name
-	GetAlignment() Alignment
-	Update()
-	GetID() string
-}
-
-type hasPosition interface {
-	GetCoordinates() (int, int)
-	SetCoordinates(int, int)
-}
-
-type CanSee interface {
-	GetVisionDistance() int
-	hasPosition
-}
-
-type CanCrouch interface {
-	IsCrouching() bool
-	Standup()
-	Crouch()
-}
