@@ -409,8 +409,12 @@ func (e *Enemy) weaponLoaded() bool {
 
 }
 
-func (e *Enemy) heal(amount int) {
-	e.attributes["hp"].AddEffect(item.NewInstantEffect(amount))
+func (e *Enemy) consume(consumable *item.Consumable) {
+	for attr, attribute := range e.attributes {
+		for _, effect := range consumable.Effects(attr) {
+			attribute.AddEffect(&effect)
+		}
+	}
 }
 
 func (e *Enemy) bloodied() bool {

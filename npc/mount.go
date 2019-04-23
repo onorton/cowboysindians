@@ -203,8 +203,12 @@ func (m *Mount) Moved() bool {
 	return m.moved
 }
 
-func (m *Mount) heal(amount int) {
-	m.attributes["hp"].AddEffect(item.NewInstantEffect(amount))
+func (m *Mount) consume(consumable *item.Consumable) {
+	for attr, attribute := range m.attributes {
+		for _, effect := range consumable.Effects(attr) {
+			attribute.AddEffect(&effect)
+		}
+	}
 }
 
 func (m *Mount) bloodied() bool {

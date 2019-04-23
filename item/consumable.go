@@ -13,7 +13,7 @@ type ConsumableAttributes struct {
 	Icon        icon.Icon
 	Weight      float64
 	Value       int
-	Effects     map[string]int
+	Effects     map[string][]Effect
 	Probability float64
 }
 
@@ -36,7 +36,7 @@ func fetchConsumableData() {
 
 type Consumable struct {
 	baseItem
-	effects map[string]int
+	effects map[string][]Effect
 }
 
 func NewConsumable(name string) Item {
@@ -102,7 +102,7 @@ func (consumable *Consumable) UnmarshalJSON(data []byte) error {
 		Icon    icon.Icon
 		Weight  float64
 		Value   int
-		Effects map[string]int
+		Effects map[string][]Effect
 	}
 	var v consumableJson
 
@@ -134,7 +134,7 @@ func (consumable *Consumable) TransferOwner(newOwner string) {
 	}
 }
 
-func (consumable *Consumable) GetEffect(e string) int {
+func (consumable *Consumable) Effects(e string) []Effect {
 	return consumable.effects[e]
 }
 

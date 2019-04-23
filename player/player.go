@@ -644,17 +644,7 @@ func (p *Player) ConsumeItem() bool {
 			} else {
 				if c, ok := itm.(*item.Consumable); ok {
 					message.Enqueue(fmt.Sprintf("You ate a %s.", c.GetName()))
-
-					if c.GetEffect("hunger") > 0 {
-						p.eat(c.GetEffect("hunger"))
-					}
-					if c.GetEffect("hp") > 0 {
-						p.heal(c.GetEffect("hp"))
-					}
-					if c.GetEffect("thirst") > 0 {
-						p.drink(c.GetEffect("thirst"))
-					}
-
+					p.consume(c)
 					return true
 				} else {
 					message.PrintMessage("That is not something you can eat.")
@@ -699,28 +689,29 @@ func (p *Player) weaponLoaded() bool {
 
 }
 
-func (p *Player) heal(amount int) {
+func (p *Player) consume(consumable *item.Consumable) {
 	originalHp := p.attributes["hp"].Value()
-	p.attributes["hp"].AddEffect(item.NewInstantEffect(amount))
-	message.Enqueue(fmt.Sprintf("You healed for %d hit points.", p.attributes["hp"].Value()-originalHp))
-}
-
-func (p *Player) eat(amount int) {
 	originalHunger := p.attributes["hunger"].Value()
-	p.attributes["hunger"].AddEffect(item.NewInstantEffect(-amount))
-	threshold := p.attributes["hunger"].Maximum() / 2
-	if originalHunger > threshold && p.attributes["hunger"].Value() <= threshold {
+	originalThirst := p.attributes["thirst"].Value()
+
+	for attr, attribute := range p.attributes {
+		for _, effect := range consumable.Effects(attr) {
+			attribute.AddEffect(&effect)
+		}
+	}
+
+	if p.attributes["hp"].Value() > originalHp {
+		message.Enqueue(fmt.Sprintf("You healed for %d hit points.", p.attributes["hp"].Value()-originalHp))
+	}
+
+	hungerThresh := p.attributes["hunger"].Maximum() / 2
+	if originalHunger > hungerThresh && p.attributes["hunger"].Value() <= hungerThresh {
 		message.Enqueue("You are no longer hungry.")
 	}
 
-}
-
-func (p *Player) drink(amount int) {
-	originalThirst := p.attributes["thirst"].Value()
-	p.attributes["thirst"].AddEffect(item.NewInstantEffect(-amount))
-	threshold := p.attributes["thirst"].Maximum() / 2
-	if originalThirst > threshold && p.attributes["thirst"].Value() <= threshold {
-		message.Enqueue("You are no longer hungry.")
+	thirstThresh := p.attributes["thirst"].Maximum() / 2
+	if originalThirst > hungerThresh && p.attributes["thirst"].Value() <= thirstThresh {
+		message.Enqueue("You are no longer thirsty.")
 	}
 }
 

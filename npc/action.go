@@ -46,13 +46,13 @@ func (a MountAction) execute() {
 	MoveAction{a.r.(hasAi), a.world, a.x, a.y}.execute()
 }
 
-type HealAction struct {
+type ConsumeAction struct {
 	c   hasAi
 	con *item.Consumable
 }
 
-func (a HealAction) execute() {
-	a.c.heal(a.con.GetEffect("hp"))
+func (a ConsumeAction) execute() {
+	a.c.consume(a.con)
 	a.c.(holdsItems).RemoveItem(a.con)
 }
 

@@ -498,8 +498,12 @@ func (npc *Npc) weaponLoaded() bool {
 
 }
 
-func (npc *Npc) heal(amount int) {
-	npc.attributes["hp"].AddEffect(item.NewInstantEffect(amount))
+func (npc *Npc) consume(consumable *item.Consumable) {
+	for attr, attribute := range npc.attributes {
+		for _, effect := range consumable.Effects(attr) {
+			attribute.AddEffect(&effect)
+		}
+	}
 }
 
 func (npc *Npc) bloodied() bool {
