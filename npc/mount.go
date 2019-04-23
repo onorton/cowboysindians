@@ -155,8 +155,7 @@ func (m *Mount) AttackHits(roll int) bool {
 	return roll > m.ac
 }
 func (m *Mount) TakeDamage(damage int) {
-	m.attributes["hp"].Modify(-damage)
-
+	m.attributes["hp"].AddEffect(item.NewInstantEffect(-damage))
 	// Rider takes falling damage if mount dies
 	if m.rider != nil && m.IsDead() {
 		m.rider.TakeDamage(rand.Intn(4) + 1)
@@ -172,6 +171,13 @@ func (m *Mount) IsDead() bool {
 }
 
 func (m *Mount) Update() {
+	for _, attribute := range m.attributes {
+		attribute.Update()
+	}
+	if m.IsDead() {
+		return
+	}
+
 	if m.rider != nil {
 		if m.rider.IsDead() {
 			m.RemoveRider()
@@ -198,7 +204,7 @@ func (m *Mount) Moved() bool {
 }
 
 func (m *Mount) heal(amount int) {
-	m.attributes["hp"].Modify(amount)
+	m.attributes["hp"].AddEffect(item.NewInstantEffect(amount))
 }
 
 func (m *Mount) bloodied() bool {

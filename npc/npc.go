@@ -304,7 +304,7 @@ func (npc *Npc) AttackHits(roll int) bool {
 	return roll > npc.ac
 }
 func (npc *Npc) TakeDamage(damage int) {
-	npc.attributes["hp"].Modify(damage)
+	npc.attributes["hp"].AddEffect(item.NewInstantEffect(-damage))
 }
 
 func (npc *Npc) IsDead() bool {
@@ -370,6 +370,13 @@ func (npc *Npc) dropItem(item item.Item) {
 }
 
 func (npc *Npc) Update() {
+	for _, attribute := range npc.attributes {
+		attribute.Update()
+	}
+	if npc.IsDead() {
+		return
+	}
+
 	p := npc.world.GetPlayer()
 	pX, pY := p.GetCoordinates()
 	if npc.world.InConversationRange(npc, p) {
@@ -492,7 +499,7 @@ func (npc *Npc) weaponLoaded() bool {
 }
 
 func (npc *Npc) heal(amount int) {
-	npc.attributes["hp"].Modify(amount)
+	npc.attributes["hp"].AddEffect(item.NewInstantEffect(amount))
 }
 
 func (npc *Npc) bloodied() bool {

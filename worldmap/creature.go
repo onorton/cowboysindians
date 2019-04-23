@@ -6,20 +6,18 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/ui"
 )
 
 type Attribute struct {
-	value int
-	max   int
+	value   int
+	max     int
+	effects []*item.Effect
 }
 
 func NewAttribute(initial, max int) *Attribute {
-	return &Attribute{initial, max}
-}
-
-func (a *Attribute) Modify(amount int) {
-	a.value = int(math.Max(0.0, math.Min(float64(a.max), float64(a.value+amount))))
+	return &Attribute{initial, max, make([]*item.Effect, 0)}
 }
 
 func (a *Attribute) Status() string {
@@ -32,6 +30,29 @@ func (a *Attribute) Value() int {
 
 func (a *Attribute) Maximum() int {
 	return a.max
+}
+
+func (a *Attribute) updateWithEffect(e *item.Effect) {
+	a.value, a.max = e.Update(a.value, a.max)
+	// Make sure value is correct if too high/low
+	a.value = int(math.Max(0.0, math.Min(float64(a.max), float64(a.value))))
+}
+
+func (a *Attribute) AddEffect(e *item.Effect) {
+	a.effects = append(a.effects, e)
+	// When first added, apply the effect
+	a.updateWithEffect(e)
+}
+
+func (a *Attribute) Update() {
+	for i := 0; i < len(a.effects); i++ {
+		effect := a.effects[i]
+		a.updateWithEffect(effect)
+		if effect.Expired() {
+			a.effects = append(a.effects[:i], a.effects[i+1:]...)
+			i--
+		}
+	}
 }
 
 func (a *Attribute) MarshalJSON() ([]byte, error) {
@@ -49,7 +70,14 @@ func (a *Attribute) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"Maximum\":%s", maxValue))
+	buffer.WriteString(fmt.Sprintf("\"Maximum\":%s,", maxValue))
+
+	effectsValue, err := json.Marshal(a.effects)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Effects\":%s", effectsValue))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -60,6 +88,7 @@ func (a *Attribute) UnmarshalJSON(data []byte) error {
 	type attributeJson struct {
 		Value   int
 		Maximum int
+		Effects []*item.Effect
 	}
 
 	var v attributeJson
@@ -70,6 +99,7 @@ func (a *Attribute) UnmarshalJSON(data []byte) error {
 
 	a.value = v.Value
 	a.max = v.Maximum
+	a.effects = v.Effects
 
 	return nil
 }

@@ -188,7 +188,7 @@ func (p *Player) MeleeAttack(c worldmap.Creature) {
 }
 
 func (p *Player) TakeDamage(damage int) {
-	p.attributes["hp"].Modify(-damage)
+	p.attributes["hp"].AddEffect(item.NewInstantEffect(-damage))
 }
 
 func (p *Player) GetStats() []string {
@@ -698,13 +698,13 @@ func (p *Player) weaponLoaded() bool {
 
 func (p *Player) heal(amount int) {
 	originalHp := p.attributes["hp"].Value()
-	p.attributes["hp"].Modify(amount)
+	p.attributes["hp"].AddEffect(item.NewInstantEffect(amount))
 	message.Enqueue(fmt.Sprintf("You healed for %d hit points.", p.attributes["hp"].Value()-originalHp))
 }
 
 func (p *Player) eat(amount int) {
 	originalHunger := p.attributes["hunger"].Value()
-	p.attributes["hunger"].Modify(-amount)
+	p.attributes["hunger"].AddEffect(item.NewInstantEffect(-amount))
 	threshold := p.attributes["hunger"].Maximum() / 2
 	if originalHunger > threshold && p.attributes["hunger"].Value() <= threshold {
 		message.Enqueue("You are no longer hungry.")
@@ -714,7 +714,7 @@ func (p *Player) eat(amount int) {
 
 func (p *Player) drink(amount int) {
 	originalThirst := p.attributes["thirst"].Value()
-	p.attributes["thirst"].Modify(-amount)
+	p.attributes["thirst"].AddEffect(item.NewInstantEffect(-amount))
 	threshold := p.attributes["thirst"].Maximum() / 2
 	if originalThirst > threshold && p.attributes["thirst"].Value() <= threshold {
 		message.Enqueue("You are no longer hungry.")
@@ -1314,8 +1314,13 @@ func (p *Player) GetVisionDistance() int {
 }
 
 func (p *Player) Update() {
-	p.attributes["hunger"].Modify(1)
-	p.attributes["thirst"].Modify(1)
+	p.attributes["hunger"].AddEffect(item.NewInstantEffect(1))
+	p.attributes["thirst"].AddEffect(item.NewInstantEffect(1))
+
+	for _, attribute := range p.attributes {
+		attribute.Update()
+	}
+
 	if p.mount != nil {
 		p.mount.ResetMoved()
 		p.mount.SetCoordinates(p.location.X, p.location.Y)

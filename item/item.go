@@ -1,7 +1,9 @@
 package item
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"hash/fnv"
 	"math/rand"
 
@@ -134,6 +136,85 @@ func GenerateItem() Item {
 	}
 
 	return itm
+}
+
+type Effect struct {
+	effect      int
+	effectOnMax int
+	duration    int
+}
+
+func NewEffect(effect, effectOnMax, duration int) *Effect {
+	return &Effect{effect, effectOnMax, duration}
+}
+
+func NewInstantEffect(effect int) *Effect {
+	return &Effect{effect, 0, 1}
+}
+
+func (e *Effect) Update(value, max int) (int, int) {
+	if e.duration != 0 {
+		if e.duration > 0 {
+			e.duration--
+		}
+		return value + e.effect, max + e.effectOnMax
+	} else {
+		// Return maximum to original value if applicable
+		return value, max - e.effectOnMax
+	}
+}
+
+func (e *Effect) Expired() bool {
+	return e.duration == 0
+}
+
+func (e *Effect) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	effectValue, err := json.Marshal(e.effect)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Effect\":%s,", effectValue))
+
+	effectOnMaxValue, err := json.Marshal(e.effectOnMax)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"EffectOnMax\":%s,", effectOnMaxValue))
+
+	durationValue, err := json.Marshal(e.duration)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Duration\":%s", durationValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (e *Effect) UnmarshalJSON(data []byte) error {
+
+	type effectJson struct {
+		Effect      int
+		EffectOnMax int
+		Duration    int
+	}
+
+	var v effectJson
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	e.effect = v.Effect
+	e.effectOnMax = v.EffectOnMax
+	e.duration = v.Duration
+
+	return nil
 }
 
 func LoadAllData() {

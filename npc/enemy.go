@@ -215,7 +215,7 @@ func (e *Enemy) AttackHits(roll int) bool {
 	return roll > e.ac
 }
 func (e *Enemy) TakeDamage(damage int) {
-	e.attributes["hp"].Modify(-damage)
+	e.attributes["hp"].AddEffect(item.NewInstantEffect(-damage))
 }
 
 func (e *Enemy) IsDead() bool {
@@ -281,6 +281,14 @@ func (e *Enemy) dropItem(item item.Item) {
 }
 
 func (e *Enemy) Update() {
+
+	for _, attribute := range e.attributes {
+		attribute.Update()
+	}
+	if e.IsDead() {
+		return
+	}
+
 	action := e.ai.update(e, e.world)
 	action.execute()
 	if _, ok := action.(MountedMoveAction); ok {
@@ -402,7 +410,7 @@ func (e *Enemy) weaponLoaded() bool {
 }
 
 func (e *Enemy) heal(amount int) {
-	e.attributes["hp"].Modify(amount)
+	e.attributes["hp"].AddEffect(item.NewInstantEffect(amount))
 }
 
 func (e *Enemy) bloodied() bool {
