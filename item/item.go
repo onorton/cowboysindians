@@ -139,17 +139,23 @@ func GenerateItem() Item {
 }
 
 type Effect struct {
-	effect      int
-	effectOnMax int
-	duration    int
+	effect     int
+	onMax      bool
+	duration   int
+	activated  bool
+	compounded bool
 }
 
-func NewEffect(effect, effectOnMax, duration int) *Effect {
-	return &Effect{effect, effectOnMax, duration}
+func NewEffect(effect, duration int, onMax bool) *Effect {
+	return &Effect{effect, onMax, duration, false, false}
 }
 
 func NewInstantEffect(effect int) *Effect {
-	return &Effect{effect, 0, 1}
+	return &Effect{effect, false, 1, false, false}
+}
+
+func NewOngoingEffect(effect int) *Effect {
+	return &Effect{effect, false, -1, false, true}
 }
 
 func (e *Effect) Update(value, max int) (int, int) {
@@ -157,11 +163,20 @@ func (e *Effect) Update(value, max int) (int, int) {
 		if e.duration > 0 {
 			e.duration--
 		}
-		return value + e.effect, max + e.effectOnMax
-	} else {
+
+		if !e.activated || e.compounded {
+			e.activated = true
+			if e.onMax {
+				return value, max + e.effect
+			} else {
+				return value + e.effect, max
+			}
+		}
+	} else if e.onMax {
 		// Return maximum to original value if applicable
-		return value, max - e.effectOnMax
+		return value, max - e.effect
 	}
+	return value, max
 }
 
 func (e *Effect) Expired() bool {
@@ -178,19 +193,33 @@ func (e *Effect) MarshalJSON() ([]byte, error) {
 
 	buffer.WriteString(fmt.Sprintf("\"Effect\":%s,", effectValue))
 
-	effectOnMaxValue, err := json.Marshal(e.effectOnMax)
+	onMaxValue, err := json.Marshal(e.onMax)
 	if err != nil {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"EffectOnMax\":%s,", effectOnMaxValue))
+	buffer.WriteString(fmt.Sprintf("\"OnMax\":%s,", onMaxValue))
 
 	durationValue, err := json.Marshal(e.duration)
 	if err != nil {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"Duration\":%s", durationValue))
+	buffer.WriteString(fmt.Sprintf("\"Duration\":%s,", durationValue))
+
+	activatedValue, err := json.Marshal(e.activated)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Activated\":%s,", activatedValue))
+
+	compoundedValue, err := json.Marshal(e.compounded)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Compounded\":%s", compoundedValue))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -199,9 +228,11 @@ func (e *Effect) MarshalJSON() ([]byte, error) {
 func (e *Effect) UnmarshalJSON(data []byte) error {
 
 	type effectJson struct {
-		Effect      int
-		EffectOnMax int
-		Duration    int
+		Effect     int
+		OnMax      bool
+		Duration   int
+		Activated  bool
+		Compounded bool
 	}
 
 	var v effectJson
@@ -211,8 +242,10 @@ func (e *Effect) UnmarshalJSON(data []byte) error {
 	}
 
 	e.effect = v.Effect
-	e.effectOnMax = v.EffectOnMax
+	e.onMax = v.OnMax
 	e.duration = v.Duration
+	e.activated = v.Activated
+	e.compounded = v.Compounded
 
 	return nil
 }

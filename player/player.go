@@ -28,6 +28,9 @@ func NewPlayer(world *worldmap.Map) *Player {
 		"hunger": worldmap.NewAttribute(0, 100),
 		"thirst": worldmap.NewAttribute(0, 100)}
 
+	attributes["hunger"].AddEffect(item.NewOngoingEffect(1))
+	attributes["thirst"].AddEffect(item.NewOngoingEffect(1))
+
 	player := &Player{worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, attributes, 15, 12, 10, 100, false, 1000, nil, nil, make(map[rune]([]item.Item)), "", nil, world}
 	player.AddItem(item.NewWeapon("shotgun"))
 	player.AddItem(item.NewWeapon("sawn-off shotgun"))
@@ -1314,8 +1317,6 @@ func (p *Player) GetVisionDistance() int {
 }
 
 func (p *Player) Update() {
-	p.attributes["hunger"].AddEffect(item.NewInstantEffect(1))
-	p.attributes["thirst"].AddEffect(item.NewInstantEffect(1))
 
 	for _, attribute := range p.attributes {
 		attribute.Update()
