@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"math/rand"
 
 	"github.com/onorton/cowboysindians/event"
@@ -43,7 +42,9 @@ func fetchEnemyData() map[string]EnemyAttributes {
 func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 	enemy := enemyData[name]
 	id := xid.New().String()
-	e := &Enemy{&ui.PlainName{name}, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, enemy.Hp, enemy.Hp, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, false, enemy.Money, nil, nil, make([]item.Item, 0), "", nil, world, enemyAi{}}
+	attributes := map[string]*worldmap.Attribute{
+		"hp": worldmap.NewAttribute(enemy.Hp, enemy.Hp)}
+	e := &Enemy{&ui.PlainName{name}, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, false, enemy.Money, nil, nil, make([]item.Item, 0), "", nil, world, enemyAi{}}
 	for _, itemDefinition := range enemy.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm item.Item = nil
@@ -74,7 +75,7 @@ func (e *Enemy) Render() ui.Element {
 func (e *Enemy) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "Ai", "MountID"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "Ai", "MountID"}
 
 	mountID := ""
 	if e.mount != nil {
@@ -87,8 +88,7 @@ func (e *Enemy) MarshalJSON() ([]byte, error) {
 		"Location":    e.location,
 		"Icon":        e.icon,
 		"Initiative":  e.initiative,
-		"Hp":          e.hp,
-		"MaxHp":       e.maxHp,
+		"Attributes":  e.attributes,
 		"AC":          e.ac,
 		"Str":         e.str,
 		"Dex":         e.dex,
@@ -129,8 +129,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 		Location    worldmap.Coordinates
 		Icon        icon.Icon
 		Initiative  int
-		Hp          int
-		MaxHp       int
+		Attributes  map[string]*worldmap.Attribute
 		AC          int
 		Str         int
 		Dex         int
@@ -152,8 +151,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 	e.location = v.Location
 	e.icon = v.Icon
 	e.initiative = v.Initiative
-	e.hp = v.Hp
-	e.maxHp = v.MaxHp
+	e.attributes = v.Attributes
 	e.ac = v.AC
 	e.str = v.Str
 	e.dex = v.Dex
@@ -217,11 +215,11 @@ func (e *Enemy) AttackHits(roll int) bool {
 	return roll > e.ac
 }
 func (e *Enemy) TakeDamage(damage int) {
-	e.hp -= damage
+	e.attributes["hp"].Modify(-damage)
 }
 
 func (e *Enemy) IsDead() bool {
-	return e.hp <= 0
+	return e.attributes["hp"].Value() == 0
 }
 
 func (e *Enemy) wieldItem() bool {
@@ -404,12 +402,11 @@ func (e *Enemy) weaponLoaded() bool {
 }
 
 func (e *Enemy) heal(amount int) {
-	originalHp := e.hp
-	e.hp = int(math.Min(float64(originalHp+amount), float64(e.maxHp)))
+	e.attributes["hp"].Modify(amount)
 }
 
 func (e *Enemy) bloodied() bool {
-	return e.hp <= e.maxHp/2
+	return e.attributes["hp"].Value() <= e.attributes["hp"].Maximum()/2
 }
 
 func (e *Enemy) GetName() ui.Name {
@@ -475,8 +472,7 @@ type Enemy struct {
 	location    worldmap.Coordinates
 	icon        icon.Icon
 	initiative  int
-	hp          int
-	maxHp       int
+	attributes  map[string]*worldmap.Attribute
 	ac          int
 	str         int
 	dex         int

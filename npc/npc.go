@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"math/rand"
 
 	"github.com/onorton/cowboysindians/event"
@@ -60,7 +59,9 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 	id := xid.New().String()
 	location := worldmap.Coordinates{x, y}
 	name := generateName(npcType)
-	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, npcAi{worldmap.NewRandomWaypoint(world, location)}, &basicDialogue{false}}
+	attributes := map[string]*worldmap.Attribute{
+		"hp": worldmap.NewAttribute(n.Hp, n.Hp)}
+	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, npcAi{worldmap.NewRandomWaypoint(world, location)}, &basicDialogue{false}}
 	npc.initialiseInventory(n.Inventory)
 	event.Subscribe(npc)
 	return npc
@@ -95,7 +96,10 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 		ai = npcAi{worldmap.NewWithinBuilding(world, b, location)}
 	}
 
-	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, n.Hp, n.Hp, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, ai, dialogue}
+	attributes := map[string]*worldmap.Attribute{
+		"hp": worldmap.NewAttribute(n.Hp, n.Hp)}
+
+	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, ai, dialogue}
 	for c, count := range n.ShopInventory {
 
 		for i := 0; i < count; i++ {
@@ -150,7 +154,7 @@ func (npc *Npc) Render() ui.Element {
 func (npc *Npc) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID", "Ai", "Dialogue"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID", "Ai", "Dialogue"}
 
 	mountID := ""
 	if npc.mount != nil {
@@ -163,8 +167,7 @@ func (npc *Npc) MarshalJSON() ([]byte, error) {
 		"Location":    npc.location,
 		"Icon":        npc.icon,
 		"Initiative":  npc.initiative,
-		"Hp":          npc.hp,
-		"MaxHp":       npc.maxHp,
+		"Attributes":  npc.attributes,
 		"AC":          npc.ac,
 		"Str":         npc.str,
 		"Dex":         npc.dex,
@@ -213,8 +216,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 		Location    worldmap.Coordinates
 		Icon        icon.Icon
 		Initiative  int
-		Hp          int
-		MaxHp       int
+		Attributes  map[string]*worldmap.Attribute
 		AC          int
 		Str         int
 		Dex         int
@@ -237,8 +239,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 	npc.location = v.Location
 	npc.icon = v.Icon
 	npc.initiative = v.Initiative
-	npc.hp = v.Hp
-	npc.maxHp = v.MaxHp
+	npc.attributes = v.Attributes
 	npc.ac = v.AC
 	npc.str = v.Str
 	npc.dex = v.Dex
@@ -303,11 +304,11 @@ func (npc *Npc) AttackHits(roll int) bool {
 	return roll > npc.ac
 }
 func (npc *Npc) TakeDamage(damage int) {
-	npc.hp -= damage
+	npc.attributes["hp"].Modify(damage)
 }
 
 func (npc *Npc) IsDead() bool {
-	return npc.hp <= 0
+	return npc.attributes["hp"].Value() == 0
 }
 
 func (npc *Npc) wieldItem() bool {
@@ -491,12 +492,11 @@ func (npc *Npc) weaponLoaded() bool {
 }
 
 func (npc *Npc) heal(amount int) {
-	originalHp := npc.hp
-	npc.hp = int(math.Min(float64(originalHp+amount), float64(npc.maxHp)))
+	npc.attributes["hp"].Modify(amount)
 }
 
 func (npc *Npc) bloodied() bool {
-	return npc.hp <= npc.maxHp/2
+	return npc.attributes["hp"].Value() <= npc.attributes["hp"].Maximum()/2
 }
 
 func (npc *Npc) GetName() ui.Name {
@@ -617,8 +617,7 @@ type Npc struct {
 	location    worldmap.Coordinates
 	icon        icon.Icon
 	initiative  int
-	hp          int
-	maxHp       int
+	attributes  map[string]*worldmap.Attribute
 	ac          int
 	str         int
 	dex         int

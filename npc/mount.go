@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"math/rand"
 
 	"github.com/onorton/cowboysindians/icon"
@@ -42,7 +41,8 @@ func NewMount(name string, x, y int, world *worldmap.Map) *Mount {
 	id := xid.New().String()
 	location := worldmap.Coordinates{x, y}
 	ai := mountAi{worldmap.NewRandomWaypoint(world, location)}
-	m := &Mount{&ui.PlainName{name}, id, location, mount.Icon, mount.Initiative, mount.Hp, mount.Hp, mount.Ac, mount.Str, mount.Dex, mount.Encumbrance, nil, world, false, ai}
+	attributes := map[string]*worldmap.Attribute{"hp": worldmap.NewAttribute(mount.Hp, mount.Hp)}
+	m := &Mount{&ui.PlainName{name}, id, location, mount.Icon, mount.Initiative, attributes, mount.Ac, mount.Str, mount.Dex, mount.Encumbrance, nil, world, false, ai}
 	return m
 }
 func (m *Mount) Render() ui.Element {
@@ -52,7 +52,7 @@ func (m *Mount) Render() ui.Element {
 func (m *Mount) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Hp", "MaxHp", "AC", "Str", "Dex", "Encumbrance", "Ai"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "AC", "Str", "Dex", "Encumbrance", "Ai"}
 
 	mountValues := map[string]interface{}{
 		"Name":        m.name,
@@ -60,8 +60,7 @@ func (m *Mount) MarshalJSON() ([]byte, error) {
 		"Location":    m.location,
 		"Icon":        m.icon,
 		"Initiative":  m.initiative,
-		"Hp":          m.hp,
-		"MaxHp":       m.maxHp,
+		"Attributes":  m.attributes,
 		"AC":          m.ac,
 		"Str":         m.str,
 		"Dex":         m.dex,
@@ -96,8 +95,7 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 		Location    worldmap.Coordinates
 		Icon        icon.Icon
 		Initiative  int
-		Hp          int
-		MaxHp       int
+		Attributes  map[string]*worldmap.Attribute
 		AC          int
 		Str         int
 		Dex         int
@@ -113,8 +111,7 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 	m.location = v.Location
 	m.icon = v.Icon
 	m.initiative = v.Initiative
-	m.hp = v.Hp
-	m.maxHp = v.MaxHp
+	m.attributes = v.Attributes
 	m.ac = v.AC
 	m.str = v.Str
 	m.dex = v.Dex
@@ -158,7 +155,7 @@ func (m *Mount) AttackHits(roll int) bool {
 	return roll > m.ac
 }
 func (m *Mount) TakeDamage(damage int) {
-	m.hp -= damage
+	m.attributes["hp"].Modify(-damage)
 
 	// Rider takes falling damage if mount dies
 	if m.rider != nil && m.IsDead() {
@@ -171,7 +168,7 @@ func (m *Mount) TakeDamage(damage int) {
 }
 
 func (m *Mount) IsDead() bool {
-	return m.hp <= 0
+	return m.attributes["hp"].Value() == 0
 }
 
 func (m *Mount) Update() {
@@ -201,12 +198,11 @@ func (m *Mount) Moved() bool {
 }
 
 func (m *Mount) heal(amount int) {
-	originalHp := m.hp
-	m.hp = int(math.Min(float64(originalHp+amount), float64(m.maxHp)))
+	m.attributes["hp"].Modify(amount)
 }
 
 func (m *Mount) bloodied() bool {
-	return m.hp <= m.maxHp/2
+	return m.attributes["hp"].Value() <= m.attributes["hp"].Maximum()/2
 }
 
 func (m *Mount) GetName() ui.Name {
@@ -277,8 +273,7 @@ type Mount struct {
 	location    worldmap.Coordinates
 	icon        icon.Icon
 	initiative  int
-	hp          int
-	maxHp       int
+	attributes  map[string]*worldmap.Attribute
 	ac          int
 	str         int
 	dex         int
