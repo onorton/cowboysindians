@@ -43,8 +43,12 @@ func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 	enemy := enemyData[name]
 	id := xid.New().String()
 	attributes := map[string]*worldmap.Attribute{
-		"hp": worldmap.NewAttribute(enemy.Hp, enemy.Hp)}
-	e := &Enemy{&ui.PlainName{name}, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, enemy.Ac, enemy.Str, enemy.Dex, enemy.Encumbrance, false, enemy.Money, nil, nil, make([]item.Item, 0), "", nil, world, enemyAi{}}
+		"hp":          worldmap.NewAttribute(enemy.Hp, enemy.Hp),
+		"ac":          worldmap.NewAttribute(enemy.Ac, enemy.Ac),
+		"str":         worldmap.NewAttribute(enemy.Str, enemy.Str),
+		"dex":         worldmap.NewAttribute(enemy.Dex, enemy.Dex),
+		"encumbrance": worldmap.NewAttribute(enemy.Encumbrance, enemy.Encumbrance)}
+	e := &Enemy{&ui.PlainName{name}, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, false, enemy.Money, nil, nil, make([]item.Item, 0), "", nil, world, enemyAi{}}
 	for _, itemDefinition := range enemy.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm item.Item = nil
@@ -75,7 +79,7 @@ func (e *Enemy) Render() ui.Element {
 func (e *Enemy) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "Ai", "MountID"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Crouching", "Money", "Weapon", "Armour", "Inventory", "Ai", "MountID"}
 
 	mountID := ""
 	if e.mount != nil {
@@ -83,23 +87,19 @@ func (e *Enemy) MarshalJSON() ([]byte, error) {
 	}
 
 	enemyValues := map[string]interface{}{
-		"Name":        e.name,
-		"Id":          e.id,
-		"Location":    e.location,
-		"Icon":        e.icon,
-		"Initiative":  e.initiative,
-		"Attributes":  e.attributes,
-		"AC":          e.ac,
-		"Str":         e.str,
-		"Dex":         e.dex,
-		"Encumbrance": e.encumbrance,
-		"Crouching":   e.crouching,
-		"Money":       e.money,
-		"Weapon":      e.weapon,
-		"Armour":      e.armour,
-		"Inventory":   e.inventory,
-		"Ai":          e.ai,
-		"MountID":     mountID,
+		"Name":       e.name,
+		"Id":         e.id,
+		"Location":   e.location,
+		"Icon":       e.icon,
+		"Initiative": e.initiative,
+		"Attributes": e.attributes,
+		"Crouching":  e.crouching,
+		"Money":      e.money,
+		"Weapon":     e.weapon,
+		"Armour":     e.armour,
+		"Inventory":  e.inventory,
+		"Ai":         e.ai,
+		"MountID":    mountID,
 	}
 
 	length := len(enemyValues)
@@ -124,23 +124,19 @@ func (e *Enemy) MarshalJSON() ([]byte, error) {
 func (e *Enemy) UnmarshalJSON(data []byte) error {
 
 	type enemyJson struct {
-		Name        *ui.PlainName
-		Id          string
-		Location    worldmap.Coordinates
-		Icon        icon.Icon
-		Initiative  int
-		Attributes  map[string]*worldmap.Attribute
-		AC          int
-		Str         int
-		Dex         int
-		Encumbrance int
-		Crouching   bool
-		Money       int
-		Weapon      *item.Weapon
-		Armour      *item.Armour
-		Inventory   item.ItemList
-		MountID     string
-		Ai          map[string]interface{}
+		Name       *ui.PlainName
+		Id         string
+		Location   worldmap.Coordinates
+		Icon       icon.Icon
+		Initiative int
+		Attributes map[string]*worldmap.Attribute
+		Crouching  bool
+		Money      int
+		Weapon     *item.Weapon
+		Armour     *item.Armour
+		Inventory  item.ItemList
+		MountID    string
+		Ai         map[string]interface{}
 	}
 	var v enemyJson
 
@@ -152,10 +148,6 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 	e.icon = v.Icon
 	e.initiative = v.Initiative
 	e.attributes = v.Attributes
-	e.ac = v.AC
-	e.str = v.Str
-	e.dex = v.Dex
-	e.encumbrance = v.Encumbrance
 	e.crouching = v.Crouching
 	e.money = v.Money
 	e.weapon = v.Weapon
@@ -179,11 +171,11 @@ func (e *Enemy) GetInitiative() int {
 }
 
 func (e *Enemy) MeleeAttack(c worldmap.Creature) {
-	e.attack(c, worldmap.GetBonus(e.str), worldmap.GetBonus(e.str))
+	e.attack(c, worldmap.GetBonus(e.attributes["str"].Value()), worldmap.GetBonus(e.attributes["str"].Value()))
 }
 
 func (e *Enemy) rangedAttack(c worldmap.Creature, environmentBonus int) {
-	e.attack(c, worldmap.GetBonus(e.dex)+environmentBonus, 0)
+	e.attack(c, worldmap.GetBonus(e.attributes["dex"].Value())+environmentBonus, 0)
 }
 
 func (e *Enemy) attack(c worldmap.Creature, hitBonus, damageBonus int) {
@@ -212,7 +204,7 @@ func (e *Enemy) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 }
 
 func (e *Enemy) AttackHits(roll int) bool {
-	return roll > e.ac
+	return roll > e.attributes["ac"].Value()
 }
 func (e *Enemy) TakeDamage(damage int) {
 	e.attributes["hp"].AddEffect(item.NewInstantEffect(-damage))
@@ -269,7 +261,7 @@ func (e *Enemy) overEncumbered() bool {
 	for _, item := range e.inventory {
 		weight += item.GetWeight()
 	}
-	return weight > float64(e.encumbrance)
+	return weight > float64(e.attributes["encumbrance"].Value())
 }
 func (e *Enemy) dropItem(item item.Item) {
 	e.RemoveItem(item)
@@ -285,6 +277,13 @@ func (e *Enemy) Update() {
 	for _, attribute := range e.attributes {
 		attribute.Update()
 	}
+
+	// Apply armour AC bonus
+	if e.armour != nil {
+		e.attributes["ac"].AddEffect(item.NewEffect(e.armour.GetACBonus(), 1, true))
+		e.attributes["ac"].AddEffect(item.NewEffect(e.armour.GetACBonus(), 1, false))
+	}
+
 	if e.IsDead() {
 		return
 	}
@@ -479,23 +478,19 @@ func (e *Enemy) LoadMount(mounts []*Mount) {
 }
 
 type Enemy struct {
-	name        *ui.PlainName
-	id          string
-	location    worldmap.Coordinates
-	icon        icon.Icon
-	initiative  int
-	attributes  map[string]*worldmap.Attribute
-	ac          int
-	str         int
-	dex         int
-	encumbrance int
-	crouching   bool
-	money       int
-	weapon      *item.Weapon
-	armour      *item.Armour
-	inventory   []item.Item
-	mountID     string
-	mount       *Mount
-	world       *worldmap.Map
-	ai          ai
+	name       *ui.PlainName
+	id         string
+	location   worldmap.Coordinates
+	icon       icon.Icon
+	initiative int
+	attributes map[string]*worldmap.Attribute
+	crouching  bool
+	money      int
+	weapon     *item.Weapon
+	armour     *item.Armour
+	inventory  []item.Item
+	mountID    string
+	mount      *Mount
+	world      *worldmap.Map
+	ai         ai
 }

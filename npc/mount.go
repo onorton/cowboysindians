@@ -41,8 +41,14 @@ func NewMount(name string, x, y int, world *worldmap.Map) *Mount {
 	id := xid.New().String()
 	location := worldmap.Coordinates{x, y}
 	ai := mountAi{worldmap.NewRandomWaypoint(world, location)}
-	attributes := map[string]*worldmap.Attribute{"hp": worldmap.NewAttribute(mount.Hp, mount.Hp)}
-	m := &Mount{&ui.PlainName{name}, id, location, mount.Icon, mount.Initiative, attributes, mount.Ac, mount.Str, mount.Dex, mount.Encumbrance, nil, world, false, ai}
+	attributes := map[string]*worldmap.Attribute{
+		"hp":          worldmap.NewAttribute(mount.Hp, mount.Hp),
+		"ac":          worldmap.NewAttribute(mount.Ac, mount.Ac),
+		"str":         worldmap.NewAttribute(mount.Str, mount.Str),
+		"dex":         worldmap.NewAttribute(mount.Dex, mount.Dex),
+		"encumbrance": worldmap.NewAttribute(mount.Encumbrance, mount.Encumbrance),
+	}
+	m := &Mount{&ui.PlainName{name}, id, location, mount.Icon, mount.Initiative, attributes, nil, world, false, ai}
 	return m
 }
 func (m *Mount) Render() ui.Element {
@@ -52,20 +58,16 @@ func (m *Mount) Render() ui.Element {
 func (m *Mount) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "AC", "Str", "Dex", "Encumbrance", "Ai"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Ai"}
 
 	mountValues := map[string]interface{}{
-		"Name":        m.name,
-		"Id":          m.id,
-		"Location":    m.location,
-		"Icon":        m.icon,
-		"Initiative":  m.initiative,
-		"Attributes":  m.attributes,
-		"AC":          m.ac,
-		"Str":         m.str,
-		"Dex":         m.dex,
-		"Encumbrance": m.encumbrance,
-		"Ai":          m.ai,
+		"Name":       m.name,
+		"Id":         m.id,
+		"Location":   m.location,
+		"Icon":       m.icon,
+		"Initiative": m.initiative,
+		"Attributes": m.attributes,
+		"Ai":         m.ai,
 	}
 
 	length := len(mountValues)
@@ -90,17 +92,13 @@ func (m *Mount) MarshalJSON() ([]byte, error) {
 func (m *Mount) UnmarshalJSON(data []byte) error {
 
 	type mountJson struct {
-		Name        *ui.PlainName
-		Id          string
-		Location    worldmap.Coordinates
-		Icon        icon.Icon
-		Initiative  int
-		Attributes  map[string]*worldmap.Attribute
-		AC          int
-		Str         int
-		Dex         int
-		Encumbrance int
-		Ai          map[string]interface{}
+		Name       *ui.PlainName
+		Id         string
+		Location   worldmap.Coordinates
+		Icon       icon.Icon
+		Initiative int
+		Attributes map[string]*worldmap.Attribute
+		Ai         map[string]interface{}
 	}
 	var v mountJson
 
@@ -112,10 +110,6 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 	m.icon = v.Icon
 	m.initiative = v.Initiative
 	m.attributes = v.Attributes
-	m.ac = v.AC
-	m.str = v.Str
-	m.dex = v.Dex
-	m.encumbrance = v.Encumbrance
 	m.ai = unmarshalAi(v.Ai)
 	return nil
 }
@@ -133,7 +127,7 @@ func (m *Mount) GetInitiative() int {
 }
 
 func (m *Mount) MeleeAttack(c worldmap.Creature) {
-	m.attack(c, worldmap.GetBonus(m.str), worldmap.GetBonus(m.str))
+	m.attack(c, worldmap.GetBonus(m.attributes["str"].Value()), worldmap.GetBonus(m.attributes["str"].Value()))
 }
 func (m *Mount) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 
@@ -152,7 +146,7 @@ func (m *Mount) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 }
 
 func (m *Mount) AttackHits(roll int) bool {
-	return roll > m.ac
+	return roll > m.attributes["ac"].Value()
 }
 func (m *Mount) TakeDamage(damage int) {
 	m.attributes["hp"].AddEffect(item.NewInstantEffect(-damage))
@@ -261,7 +255,7 @@ func (m *Mount) GetIcon() icon.Icon {
 }
 
 func (m *Mount) GetEncumbrance() int {
-	return m.encumbrance
+	return m.attributes["encumbrance"].Value()
 }
 
 func (m *Mount) GetVisionDistance() int {
@@ -278,20 +272,16 @@ func (m *Mount) GetID() string {
 }
 
 type Mount struct {
-	name        *ui.PlainName
-	id          string
-	location    worldmap.Coordinates
-	icon        icon.Icon
-	initiative  int
-	attributes  map[string]*worldmap.Attribute
-	ac          int
-	str         int
-	dex         int
-	encumbrance int
-	rider       Rider
-	world       *worldmap.Map
-	moved       bool
-	ai          ai
+	name       *ui.PlainName
+	id         string
+	location   worldmap.Coordinates
+	icon       icon.Icon
+	initiative int
+	attributes map[string]*worldmap.Attribute
+	rider      Rider
+	world      *worldmap.Map
+	moved      bool
+	ai         ai
 }
 
 type Rider interface {

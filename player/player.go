@@ -24,14 +24,18 @@ func check(err error) {
 
 func NewPlayer(world *worldmap.Map) *Player {
 	attributes := map[string]*worldmap.Attribute{
-		"hp":     worldmap.NewAttribute(10, 10),
-		"hunger": worldmap.NewAttribute(0, 100),
-		"thirst": worldmap.NewAttribute(0, 100)}
+		"hp":          worldmap.NewAttribute(10, 10),
+		"hunger":      worldmap.NewAttribute(0, 100),
+		"thirst":      worldmap.NewAttribute(0, 100),
+		"ac":          worldmap.NewAttribute(15, 15),
+		"str":         worldmap.NewAttribute(12, 12),
+		"dex":         worldmap.NewAttribute(10, 10),
+		"encumbrance": worldmap.NewAttribute(100, 100)}
 
 	attributes["hunger"].AddEffect(item.NewOngoingEffect(1))
 	attributes["thirst"].AddEffect(item.NewOngoingEffect(1))
 
-	player := &Player{worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, attributes, 15, 12, 10, 100, false, 1000, nil, nil, make(map[rune]([]item.Item)), "", nil, world}
+	player := &Player{worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, attributes, false, 1000, nil, nil, make(map[rune]([]item.Item)), "", nil, world}
 	player.AddItem(item.NewWeapon("shotgun"))
 	player.AddItem(item.NewWeapon("sawn-off shotgun"))
 	player.AddItem(item.NewWeapon("baseball bat"))
@@ -53,7 +57,7 @@ func (p *Player) Render() ui.Element {
 func (p *Player) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Location", "Icon", "Initiative", "Attributes", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID"}
+	keys := []string{"Location", "Icon", "Initiative", "Attributes", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID"}
 
 	mountID := ""
 	if p.mount != nil {
@@ -61,19 +65,15 @@ func (p *Player) MarshalJSON() ([]byte, error) {
 	}
 
 	playerValues := map[string]interface{}{
-		"Location":    p.location,
-		"Icon":        p.icon,
-		"Initiative":  p.initiative,
-		"Attributes":  p.attributes,
-		"AC":          p.ac,
-		"Str":         p.str,
-		"Dex":         p.dex,
-		"Encumbrance": p.encumbrance,
-		"Money":       p.money,
-		"Weapon":      p.weapon,
-		"Armour":      p.armour,
-		"Crouching":   p.crouching,
-		"MountID":     mountID,
+		"Location":   p.location,
+		"Icon":       p.icon,
+		"Initiative": p.initiative,
+		"Attributes": p.attributes,
+		"Money":      p.money,
+		"Weapon":     p.weapon,
+		"Armour":     p.armour,
+		"Crouching":  p.crouching,
+		"MountID":    mountID,
 	}
 
 	var inventory []item.Item
@@ -106,20 +106,16 @@ func (p *Player) MarshalJSON() ([]byte, error) {
 func (p *Player) UnmarshalJSON(data []byte) error {
 
 	type playerJson struct {
-		Location    worldmap.Coordinates
-		Icon        icon.Icon
-		Initiative  int
-		Attributes  map[string]*worldmap.Attribute
-		AC          int
-		Str         int
-		Dex         int
-		Encumbrance int
-		Crouching   bool
-		Money       int
-		Weapon      *item.Weapon
-		Armour      *item.Armour
-		Inventory   item.ItemList
-		MountID     string
+		Location   worldmap.Coordinates
+		Icon       icon.Icon
+		Initiative int
+		Attributes map[string]*worldmap.Attribute
+		Crouching  bool
+		Money      int
+		Weapon     *item.Weapon
+		Armour     *item.Armour
+		Inventory  item.ItemList
+		MountID    string
 	}
 	v := playerJson{}
 
@@ -131,10 +127,6 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 	p.icon = v.Icon
 	p.initiative = v.Initiative
 	p.attributes = v.Attributes
-	p.ac = v.AC
-	p.str = v.Str
-	p.dex = v.Dex
-	p.encumbrance = v.Encumbrance
 	p.crouching = v.Crouching
 	p.money = v.Money
 	p.weapon = v.Weapon
@@ -187,7 +179,7 @@ func (p *Player) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 }
 
 func (p *Player) MeleeAttack(c worldmap.Creature) {
-	p.attack(c, worldmap.GetBonus(p.str), worldmap.GetBonus(p.str))
+	p.attack(c, worldmap.GetBonus(p.attributes["str"].Value()), worldmap.GetBonus(p.attributes["str"].Value()))
 }
 
 func (p *Player) TakeDamage(damage int) {
@@ -197,9 +189,9 @@ func (p *Player) TakeDamage(damage int) {
 func (p *Player) GetStats() []string {
 	stats := make([]string, 5)
 	stats[0] = fmt.Sprintf("HP:%s", p.attributes["hp"].Status())
-	stats[1] = fmt.Sprintf("STR:%d(%+d)", p.str, worldmap.GetBonus(p.str))
-	stats[2] = fmt.Sprintf("DEX:%d(%+d)", p.dex, worldmap.GetBonus(p.dex))
-	stats[3] = fmt.Sprintf("AC:%d", p.ac)
+	stats[1] = fmt.Sprintf("STR:%d(%+d)", p.attributes["str"].Value(), worldmap.GetBonus(p.attributes["str"].Value()))
+	stats[2] = fmt.Sprintf("DEX:%d(%+d)", p.attributes["dex"].Value(), worldmap.GetBonus(p.attributes["dex"].Value()))
+	stats[3] = fmt.Sprintf("AC:%d", p.attributes["ac"].Value())
 	stats[4] = fmt.Sprintf("$%.2f", float64(p.money)/100)
 	if p.crouching {
 		stats = append(stats, "Crouching")
@@ -308,7 +300,7 @@ func (p *Player) IsDead() bool {
 }
 
 func (p *Player) AttackHits(roll int) bool {
-	return roll > p.ac
+	return roll > p.attributes["ac"].Value()
 }
 
 func (p *Player) RangedAttack() bool {
@@ -337,7 +329,7 @@ func (p *Player) RangedAttack() bool {
 		if p.world.TargetBehindCover(p, target) {
 			coverPenalty = 5
 		}
-		p.attack(target, worldmap.GetBonus(p.dex)-coverPenalty, 0)
+		p.attack(target, worldmap.GetBonus(p.attributes["ac"].Value())-coverPenalty, 0)
 	} else {
 		message.Enqueue("Your target was too far away.")
 	}
@@ -572,10 +564,8 @@ func (p *Player) WearArmour() bool {
 				if a, ok := itm.(*item.Armour); ok {
 					other := p.armour
 					p.armour = a
-					p.ac += a.GetACBonus()
 					if other != nil {
-						p.ac -= other.GetACBonus()
-						p.AddItem(a)
+						p.AddItem(other)
 					}
 					message.Enqueue(fmt.Sprintf("You are now wearing a %s.", a.GetName()))
 					return true
@@ -794,14 +784,14 @@ func (p *Player) OverEncumbered() bool {
 		total += p.weapon.GetWeight()
 	}
 	if p.armour != nil {
-		total += p.weapon.GetWeight()
+		total += p.armour.GetWeight()
 	}
 	for _, items := range p.inventory {
 		for _, item := range items {
 			total += item.GetWeight()
 		}
 	}
-	total_encumbrance := p.encumbrance
+	total_encumbrance := p.attributes["encumbrance"].Value()
 	if p.mount != nil {
 		total_encumbrance += p.mount.GetEncumbrance()
 	}
@@ -1313,6 +1303,12 @@ func (p *Player) Update() {
 		attribute.Update()
 	}
 
+	// Apply armour AC bonus
+	if p.armour != nil {
+		p.attributes["ac"].AddEffect(item.NewEffect(p.armour.GetACBonus(), 1, true))
+		p.attributes["ac"].AddEffect(item.NewEffect(p.armour.GetACBonus(), 1, false))
+	}
+
 	if p.mount != nil {
 		p.mount.ResetMoved()
 		p.mount.SetCoordinates(p.location.X, p.location.Y)
@@ -1332,20 +1328,16 @@ func (p *Player) LoadMount(mounts []*npc.Mount) {
 }
 
 type Player struct {
-	location    worldmap.Coordinates
-	icon        icon.Icon
-	initiative  int
-	attributes  map[string]*worldmap.Attribute
-	ac          int
-	str         int
-	dex         int
-	encumbrance int
-	crouching   bool
-	money       int
-	weapon      *item.Weapon
-	armour      *item.Armour
-	inventory   map[rune]([]item.Item)
-	mountID     string
-	mount       *npc.Mount
-	world       *worldmap.Map
+	location   worldmap.Coordinates
+	icon       icon.Icon
+	initiative int
+	attributes map[string]*worldmap.Attribute
+	crouching  bool
+	money      int
+	weapon     *item.Weapon
+	armour     *item.Armour
+	inventory  map[rune]([]item.Item)
+	mountID    string
+	mount      *npc.Mount
+	world      *worldmap.Map
 }

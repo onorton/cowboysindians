@@ -60,8 +60,12 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 	location := worldmap.Coordinates{x, y}
 	name := generateName(npcType)
 	attributes := map[string]*worldmap.Attribute{
-		"hp": worldmap.NewAttribute(n.Hp, n.Hp)}
-	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, npcAi{worldmap.NewRandomWaypoint(world, location)}, &basicDialogue{false}}
+		"hp":          worldmap.NewAttribute(n.Hp, n.Hp),
+		"ac":          worldmap.NewAttribute(n.Ac, n.Ac),
+		"str":         worldmap.NewAttribute(n.Str, n.Str),
+		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
+		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
+	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, npcAi{worldmap.NewRandomWaypoint(world, location)}, &basicDialogue{false}}
 	npc.initialiseInventory(n.Inventory)
 	event.Subscribe(npc)
 	return npc
@@ -97,9 +101,13 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 	}
 
 	attributes := map[string]*worldmap.Attribute{
-		"hp": worldmap.NewAttribute(n.Hp, n.Hp)}
+		"hp":          worldmap.NewAttribute(n.Hp, n.Hp),
+		"ac":          worldmap.NewAttribute(n.Ac, n.Ac),
+		"str":         worldmap.NewAttribute(n.Str, n.Str),
+		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
+		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
 
-	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, n.Ac, n.Str, n.Dex, n.Encumbrance, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, ai, dialogue}
+	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, ai, dialogue}
 	for c, count := range n.ShopInventory {
 
 		for i := 0; i < count; i++ {
@@ -154,7 +162,7 @@ func (npc *Npc) Render() ui.Element {
 func (npc *Npc) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "AC", "Str", "Dex", "Encumbrance", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID", "Ai", "Dialogue"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID", "Ai", "Dialogue"}
 
 	mountID := ""
 	if npc.mount != nil {
@@ -162,24 +170,20 @@ func (npc *Npc) MarshalJSON() ([]byte, error) {
 	}
 
 	npcValues := map[string]interface{}{
-		"Name":        npc.name,
-		"Id":          npc.id,
-		"Location":    npc.location,
-		"Icon":        npc.icon,
-		"Initiative":  npc.initiative,
-		"Attributes":  npc.attributes,
-		"AC":          npc.ac,
-		"Str":         npc.str,
-		"Dex":         npc.dex,
-		"Encumbrance": npc.encumbrance,
-		"Crouching":   npc.crouching,
-		"Money":       npc.money,
-		"Weapon":      npc.weapon,
-		"Armour":      npc.armour,
-		"Inventory":   npc.inventory,
-		"MountID":     mountID,
-		"Ai":          npc.ai,
-		"Dialogue":    npc.dialogue,
+		"Name":       npc.name,
+		"Id":         npc.id,
+		"Location":   npc.location,
+		"Icon":       npc.icon,
+		"Initiative": npc.initiative,
+		"Attributes": npc.attributes,
+		"Crouching":  npc.crouching,
+		"Money":      npc.money,
+		"Weapon":     npc.weapon,
+		"Armour":     npc.armour,
+		"Inventory":  npc.inventory,
+		"MountID":    mountID,
+		"Ai":         npc.ai,
+		"Dialogue":   npc.dialogue,
 	}
 
 	length := len(npcValues)
@@ -211,24 +215,20 @@ func (npc *Npc) Talk() interaction {
 func (npc *Npc) UnmarshalJSON(data []byte) error {
 
 	type npcJson struct {
-		Name        *npcName
-		Id          string
-		Location    worldmap.Coordinates
-		Icon        icon.Icon
-		Initiative  int
-		Attributes  map[string]*worldmap.Attribute
-		AC          int
-		Str         int
-		Dex         int
-		Encumbrance int
-		Crouching   bool
-		Money       int
-		Weapon      *item.Weapon
-		Armour      *item.Armour
-		Inventory   item.ItemList
-		MountID     string
-		Ai          map[string]interface{}
-		Dialogue    map[string]interface{}
+		Name       *npcName
+		Id         string
+		Location   worldmap.Coordinates
+		Icon       icon.Icon
+		Initiative int
+		Attributes map[string]*worldmap.Attribute
+		Crouching  bool
+		Money      int
+		Weapon     *item.Weapon
+		Armour     *item.Armour
+		Inventory  item.ItemList
+		MountID    string
+		Ai         map[string]interface{}
+		Dialogue   map[string]interface{}
 	}
 	var v npcJson
 
@@ -240,10 +240,6 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 	npc.icon = v.Icon
 	npc.initiative = v.Initiative
 	npc.attributes = v.Attributes
-	npc.ac = v.AC
-	npc.str = v.Str
-	npc.dex = v.Dex
-	npc.encumbrance = v.Encumbrance
 	npc.crouching = v.Crouching
 	npc.money = v.Money
 	npc.weapon = v.Weapon
@@ -268,11 +264,11 @@ func (npc *Npc) GetInitiative() int {
 }
 
 func (npc *Npc) MeleeAttack(c worldmap.Creature) {
-	npc.attack(c, worldmap.GetBonus(npc.str), worldmap.GetBonus(npc.str))
+	npc.attack(c, worldmap.GetBonus(npc.attributes["str"].Value()), worldmap.GetBonus(npc.attributes["str"].Value()))
 }
 
 func (npc *Npc) rangedAttack(c worldmap.Creature, environmentBonus int) {
-	npc.attack(c, worldmap.GetBonus(npc.dex)+environmentBonus, 0)
+	npc.attack(c, worldmap.GetBonus(npc.attributes["dex"].Value())+environmentBonus, 0)
 }
 
 func (npc *Npc) attack(c worldmap.Creature, hitBonus, damageBonus int) {
@@ -301,7 +297,7 @@ func (npc *Npc) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 }
 
 func (npc *Npc) AttackHits(roll int) bool {
-	return roll > npc.ac
+	return roll > npc.attributes["ac"].Value()
 }
 func (npc *Npc) TakeDamage(damage int) {
 	npc.attributes["hp"].AddEffect(item.NewInstantEffect(-damage))
@@ -358,7 +354,7 @@ func (npc *Npc) overEncumbered() bool {
 	for _, item := range npc.inventory {
 		weight += item.GetWeight()
 	}
-	return weight > float64(npc.encumbrance)
+	return weight > float64(npc.attributes["encumbrance"].Value())
 }
 func (npc *Npc) dropItem(item item.Item) {
 	npc.RemoveItem(item)
@@ -373,6 +369,13 @@ func (npc *Npc) Update() {
 	for _, attribute := range npc.attributes {
 		attribute.Update()
 	}
+
+	// Apply armour AC bonus
+	if npc.armour != nil {
+		npc.attributes["ac"].AddEffect(item.NewEffect(npc.armour.GetACBonus(), 1, true))
+		npc.attributes["ac"].AddEffect(item.NewEffect(npc.armour.GetACBonus(), 1, false))
+	}
+
 	if npc.IsDead() {
 		return
 	}
@@ -623,24 +626,20 @@ func (npc *Npc) ProcessEvent(e event.Event) {
 }
 
 type Npc struct {
-	name        *npcName
-	id          string
-	location    worldmap.Coordinates
-	icon        icon.Icon
-	initiative  int
-	attributes  map[string]*worldmap.Attribute
-	ac          int
-	str         int
-	dex         int
-	encumbrance int
-	crouching   bool
-	money       int
-	weapon      *item.Weapon
-	armour      *item.Armour
-	inventory   []item.Item
-	mountID     string
-	mount       *Mount
-	world       *worldmap.Map
-	ai          ai
-	dialogue    dialogue
+	name       *npcName
+	id         string
+	location   worldmap.Coordinates
+	icon       icon.Icon
+	initiative int
+	attributes map[string]*worldmap.Attribute
+	crouching  bool
+	money      int
+	weapon     *item.Weapon
+	armour     *item.Armour
+	inventory  []item.Item
+	mountID    string
+	mount      *Mount
+	world      *worldmap.Map
+	ai         ai
+	dialogue   dialogue
 }
