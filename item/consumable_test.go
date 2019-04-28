@@ -14,9 +14,9 @@ type consumableMarshallingPair struct {
 }
 
 var consumableMarshallingTests = []consumableMarshallingPair{
-	{Consumable{baseItem{"beer", "townsman", icon.NewIcon(98, 2), 0.01, 20}, map[string]int{"hp": 1, "thirst": 10}}, "{\"Type\":\"consumable\",\"Name\":\"beer\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":2},\"Weight\":0.01,\"Value\":20,\"Effects\":{\"hp\":1,\"thirst\":10}}"},
-	{Consumable{baseItem{"standard ration", "bandit", icon.NewIcon(42, 4), 0.1, 40}, map[string]int{"hp": 10, "hunger": 10}}, "{\"Type\":\"consumable\",\"Name\":\"standard ration\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":0.1,\"Value\":40,\"Effects\":{\"hp\":10,\"hunger\":10}}"},
-	{Consumable{baseItem{"healing potion", "townsman", icon.NewIcon(112, 4), 0.1, 100}, map[string]int{"hp": 20}}, "{\"Type\":\"consumable\",\"Name\":\"healing potion\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":112,\"Colour\":4},\"Weight\":0.1,\"Value\":100,\"Effects\":{\"hp\":20}}"},
+	{Consumable{baseItem{"beer", "townsman", icon.NewIcon(98, 2), 0.01, 20}, map[string][]Effect{"hp": []Effect{*NewInstantEffect(1)}, "thirst": []Effect{*NewInstantEffect(-10)}}}, "{\"Type\":\"consumable\",\"Name\":\"beer\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":2},\"Weight\":0.01,\"Value\":20,\"Effects\":{\"hp\":[{\"Effect\":1,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}],\"thirst\":[{\"Effect\":-10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}"},
+	{Consumable{baseItem{"standard ration", "bandit", icon.NewIcon(42, 4), 0.1, 40}, map[string][]Effect{"hp": []Effect{*NewInstantEffect(10)}, "hunger": []Effect{*NewInstantEffect(-10)}}}, "{\"Type\":\"consumable\",\"Name\":\"standard ration\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":0.1,\"Value\":40,\"Effects\":{\"hp\":[{\"Effect\":10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}],\"hunger\":[{\"Effect\":-10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}"},
+	{Consumable{baseItem{"healing potion", "townsman", icon.NewIcon(112, 4), 0.1, 100}, map[string][]Effect{"hp": []Effect{*NewInstantEffect(20)}}}, "{\"Type\":\"consumable\",\"Name\":\"healing potion\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":112,\"Colour\":4},\"Weight\":0.1,\"Value\":100,\"Effects\":{\"hp\":[{\"Effect\":20,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}"},
 }
 
 type consumableUnmarshallingPair struct {
@@ -25,9 +25,9 @@ type consumableUnmarshallingPair struct {
 }
 
 var consumableUnmarshallingTests = []consumableUnmarshallingPair{
-	{"{\"Type\":\"consumable\",\"Name\":\"beer\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":2},\"Weight\":0.01,\"Value\":20,\"Effects\":{\"hp\":1,\"thirst\":10}}", Consumable{baseItem{"beer", "townsman", icon.NewIcon(98, 2), 0.01, 20}, map[string]int{"hp": 1, "thirst": 10}}},
-	{"{\"Type\":\"consumable\",\"Name\":\"standard ration\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":0.1,\"Value\":40,\"Effects\":{\"hp\":10,\"hunger\":10}}", Consumable{baseItem{"standard ration", "bandit", icon.NewIcon(42, 4), 0.1, 40}, map[string]int{"hp": 10, "hunger": 10}}},
-	{"{\"Type\":\"consumable\",\"Name\":\"healing potion\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":112,\"Colour\":4},\"Weight\":0.1,\"Value\":100,\"Effects\":{\"hp\":20}}", Consumable{baseItem{"healing potion", "townsman", icon.NewIcon(112, 4), 0.1, 100}, map[string]int{"hp": 20}}},
+	{"{\"Type\":\"consumable\",\"Name\":\"beer\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":2},\"Weight\":0.01,\"Value\":20,\"Effects\":{\"hp\":[{\"Effect\":1,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}],\"thirst\":[{\"Effect\":-10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}", Consumable{baseItem{"beer", "townsman", icon.NewIcon(98, 2), 0.01, 20}, map[string][]Effect{"hp": []Effect{*NewInstantEffect(1)}, "thirst": []Effect{*NewInstantEffect(-10)}}}},
+	{"{\"Type\":\"consumable\",\"Name\":\"standard ration\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":0.1,\"Value\":40,\"Effects\":{\"hp\":[{\"Effect\":10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}],\"hunger\":[{\"Effect\":-10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}", Consumable{baseItem{"standard ration", "bandit", icon.NewIcon(42, 4), 0.1, 40}, map[string][]Effect{"hp": []Effect{*NewInstantEffect(10)}, "hunger": []Effect{*NewInstantEffect(-10)}}}},
+	{"{\"Type\":\"consumable\",\"Name\":\"healing potion\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":112,\"Colour\":4},\"Weight\":0.1,\"Value\":100,\"Effects\":{\"hp\":[{\"Effect\":20,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}", Consumable{baseItem{"healing potion", "townsman", icon.NewIcon(112, 4), 0.1, 100}, map[string][]Effect{"hp": []Effect{*NewInstantEffect(20)}}}},
 }
 
 func TestConsumableMarshalling(t *testing.T) {
