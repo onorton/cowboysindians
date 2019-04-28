@@ -99,11 +99,6 @@ func (itemList *ItemList) UnmarshalJSON(data []byte) error {
 			err = json.Unmarshal(itemJson, item)
 			check(err)
 			items = append(items, item)
-		case "readable":
-			readable := &Readable{}
-			err = json.Unmarshal(itemJson, readable)
-			check(err)
-			items = append(items, readable)
 		case "weapon":
 			weapon := &Weapon{}
 			err = json.Unmarshal(itemJson, weapon)

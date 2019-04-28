@@ -283,7 +283,7 @@ func (p *Player) PrintConsumables() {
 func (p *Player) PrintReadables() {
 	position := 0
 	for k, items := range p.inventory {
-		if _, ok := p.inventory[k][0].(*item.Readable); !ok {
+		if itm, ok := p.inventory[k][0].(*item.NormalItem); !ok || !itm.IsReadable() {
 			continue
 		}
 		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
@@ -440,7 +440,7 @@ func (p *Player) GetReadableKeys() string {
 	keysSet := make([]bool, 128)
 	for k := range p.inventory {
 
-		if _, ok := p.inventory[k][0].(*item.Readable); ok {
+		if itm, ok := p.inventory[k][0].(*item.NormalItem); ok && itm.IsReadable() {
 			keysSet[k] = true
 		}
 	}
@@ -1214,11 +1214,11 @@ func (p *Player) Talk() {
 func (p *Player) Read() {
 	items := p.world.GetItems(p.location.X, p.location.Y)
 
-	readables := make([]item.Readable, 0)
+	readables := make([]item.NormalItem, 0)
 
 	for _, itm := range items {
-		if readable, ok := itm.(*item.Readable); ok {
-			readables = append(readables, *readable)
+		if itm, ok := itm.(*item.NormalItem); ok && itm.IsReadable() {
+			readables = append(readables, *itm)
 		}
 	}
 
@@ -1262,7 +1262,7 @@ func (p *Player) Read() {
 				message.PrintMessage("You don't have that to read.")
 				ui.GetInput()
 			} else {
-				if r, ok := itm.(*item.Readable); ok {
+				if r, ok := itm.(*item.NormalItem); ok && r.IsReadable() {
 					message.PrintMessage(r.Read())
 					return
 				} else {

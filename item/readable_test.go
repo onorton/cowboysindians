@@ -8,23 +8,26 @@ import (
 )
 
 type readableMarshallingPair struct {
-	readable Readable
+	readable NormalItem
 	result   string
 }
 
+var signpostDescription string = "\"Welcome to Deadwood!\""
+var bookDescription string = "This book has words in it."
+
 var readableMarshallingTests = []readableMarshallingPair{
-	{Readable{baseItem{"signpost", "", icon.NewIcon(80, 4), 20, 1000}, "\"Welcome to Deadwood!\""}, "{\"Type\":\"readable\",\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Description\":\"\\\"Welcome to Deadwood!\\\"\"}"},
-	{Readable{baseItem{"book", "townsman", icon.NewIcon(98, 6), 1, 1000}, "This book has words in it."}, "{\"Type\":\"readable\",\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Description\":\"This book has words in it.\"}"},
+	{NormalItem{baseItem{"signpost", "", icon.NewIcon(80, 4), 20, 1000}, false, &signpostDescription}, "{\"Type\":\"normal\",\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Cover\":false,\"Description\":\"\\\"Welcome to Deadwood!\\\"\"}"},
+	{NormalItem{baseItem{"book", "townsman", icon.NewIcon(98, 6), 1, 1000}, false, &bookDescription}, "{\"Type\":\"normal\",\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Cover\":false,\"Description\":\"This book has words in it.\"}"},
 }
 
 type readableUnmarshallingPair struct {
 	readableJson string
-	readable     Readable
+	readable     NormalItem
 }
 
 var readableUnmarshallingTests = []readableUnmarshallingPair{
-	{"{\"Type\":\"readable\",\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Description\":\"\\\"Welcome to Deadwood!\\\"\"}", Readable{baseItem{"signpost", "", icon.NewIcon(80, 4), 20, 1000}, "\"Welcome to Deadwood!\""}},
-	{"{\"Type\":\"readable\",\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Description\":\"This book has words in it.\"}", Readable{baseItem{"book", "townsman", icon.NewIcon(98, 6), 1, 1000}, "This book has words in it."}},
+	{"{\"Type\":\"normal\",\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Description\":\"\\\"Welcome to Deadwood!\\\"\"}", NormalItem{baseItem{"signpost", "", icon.NewIcon(80, 4), 20, 1000}, false, &signpostDescription}},
+	{"{\"Type\":\"normal\",\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Description\":\"This book has words in it.\"}", NormalItem{baseItem{"book", "townsman", icon.NewIcon(98, 6), 1, 1000}, false, &bookDescription}},
 }
 
 func TestReadableMarshalling(t *testing.T) {
@@ -48,7 +51,7 @@ func TestReadableMarshalling(t *testing.T) {
 func TestReadableUnmarshalling(t *testing.T) {
 
 	for _, pair := range readableUnmarshallingTests {
-		readable := Readable{}
+		readable := NormalItem{}
 
 		if err := json.Unmarshal([]byte(pair.readableJson), &readable); err != nil {
 			t.Error("Failed when unmarshalling", pair.readableJson, err)
@@ -93,11 +96,19 @@ func TestReadableUnmarshalling(t *testing.T) {
 			)
 		}
 
-		if readable.description != pair.readable.description {
+		if readable.cover != pair.readable.cover {
+			t.Error(
+				"For", "Gives Cover",
+				"expected", pair.readable.cover,
+				"got", readable.cover,
+			)
+		}
+
+		if *(readable.description) != *(pair.readable.description) {
 			t.Error(
 				"For", "Description",
-				"expected", pair.readable.description,
-				"got", readable.description,
+				"expected", (pair.readable.description),
+				"got", *(readable.description),
 			)
 		}
 	}

@@ -36,17 +36,18 @@ func fetchItemData() {
 
 type NormalItem struct {
 	baseItem
-	cover bool
+	cover       bool
+	description *string
 }
 
 func NewNormalItem(name string) Item {
 	item := normalItemData[name]
-	var itm Item = &NormalItem{baseItem{name, "", item.Icon, item.Weight, item.Value}, item.Cover}
+	var itm Item = &NormalItem{baseItem{name, "", item.Icon, item.Weight, item.Value}, item.Cover, nil}
 	return itm
 }
 
 func Money(amount int) Item {
-	return &NormalItem{baseItem{"money", "", icon.NewIcon('$', 4), 0, amount}, false}
+	return &NormalItem{baseItem{"money", "", icon.NewIcon('$', 4), 0, amount}, false, nil}
 }
 
 func GenerateNormalItem() Item {
@@ -92,7 +93,14 @@ func (item *NormalItem) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"Cover\":%s", coverValue))
+	buffer.WriteString(fmt.Sprintf("\"Cover\":%s,", coverValue))
+
+	descriptionValue, err := json.Marshal(item.description)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Description\":%s", descriptionValue))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -101,12 +109,13 @@ func (item *NormalItem) MarshalJSON() ([]byte, error) {
 func (item *NormalItem) UnmarshalJSON(data []byte) error {
 
 	type itemJson struct {
-		Name   string
-		Owner  string
-		Icon   icon.Icon
-		Weight float64
-		Value  int
-		Cover  bool
+		Name        string
+		Owner       string
+		Icon        icon.Icon
+		Weight      float64
+		Value       int
+		Cover       bool
+		Description *string
 	}
 	var v itemJson
 
@@ -120,6 +129,7 @@ func (item *NormalItem) UnmarshalJSON(data []byte) error {
 	item.w = v.Weight
 	item.v = v.Value
 	item.cover = v.Cover
+	item.description = v.Description
 
 	return nil
 }
@@ -136,6 +146,10 @@ func (item *NormalItem) TransferOwner(newOwner string) {
 	if item.owner == "" {
 		item.owner = newOwner
 	}
+}
+
+func (item *NormalItem) IsReadable() bool {
+	return item.description != nil
 }
 
 func (item *NormalItem) GivesCover() bool {
