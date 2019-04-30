@@ -74,11 +74,6 @@ func (itemList *ItemList) UnmarshalJSON(data []byte) error {
 
 		switch rawItem["Type"] {
 
-		case "ammo":
-			ammo := &Ammo{}
-			err = json.Unmarshal(itemJson, ammo)
-			check(err)
-			items = append(items, ammo)
 		case "armour":
 			armour := &Armour{}
 			err = json.Unmarshal(itemJson, armour)

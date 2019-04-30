@@ -444,9 +444,9 @@ func (npc *Npc) EmptyInventory() {
 
 }
 
-func (npc *Npc) getAmmo() *item.Ammo {
+func (npc *Npc) getAmmo() *item.NormalItem {
 	for i, itm := range npc.inventory {
-		if ammo, ok := itm.(*item.Ammo); ok && npc.weapon.AmmoTypeMatches(ammo) {
+		if ammo, ok := itm.(*item.NormalItem); ok && ammo.IsAmmo() && npc.weapon.AmmoTypeMatches(ammo) {
 			npc.inventory = append(npc.inventory[:i], npc.inventory[i+1:]...)
 			return ammo
 		}
@@ -486,7 +486,7 @@ func (npc *Npc) weaponFullyLoaded() bool {
 // Check whether npc has ammo for particular wielded weapon
 func (npc *Npc) hasAmmo() bool {
 	for _, itm := range npc.inventory {
-		if a, ok := itm.(*item.Ammo); ok && npc.weapon.AmmoTypeMatches(a) {
+		if a, ok := itm.(*item.NormalItem); ok && a.IsAmmo() && npc.weapon.AmmoTypeMatches(a) {
 			return true
 		}
 	}

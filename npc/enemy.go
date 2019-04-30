@@ -343,9 +343,9 @@ func (e *Enemy) EmptyInventory() {
 
 }
 
-func (e *Enemy) getAmmo() *item.Ammo {
+func (e *Enemy) getAmmo() *item.NormalItem {
 	for i, itm := range e.inventory {
-		if ammo, ok := itm.(*item.Ammo); ok && e.weapon.AmmoTypeMatches(ammo) {
+		if ammo, ok := itm.(*item.NormalItem); ok && ammo.IsAmmo() && e.weapon.AmmoTypeMatches(ammo) {
 			e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
 			return ammo
 		}
@@ -393,7 +393,7 @@ func (e *Enemy) weaponFullyLoaded() bool {
 // Check whether enemy has ammo for particular wielded weapon
 func (e *Enemy) hasAmmo() bool {
 	for _, itm := range e.inventory {
-		if a, ok := itm.(*item.Ammo); ok && e.weapon.AmmoTypeMatches(a) {
+		if a, ok := itm.(*item.NormalItem); ok && a.IsAmmo() && e.weapon.AmmoTypeMatches(a) {
 			return true
 		}
 	}

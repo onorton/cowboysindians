@@ -8,23 +8,23 @@ import (
 )
 
 type ammoMarshallingPair struct {
-	ammo   Ammo
+	ammo   NormalItem
 	result string
 }
 
 var ammoMarshallingTests = []ammoMarshallingPair{
-	{Ammo{baseItem{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20}, 2}, "{\"Type\":\"ammo\",\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"AmmoType\":2,\"Weight\":0.2,\"Value\":20}"},
-	{Ammo{baseItem{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10}, 1}, "{\"Type\":\"ammo\",\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"AmmoType\":1,\"Weight\":0.01,\"Value\":10}"},
+	{NormalItem{baseItem{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20}, false, nil, false, Shotgun}, "{\"Type\":\"normal\",\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Weight\":0.2,\"Value\":20,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":2}"},
+	{NormalItem{baseItem{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10}, false, nil, false, Pistol}, "{\"Type\":\"normal\",\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Weight\":0.01,\"Value\":10,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":1}"},
 }
 
 type ammoUnmarshallingPair struct {
 	ammoJson string
-	ammo     Ammo
+	ammo     NormalItem
 }
 
 var ammoUnmarshallingTests = []ammoUnmarshallingPair{
-	{"{\"Type\":\"ammo\",\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"AmmoType\":2,\"Weight\":0.2,\"Value\":20}", Ammo{baseItem{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20}, 2}},
-	{"{\"Type\":\"ammo\",\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"AmmoType\":1,\"Weight\":0.01,\"Value\":10}", Ammo{baseItem{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10}, 1}},
+	{"{\"Type\":\"normal\",\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Weight\":0.2,\"Value\":20,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":2}", NormalItem{baseItem{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20}, false, nil, false, Shotgun}},
+	{"{\"Type\":\"normal\",\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Weight\":0.01,\"Value\":10,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":1}", NormalItem{baseItem{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10}, false, nil, false, Pistol}},
 }
 
 func TestAmmoMarshalling(t *testing.T) {
@@ -48,7 +48,7 @@ func TestAmmoMarshalling(t *testing.T) {
 func TestAmmoUnmarshalling(t *testing.T) {
 
 	for _, pair := range ammoUnmarshallingTests {
-		ammo := Ammo{}
+		ammo := NormalItem{}
 
 		if err := json.Unmarshal([]byte(pair.ammoJson), &ammo); err != nil {
 			t.Error("Failed when unmarshalling", pair.ammoJson, err)
@@ -85,11 +85,11 @@ func TestAmmoUnmarshalling(t *testing.T) {
 			)
 		}
 
-		if ammo.t != pair.ammo.t {
+		if ammo.ammoType != pair.ammo.ammoType {
 			t.Error(
-				"For", "AmmoType",
-				"expected", pair.ammo.t,
-				"got", ammo.t,
+				"For", "Ammo type",
+				"expected", pair.ammo.ammoType,
+				"got", ammo.ammoType,
 			)
 		}
 		if ammo.v != pair.ammo.v {
@@ -97,6 +97,22 @@ func TestAmmoUnmarshalling(t *testing.T) {
 				"For", "Value",
 				"expected", pair.ammo.v,
 				"got", ammo.v,
+			)
+		}
+
+		if ammo.cover != pair.ammo.cover {
+			t.Error(
+				"For", "Gives cover",
+				"expected", pair.ammo.cover,
+				"got", ammo.cover,
+			)
+		}
+
+		if ammo.corpse != pair.ammo.corpse {
+			t.Error(
+				"For", "Corpse",
+				"expected", pair.ammo.corpse,
+				"got", ammo.corpse,
 			)
 		}
 	}

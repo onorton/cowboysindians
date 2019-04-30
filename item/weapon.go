@@ -303,8 +303,8 @@ func (weapon *Weapon) GetDamage() int {
 	return result
 }
 
-func (weapon *Weapon) AmmoTypeMatches(ammo *Ammo) bool {
-	return weapon.t == ammo.t
+func (weapon *Weapon) AmmoTypeMatches(ammo *NormalItem) bool {
+	return weapon.t == ammo.ammoType
 }
 
 func (weapon *Weapon) NeedsAmmo() bool {

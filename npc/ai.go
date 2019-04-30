@@ -36,7 +36,7 @@ type usesItems interface {
 	weaponLoaded() bool
 	weaponFullyLoaded() bool
 	hasAmmo() bool
-	getAmmo() *item.Ammo
+	getAmmo() *item.NormalItem
 }
 
 type damageable interface {

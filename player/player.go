@@ -338,10 +338,10 @@ func (p *Player) RangedAttack() bool {
 
 }
 
-func (p *Player) getAmmo() *item.Ammo {
+func (p *Player) getAmmo() *item.NormalItem {
 	for k, items := range p.inventory {
-		if a, ok := items[0].(*item.Ammo); ok && p.weapon.AmmoTypeMatches(a) {
-			return p.GetItem(k).(*item.Ammo)
+		if a, ok := items[0].(*item.NormalItem); ok && a.IsAmmo() && p.weapon.AmmoTypeMatches(a) {
+			return p.GetItem(k).(*item.NormalItem)
 		}
 	}
 	return nil
@@ -664,7 +664,8 @@ func (p *Player) weaponFullyLoaded() bool {
 // Check whether player has ammo for particular wielded weapon
 func (p *Player) hasAmmo() bool {
 	for _, items := range p.inventory {
-		if a, ok := items[0].(*item.Ammo); ok && p.weapon.AmmoTypeMatches(a) {
+
+		if a, ok := items[0].(*item.NormalItem); ok && a.IsAmmo() && p.weapon.AmmoTypeMatches(a) {
 			return true
 		}
 	}
