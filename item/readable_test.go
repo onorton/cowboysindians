@@ -16,8 +16,8 @@ var signpostDescription string = "\"Welcome to Deadwood!\""
 var bookDescription string = "This book has words in it."
 
 var readableMarshallingTests = []readableMarshallingPair{
-	{NormalItem{baseItem{"signpost", "", icon.NewIcon(80, 4), 20, 1000}, false, &signpostDescription}, "{\"Type\":\"normal\",\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Cover\":false,\"Description\":\"\\\"Welcome to Deadwood!\\\"\"}"},
-	{NormalItem{baseItem{"book", "townsman", icon.NewIcon(98, 6), 1, 1000}, false, &bookDescription}, "{\"Type\":\"normal\",\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Cover\":false,\"Description\":\"This book has words in it.\"}"},
+	{NormalItem{baseItem{"signpost", "", icon.NewIcon(80, 4), 20, 1000}, false, &signpostDescription, false}, "{\"Type\":\"normal\",\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Cover\":false,\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"Corpse\":false}"},
+	{NormalItem{baseItem{"book", "townsman", icon.NewIcon(98, 6), 1, 1000}, false, &bookDescription, false}, "{\"Type\":\"normal\",\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Cover\":false,\"Description\":\"This book has words in it.\",\"Corpse\":false}"},
 }
 
 type readableUnmarshallingPair struct {
@@ -26,8 +26,8 @@ type readableUnmarshallingPair struct {
 }
 
 var readableUnmarshallingTests = []readableUnmarshallingPair{
-	{"{\"Type\":\"normal\",\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Description\":\"\\\"Welcome to Deadwood!\\\"\"}", NormalItem{baseItem{"signpost", "", icon.NewIcon(80, 4), 20, 1000}, false, &signpostDescription}},
-	{"{\"Type\":\"normal\",\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Description\":\"This book has words in it.\"}", NormalItem{baseItem{"book", "townsman", icon.NewIcon(98, 6), 1, 1000}, false, &bookDescription}},
+	{"{\"Type\":\"normal\",\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"Corpse\":false}", NormalItem{baseItem{"signpost", "", icon.NewIcon(80, 4), 20, 1000}, false, &signpostDescription, false}},
+	{"{\"Type\":\"normal\",\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Description\":\"This book has words in it.\",\"Corpse\":false}", NormalItem{baseItem{"book", "townsman", icon.NewIcon(98, 6), 1, 1000}, false, &bookDescription, false}},
 }
 
 func TestReadableMarshalling(t *testing.T) {
@@ -107,8 +107,16 @@ func TestReadableUnmarshalling(t *testing.T) {
 		if *(readable.description) != *(pair.readable.description) {
 			t.Error(
 				"For", "Description",
-				"expected", (pair.readable.description),
+				"expected", *(pair.readable.description),
 				"got", *(readable.description),
+			)
+		}
+
+		if readable.corpse != pair.readable.corpse {
+			t.Error(
+				"For", "Corpse",
+				"expected", pair.readable.corpse,
+				"got", readable.corpse,
 			)
 		}
 	}

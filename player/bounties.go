@@ -20,7 +20,7 @@ func claimBounties(p *Player, npc *npc.Npc) {
 			totalReward := 0
 			for _, items := range p.inventory {
 				for _, itm := range items {
-					if c, ok := itm.(*item.Corpse); ok {
+					if c, ok := itm.(*item.NormalItem); ok && c.IsCorpse() {
 						reward, criminal := npc.GetBounties().RemoveBounty(c.Owner())
 						if reward > 0 {
 							totalReward += reward

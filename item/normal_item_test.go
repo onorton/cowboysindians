@@ -13,10 +13,10 @@ type marshallingPair struct {
 }
 
 var marshallingTests = []marshallingPair{
-	{NormalItem{baseItem{"gem", "bandit", icon.NewIcon(42, 4), 2, 2000}, false, nil}, "{\"Type\":\"normal\",\"Name\":\"gem\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":2,\"Value\":2000,\"Cover\":false,\"Description\":null}"},
-	{NormalItem{baseItem{"stick", "townsman", icon.NewIcon(30, 7), 5, 2}, false, nil}, "{\"Type\":\"normal\",\"Name\":\"stick\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":30,\"Colour\":7},\"Weight\":5,\"Value\":2,\"Cover\":false,\"Description\":null}"},
-	{NormalItem{baseItem{"bowl", "bandit", icon.NewIcon(66, 10), 3, 10}, false, nil}, "{\"Type\":\"normal\",\"Name\":\"bowl\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":66,\"Colour\":10},\"Weight\":3,\"Value\":10,\"Cover\":false,\"Description\":null}"},
-	{NormalItem{baseItem{"barrel", "townsman", icon.NewIcon(111, 0), 30, 200}, true, nil}, "{\"Type\":\"normal\",\"Name\":\"barrel\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":111,\"Colour\":0},\"Weight\":30,\"Value\":200,\"Cover\":true,\"Description\":null}"},
+	{NormalItem{baseItem{"gem", "bandit", icon.NewIcon(42, 4), 2, 2000}, false, nil, false}, "{\"Type\":\"normal\",\"Name\":\"gem\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":2,\"Value\":2000,\"Cover\":false,\"Description\":null,\"Corpse\":false}"},
+	{NormalItem{baseItem{"stick", "townsman", icon.NewIcon(30, 7), 5, 2}, false, nil, false}, "{\"Type\":\"normal\",\"Name\":\"stick\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":30,\"Colour\":7},\"Weight\":5,\"Value\":2,\"Cover\":false,\"Description\":null,\"Corpse\":false}"},
+	{NormalItem{baseItem{"bowl", "bandit", icon.NewIcon(66, 10), 3, 10}, false, nil, false}, "{\"Type\":\"normal\",\"Name\":\"bowl\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":66,\"Colour\":10},\"Weight\":3,\"Value\":10,\"Cover\":false,\"Description\":null,\"Corpse\":false}"},
+	{NormalItem{baseItem{"barrel", "townsman", icon.NewIcon(111, 0), 30, 200}, true, nil, false}, "{\"Type\":\"normal\",\"Name\":\"barrel\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":111,\"Colour\":0},\"Weight\":30,\"Value\":200,\"Cover\":true,\"Description\":null,\"Corpse\":false}"},
 }
 
 type unmarshallingPair struct {
@@ -25,10 +25,10 @@ type unmarshallingPair struct {
 }
 
 var unmarshallingTests = []unmarshallingPair{
-	{"{\"Type\":\"normal\",\"Name\":\"gem\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":2,\"Value\":2000,\"Cover\":false}", NormalItem{baseItem{"gem", "bandit", icon.NewIcon(42, 4), 2, 2000}, false, nil}},
-	{"{\"Type\":\"normal\",\"Name\":\"stick\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":30,\"Colour\":7},\"Weight\":5,\"Value\":2,\"Cover\":false}", NormalItem{baseItem{"stick", "townsman", icon.NewIcon(30, 7), 5, 2}, false, nil}},
-	{"{\"Type\":\"normal\",\"Name\":\"bowl\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":66,\"Colour\":10},\"Weight\":3,\"Value\":10,\"Cover\":false}", NormalItem{baseItem{"bowl", "bandit", icon.NewIcon(66, 10), 3, 10}, false, nil}},
-	{"{\"Type\":\"normal\",\"Name\":\"barrel\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":111,\"Colour\":0},\"Weight\":30,\"Value\":200,\"Cover\":true}", NormalItem{baseItem{"barrel", "townsman", icon.NewIcon(111, 0), 30, 200}, true, nil}},
+	{"{\"Type\":\"normal\",\"Name\":\"gem\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":2,\"Value\":2000,\"Cover\":false}", NormalItem{baseItem{"gem", "bandit", icon.NewIcon(42, 4), 2, 2000}, false, nil, false}},
+	{"{\"Type\":\"normal\",\"Name\":\"stick\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":30,\"Colour\":7},\"Weight\":5,\"Value\":2,\"Cover\":false}", NormalItem{baseItem{"stick", "townsman", icon.NewIcon(30, 7), 5, 2}, false, nil, false}},
+	{"{\"Type\":\"normal\",\"Name\":\"bowl\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":66,\"Colour\":10},\"Weight\":3,\"Value\":10,\"Cover\":false}", NormalItem{baseItem{"bowl", "bandit", icon.NewIcon(66, 10), 3, 10}, false, nil, false}},
+	{"{\"Type\":\"normal\",\"Name\":\"barrel\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":111,\"Colour\":0},\"Weight\":30,\"Value\":200,\"Cover\":true}", NormalItem{baseItem{"barrel", "townsman", icon.NewIcon(111, 0), 30, 200}, true, nil, false}},
 }
 
 func TestMarshalling(t *testing.T) {
@@ -102,6 +102,14 @@ func TestUnmarshalling(t *testing.T) {
 				"For", "Gives cover",
 				"expected", pair.item.cover,
 				"got", item.cover,
+			)
+		}
+
+		if item.corpse != pair.item.corpse {
+			t.Error(
+				"For", "Corpse",
+				"expected", pair.item.corpse,
+				"got", item.corpse,
 			)
 		}
 	}

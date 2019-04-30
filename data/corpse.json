@@ -1,10 +1,12 @@
 {
   "head":{
 		"Weight": 10.5,
-		"Value": 1000
+		"Value": 1000,
+    "Cover": false
 	},
 	"body":{
 		"Weight": 140,
-		"Value": 500
+		"Value": 500,
+    "Cover": true
 	}
 }

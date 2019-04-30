@@ -89,11 +89,6 @@ func (itemList *ItemList) UnmarshalJSON(data []byte) error {
 			err = json.Unmarshal(itemJson, consumable)
 			check(err)
 			items = append(items, consumable)
-		case "corpse":
-			corpse := &Corpse{}
-			err = json.Unmarshal(itemJson, corpse)
-			check(err)
-			items = append(items, corpse)
 		case "normal":
 			item := &NormalItem{}
 			err = json.Unmarshal(itemJson, item)

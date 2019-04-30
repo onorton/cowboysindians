@@ -8,23 +8,23 @@ import (
 )
 
 type corpseMarshallingPair struct {
-	corpse Corpse
+	corpse NormalItem
 	result string
 }
 
 var corpseMarshallingTests = []corpseMarshallingPair{
-	{Corpse{baseItem{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000}}, "{\"Type\":\"corpse\",\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000}"},
-	{Corpse{baseItem{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500}}, "{\"Type\":\"corpse\",\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500}"},
+	{NormalItem{baseItem{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000}, false, nil, true}, "{\"Type\":\"normal\",\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000,\"Cover\":false,\"Description\":null,\"Corpse\":true}"},
+	{NormalItem{baseItem{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500}, true, nil, true}, "{\"Type\":\"normal\",\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500,\"Cover\":true,\"Description\":null,\"Corpse\":true}"},
 }
 
 type corpseUnmarshallingPair struct {
 	corpseJson string
-	corpse     Corpse
+	corpse     NormalItem
 }
 
 var corpseUnmarshallingTests = []corpseUnmarshallingPair{
-	{"{\"Type\":\"corpse\",\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000}", Corpse{baseItem{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000}}},
-	{"{\"Type\":\"corpse\",\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500}", Corpse{baseItem{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500}}},
+	{"{\"Type\":\"corpse\",\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000,\"Cover\":false,\"Corpse\":true}", NormalItem{baseItem{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000}, false, nil, true}},
+	{"{\"Type\":\"corpse\",\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500,\"Cover\":true,\"Corpse\":true}", NormalItem{baseItem{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500}, true, nil, true}},
 }
 
 func TestCorpseMarshalling(t *testing.T) {
@@ -48,7 +48,7 @@ func TestCorpseMarshalling(t *testing.T) {
 func TestCorpseUnmarshalling(t *testing.T) {
 
 	for _, pair := range corpseUnmarshallingTests {
-		corpse := Corpse{}
+		corpse := NormalItem{}
 
 		if err := json.Unmarshal([]byte(pair.corpseJson), &corpse); err != nil {
 			t.Error("Failed when unmarshalling", pair.corpseJson, err)
@@ -91,6 +91,22 @@ func TestCorpseUnmarshalling(t *testing.T) {
 				"For", "Value",
 				"expected", pair.corpse.v,
 				"got", corpse.v,
+			)
+		}
+
+		if corpse.cover != pair.corpse.cover {
+			t.Error(
+				"For", "Gives cover",
+				"expected", pair.corpse.cover,
+				"got", corpse.cover,
+			)
+		}
+
+		if corpse.corpse != pair.corpse.corpse {
+			t.Error(
+				"For", "Corpse",
+				"expected", pair.corpse.corpse,
+				"got", corpse.corpse,
 			)
 		}
 

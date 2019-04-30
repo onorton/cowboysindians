@@ -21,8 +21,8 @@ import (
 
 const windowWidth = 100
 const windowHeight = 25
-const width = 100
-const height = 100
+const width = 200
+const height = 200
 const saveFilename = "game.json"
 
 func check(e error) {
@@ -157,6 +157,7 @@ func main() {
 	item.LoadAllData()
 	message.SetWindowSize(windowWidth, windowHeight)
 	state := GameState{}
+	rand.Seed(1555873582740657570)
 
 	loaded := false
 	if _, err := os.Stat(saveFilename); !os.IsNotExist(err) {

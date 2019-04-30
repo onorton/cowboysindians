@@ -38,16 +38,17 @@ type NormalItem struct {
 	baseItem
 	cover       bool
 	description *string
+	corpse      bool
 }
 
 func NewNormalItem(name string) Item {
 	item := normalItemData[name]
-	var itm Item = &NormalItem{baseItem{name, "", item.Icon, item.Weight, item.Value}, item.Cover, nil}
+	var itm Item = &NormalItem{baseItem{name, "", item.Icon, item.Weight, item.Value}, item.Cover, nil, false}
 	return itm
 }
 
 func Money(amount int) Item {
-	return &NormalItem{baseItem{"money", "", icon.NewIcon('$', 4), 0, amount}, false, nil}
+	return &NormalItem{baseItem{"money", "", icon.NewIcon('$', 4), 0, amount}, false, nil, false}
 }
 
 func GenerateNormalItem() Item {
@@ -100,7 +101,14 @@ func (item *NormalItem) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"Description\":%s", descriptionValue))
+	buffer.WriteString(fmt.Sprintf("\"Description\":%s,", descriptionValue))
+
+	corpseValue, err := json.Marshal(item.corpse)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Corpse\":%s", corpseValue))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -116,6 +124,7 @@ func (item *NormalItem) UnmarshalJSON(data []byte) error {
 		Value       int
 		Cover       bool
 		Description *string
+		Corpse      bool
 	}
 	var v itemJson
 
@@ -130,18 +139,27 @@ func (item *NormalItem) UnmarshalJSON(data []byte) error {
 	item.v = v.Value
 	item.cover = v.Cover
 	item.description = v.Description
+	item.corpse = v.Corpse
 
 	return nil
 }
 
+func (item *NormalItem) Owner() string {
+	return item.owner
+}
+
 func (item *NormalItem) Owned(id string) bool {
-	if item.owner == "" {
+	if item.owner == "" || item.corpse {
 		return true
 	}
 	return item.owner == id
 }
 
 func (item *NormalItem) TransferOwner(newOwner string) {
+	if item.corpse {
+		return
+	}
+
 	// Only assign owner if item not owned
 	if item.owner == "" {
 		item.owner = newOwner
@@ -150,6 +168,10 @@ func (item *NormalItem) TransferOwner(newOwner string) {
 
 func (item *NormalItem) IsReadable() bool {
 	return item.description != nil
+}
+
+func (item *NormalItem) IsCorpse() bool {
+	return item.corpse
 }
 
 func (item *NormalItem) GivesCover() bool {
