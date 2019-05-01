@@ -34,7 +34,7 @@ func fetchAmmoData() {
 
 func NewAmmo(name string) Item {
 	ammo := ammoData[name]
-	var itm Item = &NormalItem{baseItem{name, "", ammo.Icon, ammo.Weight, ammo.Value}, false, nil, false, ammo.Type}
+	var itm Item = &NormalItem{baseItem{name, "", ammo.Icon, ammo.Weight, ammo.Value}, false, nil, false, ammo.Type, nil}
 	return itm
 }
 

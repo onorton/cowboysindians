@@ -224,7 +224,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 		Crouching  bool
 		Money      int
 		Weapon     *item.Weapon
-		Armour     *item.Armour
+		Armour     *item.NormalItem
 		Inventory  item.ItemList
 		MountID    string
 		Ai         map[string]interface{}
@@ -331,13 +331,13 @@ func (npc *Npc) wieldItem() bool {
 func (npc *Npc) wearArmour() bool {
 	changed := false
 	for i, itm := range npc.inventory {
-		if a, ok := itm.(*item.Armour); ok {
+		if a, ok := itm.(*item.NormalItem); ok && a.IsArmour() {
 			if npc.armour == nil {
 				npc.armour = a
 				npc.inventory = append(npc.inventory[:i], npc.inventory[i+1:]...)
 				changed = true
 
-			} else if a.GetACBonus() > npc.armour.GetACBonus() {
+			} else if a.ACBonus() > npc.armour.ACBonus() {
 				npc.inventory[i] = npc.weapon
 				npc.armour = a
 				changed = true
@@ -372,8 +372,8 @@ func (npc *Npc) Update() {
 
 	// Apply armour AC bonus
 	if npc.armour != nil {
-		npc.attributes["ac"].AddEffect(item.NewEffect(npc.armour.GetACBonus(), 1, true))
-		npc.attributes["ac"].AddEffect(item.NewEffect(npc.armour.GetACBonus(), 1, false))
+		npc.attributes["ac"].AddEffect(item.NewEffect(npc.armour.ACBonus(), 1, true))
+		npc.attributes["ac"].AddEffect(item.NewEffect(npc.armour.ACBonus(), 1, false))
 	}
 
 	if npc.IsDead() {
@@ -635,7 +635,7 @@ type Npc struct {
 	crouching  bool
 	money      int
 	weapon     *item.Weapon
-	armour     *item.Armour
+	armour     *item.NormalItem
 	inventory  []item.Item
 	mountID    string
 	mount      *Mount

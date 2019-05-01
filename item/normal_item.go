@@ -40,16 +40,17 @@ type NormalItem struct {
 	description *string
 	corpse      bool
 	ammoType    WeaponType
+	armour      *armourComponent
 }
 
 func NewNormalItem(name string) Item {
 	item := normalItemData[name]
-	var itm Item = &NormalItem{baseItem{name, "", item.Icon, item.Weight, item.Value}, item.Cover, nil, false, NoAmmo}
+	var itm Item = &NormalItem{baseItem{name, "", item.Icon, item.Weight, item.Value}, item.Cover, nil, false, NoAmmo, nil}
 	return itm
 }
 
 func Money(amount int) Item {
-	return &NormalItem{baseItem{"money", "", icon.NewIcon('$', 4), 0, amount}, false, nil, false, NoAmmo}
+	return &NormalItem{baseItem{"money", "", icon.NewIcon('$', 4), 0, amount}, false, nil, false, NoAmmo, nil}
 }
 
 func GenerateNormalItem() Item {
@@ -116,7 +117,14 @@ func (item *NormalItem) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"AmmoType\":%s", ammoValue))
+	buffer.WriteString(fmt.Sprintf("\"AmmoType\":%s,", ammoValue))
+
+	armourValue, err := json.Marshal(item.armour)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Armour\":%s", armourValue))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -134,6 +142,7 @@ func (item *NormalItem) UnmarshalJSON(data []byte) error {
 		Description *string
 		Corpse      bool
 		AmmoType    WeaponType
+		Armour      *armourComponent
 	}
 	var v itemJson
 
@@ -150,6 +159,7 @@ func (item *NormalItem) UnmarshalJSON(data []byte) error {
 	item.description = v.Description
 	item.corpse = v.Corpse
 	item.ammoType = v.AmmoType
+	item.armour = v.Armour
 
 	return nil
 }
@@ -186,6 +196,17 @@ func (item *NormalItem) IsCorpse() bool {
 
 func (item *NormalItem) IsAmmo() bool {
 	return item.ammoType != NoAmmo
+}
+
+func (item *NormalItem) IsArmour() bool {
+	return item.armour != nil
+}
+
+func (item *NormalItem) ACBonus() int {
+	if item.armour != nil {
+		return item.armour.Bonus
+	}
+	return 0
 }
 
 func (item *NormalItem) GivesCover() bool {

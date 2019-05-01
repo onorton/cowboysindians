@@ -1,9 +1,7 @@
 package item
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 
 	"github.com/onorton/cowboysindians/icon"
@@ -34,108 +32,15 @@ func fetchArmourData() {
 	}
 }
 
-type Armour struct {
-	baseItem
-	bonus int
+type armourComponent struct {
+	Bonus int
 }
 
-func NewArmour(name string) *Armour {
+func NewArmour(name string) *NormalItem {
 	armour := armourData[name]
-	return &Armour{baseItem{name, "", armour.Icon, armour.Weight, armour.Value}, armour.Bonus}
+	return &NormalItem{baseItem{name, "", armour.Icon, armour.Weight, armour.Value}, false, nil, false, NoAmmo, &armourComponent{armour.Bonus}}
 }
 
 func GenerateArmour() Item {
 	return NewArmour(Choose(armourProbabilities))
-}
-
-func (armour *Armour) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{")
-	buffer.WriteString("\"Type\":\"armour\",")
-
-	nameValue, err := json.Marshal(armour.name)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Name\":%s,", nameValue))
-
-	ownerValue, err := json.Marshal(armour.owner)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Owner\":%s,", ownerValue))
-
-	iconValue, err := json.Marshal(armour.ic)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Icon\":%s,", iconValue))
-
-	bonusValue, err := json.Marshal(armour.bonus)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Bonus\":%s,", bonusValue))
-
-	weightValue, err := json.Marshal(armour.w)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Weight\":%s,", weightValue))
-	buffer.WriteString(fmt.Sprintf("\"Value\":%d", armour.v))
-	buffer.WriteString("}")
-
-	return buffer.Bytes(), nil
-}
-
-func (armour *Armour) UnmarshalJSON(data []byte) error {
-
-	type armourJson struct {
-		Name   string
-		Owner  string
-		Icon   icon.Icon
-		Bonus  int
-		Weight float64
-		Value  int
-	}
-	var v armourJson
-
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-
-	armour.name = v.Name
-	armour.owner = v.Owner
-	armour.ic = v.Icon
-	armour.bonus = v.Bonus
-	armour.w = v.Weight
-	armour.v = v.Value
-
-	return nil
-}
-
-func (armour *Armour) Owned(id string) bool {
-	if armour.owner == "" {
-		return true
-	}
-	return armour.owner == id
-}
-
-func (armour *Armour) TransferOwner(newOwner string) {
-	// Only assign owner if item not owned
-	if armour.owner == "" {
-		armour.owner = newOwner
-	}
-}
-
-func (armour *Armour) GetACBonus() int {
-	return armour.bonus
-}
-
-func (armour *Armour) GivesCover() bool {
-	return false
 }

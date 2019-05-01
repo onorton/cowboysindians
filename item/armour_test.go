@@ -8,25 +8,25 @@ import (
 )
 
 type armourMarshallingPair struct {
-	armour Armour
+	armour NormalItem
 	result string
 }
 
 var armourMarshallingTests = []armourMarshallingPair{
-	{Armour{baseItem{"leather jacket", "bandit", icon.NewIcon(91, 100), 2, 1000}, 1}, "{\"Type\":\"armour\",\"Name\":\"leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Bonus\":1,\"Weight\":2,\"Value\":1000}"},
-	{Armour{baseItem{"metal breastplate", "bandit", icon.NewIcon(91, 50), 5, 2000}, 3}, "{\"Type\":\"armour\",\"Name\":\"metal breastplate\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Bonus\":3,\"Weight\":5,\"Value\":2000}"},
-	{Armour{baseItem{"reinforced leather jacket", "bandit", icon.NewIcon(91, 70), 3, 1500}, 2}, "{\"Type\":\"armour\",\"Name\":\"reinforced leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Bonus\":2,\"Weight\":3,\"Value\":1500}"},
+	{NormalItem{baseItem{"leather jacket", "bandit", icon.NewIcon(91, 100), 2, 1000}, false, nil, false, NoAmmo, &armourComponent{1}}, "{\"Type\":\"normal\",\"Name\":\"leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Weight\":2,\"Value\":1000,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":{\"Bonus\":1}}"},
+	{NormalItem{baseItem{"metal breastplate", "bandit", icon.NewIcon(91, 50), 5, 2000}, false, nil, false, NoAmmo, &armourComponent{3}}, "{\"Type\":\"normal\",\"Name\":\"metal breastplate\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Weight\":5,\"Value\":2000,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":{\"Bonus\":3}}"},
+	{NormalItem{baseItem{"reinforced leather jacket", "bandit", icon.NewIcon(91, 70), 3, 1500}, false, nil, false, NoAmmo, &armourComponent{2}}, "{\"Type\":\"normal\",\"Name\":\"reinforced leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Weight\":3,\"Value\":1500,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":{\"Bonus\":2}}"},
 }
 
 type armourUnmarshallingPair struct {
 	armourJson string
-	armour     Armour
+	armour     NormalItem
 }
 
 var armourUnmarshallingTests = []armourUnmarshallingPair{
-	{"{\"Type\":\"armour\",\"Name\":\"leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Bonus\":1,\"Weight\":2,\"Value\":1000}", Armour{baseItem{"leather jacket", "bandit", icon.NewIcon(91, 100), 2, 1000}, 1}},
-	{"{\"Type\":\"armour\",\"Name\":\"metal breastplate\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Bonus\":3,\"Weight\":5,\"Value\":2000}", Armour{baseItem{"metal breastplate", "bandit", icon.NewIcon(91, 50), 5, 2000}, 3}},
-	{"{\"Type\":\"armour\",\"Name\":\"reinforced leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Bonus\":2,\"Weight\":3,\"Value\":1500}", Armour{baseItem{"reinforced leather jacket", "bandit", icon.NewIcon(91, 70), 3, 1500}, 2}},
+	{"{\"Type\":\"normal\",\"Name\":\"leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Weight\":2,\"Value\":1000,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":{\"Bonus\":1}}", NormalItem{baseItem{"leather jacket", "bandit", icon.NewIcon(91, 100), 2, 1000}, false, nil, false, NoAmmo, &armourComponent{1}}},
+	{"{\"Type\":\"normal\",\"Name\":\"metal breastplate\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Weight\":5,\"Value\":2000,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":{\"Bonus\":3}}", NormalItem{baseItem{"metal breastplate", "bandit", icon.NewIcon(91, 50), 5, 2000}, false, nil, false, NoAmmo, &armourComponent{3}}},
+	{"{\"Type\":\"normal\",\"Name\":\"reinforced leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Weight\":3,\"Value\":1500,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":{\"Bonus\":2}}", NormalItem{baseItem{"reinforced leather jacket", "bandit", icon.NewIcon(91, 70), 3, 1500}, false, nil, false, NoAmmo, &armourComponent{2}}},
 }
 
 func TestArmourMarshalling(t *testing.T) {
@@ -50,7 +50,7 @@ func TestArmourMarshalling(t *testing.T) {
 func TestArmourUnmarshalling(t *testing.T) {
 
 	for _, pair := range armourUnmarshallingTests {
-		armour := Armour{}
+		armour := NormalItem{}
 
 		if err := json.Unmarshal([]byte(pair.armourJson), &armour); err != nil {
 			t.Error("Failed when unmarshalling", pair.armourJson, err)
@@ -87,11 +87,27 @@ func TestArmourUnmarshalling(t *testing.T) {
 			)
 		}
 
-		if armour.bonus != pair.armour.bonus {
+		if *(armour.armour) != *(pair.armour.armour) {
 			t.Error(
-				"For", "Bonus",
-				"expected", pair.armour.bonus,
-				"got", armour.bonus,
+				"For", "Armour",
+				"expected", *(pair.armour.armour),
+				"got", *(armour.armour),
+			)
+		}
+
+		if armour.cover != pair.armour.cover {
+			t.Error(
+				"For", "Gives cover",
+				"expected", pair.armour.cover,
+				"got", armour.cover,
+			)
+		}
+
+		if armour.corpse != pair.armour.corpse {
+			t.Error(
+				"For", "Corpse",
+				"expected", pair.armour.corpse,
+				"got", armour.corpse,
 			)
 		}
 	}

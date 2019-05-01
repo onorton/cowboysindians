@@ -113,7 +113,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 		Crouching  bool
 		Money      int
 		Weapon     *item.Weapon
-		Armour     *item.Armour
+		Armour     *item.NormalItem
 		Inventory  item.ItemList
 		MountID    string
 	}
@@ -252,7 +252,7 @@ func (p *Player) PrintWeapons() {
 func (p *Player) PrintArmour() {
 	position := 0
 	for k, items := range p.inventory {
-		if _, ok := p.inventory[k][0].(*item.Armour); !ok {
+		if a, ok := p.inventory[k][0].(*item.NormalItem); !ok || !a.IsArmour() {
 			continue
 		}
 		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
@@ -390,7 +390,7 @@ func (p *Player) GetArmourKeys() string {
 	keysSet := make([]bool, 128)
 	for k := range p.inventory {
 
-		if _, ok := p.inventory[k][0].(*item.Armour); ok {
+		if a, ok := p.inventory[k][0].(*item.NormalItem); ok && a.IsArmour() {
 			keysSet[k] = true
 		}
 	}
@@ -561,7 +561,7 @@ func (p *Player) WearArmour() bool {
 				message.PrintMessage("You don't have that piece of armour.")
 				ui.GetInput()
 			} else {
-				if a, ok := itm.(*item.Armour); ok {
+				if a, ok := itm.(*item.NormalItem); ok && a.IsArmour() {
 					other := p.armour
 					p.armour = a
 					if other != nil {
@@ -1306,8 +1306,8 @@ func (p *Player) Update() {
 
 	// Apply armour AC bonus
 	if p.armour != nil {
-		p.attributes["ac"].AddEffect(item.NewEffect(p.armour.GetACBonus(), 1, true))
-		p.attributes["ac"].AddEffect(item.NewEffect(p.armour.GetACBonus(), 1, false))
+		p.attributes["ac"].AddEffect(item.NewEffect(p.armour.ACBonus(), 1, true))
+		p.attributes["ac"].AddEffect(item.NewEffect(p.armour.ACBonus(), 1, false))
 	}
 
 	if p.mount != nil {
@@ -1336,7 +1336,7 @@ type Player struct {
 	crouching  bool
 	money      int
 	weapon     *item.Weapon
-	armour     *item.Armour
+	armour     *item.NormalItem
 	inventory  map[rune]([]item.Item)
 	mountID    string
 	mount      *npc.Mount
