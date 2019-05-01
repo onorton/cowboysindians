@@ -32,7 +32,7 @@ type usesItems interface {
 	wearArmour() bool
 	ranged() bool
 	rangedAttack(worldmap.Creature, int)
-	Weapon() *item.Weapon
+	Weapon() *item.NormalItem
 	weaponLoaded() bool
 	weaponFullyLoaded() bool
 	hasAmmo() bool
@@ -392,7 +392,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 		}
 
 		if itemUser, ok := c.(usesItems); ok {
-			if itemUser.ranged() && min < float64(itemUser.Weapon().GetRange()) {
+			if itemUser.ranged() && min < float64(itemUser.Weapon().Range()) {
 
 				// if weapon loaded, shoot at target else if enemy has ammo, load weapon
 				if itemUser.weaponLoaded() {
@@ -568,7 +568,7 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 	tX, tY := target.GetCoordinates()
 
 	if itemUser, ok := c.(usesItems); ok {
-		if distance := worldmap.Distance(location.X, location.Y, tX, tY); itemUser.ranged() && distance < float64(itemUser.Weapon().GetRange()) && world.IsVisible(c, tX, tY) {
+		if distance := worldmap.Distance(location.X, location.Y, tX, tY); itemUser.ranged() && distance < float64(itemUser.Weapon().Range()) && world.IsVisible(c, tX, tY) {
 			// if weapon loaded, shoot at target else if enemy has ammo, load weapon
 			if itemUser.weaponLoaded() {
 				return RangedAttackAction{c, world, target}

@@ -223,7 +223,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 		Attributes map[string]*worldmap.Attribute
 		Crouching  bool
 		Money      int
-		Weapon     *item.Weapon
+		Weapon     *item.NormalItem
 		Armour     *item.NormalItem
 		Inventory  item.ItemList
 		MountID    string
@@ -310,7 +310,7 @@ func (npc *Npc) IsDead() bool {
 func (npc *Npc) wieldItem() bool {
 	changed := false
 	for i, itm := range npc.inventory {
-		if w, ok := itm.(*item.Weapon); ok {
+		if w, ok := itm.(*item.NormalItem); ok && w.IsWeapon() {
 			if npc.weapon == nil {
 				npc.weapon = w
 				npc.inventory = append(npc.inventory[:i], npc.inventory[i+1:]...)
@@ -469,12 +469,12 @@ func (npc *Npc) Inventory() []item.Item {
 
 func (npc *Npc) ranged() bool {
 	if npc.weapon != nil {
-		return npc.weapon.GetRange() > 0
+		return npc.weapon.Range() > 0
 	}
 	return false
 }
 
-func (npc *Npc) Weapon() *item.Weapon {
+func (npc *Npc) Weapon() *item.NormalItem {
 	return npc.weapon
 }
 
@@ -634,7 +634,7 @@ type Npc struct {
 	attributes map[string]*worldmap.Attribute
 	crouching  bool
 	money      int
-	weapon     *item.Weapon
+	weapon     *item.NormalItem
 	armour     *item.NormalItem
 	inventory  []item.Item
 	mountID    string

@@ -132,7 +132,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 		Attributes map[string]*worldmap.Attribute
 		Crouching  bool
 		Money      int
-		Weapon     *item.Weapon
+		Weapon     *item.NormalItem
 		Armour     *item.NormalItem
 		Inventory  item.ItemList
 		MountID    string
@@ -217,7 +217,7 @@ func (e *Enemy) IsDead() bool {
 func (e *Enemy) wieldItem() bool {
 	changed := false
 	for i, itm := range e.inventory {
-		if w, ok := itm.(*item.Weapon); ok {
+		if w, ok := itm.(*item.NormalItem); ok && w.IsWeapon() {
 			if e.weapon == nil {
 				e.weapon = w
 				e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
@@ -374,13 +374,13 @@ func (e *Enemy) Inventory() []item.Item {
 	return e.inventory
 }
 
-func (e *Enemy) Weapon() *item.Weapon {
+func (e *Enemy) Weapon() *item.NormalItem {
 	return e.weapon
 }
 
 func (e *Enemy) ranged() bool {
 	if e.weapon != nil {
-		return e.weapon.GetRange() > 0
+		return e.weapon.Range() > 0
 	}
 	return false
 }
@@ -486,7 +486,7 @@ type Enemy struct {
 	attributes map[string]*worldmap.Attribute
 	crouching  bool
 	money      int
-	weapon     *item.Weapon
+	weapon     *item.NormalItem
 	armour     *item.NormalItem
 	inventory  []item.Item
 	mountID    string

@@ -52,12 +52,11 @@ func fetchWeaponData() {
 	}
 }
 
-type Weapon struct {
-	baseItem
-	r      int
-	t      WeaponType
-	wc     *WeaponCapacity
-	damage *Damage
+type weaponComponent struct {
+	Range    int
+	Type     WeaponType
+	Capacity *WeaponCapacity
+	Damage   Damage
 }
 
 type Damage struct {
@@ -66,19 +65,24 @@ type Damage struct {
 	bonus  int
 }
 
+func (damage Damage) max() int {
+	return damage.number*damage.dice + damage.bonus
+}
+
 type WeaponCapacity struct {
 	capacity int
 	loaded   int
 }
 
-func NewWeapon(name string) *Weapon {
+func NewWeapon(name string) *NormalItem {
 	weapon := weaponData[name]
 
 	var weaponCapacity *WeaponCapacity
 	if weapon.Capacity != 0 {
 		weaponCapacity = &WeaponCapacity{weapon.Capacity, 0}
 	}
-	return &Weapon{baseItem{name, "", weapon.Icon, weapon.Weight, weapon.Value}, weapon.Range, weapon.Type, weaponCapacity, &Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
+	wc := weaponComponent{weapon.Range, weapon.Type, weaponCapacity, Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
+	return &NormalItem{baseItem{name, "", weapon.Icon, weapon.Weight, weapon.Value}, false, nil, false, NoAmmo, nil, &wc}
 }
 
 func GenerateWeapon() Item {
@@ -134,73 +138,6 @@ func (damage *Damage) MarshalJSON() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func (weapon *Weapon) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{")
-
-	buffer.WriteString("\"Type\":\"weapon\",")
-
-	nameValue, err := json.Marshal(weapon.name)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Name\":%s,", nameValue))
-
-	ownerValue, err := json.Marshal(weapon.owner)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Owner\":%s,", ownerValue))
-
-	iconValue, err := json.Marshal(weapon.ic)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Icon\":%s,", iconValue))
-
-	rangeValue, err := json.Marshal(weapon.r)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Range\":%s,", rangeValue))
-
-	weaponTypeValue, err := json.Marshal(weapon.t)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"WeaponType\":%s,", weaponTypeValue))
-
-	weightValue, err := json.Marshal(weapon.w)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Weight\":%s,", weightValue))
-	buffer.WriteString(fmt.Sprintf("\"Value\":%d,", weapon.v))
-
-	if weapon.wc != nil {
-		weaponCapacityValue, err := json.Marshal(weapon.wc)
-		if err != nil {
-			return nil, err
-		}
-
-		buffer.WriteString(fmt.Sprintf("\"WeaponCapacity\":%s,", weaponCapacityValue))
-	}
-	damageValue, err := json.Marshal(weapon.damage)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Damage\":%s", damageValue))
-	buffer.WriteString("}")
-
-	return buffer.Bytes(), nil
-}
-
 func (weaponCapacity *WeaponCapacity) UnmarshalJSON(data []byte) error {
 
 	type weaponCapacityJson struct {
@@ -239,96 +176,72 @@ func (damage *Damage) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (weapon *Weapon) UnmarshalJSON(data []byte) error {
-
-	type weaponJson struct {
-		Name           string
-		Owner          string
-		Icon           icon.Icon
-		Range          int
-		WeaponType     WeaponType
-		Weight         float64
-		Value          int
-		WeaponCapacity *WeaponCapacity
-		Damage         *Damage
+func (item *NormalItem) Range() int {
+	if item.weapon != nil {
+		return item.weapon.Range
 	}
-	var v weaponJson
-
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-
-	weapon.name = v.Name
-	weapon.owner = v.Owner
-	weapon.ic = v.Icon
-	weapon.r = v.Range
-	weapon.t = v.WeaponType
-	weapon.w = v.Weight
-	weapon.v = v.Value
-	weapon.wc = v.WeaponCapacity
-	weapon.damage = v.Damage
-
-	return nil
-}
-
-func (weapon *Weapon) Owned(id string) bool {
-	if weapon.owner == "" {
-		return true
-	}
-	return weapon.owner == id
-}
-
-func (weapon *Weapon) TransferOwner(newOwner string) {
-	// Only assign owner if item not owned
-	if weapon.owner == "" {
-		weapon.owner = newOwner
-	}
-}
-
-func (weapon *Weapon) GetRange() int {
-	return weapon.r
+	return 0
 }
 
 // Maximum possible damage
-func (weapon *Weapon) GetMaxDamage() int {
-	return weapon.damage.number*weapon.damage.dice + weapon.damage.bonus
+func (item *NormalItem) GetMaxDamage() int {
+	if item.weapon != nil {
+		return item.weapon.Damage.max()
+	}
+	return 0
 }
-func (weapon *Weapon) GetDamage() int {
-	result := 0
-	for i := 0; i < weapon.damage.number; i++ {
-		result += rand.Intn(weapon.damage.dice) + 1
+func (item *NormalItem) GetDamage() int {
+	if item.weapon == nil {
+		return 0
 	}
 
-	result += weapon.damage.bonus
+	result := 0
+	for i := 0; i < item.weapon.Damage.number; i++ {
+		result += rand.Intn(item.weapon.Damage.dice) + 1
+	}
+
+	result += item.weapon.Damage.bonus
 	return result
 }
 
-func (weapon *Weapon) AmmoTypeMatches(ammo *NormalItem) bool {
-	return weapon.t == ammo.ammoType
+func (item *NormalItem) AmmoTypeMatches(ammo *NormalItem) bool {
+	if item.weapon != nil {
+		return item.weapon.Type == ammo.ammoType
+	}
+	return false
 }
 
-func (weapon *Weapon) NeedsAmmo() bool {
-	return weapon.wc != nil
+func (item *NormalItem) NeedsAmmo() bool {
+	if item.weapon != nil {
+		return item.weapon.Capacity != nil
+	}
+	return false
 }
 
-func (weapon *Weapon) IsUnloaded() bool {
-	return weapon.wc.loaded == 0
+func (item *NormalItem) IsUnloaded() bool {
+	if item.weapon != nil {
+		return item.weapon.Capacity.loaded == 0
+	}
+	return false
 }
 
-func (weapon *Weapon) IsFullyLoaded() bool {
-	return weapon.wc.capacity == weapon.wc.loaded
+func (item *NormalItem) IsFullyLoaded() bool {
+	if item.weapon != nil {
+		return item.weapon.Capacity.loaded == item.weapon.Capacity.capacity
+	}
+	return false
 }
 
-func (weapon *Weapon) Load() {
-	weapon.wc.loaded++
-}
-
-func (weapon *Weapon) Fire() {
-	if weapon.wc != nil && weapon.wc.loaded > 0 {
-		weapon.wc.loaded--
+func (item *NormalItem) Load() {
+	if item.weapon != nil && item.weapon.Capacity != nil {
+		item.weapon.Capacity.loaded++
 	}
 }
 
-func (weapon *Weapon) GivesCover() bool {
-	return false
+func (item *NormalItem) Fire() {
+	if item.weapon != nil && item.weapon.Capacity != nil {
+		if item.weapon.Capacity.loaded > 0 {
+			item.weapon.Capacity.loaded--
+		}
+	}
 }

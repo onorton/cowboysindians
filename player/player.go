@@ -112,7 +112,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 		Attributes map[string]*worldmap.Attribute
 		Crouching  bool
 		Money      int
-		Weapon     *item.Weapon
+		Weapon     *item.NormalItem
 		Armour     *item.NormalItem
 		Inventory  item.ItemList
 		MountID    string
@@ -237,7 +237,7 @@ func (p *Player) PrintInventory() {
 func (p *Player) PrintWeapons() {
 	position := 0
 	for k, items := range p.inventory {
-		if _, ok := p.inventory[k][0].(*item.Weapon); !ok {
+		if w, ok := p.inventory[k][0].(*item.NormalItem); !ok || !w.IsWeapon() {
 			continue
 		}
 		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
@@ -324,7 +324,7 @@ func (p *Player) RangedAttack() bool {
 
 	tX, tY := target.GetCoordinates()
 	distance := worldmap.Distance(p.location.X, p.location.Y, tX, tY)
-	if distance < float64(p.weapon.GetRange()) {
+	if distance < float64(p.weapon.Range()) {
 		coverPenalty := 0
 		if p.world.TargetBehindCover(p, target) {
 			coverPenalty = 5
@@ -365,7 +365,7 @@ func (p *Player) GetWeaponKeys() string {
 	keysSet := make([]bool, 128)
 	for k := range p.inventory {
 
-		if _, ok := p.inventory[k][0].(*item.Weapon); ok {
+		if w, ok := p.inventory[k][0].(*item.NormalItem); ok && w.IsWeapon() {
 			keysSet[k] = true
 		}
 	}
@@ -519,7 +519,7 @@ func (p *Player) WieldItem() bool {
 				message.PrintMessage("You don't have that weapon.")
 				ui.GetInput()
 			} else {
-				if w, ok := itm.(*item.Weapon); ok {
+				if w, ok := itm.(*item.NormalItem); ok && w.IsWeapon() {
 					other := p.weapon
 					p.weapon = w
 					if other != nil {
@@ -651,7 +651,7 @@ func (p *Player) ConsumeItem() bool {
 // Check whether player can carry out a range attack this turn
 func (p *Player) ranged() bool {
 	if p.weapon != nil {
-		return p.weapon.GetRange() > 0
+		return p.weapon.Range() > 0
 	}
 	return false
 }
@@ -1335,7 +1335,7 @@ type Player struct {
 	attributes map[string]*worldmap.Attribute
 	crouching  bool
 	money      int
-	weapon     *item.Weapon
+	weapon     *item.NormalItem
 	armour     *item.NormalItem
 	inventory  map[rune]([]item.Item)
 	mountID    string
