@@ -42,16 +42,17 @@ type NormalItem struct {
 	ammoType    WeaponType
 	armour      *armourComponent
 	weapon      *weaponComponent
+	consumable  *consumableComponent
 }
 
 func NewNormalItem(name string) Item {
 	item := normalItemData[name]
-	var itm Item = &NormalItem{baseItem{name, "", item.Icon, item.Weight, item.Value}, item.Cover, nil, false, NoAmmo, nil, nil}
+	var itm Item = &NormalItem{baseItem{name, "", item.Icon, item.Weight, item.Value}, item.Cover, nil, false, NoAmmo, nil, nil, nil}
 	return itm
 }
 
 func Money(amount int) Item {
-	return &NormalItem{baseItem{"money", "", icon.NewIcon('$', 4), 0, amount}, false, nil, false, NoAmmo, nil, nil}
+	return &NormalItem{baseItem{"money", "", icon.NewIcon('$', 4), 0, amount}, false, nil, false, NoAmmo, nil, nil, nil}
 }
 
 func GenerateNormalItem() Item {
@@ -60,9 +61,6 @@ func GenerateNormalItem() Item {
 
 func (item *NormalItem) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
-
-	buffer.WriteString("\"Type\":\"normal\",")
-
 	nameValue, err := json.Marshal(item.name)
 	if err != nil {
 		return nil, err
@@ -132,7 +130,14 @@ func (item *NormalItem) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"Weapon\":%s", weaponValue))
+	buffer.WriteString(fmt.Sprintf("\"Weapon\":%s,", weaponValue))
+
+	consumableValue, err := json.Marshal(item.consumable)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Consumable\":%s", consumableValue))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -152,6 +157,7 @@ func (item *NormalItem) UnmarshalJSON(data []byte) error {
 		AmmoType    WeaponType
 		Armour      *armourComponent
 		Weapon      *weaponComponent
+		Consumable  *consumableComponent
 	}
 	var v itemJson
 
@@ -170,6 +176,7 @@ func (item *NormalItem) UnmarshalJSON(data []byte) error {
 	item.ammoType = v.AmmoType
 	item.armour = v.Armour
 	item.weapon = v.Weapon
+	item.consumable = v.Consumable
 
 	return nil
 }
@@ -221,6 +228,17 @@ func (item *NormalItem) ACBonus() int {
 
 func (item *NormalItem) IsWeapon() bool {
 	return item.weapon != nil
+}
+
+func (item *NormalItem) IsConsumable() bool {
+	return item.consumable != nil
+}
+
+func (item *NormalItem) Effects(attr string) []Effect {
+	if item.consumable != nil {
+		return item.consumable.Effects[attr]
+	}
+	return []Effect{}
 }
 
 func (item *NormalItem) GivesCover() bool {

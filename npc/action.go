@@ -48,7 +48,7 @@ func (a MountAction) execute() {
 
 type ConsumeAction struct {
 	c   hasAi
-	con *item.Consumable
+	con *item.NormalItem
 }
 
 func (a ConsumeAction) execute() {

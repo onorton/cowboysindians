@@ -13,7 +13,7 @@ import (
 )
 
 type hasAi interface {
-	consume(*item.Consumable)
+	consume(*item.NormalItem)
 	damageable
 	worldmap.CanSee
 	worldmap.CanCrouch
@@ -165,7 +165,7 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) Action {
 	// If at half health heal up
 	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
 		for _, itm := range itemHolder.Inventory() {
-			if con, ok := itm.(*item.Consumable); ok && len(con.Effects("hp")) > 0 {
+			if con, ok := itm.(*item.NormalItem); ok && con.IsConsumable() && len(con.Effects("hp")) > 0 {
 				return ConsumeAction{c, con}
 			}
 		}
@@ -353,7 +353,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	// If at half health heal up
 	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
 		for _, itm := range itemHolder.Inventory() {
-			if con, ok := itm.(*item.Consumable); ok && len(con.Effects("hp")) > 0 {
+			if con, ok := itm.(*item.NormalItem); ok && con.IsConsumable() && len(con.Effects("hp")) > 0 {
 				return ConsumeAction{c, con}
 			}
 		}
@@ -540,7 +540,7 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 	// If at half health heal up
 	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
 		for _, itm := range itemHolder.Inventory() {
-			if con, ok := itm.(*item.Consumable); ok && len(con.Effects("hp")) > 0 {
+			if con, ok := itm.(*item.NormalItem); ok && con.IsConsumable() && len(con.Effects("hp")) > 0 {
 				return ConsumeAction{c, con}
 			}
 		}

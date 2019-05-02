@@ -267,7 +267,7 @@ func (p *Player) PrintArmour() {
 func (p *Player) PrintConsumables() {
 	position := 0
 	for k, items := range p.inventory {
-		if _, ok := p.inventory[k][0].(*item.Consumable); !ok {
+		if c, ok := p.inventory[k][0].(*item.NormalItem); !ok || !c.IsConsumable() {
 			continue
 		}
 		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
@@ -415,7 +415,7 @@ func (p *Player) GetConsumableKeys() string {
 	keysSet := make([]bool, 128)
 	for k := range p.inventory {
 
-		if _, ok := p.inventory[k][0].(*item.Consumable); ok {
+		if c, ok := p.inventory[k][0].(*item.NormalItem); ok && c.IsConsumable() {
 			keysSet[k] = true
 		}
 	}
@@ -632,7 +632,7 @@ func (p *Player) ConsumeItem() bool {
 				message.PrintMessage("You don't have that thing to eat.")
 				ui.GetInput()
 			} else {
-				if c, ok := itm.(*item.Consumable); ok {
+				if c, ok := itm.(*item.NormalItem); ok && c.IsConsumable() {
 					message.Enqueue(fmt.Sprintf("You ate a %s.", c.GetName()))
 					p.consume(c)
 					return true
@@ -680,7 +680,7 @@ func (p *Player) weaponLoaded() bool {
 
 }
 
-func (p *Player) consume(consumable *item.Consumable) {
+func (p *Player) consume(consumable *item.NormalItem) {
 	originalHp := p.attributes["hp"].Value()
 	originalHunger := p.attributes["hunger"].Value()
 	originalThirst := p.attributes["thirst"].Value()

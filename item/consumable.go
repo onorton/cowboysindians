@@ -1,9 +1,7 @@
 package item
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 
 	"github.com/onorton/cowboysindians/icon"
@@ -34,110 +32,16 @@ func fetchConsumableData() {
 	}
 }
 
-type Consumable struct {
-	baseItem
-	effects map[string][]Effect
+type consumableComponent struct {
+	Effects map[string][]Effect
 }
 
 func NewConsumable(name string) Item {
 	consumable := consumableData[name]
-	var itm Item = &Consumable{baseItem{name, "", consumable.Icon, consumable.Weight, consumable.Value}, consumable.Effects}
+	var itm Item = &NormalItem{baseItem{name, "", consumable.Icon, consumable.Weight, consumable.Value}, false, nil, false, NoAmmo, nil, nil, &consumableComponent{consumable.Effects}}
 	return itm
 }
 
 func GenerateConsumable() Item {
 	return NewConsumable(Choose(consumableProbabilities))
-}
-
-func (item *Consumable) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{")
-
-	buffer.WriteString("\"Type\":\"consumable\",")
-
-	nameValue, err := json.Marshal(item.name)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Name\":%s,", nameValue))
-
-	ownerValue, err := json.Marshal(item.owner)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Owner\":%s,", ownerValue))
-
-	iconValue, err := json.Marshal(item.ic)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Icon\":%s,", iconValue))
-
-	weightValue, err := json.Marshal(item.w)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Weight\":%s,", weightValue))
-	buffer.WriteString(fmt.Sprintf("\"Value\":%d,", item.v))
-
-	effectsValue, err := json.Marshal(item.effects)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Effects\":%s", effectsValue))
-	buffer.WriteString("}")
-
-	return buffer.Bytes(), nil
-}
-
-func (consumable *Consumable) UnmarshalJSON(data []byte) error {
-
-	type consumableJson struct {
-		Name    string
-		Owner   string
-		Icon    icon.Icon
-		Weight  float64
-		Value   int
-		Effects map[string][]Effect
-	}
-	var v consumableJson
-
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-
-	consumable.name = v.Name
-	consumable.owner = v.Owner
-	consumable.ic = v.Icon
-	consumable.w = v.Weight
-	consumable.v = v.Value
-	consumable.effects = v.Effects
-
-	return nil
-}
-
-func (consumable *Consumable) Owned(id string) bool {
-	if consumable.owner == "" {
-		return true
-	}
-	return consumable.owner == id
-}
-
-func (consumable *Consumable) TransferOwner(newOwner string) {
-	// Only assign owner if item not owned
-	if consumable.owner == "" {
-		consumable.owner = newOwner
-	}
-}
-
-func (consumable *Consumable) Effects(e string) []Effect {
-	return consumable.effects[e]
-}
-
-func (consumable *Consumable) GivesCover() bool {
-	return false
 }

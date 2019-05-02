@@ -408,7 +408,7 @@ func (e *Enemy) weaponLoaded() bool {
 
 }
 
-func (e *Enemy) consume(consumable *item.Consumable) {
+func (e *Enemy) consume(consumable *item.NormalItem) {
 	for attr, attribute := range e.attributes {
 		for _, effect := range consumable.Effects(attr) {
 			attribute.AddEffect(&effect)

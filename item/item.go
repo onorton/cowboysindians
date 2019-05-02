@@ -71,20 +71,10 @@ func (itemList *ItemList) UnmarshalJSON(data []byte) error {
 	for _, rawItem := range rawItems {
 		itemJson, err := json.Marshal(rawItem)
 		check(err)
-
-		switch rawItem["Type"] {
-
-		case "consumable":
-			consumable := &Consumable{}
-			err = json.Unmarshal(itemJson, consumable)
-			check(err)
-			items = append(items, consumable)
-		case "normal":
-			item := &NormalItem{}
-			err = json.Unmarshal(itemJson, item)
-			check(err)
-			items = append(items, item)
-		}
+		item := &NormalItem{}
+		err = json.Unmarshal(itemJson, item)
+		check(err)
+		items = append(items, item)
 	}
 	*itemList = ItemList(items)
 	return nil

@@ -39,7 +39,7 @@ func NewReadable(name string, values map[string]string) Item {
 	for key, value := range values {
 		description = strings.Replace(description, "["+key+"]", value, -1)
 	}
-	var itm Item = &NormalItem{baseItem{name, "", item.Icon, item.Weight, item.Value}, false, &description, false, NoAmmo, nil, nil}
+	var itm Item = &NormalItem{baseItem{name, "", item.Icon, item.Weight, item.Value}, false, &description, false, NoAmmo, nil, nil, nil}
 	return itm
 }
 
