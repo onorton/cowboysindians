@@ -36,7 +36,7 @@ type MurderEvent struct {
 type TheftEvent struct {
 	id          string
 	perpetrator worldmap.Creature
-	item        item.Item
+	item        *item.Item
 	location    worldmap.Coordinates
 }
 
@@ -104,7 +104,7 @@ func NewMurder(perpetrator worldmap.Creature, victim worldmap.Creature, location
 	return MurderEvent{xid.New().String(), perpetrator, victim, location}
 }
 
-func NewTheft(perpetrator worldmap.Creature, item item.Item, location worldmap.Coordinates) TheftEvent {
+func NewTheft(perpetrator worldmap.Creature, item *item.Item, location worldmap.Coordinates) TheftEvent {
 	return TheftEvent{xid.New().String(), perpetrator, item, location}
 }
 

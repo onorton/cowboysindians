@@ -36,12 +36,11 @@ type consumableComponent struct {
 	Effects map[string][]Effect
 }
 
-func NewConsumable(name string) Item {
+func NewConsumable(name string) *Item {
 	consumable := consumableData[name]
-	var itm Item = &NormalItem{baseItem{name, "", consumable.Icon, consumable.Weight, consumable.Value}, false, nil, false, NoAmmo, nil, nil, &consumableComponent{consumable.Effects}}
-	return itm
+	return &Item{baseItem{name, "", consumable.Icon, consumable.Weight, consumable.Value}, false, nil, false, NoAmmo, nil, nil, &consumableComponent{consumable.Effects}}
 }
 
-func GenerateConsumable() Item {
+func GenerateConsumable() *Item {
 	return NewConsumable(Choose(consumableProbabilities))
 }

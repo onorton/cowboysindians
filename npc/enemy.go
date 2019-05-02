@@ -25,7 +25,7 @@ type EnemyAttributes struct {
 	Dex         int
 	Encumbrance int
 	Money       int
-	Inventory   []item.ItemDefinition
+	Inventory   []*item.ItemDefinition
 }
 
 var enemyData map[string]EnemyAttributes = fetchEnemyData()
@@ -48,10 +48,10 @@ func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 		"str":         worldmap.NewAttribute(enemy.Str, enemy.Str),
 		"dex":         worldmap.NewAttribute(enemy.Dex, enemy.Dex),
 		"encumbrance": worldmap.NewAttribute(enemy.Encumbrance, enemy.Encumbrance)}
-	e := &Enemy{&ui.PlainName{name}, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, false, enemy.Money, nil, nil, make([]item.Item, 0), "", nil, world, enemyAi{}}
+	e := &Enemy{&ui.PlainName{name}, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, false, enemy.Money, nil, nil, make([]*item.Item, 0), "", nil, world, enemyAi{}}
 	for _, itemDefinition := range enemy.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
-			var itm item.Item = nil
+			var itm *item.Item = nil
 			switch itemDefinition.Category {
 			case "Ammo":
 				itm = item.NewAmmo(itemDefinition.Name)
@@ -132,9 +132,9 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 		Attributes map[string]*worldmap.Attribute
 		Crouching  bool
 		Money      int
-		Weapon     *item.NormalItem
-		Armour     *item.NormalItem
-		Inventory  item.ItemList
+		Weapon     *item.Item
+		Armour     *item.Item
+		Inventory  []*item.Item
 		MountID    string
 		Ai         map[string]interface{}
 	}
@@ -217,15 +217,15 @@ func (e *Enemy) IsDead() bool {
 func (e *Enemy) wieldItem() bool {
 	changed := false
 	for i, itm := range e.inventory {
-		if w, ok := itm.(*item.NormalItem); ok && w.IsWeapon() {
+		if itm.IsWeapon() {
 			if e.weapon == nil {
-				e.weapon = w
+				e.weapon = itm
 				e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
 				changed = true
 
-			} else if w.GetMaxDamage() > e.weapon.GetMaxDamage() {
+			} else if itm.GetMaxDamage() > e.weapon.GetMaxDamage() {
 				e.inventory[i] = e.weapon
-				e.weapon = w
+				e.weapon = itm
 				changed = true
 			}
 
@@ -238,15 +238,15 @@ func (e *Enemy) wieldItem() bool {
 func (e *Enemy) wearArmour() bool {
 	changed := false
 	for i, itm := range e.inventory {
-		if a, ok := itm.(*item.NormalItem); ok && a.IsArmour() {
+		if itm.IsArmour() {
 			if e.armour == nil {
-				e.armour = a
+				e.armour = itm
 				e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
 				changed = true
 
-			} else if a.ACBonus() > e.armour.ACBonus() {
+			} else if itm.ACBonus() > e.armour.ACBonus() {
 				e.inventory[i] = e.weapon
-				e.armour = a
+				e.armour = itm
 				changed = true
 			}
 
@@ -263,7 +263,7 @@ func (e *Enemy) overEncumbered() bool {
 	}
 	return weight > float64(e.attributes["encumbrance"].Value())
 }
-func (e *Enemy) dropItem(item item.Item) {
+func (e *Enemy) dropItem(item *item.Item) {
 	e.RemoveItem(item)
 	e.world.PlaceItem(e.location.X, e.location.Y, item)
 	if e.world.IsVisible(e.world.GetPlayer(), e.location.X, e.location.Y) {
@@ -343,17 +343,17 @@ func (e *Enemy) EmptyInventory() {
 
 }
 
-func (e *Enemy) getAmmo() *item.NormalItem {
+func (e *Enemy) getAmmo() *item.Item {
 	for i, itm := range e.inventory {
-		if ammo, ok := itm.(*item.NormalItem); ok && ammo.IsAmmo() && e.weapon.AmmoTypeMatches(ammo) {
+		if itm.IsAmmo() && e.weapon.AmmoTypeMatches(itm) {
 			e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
-			return ammo
+			return itm
 		}
 	}
 	return nil
 }
 
-func (e *Enemy) PickupItem(item item.Item) {
+func (e *Enemy) PickupItem(item *item.Item) {
 	e.inventory = append(e.inventory, item)
 	// If item had previous owner, send theft event
 	if !item.Owned(e.id) {
@@ -361,7 +361,7 @@ func (e *Enemy) PickupItem(item item.Item) {
 	}
 }
 
-func (e *Enemy) RemoveItem(itm item.Item) {
+func (e *Enemy) RemoveItem(itm *item.Item) {
 	for i, item := range e.inventory {
 		if itm.GetName() == item.GetName() {
 			e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
@@ -370,11 +370,11 @@ func (e *Enemy) RemoveItem(itm item.Item) {
 	}
 }
 
-func (e *Enemy) Inventory() []item.Item {
+func (e *Enemy) Inventory() []*item.Item {
 	return e.inventory
 }
 
-func (e *Enemy) Weapon() *item.NormalItem {
+func (e *Enemy) Weapon() *item.Item {
 	return e.weapon
 }
 
@@ -393,7 +393,7 @@ func (e *Enemy) weaponFullyLoaded() bool {
 // Check whether enemy has ammo for particular wielded weapon
 func (e *Enemy) hasAmmo() bool {
 	for _, itm := range e.inventory {
-		if a, ok := itm.(*item.NormalItem); ok && a.IsAmmo() && e.weapon.AmmoTypeMatches(a) {
+		if itm.IsAmmo() && e.weapon.AmmoTypeMatches(itm) {
 			return true
 		}
 	}
@@ -408,7 +408,7 @@ func (e *Enemy) weaponLoaded() bool {
 
 }
 
-func (e *Enemy) consume(consumable *item.NormalItem) {
+func (e *Enemy) consume(consumable *item.Item) {
 	for attr, attribute := range e.attributes {
 		for _, effect := range consumable.Effects(attr) {
 			attribute.AddEffect(&effect)
@@ -486,9 +486,9 @@ type Enemy struct {
 	attributes map[string]*worldmap.Attribute
 	crouching  bool
 	money      int
-	weapon     *item.NormalItem
-	armour     *item.NormalItem
-	inventory  []item.Item
+	weapon     *item.Item
+	armour     *item.Item
+	inventory  []*item.Item
 	mountID    string
 	mount      *Mount
 	world      *worldmap.Map

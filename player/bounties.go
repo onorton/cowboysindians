@@ -3,7 +3,6 @@ package player
 import (
 	"fmt"
 
-	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/npc"
 	"github.com/onorton/cowboysindians/ui"
@@ -20,8 +19,8 @@ func claimBounties(p *Player, npc *npc.Npc) {
 			totalReward := 0
 			for _, items := range p.inventory {
 				for _, itm := range items {
-					if c, ok := itm.(*item.NormalItem); ok && c.IsCorpse() {
-						reward, criminal := npc.GetBounties().RemoveBounty(c.Owner())
+					if itm.IsCorpse() {
+						reward, criminal := npc.GetBounties().RemoveBounty(itm.Owner())
 						if reward > 0 {
 							totalReward += reward
 							message.Enqueue(fmt.Sprintf("You managed to track down %s. Your reward is $%.2f.", criminal, float64(reward)/100))

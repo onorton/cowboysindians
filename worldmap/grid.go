@@ -41,7 +41,7 @@ type Grid struct {
 	blocksVision  [][]bool
 	blocksVClosed [][]bool
 	c             [][]Creature
-	items         [][]item.ItemList
+	items         [][][]*item.Item
 }
 
 func NewGrid(width int, height int) *Grid {
@@ -51,7 +51,7 @@ func NewGrid(width int, height int) *Grid {
 	blocksVision := make([][]bool, height)
 	blocksVClosed := make([][]bool, height)
 	c := make([][]Creature, height)
-	items := make([][]item.ItemList, height)
+	items := make([][][]*item.Item, height)
 
 	grid := &Grid{}
 
@@ -62,7 +62,7 @@ func NewGrid(width int, height int) *Grid {
 		blocksVision[y] = make([]bool, width)
 		blocksVClosed[y] = make([]bool, width)
 		c[y] = make([]Creature, width)
-		items[y] = make([]item.ItemList, width)
+		items[y] = make([][]*item.Item, width)
 	}
 
 	grid.terrain = terrain
@@ -140,7 +140,7 @@ func (grid *Grid) UnmarshalJSON(data []byte) error {
 		Door               [][]bool
 		BlocksVision       [][]bool
 		BlocksVisionClosed [][]bool
-		Items              [][]item.ItemList
+		Items              [][][]*item.Item
 	}
 	v := gridJson{}
 

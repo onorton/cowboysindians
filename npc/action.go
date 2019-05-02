@@ -24,7 +24,7 @@ func (a PickupAction) execute() {
 
 type DropAction struct {
 	h    holdsItems
-	item item.Item
+	item *item.Item
 }
 
 func (a DropAction) execute() {
@@ -48,7 +48,7 @@ func (a MountAction) execute() {
 
 type ConsumeAction struct {
 	c   hasAi
-	con *item.NormalItem
+	con *item.Item
 }
 
 func (a ConsumeAction) execute() {

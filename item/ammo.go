@@ -32,12 +32,11 @@ func fetchAmmoData() {
 	}
 }
 
-func NewAmmo(name string) Item {
+func NewAmmo(name string) *Item {
 	ammo := ammoData[name]
-	var itm Item = &NormalItem{baseItem{name, "", ammo.Icon, ammo.Weight, ammo.Value}, false, nil, false, ammo.Type, nil, nil, nil}
-	return itm
+	return &Item{baseItem{name, "", ammo.Icon, ammo.Weight, ammo.Value}, false, nil, false, ammo.Type, nil, nil, nil}
 }
 
-func GenerateAmmo() Item {
+func GenerateAmmo() *Item {
 	return NewAmmo(Choose(ammoProbabilities))
 }

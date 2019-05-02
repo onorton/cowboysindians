@@ -74,7 +74,7 @@ type WeaponCapacity struct {
 	loaded   int
 }
 
-func NewWeapon(name string) *NormalItem {
+func NewWeapon(name string) *Item {
 	weapon := weaponData[name]
 
 	var weaponCapacity *WeaponCapacity
@@ -82,10 +82,10 @@ func NewWeapon(name string) *NormalItem {
 		weaponCapacity = &WeaponCapacity{weapon.Capacity, 0}
 	}
 	wc := weaponComponent{weapon.Range, weapon.Type, weaponCapacity, Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
-	return &NormalItem{baseItem{name, "", weapon.Icon, weapon.Weight, weapon.Value}, false, nil, false, NoAmmo, nil, &wc, nil}
+	return &Item{baseItem{name, "", weapon.Icon, weapon.Weight, weapon.Value}, false, nil, false, NoAmmo, nil, &wc, nil}
 }
 
-func GenerateWeapon() Item {
+func GenerateWeapon() *Item {
 	return NewWeapon(Choose(weaponProbabilities))
 }
 
@@ -176,7 +176,7 @@ func (damage *Damage) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (item *NormalItem) Range() int {
+func (item *Item) Range() int {
 	if item.weapon != nil {
 		return item.weapon.Range
 	}
@@ -184,13 +184,13 @@ func (item *NormalItem) Range() int {
 }
 
 // Maximum possible damage
-func (item *NormalItem) GetMaxDamage() int {
+func (item *Item) GetMaxDamage() int {
 	if item.weapon != nil {
 		return item.weapon.Damage.max()
 	}
 	return 0
 }
-func (item *NormalItem) GetDamage() int {
+func (item *Item) GetDamage() int {
 	if item.weapon == nil {
 		return 0
 	}
@@ -204,41 +204,41 @@ func (item *NormalItem) GetDamage() int {
 	return result
 }
 
-func (item *NormalItem) AmmoTypeMatches(ammo *NormalItem) bool {
+func (item *Item) AmmoTypeMatches(ammo *Item) bool {
 	if item.weapon != nil {
 		return item.weapon.Type == ammo.ammoType
 	}
 	return false
 }
 
-func (item *NormalItem) NeedsAmmo() bool {
+func (item *Item) NeedsAmmo() bool {
 	if item.weapon != nil {
 		return item.weapon.Capacity != nil
 	}
 	return false
 }
 
-func (item *NormalItem) IsUnloaded() bool {
+func (item *Item) IsUnloaded() bool {
 	if item.weapon != nil {
 		return item.weapon.Capacity.loaded == 0
 	}
 	return false
 }
 
-func (item *NormalItem) IsFullyLoaded() bool {
+func (item *Item) IsFullyLoaded() bool {
 	if item.weapon != nil {
 		return item.weapon.Capacity.loaded == item.weapon.Capacity.capacity
 	}
 	return false
 }
 
-func (item *NormalItem) Load() {
+func (item *Item) Load() {
 	if item.weapon != nil && item.weapon.Capacity != nil {
 		item.weapon.Capacity.loaded++
 	}
 }
 
-func (item *NormalItem) Fire() {
+func (item *Item) Fire() {
 	if item.weapon != nil && item.weapon.Capacity != nil {
 		if item.weapon.Capacity.loaded > 0 {
 			item.weapon.Capacity.loaded--

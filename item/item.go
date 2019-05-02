@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
+	"io/ioutil"
 	"math/rand"
 
 	"github.com/onorton/cowboysindians/icon"
@@ -15,6 +16,42 @@ func check(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+type itemAttributes struct {
+	Icon        icon.Icon
+	Weight      float64
+	Value       int
+	Cover       bool
+	Probability float64
+}
+
+var normalItemData map[string]itemAttributes
+var normalItemProbabilities map[string]float64
+
+func fetchItemData() {
+	data, err := ioutil.ReadFile("data/item.json")
+	check(err)
+	var iD map[string]itemAttributes
+	err = json.Unmarshal(data, &iD)
+	check(err)
+	normalItemData = iD
+
+	normalItemProbabilities = make(map[string]float64)
+	for name, attributes := range normalItemData {
+		normalItemProbabilities[name] = attributes.Probability
+	}
+}
+
+type Item struct {
+	baseItem
+	cover       bool
+	description *string
+	corpse      bool
+	ammoType    WeaponType
+	armour      *armourComponent
+	weapon      *weaponComponent
+	consumable  *consumableComponent
 }
 
 var typeProbabilities = map[string]float64{
@@ -56,35 +93,11 @@ func Choose(probabilites map[string]float64) string {
 	return items[n]
 }
 
-type ItemList []Item
-
-func (itemList *ItemList) UnmarshalJSON(data []byte) error {
-	var rawItems []map[string]interface{}
-
-	if err := json.Unmarshal(data, &rawItems); err != nil {
-		return err
-	}
-
-	items := []Item{}
-
-	//convert raw items back into byte data and unmarshal individually,
-	for _, rawItem := range rawItems {
-		itemJson, err := json.Marshal(rawItem)
-		check(err)
-		item := &NormalItem{}
-		err = json.Unmarshal(itemJson, item)
-		check(err)
-		items = append(items, item)
-	}
-	*itemList = ItemList(items)
-	return nil
-}
-
-func GenerateItem() Item {
+func GenerateItem() *Item {
 
 	itemType := Choose(typeProbabilities)
 
-	var itm Item = nil
+	var itm *Item = nil
 	switch itemType {
 	case "ammo":
 		itm = GenerateAmmo()
@@ -225,19 +238,6 @@ func LoadAllData() {
 	fetchReadableData()
 }
 
-type Item interface {
-	GetKey() rune
-	GetName() string
-	Owned(string) bool
-	TransferOwner(string)
-	Render() ui.Element
-	MarshalJSON() ([]byte, error)
-	UnmarshalJSON([]byte) error
-	GetWeight() float64
-	GetValue() int
-	GivesCover() bool
-}
-
 func (item *baseItem) Render() ui.Element {
 	return item.ic.Render()
 }
@@ -270,4 +270,203 @@ type baseItem struct {
 	ic    icon.Icon
 	w     float64
 	v     int
+}
+
+func NewNormalItem(name string) *Item {
+	item := normalItemData[name]
+	return &Item{baseItem{name, "", item.Icon, item.Weight, item.Value}, item.Cover, nil, false, NoAmmo, nil, nil, nil}
+}
+
+func Money(amount int) *Item {
+	return &Item{baseItem{"money", "", icon.NewIcon('$', 4), 0, amount}, false, nil, false, NoAmmo, nil, nil, nil}
+}
+
+func GenerateNormalItem() *Item {
+	return NewNormalItem(Choose(normalItemProbabilities))
+}
+
+func (item *Item) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+	nameValue, err := json.Marshal(item.name)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Name\":%s,", nameValue))
+
+	ownerValue, err := json.Marshal(item.owner)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Owner\":%s,", ownerValue))
+
+	iconValue, err := json.Marshal(item.ic)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Icon\":%s,", iconValue))
+
+	weightValue, err := json.Marshal(item.w)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Weight\":%s,", weightValue))
+	buffer.WriteString(fmt.Sprintf("\"Value\":%d,", item.v))
+
+	coverValue, err := json.Marshal(item.cover)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Cover\":%s,", coverValue))
+
+	descriptionValue, err := json.Marshal(item.description)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Description\":%s,", descriptionValue))
+
+	corpseValue, err := json.Marshal(item.corpse)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Corpse\":%s,", corpseValue))
+
+	ammoValue, err := json.Marshal(item.ammoType)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"AmmoType\":%s,", ammoValue))
+
+	armourValue, err := json.Marshal(item.armour)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Armour\":%s,", armourValue))
+
+	weaponValue, err := json.Marshal(item.weapon)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Weapon\":%s,", weaponValue))
+
+	consumableValue, err := json.Marshal(item.consumable)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Consumable\":%s", consumableValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (item *Item) UnmarshalJSON(data []byte) error {
+
+	type itemJson struct {
+		Name        string
+		Owner       string
+		Icon        icon.Icon
+		Weight      float64
+		Value       int
+		Cover       bool
+		Description *string
+		Corpse      bool
+		AmmoType    WeaponType
+		Armour      *armourComponent
+		Weapon      *weaponComponent
+		Consumable  *consumableComponent
+	}
+	var v itemJson
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	item.name = v.Name
+	item.owner = v.Owner
+	item.ic = v.Icon
+	item.w = v.Weight
+	item.v = v.Value
+	item.cover = v.Cover
+	item.description = v.Description
+	item.corpse = v.Corpse
+	item.ammoType = v.AmmoType
+	item.armour = v.Armour
+	item.weapon = v.Weapon
+	item.consumable = v.Consumable
+
+	return nil
+}
+
+func (item *Item) Owner() string {
+	return item.owner
+}
+
+func (item *Item) Owned(id string) bool {
+	if item.owner == "" || item.corpse {
+		return true
+	}
+	return item.owner == id
+}
+
+func (item *Item) TransferOwner(newOwner string) {
+	if item.corpse {
+		return
+	}
+
+	// Only assign owner if item not owned
+	if item.owner == "" {
+		item.owner = newOwner
+	}
+}
+
+func (item *Item) IsReadable() bool {
+	return item.description != nil
+}
+
+func (item *Item) IsCorpse() bool {
+	return item.corpse
+}
+
+func (item *Item) IsAmmo() bool {
+	return item.ammoType != NoAmmo
+}
+
+func (item *Item) IsArmour() bool {
+	return item.armour != nil
+}
+
+func (item *Item) ACBonus() int {
+	if item.armour != nil {
+		return item.armour.Bonus
+	}
+	return 0
+}
+
+func (item *Item) IsWeapon() bool {
+	return item.weapon != nil
+}
+
+func (item *Item) IsConsumable() bool {
+	return item.consumable != nil
+}
+
+func (item *Item) Effects(attr string) []Effect {
+	if item.consumable != nil {
+		return item.consumable.Effects[attr]
+	}
+	return []Effect{}
+}
+
+func (item *Item) GivesCover() bool {
+	return item.cover
 }

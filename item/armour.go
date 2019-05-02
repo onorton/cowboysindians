@@ -36,11 +36,11 @@ type armourComponent struct {
 	Bonus int
 }
 
-func NewArmour(name string) *NormalItem {
+func NewArmour(name string) *Item {
 	armour := armourData[name]
-	return &NormalItem{baseItem{name, "", armour.Icon, armour.Weight, armour.Value}, false, nil, false, NoAmmo, &armourComponent{armour.Bonus}, nil, nil}
+	return &Item{baseItem{name, "", armour.Icon, armour.Weight, armour.Value}, false, nil, false, NoAmmo, &armourComponent{armour.Bonus}, nil, nil}
 }
 
-func GenerateArmour() Item {
+func GenerateArmour() *Item {
 	return NewArmour(Choose(armourProbabilities))
 }

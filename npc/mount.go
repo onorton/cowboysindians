@@ -197,7 +197,7 @@ func (m *Mount) Moved() bool {
 	return m.moved
 }
 
-func (m *Mount) consume(consumable *item.NormalItem) {
+func (m *Mount) consume(consumable *item.Item) {
 	for attr, attribute := range m.attributes {
 		for _, effect := range consumable.Effects(attr) {
 			attribute.AddEffect(&effect)

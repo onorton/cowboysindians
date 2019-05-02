@@ -465,8 +465,8 @@ func (m Map) BehindCover(x1, y1 int, a Creature) bool {
 	return false
 }
 
-func (m Map) PlaceItem(x, y int, itm item.Item) {
-	m.grid.items[y][x] = append([]item.Item{itm}, m.grid.items[y][x]...)
+func (m Map) PlaceItem(x, y int, itm *item.Item) {
+	m.grid.items[y][x] = append([]*item.Item{itm}, m.grid.items[y][x]...)
 }
 
 func (m Map) GetWidth() int {
@@ -522,9 +522,9 @@ func (m Map) Move(c Creature, x, y int) {
 	m.grid.c[y][x] = c
 }
 
-func (m Map) GetItems(x, y int) []item.Item {
+func (m Map) GetItems(x, y int) []*item.Item {
 	items := m.grid.items[y][x]
-	m.grid.items[y][x] = make([]item.Item, 0)
+	m.grid.items[y][x] = make([]*item.Item, 0)
 	return items
 }
 

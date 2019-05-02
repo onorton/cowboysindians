@@ -13,18 +13,18 @@ import (
 )
 
 type hasAi interface {
-	consume(*item.NormalItem)
+	consume(*item.Item)
 	damageable
 	worldmap.CanSee
 	worldmap.CanCrouch
 }
 
 type holdsItems interface {
-	dropItem(item.Item)
-	PickupItem(item.Item)
-	Inventory() []item.Item
+	dropItem(*item.Item)
+	PickupItem(*item.Item)
+	Inventory() []*item.Item
 	overEncumbered() bool
-	RemoveItem(item.Item)
+	RemoveItem(*item.Item)
 }
 
 type usesItems interface {
@@ -32,11 +32,11 @@ type usesItems interface {
 	wearArmour() bool
 	ranged() bool
 	rangedAttack(worldmap.Creature, int)
-	Weapon() *item.NormalItem
+	Weapon() *item.Item
 	weaponLoaded() bool
 	weaponFullyLoaded() bool
 	hasAmmo() bool
-	getAmmo() *item.NormalItem
+	getAmmo() *item.Item
 }
 
 type damageable interface {
@@ -165,8 +165,8 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) Action {
 	// If at half health heal up
 	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
 		for _, itm := range itemHolder.Inventory() {
-			if con, ok := itm.(*item.NormalItem); ok && con.IsConsumable() && len(con.Effects("hp")) > 0 {
-				return ConsumeAction{c, con}
+			if itm.IsConsumable() && len(itm.Effects("hp")) > 0 {
+				return ConsumeAction{c, itm}
 			}
 		}
 	}
@@ -353,8 +353,8 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	// If at half health heal up
 	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
 		for _, itm := range itemHolder.Inventory() {
-			if con, ok := itm.(*item.NormalItem); ok && con.IsConsumable() && len(con.Effects("hp")) > 0 {
-				return ConsumeAction{c, con}
+			if itm.IsConsumable() && len(itm.Effects("hp")) > 0 {
+				return ConsumeAction{c, itm}
 			}
 		}
 	}
@@ -540,8 +540,8 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 	// If at half health heal up
 	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
 		for _, itm := range itemHolder.Inventory() {
-			if con, ok := itm.(*item.NormalItem); ok && con.IsConsumable() && len(con.Effects("hp")) > 0 {
-				return ConsumeAction{c, con}
+			if itm.IsConsumable() && len(itm.Effects("hp")) > 0 {
+				return ConsumeAction{c, itm}
 			}
 		}
 	}

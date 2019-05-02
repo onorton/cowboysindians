@@ -31,7 +31,7 @@ type NpcAttributes struct {
 	Dex           int
 	Encumbrance   int
 	Money         int
-	Inventory     []item.ItemDefinition
+	Inventory     []*item.ItemDefinition
 	ShopInventory map[string]int
 	DialogueType  dialogueType
 }
@@ -65,7 +65,7 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 		"str":         worldmap.NewAttribute(n.Str, n.Str),
 		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
 		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
-	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, npcAi{worldmap.NewRandomWaypoint(world, location)}, &basicDialogue{false}}
+	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", nil, world, npcAi{worldmap.NewRandomWaypoint(world, location)}, &basicDialogue{false}}
 	npc.initialiseInventory(n.Inventory)
 	event.Subscribe(npc)
 	return npc
@@ -107,7 +107,7 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
 		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
 
-	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]item.Item, 0), "", nil, world, ai, dialogue}
+	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", nil, world, ai, dialogue}
 	for c, count := range n.ShopInventory {
 
 		for i := 0; i < count; i++ {
@@ -131,10 +131,10 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 	return npc
 }
 
-func (npc *Npc) initialiseInventory(inventory []item.ItemDefinition) {
+func (npc *Npc) initialiseInventory(inventory []*item.ItemDefinition) {
 	for _, itemDefinition := range inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
-			var itm item.Item = nil
+			var itm *item.Item = nil
 			switch itemDefinition.Category {
 			case "Ammo":
 				itm = item.NewAmmo(itemDefinition.Name)
@@ -223,9 +223,9 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 		Attributes map[string]*worldmap.Attribute
 		Crouching  bool
 		Money      int
-		Weapon     *item.NormalItem
-		Armour     *item.NormalItem
-		Inventory  item.ItemList
+		Weapon     *item.Item
+		Armour     *item.Item
+		Inventory  []*item.Item
 		MountID    string
 		Ai         map[string]interface{}
 		Dialogue   map[string]interface{}
@@ -310,15 +310,15 @@ func (npc *Npc) IsDead() bool {
 func (npc *Npc) wieldItem() bool {
 	changed := false
 	for i, itm := range npc.inventory {
-		if w, ok := itm.(*item.NormalItem); ok && w.IsWeapon() {
+		if itm.IsWeapon() {
 			if npc.weapon == nil {
-				npc.weapon = w
+				npc.weapon = itm
 				npc.inventory = append(npc.inventory[:i], npc.inventory[i+1:]...)
 				changed = true
 
-			} else if w.GetMaxDamage() > npc.weapon.GetMaxDamage() {
+			} else if itm.GetMaxDamage() > npc.weapon.GetMaxDamage() {
 				npc.inventory[i] = npc.weapon
-				npc.weapon = w
+				npc.weapon = itm
 				changed = true
 			}
 
@@ -331,15 +331,15 @@ func (npc *Npc) wieldItem() bool {
 func (npc *Npc) wearArmour() bool {
 	changed := false
 	for i, itm := range npc.inventory {
-		if a, ok := itm.(*item.NormalItem); ok && a.IsArmour() {
+		if itm.IsArmour() {
 			if npc.armour == nil {
-				npc.armour = a
+				npc.armour = itm
 				npc.inventory = append(npc.inventory[:i], npc.inventory[i+1:]...)
 				changed = true
 
-			} else if a.ACBonus() > npc.armour.ACBonus() {
+			} else if itm.ACBonus() > npc.armour.ACBonus() {
 				npc.inventory[i] = npc.weapon
-				npc.armour = a
+				npc.armour = itm
 				changed = true
 			}
 
@@ -356,7 +356,7 @@ func (npc *Npc) overEncumbered() bool {
 	}
 	return weight > float64(npc.attributes["encumbrance"].Value())
 }
-func (npc *Npc) dropItem(item item.Item) {
+func (npc *Npc) dropItem(item *item.Item) {
 	npc.RemoveItem(item)
 	npc.world.PlaceItem(npc.location.X, npc.location.Y, item)
 	if npc.world.IsVisible(npc.world.GetPlayer(), npc.location.X, npc.location.Y) {
@@ -444,17 +444,17 @@ func (npc *Npc) EmptyInventory() {
 
 }
 
-func (npc *Npc) getAmmo() *item.NormalItem {
+func (npc *Npc) getAmmo() *item.Item {
 	for i, itm := range npc.inventory {
-		if ammo, ok := itm.(*item.NormalItem); ok && ammo.IsAmmo() && npc.weapon.AmmoTypeMatches(ammo) {
+		if itm.IsAmmo() && npc.weapon.AmmoTypeMatches(itm) {
 			npc.inventory = append(npc.inventory[:i], npc.inventory[i+1:]...)
-			return ammo
+			return itm
 		}
 	}
 	return nil
 }
 
-func (npc *Npc) PickupItem(item item.Item) {
+func (npc *Npc) PickupItem(item *item.Item) {
 	npc.inventory = append(npc.inventory, item)
 	// If item had previous owner, send theft event
 	if !item.Owned(npc.id) {
@@ -463,7 +463,7 @@ func (npc *Npc) PickupItem(item item.Item) {
 	item.TransferOwner(npc.id)
 }
 
-func (npc *Npc) Inventory() []item.Item {
+func (npc *Npc) Inventory() []*item.Item {
 	return npc.inventory
 }
 
@@ -474,7 +474,7 @@ func (npc *Npc) ranged() bool {
 	return false
 }
 
-func (npc *Npc) Weapon() *item.NormalItem {
+func (npc *Npc) Weapon() *item.Item {
 	return npc.weapon
 }
 
@@ -486,7 +486,7 @@ func (npc *Npc) weaponFullyLoaded() bool {
 // Check whether npc has ammo for particular wielded weapon
 func (npc *Npc) hasAmmo() bool {
 	for _, itm := range npc.inventory {
-		if a, ok := itm.(*item.NormalItem); ok && a.IsAmmo() && npc.weapon.AmmoTypeMatches(a) {
+		if itm.IsAmmo() && npc.weapon.AmmoTypeMatches(itm) {
 			return true
 		}
 	}
@@ -501,7 +501,7 @@ func (npc *Npc) weaponLoaded() bool {
 
 }
 
-func (npc *Npc) consume(consumable *item.NormalItem) {
+func (npc *Npc) consume(consumable *item.Item) {
 	for attr, attribute := range npc.attributes {
 		for _, effect := range consumable.Effects(attr) {
 			attribute.AddEffect(&effect)
@@ -565,12 +565,12 @@ func (npc *Npc) GetVisionDistance() int {
 	return 20
 }
 
-func (npc *Npc) GetItems() map[rune]([]item.Item) {
-	items := make(map[rune]([]item.Item))
+func (npc *Npc) GetItems() map[rune]([]*item.Item) {
+	items := make(map[rune]([]*item.Item))
 	for _, itm := range npc.inventory {
 		existing := items[itm.GetKey()]
 		if existing == nil {
-			existing = make([]item.Item, 0)
+			existing = make([]*item.Item, 0)
 		}
 		existing = append(existing, itm)
 		items[itm.GetKey()] = existing
@@ -578,7 +578,7 @@ func (npc *Npc) GetItems() map[rune]([]item.Item) {
 	return items
 }
 
-func (npc *Npc) RemoveItem(itm item.Item) {
+func (npc *Npc) RemoveItem(itm *item.Item) {
 	for i, item := range npc.inventory {
 		if itm.GetName() == item.GetName() {
 			npc.inventory = append(npc.inventory[:i], npc.inventory[i+1:]...)
@@ -596,7 +596,7 @@ func (npc *Npc) LoadMount(mounts []*Mount) {
 	}
 }
 
-func (npc Npc) CanBuy(itm item.Item) bool {
+func (npc Npc) CanBuy(itm *item.Item) bool {
 	return itm.GetValue() <= npc.money
 }
 
@@ -634,9 +634,9 @@ type Npc struct {
 	attributes map[string]*worldmap.Attribute
 	crouching  bool
 	money      int
-	weapon     *item.NormalItem
-	armour     *item.NormalItem
-	inventory  []item.Item
+	weapon     *item.Item
+	armour     *item.Item
+	inventory  []*item.Item
 	mountID    string
 	mount      *Mount
 	world      *worldmap.Map

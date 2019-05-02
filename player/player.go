@@ -35,7 +35,7 @@ func NewPlayer(world *worldmap.Map) *Player {
 	attributes["hunger"].AddEffect(item.NewOngoingEffect(1))
 	attributes["thirst"].AddEffect(item.NewOngoingEffect(1))
 
-	player := &Player{worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, attributes, false, 1000, nil, nil, make(map[rune]([]item.Item)), "", nil, world}
+	player := &Player{worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, attributes, false, 1000, nil, nil, make(map[rune]([]*item.Item)), "", nil, world}
 	player.AddItem(item.NewWeapon("shotgun"))
 	player.AddItem(item.NewWeapon("sawn-off shotgun"))
 	player.AddItem(item.NewWeapon("baseball bat"))
@@ -76,7 +76,7 @@ func (p *Player) MarshalJSON() ([]byte, error) {
 		"MountID":    mountID,
 	}
 
-	var inventory []item.Item
+	var inventory []*item.Item
 	for _, setItems := range p.inventory {
 		for _, item := range setItems {
 			inventory = append(inventory, item)
@@ -112,9 +112,9 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 		Attributes map[string]*worldmap.Attribute
 		Crouching  bool
 		Money      int
-		Weapon     *item.NormalItem
-		Armour     *item.NormalItem
-		Inventory  item.ItemList
+		Weapon     *item.Item
+		Armour     *item.Item
+		Inventory  []*item.Item
 		MountID    string
 	}
 	v := playerJson{}
@@ -132,7 +132,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 	p.weapon = v.Weapon
 	p.armour = v.Armour
 	p.mountID = v.MountID
-	p.inventory = make(map[rune][]item.Item)
+	p.inventory = make(map[rune][]*item.Item)
 
 	for _, itm := range v.Inventory {
 		p.AddItem(itm)
@@ -237,7 +237,7 @@ func (p *Player) PrintInventory() {
 func (p *Player) PrintWeapons() {
 	position := 0
 	for k, items := range p.inventory {
-		if w, ok := p.inventory[k][0].(*item.NormalItem); !ok || !w.IsWeapon() {
+		if !p.inventory[k][0].IsWeapon() {
 			continue
 		}
 		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
@@ -252,7 +252,7 @@ func (p *Player) PrintWeapons() {
 func (p *Player) PrintArmour() {
 	position := 0
 	for k, items := range p.inventory {
-		if a, ok := p.inventory[k][0].(*item.NormalItem); !ok || !a.IsArmour() {
+		if !p.inventory[k][0].IsArmour() {
 			continue
 		}
 		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
@@ -267,7 +267,7 @@ func (p *Player) PrintArmour() {
 func (p *Player) PrintConsumables() {
 	position := 0
 	for k, items := range p.inventory {
-		if c, ok := p.inventory[k][0].(*item.NormalItem); !ok || !c.IsConsumable() {
+		if !p.inventory[k][0].IsConsumable() {
 			continue
 		}
 		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
@@ -283,7 +283,7 @@ func (p *Player) PrintConsumables() {
 func (p *Player) PrintReadables() {
 	position := 0
 	for k, items := range p.inventory {
-		if itm, ok := p.inventory[k][0].(*item.NormalItem); !ok || !itm.IsReadable() {
+		if !p.inventory[k][0].IsReadable() {
 			continue
 		}
 		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
@@ -338,19 +338,19 @@ func (p *Player) RangedAttack() bool {
 
 }
 
-func (p *Player) getAmmo() *item.NormalItem {
+func (p *Player) getAmmo() *item.Item {
 	for k, items := range p.inventory {
-		if a, ok := items[0].(*item.NormalItem); ok && a.IsAmmo() && p.weapon.AmmoTypeMatches(a) {
-			return p.GetItem(k).(*item.NormalItem)
+		if items[0].IsAmmo() && p.weapon.AmmoTypeMatches(items[0]) {
+			return p.GetItem(k)
 		}
 	}
 	return nil
 }
 
-func (p *Player) AddItem(itm item.Item) {
+func (p *Player) AddItem(itm *item.Item) {
 	existing := p.inventory[itm.GetKey()]
 	if existing == nil {
-		existing = make([]item.Item, 0)
+		existing = make([]*item.Item, 0)
 	}
 	existing = append(existing, itm)
 	p.inventory[itm.GetKey()] = existing
@@ -365,7 +365,7 @@ func (p *Player) GetWeaponKeys() string {
 	keysSet := make([]bool, 128)
 	for k := range p.inventory {
 
-		if w, ok := p.inventory[k][0].(*item.NormalItem); ok && w.IsWeapon() {
+		if p.inventory[k][0].IsWeapon() {
 			keysSet[k] = true
 		}
 	}
@@ -390,7 +390,7 @@ func (p *Player) GetArmourKeys() string {
 	keysSet := make([]bool, 128)
 	for k := range p.inventory {
 
-		if a, ok := p.inventory[k][0].(*item.NormalItem); ok && a.IsArmour() {
+		if p.inventory[k][0].IsArmour() {
 			keysSet[k] = true
 		}
 	}
@@ -415,7 +415,7 @@ func (p *Player) GetConsumableKeys() string {
 	keysSet := make([]bool, 128)
 	for k := range p.inventory {
 
-		if c, ok := p.inventory[k][0].(*item.NormalItem); ok && c.IsConsumable() {
+		if p.inventory[k][0].IsConsumable() {
 			keysSet[k] = true
 		}
 	}
@@ -440,7 +440,7 @@ func (p *Player) GetReadableKeys() string {
 	keysSet := make([]bool, 128)
 	for k := range p.inventory {
 
-		if itm, ok := p.inventory[k][0].(*item.NormalItem); ok && itm.IsReadable() {
+		if p.inventory[k][0].IsReadable() {
 			keysSet[k] = true
 		}
 	}
@@ -483,7 +483,7 @@ func (p *Player) GetInventoryKeys() string {
 	return keys
 }
 
-func (p *Player) GetItem(key rune) item.Item {
+func (p *Player) GetItem(key rune) *item.Item {
 	items := p.inventory[key]
 	if items == nil {
 		return nil
@@ -519,13 +519,13 @@ func (p *Player) WieldItem() bool {
 				message.PrintMessage("You don't have that weapon.")
 				ui.GetInput()
 			} else {
-				if w, ok := itm.(*item.NormalItem); ok && w.IsWeapon() {
+				if itm.IsWeapon() {
 					other := p.weapon
-					p.weapon = w
+					p.weapon = itm
 					if other != nil {
 						p.AddItem(other)
 					}
-					message.Enqueue(fmt.Sprintf("You are now wielding a %s.", w.GetName()))
+					message.Enqueue(fmt.Sprintf("You are now wielding a %s.", itm.GetName()))
 					return true
 				} else {
 					message.PrintMessage("That is not a weapon.")
@@ -561,13 +561,13 @@ func (p *Player) WearArmour() bool {
 				message.PrintMessage("You don't have that piece of armour.")
 				ui.GetInput()
 			} else {
-				if a, ok := itm.(*item.NormalItem); ok && a.IsArmour() {
+				if itm.IsArmour() {
 					other := p.armour
-					p.armour = a
+					p.armour = itm
 					if other != nil {
 						p.AddItem(other)
 					}
-					message.Enqueue(fmt.Sprintf("You are now wearing a %s.", a.GetName()))
+					message.Enqueue(fmt.Sprintf("You are now wearing a %s.", itm.GetName()))
 					return true
 				} else {
 					message.PrintMessage("That is not a piece of armour.")
@@ -632,9 +632,9 @@ func (p *Player) ConsumeItem() bool {
 				message.PrintMessage("You don't have that thing to eat.")
 				ui.GetInput()
 			} else {
-				if c, ok := itm.(*item.NormalItem); ok && c.IsConsumable() {
-					message.Enqueue(fmt.Sprintf("You ate a %s.", c.GetName()))
-					p.consume(c)
+				if itm.IsConsumable() {
+					message.Enqueue(fmt.Sprintf("You ate a %s.", itm.GetName()))
+					p.consume(itm)
 					return true
 				} else {
 					message.PrintMessage("That is not something you can eat.")
@@ -664,8 +664,7 @@ func (p *Player) weaponFullyLoaded() bool {
 // Check whether player has ammo for particular wielded weapon
 func (p *Player) hasAmmo() bool {
 	for _, items := range p.inventory {
-
-		if a, ok := items[0].(*item.NormalItem); ok && a.IsAmmo() && p.weapon.AmmoTypeMatches(a) {
+		if items[0].IsAmmo() && p.weapon.AmmoTypeMatches(items[0]) {
 			return true
 		}
 	}
@@ -680,7 +679,7 @@ func (p *Player) weaponLoaded() bool {
 
 }
 
-func (p *Player) consume(consumable *item.NormalItem) {
+func (p *Player) consume(consumable *item.Item) {
 	originalHp := p.attributes["hp"].Value()
 	originalHunger := p.attributes["hunger"].Value()
 	originalThirst := p.attributes["thirst"].Value()
@@ -905,11 +904,11 @@ func (p *Player) PickupItem() bool {
 		}
 	}
 
-	items := make(map[rune]([]item.Item))
+	items := make(map[rune]([]*item.Item))
 	for _, itm := range itemsOnGround {
 		existing := items[itm.GetKey()]
 		if existing == nil {
-			existing = make([]item.Item, 0)
+			existing = make([]*item.Item, 0)
 		}
 		existing = append(existing, itm)
 		items[itm.GetKey()] = existing
@@ -1215,11 +1214,11 @@ func (p *Player) Talk() {
 func (p *Player) Read() {
 	items := p.world.GetItems(p.location.X, p.location.Y)
 
-	readables := make([]item.NormalItem, 0)
+	readables := make([]*item.Item, 0)
 
 	for _, itm := range items {
-		if itm, ok := itm.(*item.NormalItem); ok && itm.IsReadable() {
-			readables = append(readables, *itm)
+		if itm.IsReadable() {
+			readables = append(readables, itm)
 		}
 	}
 
@@ -1263,8 +1262,8 @@ func (p *Player) Read() {
 				message.PrintMessage("You don't have that to read.")
 				ui.GetInput()
 			} else {
-				if r, ok := itm.(*item.NormalItem); ok && r.IsReadable() {
-					message.PrintMessage(r.Read())
+				if itm.IsReadable() {
+					message.PrintMessage(itm.Read())
 					return
 				} else {
 					message.PrintMessage("That is not something that you can read.")
@@ -1335,9 +1334,9 @@ type Player struct {
 	attributes map[string]*worldmap.Attribute
 	crouching  bool
 	money      int
-	weapon     *item.NormalItem
-	armour     *item.NormalItem
-	inventory  map[rune]([]item.Item)
+	weapon     *item.Item
+	armour     *item.Item
+	inventory  map[rune]([]*item.Item)
 	mountID    string
 	mount      *npc.Mount
 	world      *worldmap.Map

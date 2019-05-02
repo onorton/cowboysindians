@@ -8,7 +8,7 @@ import (
 )
 
 type readableMarshallingPair struct {
-	readable NormalItem
+	readable Item
 	result   string
 }
 
@@ -16,18 +16,18 @@ var signpostDescription string = "\"Welcome to Deadwood!\""
 var bookDescription string = "This book has words in it."
 
 var readableMarshallingTests = []readableMarshallingPair{
-	{NormalItem{baseItem{"signpost", "", icon.NewIcon(80, 4), 20, 1000}, false, &signpostDescription, false, NoAmmo, nil, nil, nil}, "{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Cover\":false,\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
-	{NormalItem{baseItem{"book", "townsman", icon.NewIcon(98, 6), 1, 1000}, false, &bookDescription, false, NoAmmo, nil, nil, nil}, "{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Cover\":false,\"Description\":\"This book has words in it.\",\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{baseItem{"signpost", "", icon.NewIcon(80, 4), 20, 1000}, false, &signpostDescription, false, NoAmmo, nil, nil, nil}, "{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Cover\":false,\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{baseItem{"book", "townsman", icon.NewIcon(98, 6), 1, 1000}, false, &bookDescription, false, NoAmmo, nil, nil, nil}, "{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Cover\":false,\"Description\":\"This book has words in it.\",\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
 }
 
 type readableUnmarshallingPair struct {
 	readableJson string
-	readable     NormalItem
+	readable     Item
 }
 
 var readableUnmarshallingTests = []readableUnmarshallingPair{
-	{"{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"Corpse\":false}", NormalItem{baseItem{"signpost", "", icon.NewIcon(80, 4), 20, 1000}, false, &signpostDescription, false, NoAmmo, nil, nil, nil}},
-	{"{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Description\":\"This book has words in it.\",\"Corpse\":false}", NormalItem{baseItem{"book", "townsman", icon.NewIcon(98, 6), 1, 1000}, false, &bookDescription, false, NoAmmo, nil, nil, nil}},
+	{"{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"Corpse\":false}", Item{baseItem{"signpost", "", icon.NewIcon(80, 4), 20, 1000}, false, &signpostDescription, false, NoAmmo, nil, nil, nil}},
+	{"{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Description\":\"This book has words in it.\",\"Corpse\":false}", Item{baseItem{"book", "townsman", icon.NewIcon(98, 6), 1, 1000}, false, &bookDescription, false, NoAmmo, nil, nil, nil}},
 }
 
 func TestReadableMarshalling(t *testing.T) {
@@ -51,7 +51,7 @@ func TestReadableMarshalling(t *testing.T) {
 func TestReadableUnmarshalling(t *testing.T) {
 
 	for _, pair := range readableUnmarshallingTests {
-		readable := NormalItem{}
+		readable := Item{}
 
 		if err := json.Unmarshal([]byte(pair.readableJson), &readable); err != nil {
 			t.Error("Failed when unmarshalling", pair.readableJson, err)

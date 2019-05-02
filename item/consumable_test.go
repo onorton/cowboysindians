@@ -9,25 +9,25 @@ import (
 )
 
 type consumableMarshallingPair struct {
-	consumable NormalItem
+	consumable Item
 	result     string
 }
 
 var consumableMarshallingTests = []consumableMarshallingPair{
-	{NormalItem{baseItem{"beer", "townsman", icon.NewIcon(98, 2), 0.01, 20}, false, nil, false, NoAmmo, nil, nil, &consumableComponent{map[string][]Effect{"hp": []Effect{*NewInstantEffect(1)}, "thirst": []Effect{*NewInstantEffect(-10)}}}}, "{\"Name\":\"beer\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":2},\"Weight\":0.01,\"Value\":20,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":{\"Effects\":{\"hp\":[{\"Effect\":1,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}],\"thirst\":[{\"Effect\":-10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}}"},
-	{NormalItem{baseItem{"standard ration", "bandit", icon.NewIcon(42, 4), 0.1, 40}, false, nil, false, NoAmmo, nil, nil, &consumableComponent{map[string][]Effect{"hp": []Effect{*NewInstantEffect(10)}, "hunger": []Effect{*NewInstantEffect(-10)}}}}, "{\"Name\":\"standard ration\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":0.1,\"Value\":40,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":{\"Effects\":{\"hp\":[{\"Effect\":10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}],\"hunger\":[{\"Effect\":-10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}}"},
-	{NormalItem{baseItem{"healing potion", "townsman", icon.NewIcon(112, 4), 0.1, 100}, false, nil, false, NoAmmo, nil, nil, &consumableComponent{map[string][]Effect{"hp": []Effect{*NewInstantEffect(20)}}}}, "{\"Name\":\"healing potion\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":112,\"Colour\":4},\"Weight\":0.1,\"Value\":100,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":{\"Effects\":{\"hp\":[{\"Effect\":20,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}}"},
+	{Item{baseItem{"beer", "townsman", icon.NewIcon(98, 2), 0.01, 20}, false, nil, false, NoAmmo, nil, nil, &consumableComponent{map[string][]Effect{"hp": []Effect{*NewInstantEffect(1)}, "thirst": []Effect{*NewInstantEffect(-10)}}}}, "{\"Name\":\"beer\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":2},\"Weight\":0.01,\"Value\":20,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":{\"Effects\":{\"hp\":[{\"Effect\":1,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}],\"thirst\":[{\"Effect\":-10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}}"},
+	{Item{baseItem{"standard ration", "bandit", icon.NewIcon(42, 4), 0.1, 40}, false, nil, false, NoAmmo, nil, nil, &consumableComponent{map[string][]Effect{"hp": []Effect{*NewInstantEffect(10)}, "hunger": []Effect{*NewInstantEffect(-10)}}}}, "{\"Name\":\"standard ration\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":0.1,\"Value\":40,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":{\"Effects\":{\"hp\":[{\"Effect\":10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}],\"hunger\":[{\"Effect\":-10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}}"},
+	{Item{baseItem{"healing potion", "townsman", icon.NewIcon(112, 4), 0.1, 100}, false, nil, false, NoAmmo, nil, nil, &consumableComponent{map[string][]Effect{"hp": []Effect{*NewInstantEffect(20)}}}}, "{\"Name\":\"healing potion\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":112,\"Colour\":4},\"Weight\":0.1,\"Value\":100,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":{\"Effects\":{\"hp\":[{\"Effect\":20,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}}"},
 }
 
 type consumableUnmarshallingPair struct {
 	consumableJson string
-	consumable     NormalItem
+	consumable     Item
 }
 
 var consumableUnmarshallingTests = []consumableUnmarshallingPair{
-	{"{\"Name\":\"beer\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":2},\"Weight\":0.01,\"Value\":20,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":{\"Effects\":{\"hp\":[{\"Effect\":1,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}],\"thirst\":[{\"Effect\":-10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}}", NormalItem{baseItem{"beer", "townsman", icon.NewIcon(98, 2), 0.01, 20}, false, nil, false, NoAmmo, nil, nil, &consumableComponent{map[string][]Effect{"hp": []Effect{*NewInstantEffect(1)}, "thirst": []Effect{*NewInstantEffect(-10)}}}}},
-	{"{\"Name\":\"standard ration\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":0.1,\"Value\":40,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":{\"Effects\":{\"hp\":[{\"Effect\":10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}],\"hunger\":[{\"Effect\":-10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}}", NormalItem{baseItem{"standard ration", "bandit", icon.NewIcon(42, 4), 0.1, 40}, false, nil, false, NoAmmo, nil, nil, &consumableComponent{map[string][]Effect{"hp": []Effect{*NewInstantEffect(10)}, "hunger": []Effect{*NewInstantEffect(-10)}}}}},
-	{"{\"Name\":\"healing potion\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":112,\"Colour\":4},\"Weight\":0.1,\"Value\":100,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":{\"Effects\":{\"hp\":[{\"Effect\":20,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}}", NormalItem{baseItem{"healing potion", "townsman", icon.NewIcon(112, 4), 0.1, 100}, false, nil, false, NoAmmo, nil, nil, &consumableComponent{map[string][]Effect{"hp": []Effect{*NewInstantEffect(20)}}}}},
+	{"{\"Name\":\"beer\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":2},\"Weight\":0.01,\"Value\":20,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":{\"Effects\":{\"hp\":[{\"Effect\":1,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}],\"thirst\":[{\"Effect\":-10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}}", Item{baseItem{"beer", "townsman", icon.NewIcon(98, 2), 0.01, 20}, false, nil, false, NoAmmo, nil, nil, &consumableComponent{map[string][]Effect{"hp": []Effect{*NewInstantEffect(1)}, "thirst": []Effect{*NewInstantEffect(-10)}}}}},
+	{"{\"Name\":\"standard ration\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":0.1,\"Value\":40,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":{\"Effects\":{\"hp\":[{\"Effect\":10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}],\"hunger\":[{\"Effect\":-10,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}}", Item{baseItem{"standard ration", "bandit", icon.NewIcon(42, 4), 0.1, 40}, false, nil, false, NoAmmo, nil, nil, &consumableComponent{map[string][]Effect{"hp": []Effect{*NewInstantEffect(10)}, "hunger": []Effect{*NewInstantEffect(-10)}}}}},
+	{"{\"Name\":\"healing potion\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":112,\"Colour\":4},\"Weight\":0.1,\"Value\":100,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":{\"Effects\":{\"hp\":[{\"Effect\":20,\"OnMax\":false,\"Duration\":1,\"Activated\":false,\"Compounded\":false}]}}}", Item{baseItem{"healing potion", "townsman", icon.NewIcon(112, 4), 0.1, 100}, false, nil, false, NoAmmo, nil, nil, &consumableComponent{map[string][]Effect{"hp": []Effect{*NewInstantEffect(20)}}}}},
 }
 
 func TestConsumableMarshalling(t *testing.T) {
@@ -51,7 +51,7 @@ func TestConsumableMarshalling(t *testing.T) {
 func TestConsumableUnmarshalling(t *testing.T) {
 
 	for _, pair := range consumableUnmarshallingTests {
-		consumable := NormalItem{}
+		consumable := Item{}
 
 		if err := json.Unmarshal([]byte(pair.consumableJson), &consumable); err != nil {
 			t.Error("Failed when unmarshalling", pair.consumableJson, err)

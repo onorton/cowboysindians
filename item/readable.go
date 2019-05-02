@@ -33,20 +33,19 @@ func fetchReadableData() {
 	}
 }
 
-func NewReadable(name string, values map[string]string) Item {
+func NewReadable(name string, values map[string]string) *Item {
 	item := readableData[name]
 	description := item.Description
 	for key, value := range values {
 		description = strings.Replace(description, "["+key+"]", value, -1)
 	}
-	var itm Item = &NormalItem{baseItem{name, "", item.Icon, item.Weight, item.Value}, false, &description, false, NoAmmo, nil, nil, nil}
-	return itm
+	return &Item{baseItem{name, "", item.Icon, item.Weight, item.Value}, false, &description, false, NoAmmo, nil, nil, nil}
 }
 
-func GenerateReadable() Item {
+func GenerateReadable() *Item {
 	return NewReadable(Choose(readableProbabilities), map[string]string{})
 }
 
-func (item *NormalItem) Read() string {
+func (item *Item) Read() string {
 	return *(item.description)
 }
