@@ -30,5 +30,5 @@ func fetchCorpseData() {
 func NewCorpse(corpseType string, owner string, ownerName string, ownerIcon icon.Icon) *Item {
 	corpse := corpseData[corpseType]
 	name := fmt.Sprintf("%s's %s", ownerName, corpseType)
-	return &Item{baseItem{name, owner, icon.NewCorpseIcon(ownerIcon), corpse.Weight, corpse.Value}, corpse.Cover, nil, true, NoAmmo, nil, nil, nil}
+	return &Item{name, owner, icon.NewCorpseIcon(ownerIcon), corpse.Weight, corpse.Value, corpse.Cover, nil, true, NoAmmo, nil, nil, nil}
 }

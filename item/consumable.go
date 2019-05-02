@@ -38,7 +38,7 @@ type consumableComponent struct {
 
 func NewConsumable(name string) *Item {
 	consumable := consumableData[name]
-	return &Item{baseItem{name, "", consumable.Icon, consumable.Weight, consumable.Value}, false, nil, false, NoAmmo, nil, nil, &consumableComponent{consumable.Effects}}
+	return &Item{name, "", consumable.Icon, consumable.Weight, consumable.Value, false, nil, false, NoAmmo, nil, nil, &consumableComponent{consumable.Effects}}
 }
 
 func GenerateConsumable() *Item {

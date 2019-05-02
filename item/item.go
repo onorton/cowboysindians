@@ -44,7 +44,11 @@ func fetchItemData() {
 }
 
 type Item struct {
-	baseItem
+	name        string
+	owner       string
+	ic          icon.Icon
+	w           float64
+	v           int
 	cover       bool
 	description *string
 	corpse      bool
@@ -116,118 +120,6 @@ func GenerateItem() *Item {
 	return itm
 }
 
-type Effect struct {
-	effect     int
-	onMax      bool
-	duration   int
-	activated  bool
-	compounded bool
-}
-
-func NewEffect(effect, duration int, onMax bool) *Effect {
-	return &Effect{effect, onMax, duration, false, false}
-}
-
-func NewInstantEffect(effect int) *Effect {
-	return &Effect{effect, false, 1, false, false}
-}
-
-func NewOngoingEffect(effect int) *Effect {
-	return &Effect{effect, false, -1, false, true}
-}
-
-func (e *Effect) Update(value, max int) (int, int) {
-	if e.duration != 0 {
-		if e.duration > 0 {
-			e.duration--
-		}
-
-		if !e.activated || e.compounded {
-			e.activated = true
-			if e.onMax {
-				return value, max + e.effect
-			} else {
-				return value + e.effect, max
-			}
-		}
-	} else if e.onMax {
-		// Return maximum to original value if applicable
-		return value, max - e.effect
-	}
-	return value, max
-}
-
-func (e *Effect) Expired() bool {
-	return e.duration == 0
-}
-
-func (e *Effect) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{")
-
-	effectValue, err := json.Marshal(e.effect)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Effect\":%s,", effectValue))
-
-	onMaxValue, err := json.Marshal(e.onMax)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"OnMax\":%s,", onMaxValue))
-
-	durationValue, err := json.Marshal(e.duration)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Duration\":%s,", durationValue))
-
-	activatedValue, err := json.Marshal(e.activated)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Activated\":%s,", activatedValue))
-
-	compoundedValue, err := json.Marshal(e.compounded)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Compounded\":%s", compoundedValue))
-	buffer.WriteString("}")
-
-	return buffer.Bytes(), nil
-}
-
-func (e *Effect) UnmarshalJSON(data []byte) error {
-
-	type effectJson struct {
-		Effect     int
-		OnMax      bool
-		Duration   int
-		Activated  bool
-		Compounded bool
-	}
-
-	var v effectJson
-
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-
-	e.effect = v.Effect
-	e.onMax = v.OnMax
-	e.duration = v.Duration
-	e.activated = v.Activated
-	e.compounded = v.Compounded
-
-	return nil
-}
-
 func LoadAllData() {
 	fetchAmmoData()
 	fetchArmourData()
@@ -238,15 +130,15 @@ func LoadAllData() {
 	fetchReadableData()
 }
 
-func (item *baseItem) Render() ui.Element {
+func (item *Item) Render() ui.Element {
 	return item.ic.Render()
 }
 
-func (item *baseItem) GetName() string {
+func (item *Item) GetName() string {
 	return item.name
 }
 
-func (item *baseItem) GetKey() rune {
+func (item *Item) GetKey() rune {
 	h := fnv.New32()
 	h.Write([]byte(item.name))
 	key := rune(33 + h.Sum32()%93)
@@ -256,29 +148,21 @@ func (item *baseItem) GetKey() rune {
 	return key
 }
 
-func (item *baseItem) GetWeight() float64 {
+func (item *Item) GetWeight() float64 {
 	return item.w
 }
 
-func (item *baseItem) GetValue() int {
+func (item *Item) GetValue() int {
 	return item.v
-}
-
-type baseItem struct {
-	name  string
-	owner string
-	ic    icon.Icon
-	w     float64
-	v     int
 }
 
 func NewNormalItem(name string) *Item {
 	item := normalItemData[name]
-	return &Item{baseItem{name, "", item.Icon, item.Weight, item.Value}, item.Cover, nil, false, NoAmmo, nil, nil, nil}
+	return &Item{name, "", item.Icon, item.Weight, item.Value, item.Cover, nil, false, NoAmmo, nil, nil, nil}
 }
 
 func Money(amount int) *Item {
-	return &Item{baseItem{"money", "", icon.NewIcon('$', 4), 0, amount}, false, nil, false, NoAmmo, nil, nil, nil}
+	return &Item{"money", "", icon.NewIcon('$', 4), 0, amount, false, nil, false, NoAmmo, nil, nil, nil}
 }
 
 func GenerateNormalItem() *Item {
