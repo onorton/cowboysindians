@@ -49,9 +49,9 @@ type Item struct {
 	ic          icon.Icon
 	w           float64
 	v           int
-	cover       bool
+	cover       *tag
 	description *string
-	corpse      bool
+	corpse      *tag
 	ammoType    WeaponType
 	armour      *armourComponent
 	weapon      *weaponComponent
@@ -158,11 +158,15 @@ func (item *Item) GetValue() int {
 
 func NewNormalItem(name string) *Item {
 	item := normalItemData[name]
-	return &Item{name, "", item.Icon, item.Weight, item.Value, item.Cover, nil, false, NoAmmo, nil, nil, nil}
+	var cover *tag = nil
+	if item.Cover {
+		cover = &tag{}
+	}
+	return &Item{name, "", item.Icon, item.Weight, item.Value, cover, nil, nil, NoAmmo, nil, nil, nil}
 }
 
 func Money(amount int) *Item {
-	return &Item{"money", "", icon.NewIcon('$', 4), 0, amount, false, nil, false, NoAmmo, nil, nil, nil}
+	return &Item{"money", "", icon.NewIcon('$', 4), 0, amount, nil, nil, nil, NoAmmo, nil, nil, nil}
 }
 
 func GenerateNormalItem() *Item {
@@ -261,9 +265,9 @@ func (item *Item) UnmarshalJSON(data []byte) error {
 		Icon        icon.Icon
 		Weight      float64
 		Value       int
-		Cover       bool
+		Cover       *tag
 		Description *string
-		Corpse      bool
+		Corpse      *tag
 		AmmoType    WeaponType
 		Armour      *armourComponent
 		Weapon      *weaponComponent
@@ -296,14 +300,14 @@ func (item *Item) Owner() string {
 }
 
 func (item *Item) Owned(id string) bool {
-	if item.owner == "" || item.corpse {
+	if item.owner == "" || item.corpse != nil {
 		return true
 	}
 	return item.owner == id
 }
 
 func (item *Item) TransferOwner(newOwner string) {
-	if item.corpse {
+	if item.corpse != nil {
 		return
 	}
 
@@ -318,7 +322,7 @@ func (item *Item) IsReadable() bool {
 }
 
 func (item *Item) IsCorpse() bool {
-	return item.corpse
+	return item.corpse != nil
 }
 
 func (item *Item) IsAmmo() bool {
@@ -352,5 +356,7 @@ func (item *Item) Effects(attr string) []Effect {
 }
 
 func (item *Item) GivesCover() bool {
-	return item.cover
+	return item.cover != nil
 }
+
+type tag struct{}

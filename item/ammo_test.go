@@ -13,8 +13,8 @@ type ammoMarshallingPair struct {
 }
 
 var ammoMarshallingTests = []ammoMarshallingPair{
-	{Item{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20, false, nil, false, Shotgun, nil, nil, nil}, "{\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Weight\":0.2,\"Value\":20,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":2,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
-	{Item{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10, false, nil, false, Pistol, nil, nil, nil}, "{\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Weight\":0.01,\"Value\":10,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":1,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20, nil, nil, nil, Shotgun, nil, nil, nil}, "{\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Weight\":0.2,\"Value\":20,\"Cover\":null,\"Description\":null,\"Corpse\":null,\"AmmoType\":2,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10, nil, nil, nil, Pistol, nil, nil, nil}, "{\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Weight\":0.01,\"Value\":10,\"Cover\":null,\"Description\":null,\"Corpse\":null,\"AmmoType\":1,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
 }
 
 type ammoUnmarshallingPair struct {
@@ -23,8 +23,8 @@ type ammoUnmarshallingPair struct {
 }
 
 var ammoUnmarshallingTests = []ammoUnmarshallingPair{
-	{"{\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Weight\":0.2,\"Value\":20,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":2,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}", Item{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20, false, nil, false, Shotgun, nil, nil, nil}},
-	{"{\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Weight\":0.01,\"Value\":10,\"Cover\":false,\"Description\":null,\"Corpse\":false,\"AmmoType\":1,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}", Item{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10, false, nil, false, Pistol, nil, nil, nil}},
+	{"{\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Weight\":0.2,\"Value\":20,\"Cover\":null,\"Description\":null,\"Corpse\":null,\"AmmoType\":2,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}", Item{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20, nil, nil, nil, Shotgun, nil, nil, nil}},
+	{"{\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Weight\":0.01,\"Value\":10,\"Cover\":null,\"Description\":null,\"Corpse\":null,\"AmmoType\":1,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}", Item{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10, nil, nil, nil, Pistol, nil, nil, nil}},
 }
 
 func TestAmmoMarshalling(t *testing.T) {
@@ -100,7 +100,7 @@ func TestAmmoUnmarshalling(t *testing.T) {
 			)
 		}
 
-		if ammo.cover != pair.ammo.cover {
+		if (ammo.cover == nil && pair.ammo.cover != nil) || (ammo.cover != nil && pair.ammo.cover == nil) {
 			t.Error(
 				"For", "Gives cover",
 				"expected", pair.ammo.cover,
@@ -108,13 +108,30 @@ func TestAmmoUnmarshalling(t *testing.T) {
 			)
 		}
 
-		if ammo.corpse != pair.ammo.corpse {
+		if ammo.cover != nil && pair.ammo.cover != nil && *(ammo.cover) != *(pair.ammo.cover) {
+			t.Error(
+				"For", "Gives cover",
+				"expected", *(pair.ammo.cover),
+				"got", *(ammo.cover),
+			)
+		}
+
+		if (ammo.corpse == nil && pair.ammo.corpse != nil) || (ammo.corpse != nil && pair.ammo.corpse == nil) {
 			t.Error(
 				"For", "Corpse",
 				"expected", pair.ammo.corpse,
 				"got", ammo.corpse,
 			)
 		}
+
+		if ammo.corpse != nil && pair.ammo.corpse != nil && *(ammo.corpse) != *(pair.ammo.corpse) {
+			t.Error(
+				"For", "Corpse",
+				"expected", *(pair.ammo.corpse),
+				"got", *(ammo.corpse),
+			)
+		}
+
 	}
 
 }

@@ -16,8 +16,8 @@ var signpostDescription string = "\"Welcome to Deadwood!\""
 var bookDescription string = "This book has words in it."
 
 var readableMarshallingTests = []readableMarshallingPair{
-	{Item{"signpost", "", icon.NewIcon(80, 4), 20, 1000, false, &signpostDescription, false, NoAmmo, nil, nil, nil}, "{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Cover\":false,\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
-	{Item{"book", "townsman", icon.NewIcon(98, 6), 1, 1000, false, &bookDescription, false, NoAmmo, nil, nil, nil}, "{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Cover\":false,\"Description\":\"This book has words in it.\",\"Corpse\":false,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"signpost", "", icon.NewIcon(80, 4), 20, 1000, nil, &signpostDescription, nil, NoAmmo, nil, nil, nil}, "{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Cover\":null,\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"Corpse\":null,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"book", "townsman", icon.NewIcon(98, 6), 1, 1000, nil, &bookDescription, nil, NoAmmo, nil, nil, nil}, "{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Cover\":null,\"Description\":\"This book has words in it.\",\"Corpse\":null,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
 }
 
 type readableUnmarshallingPair struct {
@@ -26,8 +26,8 @@ type readableUnmarshallingPair struct {
 }
 
 var readableUnmarshallingTests = []readableUnmarshallingPair{
-	{"{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"Corpse\":false}", Item{"signpost", "", icon.NewIcon(80, 4), 20, 1000, false, &signpostDescription, false, NoAmmo, nil, nil, nil}},
-	{"{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Description\":\"This book has words in it.\",\"Corpse\":false}", Item{"book", "townsman", icon.NewIcon(98, 6), 1, 1000, false, &bookDescription, false, NoAmmo, nil, nil, nil}},
+	{"{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"Corpse\":null}", Item{"signpost", "", icon.NewIcon(80, 4), 20, 1000, nil, &signpostDescription, nil, NoAmmo, nil, nil, nil}},
+	{"{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Description\":\"This book has words in it.\",\"Corpse\":null}", Item{"book", "townsman", icon.NewIcon(98, 6), 1, 1000, nil, &bookDescription, nil, NoAmmo, nil, nil, nil}},
 }
 
 func TestReadableMarshalling(t *testing.T) {
@@ -95,12 +95,35 @@ func TestReadableUnmarshalling(t *testing.T) {
 				"got", readable.v,
 			)
 		}
-
-		if readable.cover != pair.readable.cover {
+		if (readable.cover == nil && pair.readable.cover != nil) || (readable.cover != nil && pair.readable.cover == nil) {
 			t.Error(
-				"For", "Gives Cover",
+				"For", "Gives cover",
 				"expected", pair.readable.cover,
 				"got", readable.cover,
+			)
+		}
+
+		if readable.cover != nil && pair.readable.cover != nil && *(readable.cover) != *(pair.readable.cover) {
+			t.Error(
+				"For", "Gives cover",
+				"expected", *(pair.readable.cover),
+				"got", *(readable.cover),
+			)
+		}
+
+		if (readable.corpse == nil && pair.readable.corpse != nil) || (readable.corpse != nil && pair.readable.corpse == nil) {
+			t.Error(
+				"For", "Corpse",
+				"expected", pair.readable.corpse,
+				"got", readable.corpse,
+			)
+		}
+
+		if readable.corpse != nil && pair.readable.corpse != nil && *(readable.corpse) != *(pair.readable.corpse) {
+			t.Error(
+				"For", "Corpse",
+				"expected", *(pair.readable.corpse),
+				"got", *(readable.corpse),
 			)
 		}
 
@@ -109,14 +132,6 @@ func TestReadableUnmarshalling(t *testing.T) {
 				"For", "Description",
 				"expected", *(pair.readable.description),
 				"got", *(readable.description),
-			)
-		}
-
-		if readable.corpse != pair.readable.corpse {
-			t.Error(
-				"For", "Corpse",
-				"expected", pair.readable.corpse,
-				"got", readable.corpse,
 			)
 		}
 	}
