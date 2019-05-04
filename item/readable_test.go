@@ -16,8 +16,8 @@ var signpostDescription string = "\"Welcome to Deadwood!\""
 var bookDescription string = "This book has words in it."
 
 var readableMarshallingTests = []readableMarshallingPair{
-	{Item{"signpost", "", icon.NewIcon(80, 4), 20, 1000, nil, &signpostDescription, nil, NoAmmo, nil, nil, nil}, "{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Cover\":null,\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"Corpse\":null,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
-	{Item{"book", "townsman", icon.NewIcon(98, 6), 1, 1000, nil, &bookDescription, nil, NoAmmo, nil, nil, nil}, "{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Cover\":null,\"Description\":\"This book has words in it.\",\"Corpse\":null,\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"signpost", "", icon.NewIcon(80, 4), 20, 1000, nil, &signpostDescription, nil, nil, nil, nil, nil}, "{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Cover\":null,\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"Corpse\":null,\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"book", "townsman", icon.NewIcon(98, 6), 1, 1000, nil, &bookDescription, nil, nil, nil, nil, nil}, "{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Cover\":null,\"Description\":\"This book has words in it.\",\"Corpse\":null,\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
 }
 
 type readableUnmarshallingPair struct {
@@ -26,8 +26,8 @@ type readableUnmarshallingPair struct {
 }
 
 var readableUnmarshallingTests = []readableUnmarshallingPair{
-	{"{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"Corpse\":null}", Item{"signpost", "", icon.NewIcon(80, 4), 20, 1000, nil, &signpostDescription, nil, NoAmmo, nil, nil, nil}},
-	{"{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Description\":\"This book has words in it.\",\"Corpse\":null}", Item{"book", "townsman", icon.NewIcon(98, 6), 1, 1000, nil, &bookDescription, nil, NoAmmo, nil, nil, nil}},
+	{"{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"Corpse\":null}", Item{"signpost", "", icon.NewIcon(80, 4), 20, 1000, nil, &signpostDescription, nil, nil, nil, nil, nil}},
+	{"{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Description\":\"This book has words in it.\",\"Corpse\":null}", Item{"book", "townsman", icon.NewIcon(98, 6), 1, 1000, nil, &bookDescription, nil, nil, nil, nil, nil}},
 }
 
 func TestReadableMarshalling(t *testing.T) {

@@ -13,8 +13,8 @@ type corpseMarshallingPair struct {
 }
 
 var corpseMarshallingTests = []corpseMarshallingPair{
-	{Item{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000, nil, nil, &tag{}, NoAmmo, nil, nil, nil}, "{\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000,\"Cover\":null,\"Description\":null,\"Corpse\":{},\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
-	{Item{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500, &tag{}, nil, &tag{}, NoAmmo, nil, nil, nil}, "{\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500,\"Cover\":{},\"Description\":null,\"Corpse\":{},\"AmmoType\":0,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000, nil, nil, &tag{}, nil, nil, nil, nil}, "{\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000,\"Cover\":null,\"Description\":null,\"Corpse\":{},\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500, &tag{}, nil, &tag{}, nil, nil, nil, nil}, "{\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500,\"Cover\":{},\"Description\":null,\"Corpse\":{},\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
 }
 
 type corpseUnmarshallingPair struct {
@@ -23,8 +23,8 @@ type corpseUnmarshallingPair struct {
 }
 
 var corpseUnmarshallingTests = []corpseUnmarshallingPair{
-	{"{\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000,\"Cover\":null,\"Corpse\":{},\"Armour\":null,\"Weapon\":null,\"Consumable\":null}", Item{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000, nil, nil, &tag{}, NoAmmo, nil, nil, nil}},
-	{"{\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500,\"Cover\":{},\"Corpse\":{},\"Armour\":null,\"Weapon\":null,\"Consumable\":null}", Item{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500, &tag{}, nil, &tag{}, NoAmmo, nil, nil, nil}},
+	{"{\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000,\"Cover\":null,\"Corpse\":{},\"Armour\":null,\"Weapon\":null,\"Consumable\":null}", Item{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000, nil, nil, &tag{}, nil, nil, nil, nil}},
+	{"{\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500,\"Cover\":{},\"Corpse\":{},\"Armour\":null,\"Weapon\":null,\"Consumable\":null}", Item{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500, &tag{}, nil, &tag{}, nil, nil, nil, nil}},
 }
 
 func TestCorpseMarshalling(t *testing.T) {

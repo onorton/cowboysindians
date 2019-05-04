@@ -52,7 +52,7 @@ type Item struct {
 	cover       *tag
 	description *string
 	corpse      *tag
-	ammoType    WeaponType
+	ammoType    *WeaponType
 	armour      *armourComponent
 	weapon      *weaponComponent
 	consumable  *consumableComponent
@@ -162,11 +162,11 @@ func NewNormalItem(name string) *Item {
 	if item.Cover {
 		cover = &tag{}
 	}
-	return &Item{name, "", item.Icon, item.Weight, item.Value, cover, nil, nil, NoAmmo, nil, nil, nil}
+	return &Item{name, "", item.Icon, item.Weight, item.Value, cover, nil, nil, nil, nil, nil, nil}
 }
 
 func Money(amount int) *Item {
-	return &Item{"money", "", icon.NewIcon('$', 4), 0, amount, nil, nil, nil, NoAmmo, nil, nil, nil}
+	return &Item{"money", "", icon.NewIcon('$', 4), 0, amount, nil, nil, nil, nil, nil, nil, nil}
 }
 
 func GenerateNormalItem() *Item {
@@ -268,7 +268,7 @@ func (item *Item) UnmarshalJSON(data []byte) error {
 		Cover       *tag
 		Description *string
 		Corpse      *tag
-		AmmoType    WeaponType
+		AmmoType    *WeaponType
 		Armour      *armourComponent
 		Weapon      *weaponComponent
 		Consumable  *consumableComponent
@@ -326,7 +326,7 @@ func (item *Item) IsCorpse() bool {
 }
 
 func (item *Item) IsAmmo() bool {
-	return item.ammoType != NoAmmo
+	return item.ammoType != nil
 }
 
 func (item *Item) IsArmour() bool {
