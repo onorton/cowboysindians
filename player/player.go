@@ -267,7 +267,7 @@ func (p *Player) PrintArmour() {
 func (p *Player) PrintConsumables() {
 	position := 0
 	for k, items := range p.inventory {
-		if !p.inventory[k][0].IsConsumable() {
+		if !p.inventory[k][0].HasComponent("consumable") {
 			continue
 		}
 		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
@@ -415,7 +415,7 @@ func (p *Player) GetConsumableKeys() string {
 	keysSet := make([]bool, 128)
 	for k := range p.inventory {
 
-		if p.inventory[k][0].IsConsumable() {
+		if p.inventory[k][0].HasComponent("consumable") {
 			keysSet[k] = true
 		}
 	}
@@ -632,7 +632,7 @@ func (p *Player) ConsumeItem() bool {
 				message.PrintMessage("You don't have that thing to eat.")
 				ui.GetInput()
 			} else {
-				if itm.IsConsumable() {
+				if itm.HasComponent("consumable") {
 					message.Enqueue(fmt.Sprintf("You ate a %s.", itm.GetName()))
 					p.consume(itm)
 					return true
@@ -679,13 +679,13 @@ func (p *Player) weaponLoaded() bool {
 
 }
 
-func (p *Player) consume(consumable *item.Item) {
+func (p *Player) consume(itm *item.Item) {
 	originalHp := p.attributes["hp"].Value()
 	originalHunger := p.attributes["hunger"].Value()
 	originalThirst := p.attributes["thirst"].Value()
 
 	for attr, attribute := range p.attributes {
-		for _, effect := range consumable.Effects(attr) {
+		for _, effect := range itm.Component("consumable").(item.ConsumableComponent).Effects[attr] {
 			attribute.AddEffect(&effect)
 		}
 	}

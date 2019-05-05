@@ -49,12 +49,11 @@ type Item struct {
 	ic          icon.Icon
 	w           float64
 	v           int
-	components  map[string]tag
+	components  map[string]component
 	description *string
 	ammoType    *WeaponType
 	armour      *armourComponent
 	weapon      *weaponComponent
-	consumable  *consumableComponent
 }
 
 var typeProbabilities = map[string]float64{
@@ -157,15 +156,15 @@ func (item *Item) GetValue() int {
 
 func NewNormalItem(name string) *Item {
 	item := normalItemData[name]
-	components := map[string]tag{}
+	components := map[string]component{}
 	if item.Cover {
 		components["cover"] = tag{}
 	}
-	return &Item{name, "", item.Icon, item.Weight, item.Value, components, nil, nil, nil, nil, nil}
+	return &Item{name, "", item.Icon, item.Weight, item.Value, components, nil, nil, nil, nil}
 }
 
 func Money(amount int) *Item {
-	return &Item{"money", "", icon.NewIcon('$', 4), 0, amount, map[string]tag{}, nil, nil, nil, nil, nil}
+	return &Item{"money", "", icon.NewIcon('$', 4), 0, amount, map[string]component{}, nil, nil, nil, nil}
 }
 
 func GenerateNormalItem() *Item {
@@ -236,14 +235,7 @@ func (item *Item) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"Weapon\":%s,", weaponValue))
-
-	consumableValue, err := json.Marshal(item.consumable)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Consumable\":%s", consumableValue))
+	buffer.WriteString(fmt.Sprintf("\"Weapon\":%s", weaponValue))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -257,12 +249,11 @@ func (item *Item) UnmarshalJSON(data []byte) error {
 		Icon        icon.Icon
 		Weight      float64
 		Value       int
-		Components  map[string]tag
+		Components  map[string]interface{}
 		Description *string
 		AmmoType    *WeaponType
 		Armour      *armourComponent
 		Weapon      *weaponComponent
-		Consumable  *consumableComponent
 	}
 	var v itemJson
 
@@ -275,14 +266,36 @@ func (item *Item) UnmarshalJSON(data []byte) error {
 	item.ic = v.Icon
 	item.w = v.Weight
 	item.v = v.Value
-	item.components = v.Components
+	item.components = UnmarshalComponents(v.Components)
 	item.description = v.Description
 	item.ammoType = v.AmmoType
 	item.armour = v.Armour
 	item.weapon = v.Weapon
-	item.consumable = v.Consumable
 
 	return nil
+}
+
+func UnmarshalComponents(cs map[string]interface{}) map[string]component {
+	components := map[string]component{}
+	for key, c := range cs {
+		componentJson, err := json.Marshal(c)
+		check(err)
+		var component component = nil
+		switch key {
+		case "cover":
+			component = tag{}
+		case "corpse":
+			component = tag{}
+		case "consumable":
+			var consumable ConsumableComponent
+			err := json.Unmarshal(componentJson, &consumable)
+			check(err)
+			component = consumable
+		}
+		components[key] = component
+
+	}
+	return components
 }
 
 func (item *Item) Owner() string {
@@ -330,20 +343,18 @@ func (item *Item) IsWeapon() bool {
 	return item.weapon != nil
 }
 
-func (item *Item) IsConsumable() bool {
-	return item.consumable != nil
-}
-
-func (item *Item) Effects(attr string) []Effect {
-	if item.consumable != nil {
-		return item.consumable.Effects[attr]
-	}
-	return []Effect{}
-}
-
 func (item *Item) HasComponent(key string) bool {
 	_, ok := item.components[key]
 	return ok
 }
 
+func (item *Item) Component(key string) component {
+	if item.HasComponent(key) {
+		return item.components[key]
+	}
+	return nil
+}
+
 type tag struct{}
+
+type component interface{}

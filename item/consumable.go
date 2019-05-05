@@ -32,13 +32,13 @@ func fetchConsumableData() {
 	}
 }
 
-type consumableComponent struct {
+type ConsumableComponent struct {
 	Effects map[string][]Effect
 }
 
 func NewConsumable(name string) *Item {
 	consumable := consumableData[name]
-	return &Item{name, "", consumable.Icon, consumable.Weight, consumable.Value, map[string]tag{}, nil, nil, nil, nil, &consumableComponent{consumable.Effects}}
+	return &Item{name, "", consumable.Icon, consumable.Weight, consumable.Value, map[string]component{"consumable": ConsumableComponent{consumable.Effects}}, nil, nil, nil, nil}
 }
 
 func GenerateConsumable() *Item {

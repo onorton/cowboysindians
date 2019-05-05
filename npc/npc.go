@@ -501,9 +501,9 @@ func (npc *Npc) weaponLoaded() bool {
 
 }
 
-func (npc *Npc) consume(consumable *item.Item) {
+func (npc *Npc) consume(itm *item.Item) {
 	for attr, attribute := range npc.attributes {
-		for _, effect := range consumable.Effects(attr) {
+		for _, effect := range itm.Component("consumable").(item.ConsumableComponent).Effects[attr] {
 			attribute.AddEffect(&effect)
 		}
 	}

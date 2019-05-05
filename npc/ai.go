@@ -165,7 +165,7 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) Action {
 	// If at half health heal up
 	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
 		for _, itm := range itemHolder.Inventory() {
-			if itm.IsConsumable() && len(itm.Effects("hp")) > 0 {
+			if consumable, ok := itm.Component("consumable").(item.ConsumableComponent); ok && len(consumable.Effects["hp"]) > 0 {
 				return ConsumeAction{c, itm}
 			}
 		}
@@ -353,7 +353,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	// If at half health heal up
 	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
 		for _, itm := range itemHolder.Inventory() {
-			if itm.IsConsumable() && len(itm.Effects("hp")) > 0 {
+			if consumable, ok := itm.Component("consumable").(item.ConsumableComponent); ok && len(consumable.Effects["hp"]) > 0 {
 				return ConsumeAction{c, itm}
 			}
 		}
@@ -540,7 +540,7 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 	// If at half health heal up
 	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
 		for _, itm := range itemHolder.Inventory() {
-			if itm.IsConsumable() && len(itm.Effects("hp")) > 0 {
+			if consumable, ok := itm.Component("consumable").(item.ConsumableComponent); ok && len(consumable.Effects["hp"]) > 0 {
 				return ConsumeAction{c, itm}
 			}
 		}

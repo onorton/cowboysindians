@@ -13,9 +13,9 @@ type armourMarshallingPair struct {
 }
 
 var armourMarshallingTests = []armourMarshallingPair{
-	{Item{"leather jacket", "bandit", icon.NewIcon(91, 100), 2, 1000, map[string]tag{}, nil, nil, &armourComponent{1}, nil, nil}, "{\"Name\":\"leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Weight\":2,\"Value\":1000,\"Components\":{},\"Description\":null,\"AmmoType\":null,\"Armour\":{\"Bonus\":1},\"Weapon\":null,\"Consumable\":null}"},
-	{Item{"metal breastplate", "bandit", icon.NewIcon(91, 50), 5, 2000, map[string]tag{}, nil, nil, &armourComponent{3}, nil, nil}, "{\"Name\":\"metal breastplate\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Weight\":5,\"Value\":2000,\"Components\":{},\"Description\":null,\"AmmoType\":null,\"Armour\":{\"Bonus\":3},\"Weapon\":null,\"Consumable\":null}"},
-	{Item{"reinforced leather jacket", "bandit", icon.NewIcon(91, 70), 3, 1500, map[string]tag{}, nil, nil, &armourComponent{2}, nil, nil}, "{\"Name\":\"reinforced leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Weight\":3,\"Value\":1500,\"Components\":{},\"Description\":null,\"AmmoType\":null,\"Armour\":{\"Bonus\":2},\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"leather jacket", "bandit", icon.NewIcon(91, 100), 2, 1000, map[string]component{}, nil, nil, &armourComponent{1}, nil}, "{\"Name\":\"leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Weight\":2,\"Value\":1000,\"Components\":{},\"Description\":null,\"AmmoType\":null,\"Armour\":{\"Bonus\":1},\"Weapon\":null}"},
+	{Item{"metal breastplate", "bandit", icon.NewIcon(91, 50), 5, 2000, map[string]component{}, nil, nil, &armourComponent{3}, nil}, "{\"Name\":\"metal breastplate\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Weight\":5,\"Value\":2000,\"Components\":{},\"Description\":null,\"AmmoType\":null,\"Armour\":{\"Bonus\":3},\"Weapon\":null}"},
+	{Item{"reinforced leather jacket", "bandit", icon.NewIcon(91, 70), 3, 1500, map[string]component{}, nil, nil, &armourComponent{2}, nil}, "{\"Name\":\"reinforced leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Weight\":3,\"Value\":1500,\"Components\":{},\"Description\":null,\"AmmoType\":null,\"Armour\":{\"Bonus\":2},\"Weapon\":null}"},
 }
 
 type armourUnmarshallingPair struct {
@@ -24,9 +24,9 @@ type armourUnmarshallingPair struct {
 }
 
 var armourUnmarshallingTests = []armourUnmarshallingPair{
-	{"{\"Name\":\"leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Weight\":2,\"Value\":1000,\"Components\":{},\"Description\":null,\"AmmoType\":null,\"Armour\":{\"Bonus\":1},\"Weapon\":null,\"Consumable\":null}", Item{"leather jacket", "bandit", icon.NewIcon(91, 100), 2, 1000, map[string]tag{}, nil, nil, &armourComponent{1}, nil, nil}},
-	{"{\"Name\":\"metal breastplate\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Weight\":5,\"Value\":2000,\"Components\":{},\"Description\":null,\"AmmoType\":null,\"Armour\":{\"Bonus\":3},\"Weapon\":null,\"Consumable\":null}", Item{"metal breastplate", "bandit", icon.NewIcon(91, 50), 5, 2000, map[string]tag{}, nil, nil, &armourComponent{3}, nil, nil}},
-	{"{\"Name\":\"reinforced leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Weight\":3,\"Value\":1500,\"Components\":{},\"Description\":null,\"AmmoType\":null,\"Armour\":{\"Bonus\":2},\"Weapon\":null,\"Consumable\":null}", Item{"reinforced leather jacket", "bandit", icon.NewIcon(91, 70), 3, 1500, map[string]tag{}, nil, nil, &armourComponent{2}, nil, nil}},
+	{"{\"Name\":\"leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Weight\":2,\"Value\":1000,\"Components\":{},\"Description\":null,\"AmmoType\":null,\"Armour\":{\"Bonus\":1},\"Weapon\":null}", Item{"leather jacket", "bandit", icon.NewIcon(91, 100), 2, 1000, map[string]component{}, nil, nil, &armourComponent{1}, nil}},
+	{"{\"Name\":\"metal breastplate\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Weight\":5,\"Value\":2000,\"Components\":{},\"Description\":null,\"AmmoType\":null,\"Armour\":{\"Bonus\":3},\"Weapon\":null}", Item{"metal breastplate", "bandit", icon.NewIcon(91, 50), 5, 2000, map[string]component{}, nil, nil, &armourComponent{3}, nil}},
+	{"{\"Name\":\"reinforced leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Weight\":3,\"Value\":1500,\"Components\":{},\"Description\":null,\"AmmoType\":null,\"Armour\":{\"Bonus\":2},\"Weapon\":null}", Item{"reinforced leather jacket", "bandit", icon.NewIcon(91, 70), 3, 1500, map[string]component{}, nil, nil, &armourComponent{2}, nil}},
 }
 
 func TestArmourMarshalling(t *testing.T) {
