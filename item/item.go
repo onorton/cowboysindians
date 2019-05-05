@@ -53,7 +53,6 @@ type Item struct {
 	description *string
 	ammoType    *WeaponType
 	armour      *armourComponent
-	weapon      *weaponComponent
 }
 
 var typeProbabilities = map[string]float64{
@@ -160,11 +159,11 @@ func NewNormalItem(name string) *Item {
 	if item.Cover {
 		components["cover"] = tag{}
 	}
-	return &Item{name, "", item.Icon, item.Weight, item.Value, components, nil, nil, nil, nil}
+	return &Item{name, "", item.Icon, item.Weight, item.Value, components, nil, nil, nil}
 }
 
 func Money(amount int) *Item {
-	return &Item{"money", "", icon.NewIcon('$', 4), 0, amount, map[string]component{}, nil, nil, nil, nil}
+	return &Item{"money", "", icon.NewIcon('$', 4), 0, amount, map[string]component{}, nil, nil, nil}
 }
 
 func GenerateNormalItem() *Item {
@@ -228,14 +227,7 @@ func (item *Item) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"Armour\":%s,", armourValue))
-
-	weaponValue, err := json.Marshal(item.weapon)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Weapon\":%s", weaponValue))
+	buffer.WriteString(fmt.Sprintf("\"Armour\":%s", armourValue))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -253,7 +245,6 @@ func (item *Item) UnmarshalJSON(data []byte) error {
 		Description *string
 		AmmoType    *WeaponType
 		Armour      *armourComponent
-		Weapon      *weaponComponent
 	}
 	var v itemJson
 
@@ -270,7 +261,6 @@ func (item *Item) UnmarshalJSON(data []byte) error {
 	item.description = v.Description
 	item.ammoType = v.AmmoType
 	item.armour = v.Armour
-	item.weapon = v.Weapon
 
 	return nil
 }
@@ -291,6 +281,11 @@ func UnmarshalComponents(cs map[string]interface{}) map[string]component {
 			err := json.Unmarshal(componentJson, &consumable)
 			check(err)
 			component = consumable
+		case "weapon":
+			var weapon WeaponComponent
+			err := json.Unmarshal(componentJson, &weapon)
+			check(err)
+			component = weapon
 		}
 		components[key] = component
 
@@ -338,11 +333,6 @@ func (item *Item) ACBonus() int {
 	}
 	return 0
 }
-
-func (item *Item) IsWeapon() bool {
-	return item.weapon != nil
-}
-
 func (item *Item) HasComponent(key string) bool {
 	_, ok := item.components[key]
 	return ok

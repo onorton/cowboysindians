@@ -52,7 +52,7 @@ func fetchWeaponData() {
 	}
 }
 
-type weaponComponent struct {
+type WeaponComponent struct {
 	Range    int
 	Type     WeaponType
 	Capacity *WeaponCapacity
@@ -81,8 +81,8 @@ func NewWeapon(name string) *Item {
 	if weapon.Capacity != 0 {
 		weaponCapacity = &WeaponCapacity{weapon.Capacity, 0}
 	}
-	wc := weaponComponent{weapon.Range, weapon.Type, weaponCapacity, Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
-	return &Item{name, "", weapon.Icon, weapon.Weight, weapon.Value, map[string]component{}, nil, nil, nil, &wc}
+	wc := WeaponComponent{weapon.Range, weapon.Type, weaponCapacity, Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
+	return &Item{name, "", weapon.Icon, weapon.Weight, weapon.Value, map[string]component{"weapon": wc}, nil, nil, nil}
 }
 
 func GenerateWeapon() *Item {
@@ -110,7 +110,7 @@ func (weaponCapacity *WeaponCapacity) MarshalJSON() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func (damage *Damage) MarshalJSON() ([]byte, error) {
+func (damage Damage) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
 	diceValue, err := json.Marshal(damage.dice)
@@ -176,72 +176,46 @@ func (damage *Damage) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (item *Item) Range() int {
-	if item.weapon != nil {
-		return item.weapon.Range
-	}
-	return 0
+func (weapon WeaponComponent) MaxDamage() int {
+	return weapon.Damage.max()
 }
 
-// Maximum possible damage
-func (item *Item) GetMaxDamage() int {
-	if item.weapon != nil {
-		return item.weapon.Damage.max()
-	}
-	return 0
-}
-func (item *Item) GetDamage() int {
-	if item.weapon == nil {
-		return 0
-	}
+func (weapon WeaponComponent) GetDamage() int {
 
 	result := 0
-	for i := 0; i < item.weapon.Damage.number; i++ {
-		result += rand.Intn(item.weapon.Damage.dice) + 1
+	for i := 0; i < weapon.Damage.number; i++ {
+		result += rand.Intn(weapon.Damage.dice) + 1
 	}
 
-	result += item.weapon.Damage.bonus
+	result += weapon.Damage.bonus
 	return result
 }
 
-func (item *Item) AmmoTypeMatches(ammo *Item) bool {
-	if item.weapon != nil {
-		return item.weapon.Type == *(ammo.ammoType)
-	}
-	return false
+func (weapon WeaponComponent) AmmoTypeMatches(ammo *Item) bool {
+	return weapon.Type == *(ammo.ammoType)
 }
 
-func (item *Item) NeedsAmmo() bool {
-	if item.weapon != nil {
-		return item.weapon.Capacity != nil
-	}
-	return false
+func (weapon WeaponComponent) NeedsAmmo() bool {
+	return weapon.Capacity != nil
 }
 
-func (item *Item) IsUnloaded() bool {
-	if item.weapon != nil {
-		return item.weapon.Capacity.loaded == 0
-	}
-	return false
+func (weapon WeaponComponent) IsUnloaded() bool {
+	return weapon.Capacity.loaded == 0
+
 }
 
-func (item *Item) IsFullyLoaded() bool {
-	if item.weapon != nil {
-		return item.weapon.Capacity.loaded == item.weapon.Capacity.capacity
-	}
-	return false
+func (weapon WeaponComponent) IsFullyLoaded() bool {
+	return weapon.Capacity.loaded == weapon.Capacity.capacity
 }
 
-func (item *Item) Load() {
-	if item.weapon != nil && item.weapon.Capacity != nil {
-		item.weapon.Capacity.loaded++
+func (weapon WeaponComponent) Load() {
+	if weapon.Capacity != nil {
+		weapon.Capacity.loaded++
 	}
 }
 
-func (item *Item) Fire() {
-	if item.weapon != nil && item.weapon.Capacity != nil {
-		if item.weapon.Capacity.loaded > 0 {
-			item.weapon.Capacity.loaded--
-		}
+func (weapon WeaponComponent) Fire() {
+	if weapon.Capacity != nil && weapon.Capacity.loaded > 0 {
+		weapon.Capacity.loaded--
 	}
 }

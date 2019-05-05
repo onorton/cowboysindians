@@ -34,5 +34,5 @@ func NewCorpse(corpseType string, owner string, ownerName string, ownerIcon icon
 	if corpse.Cover {
 		components["cover"] = tag{}
 	}
-	return &Item{name, owner, icon.NewCorpseIcon(ownerIcon), corpse.Weight, corpse.Value, components, nil, nil, nil, nil}
+	return &Item{name, owner, icon.NewCorpseIcon(ownerIcon), corpse.Weight, corpse.Value, components, nil, nil, nil}
 }

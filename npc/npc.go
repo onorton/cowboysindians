@@ -276,7 +276,7 @@ func (npc *Npc) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 	hits := c.AttackHits(rand.Intn(20) + hitBonus + 1)
 	if hits {
 		if npc.weapon != nil {
-			c.TakeDamage(npc.weapon.GetDamage() + damageBonus)
+			c.TakeDamage(npc.Weapon().GetDamage() + damageBonus)
 		} else {
 			c.TakeDamage(damageBonus)
 		}
@@ -310,13 +310,13 @@ func (npc *Npc) IsDead() bool {
 func (npc *Npc) wieldItem() bool {
 	changed := false
 	for i, itm := range npc.inventory {
-		if itm.IsWeapon() {
+		if itm.HasComponent("weapon") {
 			if npc.weapon == nil {
 				npc.weapon = itm
 				npc.inventory = append(npc.inventory[:i], npc.inventory[i+1:]...)
 				changed = true
 
-			} else if itm.GetMaxDamage() > npc.weapon.GetMaxDamage() {
+			} else if itm.Component("weapon").(item.WeaponComponent).MaxDamage() > npc.Weapon().MaxDamage() {
 				npc.inventory[i] = npc.weapon
 				npc.weapon = itm
 				changed = true
@@ -446,7 +446,7 @@ func (npc *Npc) EmptyInventory() {
 
 func (npc *Npc) getAmmo() *item.Item {
 	for i, itm := range npc.inventory {
-		if itm.IsAmmo() && npc.weapon.AmmoTypeMatches(itm) {
+		if itm.IsAmmo() && npc.Weapon().AmmoTypeMatches(itm) {
 			npc.inventory = append(npc.inventory[:i], npc.inventory[i+1:]...)
 			return itm
 		}
@@ -469,24 +469,24 @@ func (npc *Npc) Inventory() []*item.Item {
 
 func (npc *Npc) ranged() bool {
 	if npc.weapon != nil {
-		return npc.weapon.Range() > 0
+		return npc.Weapon().Range > 0
 	}
 	return false
 }
 
-func (npc *Npc) Weapon() *item.Item {
-	return npc.weapon
+func (npc *Npc) Weapon() item.WeaponComponent {
+	return npc.weapon.Component("weapon").(item.WeaponComponent)
 }
 
 // Check whether npc is carrying a fully loaded weapon
 func (npc *Npc) weaponFullyLoaded() bool {
-	return npc.weapon.IsFullyLoaded()
+	return npc.Weapon().IsFullyLoaded()
 }
 
 // Check whether npc has ammo for particular wielded weapon
 func (npc *Npc) hasAmmo() bool {
 	for _, itm := range npc.inventory {
-		if itm.IsAmmo() && npc.weapon.AmmoTypeMatches(itm) {
+		if itm.IsAmmo() && npc.Weapon().AmmoTypeMatches(itm) {
 			return true
 		}
 	}
@@ -494,8 +494,8 @@ func (npc *Npc) hasAmmo() bool {
 }
 
 func (npc *Npc) weaponLoaded() bool {
-	if npc.weapon != nil && npc.weapon.NeedsAmmo() {
-		return !npc.weapon.IsUnloaded()
+	if npc.weapon != nil && npc.Weapon().NeedsAmmo() {
+		return !npc.Weapon().IsUnloaded()
 	}
 	return true
 

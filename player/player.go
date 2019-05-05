@@ -157,11 +157,15 @@ func (p *Player) GetInitiative() int {
 	return p.initiative
 }
 
+func (p *Player) Weapon() item.WeaponComponent {
+	return p.weapon.Component("weapon").(item.WeaponComponent)
+}
+
 func (p *Player) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 	if c.AttackHits(rand.Intn(20) + hitBonus + 1) {
 		message.Enqueue(fmt.Sprintf("You hit %s.", c.GetName().WithDefinite()))
 		if p.weapon != nil {
-			c.TakeDamage(p.weapon.GetDamage() + damageBonus)
+			c.TakeDamage(p.Weapon().GetDamage() + damageBonus)
 		} else {
 			c.TakeDamage(damageBonus)
 		}
@@ -237,7 +241,7 @@ func (p *Player) PrintInventory() {
 func (p *Player) PrintWeapons() {
 	position := 0
 	for k, items := range p.inventory {
-		if !p.inventory[k][0].IsWeapon() {
+		if !p.inventory[k][0].HasComponent("weapon") {
 			continue
 		}
 		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
@@ -316,7 +320,7 @@ func (p *Player) RangedAttack() bool {
 
 	target := p.findTarget()
 
-	p.weapon.Fire()
+	p.Weapon().Fire()
 	if target == nil {
 		message.Enqueue("You fire your weapon at the ground.")
 		return true
@@ -324,7 +328,7 @@ func (p *Player) RangedAttack() bool {
 
 	tX, tY := target.GetCoordinates()
 	distance := worldmap.Distance(p.location.X, p.location.Y, tX, tY)
-	if distance < float64(p.weapon.Range()) {
+	if distance < float64(p.Weapon().Range) {
 		coverPenalty := 0
 		if p.world.TargetBehindCover(p, target) {
 			coverPenalty = 5
@@ -340,7 +344,7 @@ func (p *Player) RangedAttack() bool {
 
 func (p *Player) getAmmo() *item.Item {
 	for k, items := range p.inventory {
-		if items[0].IsAmmo() && p.weapon.AmmoTypeMatches(items[0]) {
+		if items[0].IsAmmo() && p.Weapon().AmmoTypeMatches(items[0]) {
 			return p.GetItem(k)
 		}
 	}
@@ -365,7 +369,7 @@ func (p *Player) GetWeaponKeys() string {
 	keysSet := make([]bool, 128)
 	for k := range p.inventory {
 
-		if p.inventory[k][0].IsWeapon() {
+		if p.inventory[k][0].HasComponent("weapon") {
 			keysSet[k] = true
 		}
 	}
@@ -519,7 +523,7 @@ func (p *Player) WieldItem() bool {
 				message.PrintMessage("You don't have that weapon.")
 				ui.GetInput()
 			} else {
-				if itm.IsWeapon() {
+				if itm.HasComponent("weapon") {
 					other := p.weapon
 					p.weapon = itm
 					if other != nil {
@@ -599,7 +603,7 @@ func (p *Player) LoadWeapon() bool {
 
 	for !p.weaponFullyLoaded() && p.hasAmmo() {
 		p.getAmmo()
-		p.weapon.Load()
+		p.Weapon().Load()
 	}
 
 	if p.weaponFullyLoaded() {
@@ -651,20 +655,20 @@ func (p *Player) ConsumeItem() bool {
 // Check whether player can carry out a range attack this turn
 func (p *Player) ranged() bool {
 	if p.weapon != nil {
-		return p.weapon.Range() > 0
+		return p.Weapon().Range > 0
 	}
 	return false
 }
 
 // Check whether player is carrying a fully loaded weapon
 func (p *Player) weaponFullyLoaded() bool {
-	return p.weapon.IsFullyLoaded()
+	return p.Weapon().IsFullyLoaded()
 }
 
 // Check whether player has ammo for particular wielded weapon
 func (p *Player) hasAmmo() bool {
 	for _, items := range p.inventory {
-		if items[0].IsAmmo() && p.weapon.AmmoTypeMatches(items[0]) {
+		if items[0].IsAmmo() && p.Weapon().AmmoTypeMatches(items[0]) {
 			return true
 		}
 	}
@@ -672,8 +676,8 @@ func (p *Player) hasAmmo() bool {
 }
 
 func (p *Player) weaponLoaded() bool {
-	if p.weapon != nil && p.weapon.NeedsAmmo() {
-		return !p.weapon.IsUnloaded()
+	if p.weapon != nil && p.Weapon().NeedsAmmo() {
+		return !p.Weapon().IsUnloaded()
 	}
 	return true
 

@@ -34,7 +34,7 @@ func fetchAmmoData() {
 
 func NewAmmo(name string) *Item {
 	ammo := ammoData[name]
-	return &Item{name, "", ammo.Icon, ammo.Weight, ammo.Value, map[string]component{}, nil, &(ammo.Type), nil, nil}
+	return &Item{name, "", ammo.Icon, ammo.Weight, ammo.Value, map[string]component{}, nil, &(ammo.Type), nil}
 }
 
 func GenerateAmmo() *Item {

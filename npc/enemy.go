@@ -183,7 +183,7 @@ func (e *Enemy) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 	hits := c.AttackHits(rand.Intn(20) + hitBonus + 1)
 	if hits {
 		if e.weapon != nil {
-			c.TakeDamage(e.weapon.GetDamage() + damageBonus)
+			c.TakeDamage(e.Weapon().GetDamage() + damageBonus)
 		} else {
 			c.TakeDamage(damageBonus)
 		}
@@ -217,13 +217,13 @@ func (e *Enemy) IsDead() bool {
 func (e *Enemy) wieldItem() bool {
 	changed := false
 	for i, itm := range e.inventory {
-		if itm.IsWeapon() {
+		if itm.HasComponent("weapon") {
 			if e.weapon == nil {
 				e.weapon = itm
 				e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
 				changed = true
 
-			} else if itm.GetMaxDamage() > e.weapon.GetMaxDamage() {
+			} else if itm.Component("weapon").(item.WeaponComponent).MaxDamage() > e.Weapon().MaxDamage() {
 				e.inventory[i] = e.weapon
 				e.weapon = itm
 				changed = true
@@ -345,7 +345,7 @@ func (e *Enemy) EmptyInventory() {
 
 func (e *Enemy) getAmmo() *item.Item {
 	for i, itm := range e.inventory {
-		if itm.IsAmmo() && e.weapon.AmmoTypeMatches(itm) {
+		if itm.IsAmmo() && e.Weapon().AmmoTypeMatches(itm) {
 			e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
 			return itm
 		}
@@ -374,26 +374,26 @@ func (e *Enemy) Inventory() []*item.Item {
 	return e.inventory
 }
 
-func (e *Enemy) Weapon() *item.Item {
-	return e.weapon
+func (e *Enemy) Weapon() item.WeaponComponent {
+	return e.weapon.Component("weapon").(item.WeaponComponent)
 }
 
 func (e *Enemy) ranged() bool {
 	if e.weapon != nil {
-		return e.weapon.Range() > 0
+		return e.Weapon().Range > 0
 	}
 	return false
 }
 
 // Check whether enemy is carrying a fully loaded weapon
 func (e *Enemy) weaponFullyLoaded() bool {
-	return e.weapon.IsFullyLoaded()
+	return e.Weapon().IsFullyLoaded()
 }
 
 // Check whether enemy has ammo for particular wielded weapon
 func (e *Enemy) hasAmmo() bool {
 	for _, itm := range e.inventory {
-		if itm.IsAmmo() && e.weapon.AmmoTypeMatches(itm) {
+		if itm.IsAmmo() && e.Weapon().AmmoTypeMatches(itm) {
 			return true
 		}
 	}
@@ -401,8 +401,8 @@ func (e *Enemy) hasAmmo() bool {
 }
 
 func (e *Enemy) weaponLoaded() bool {
-	if e.weapon != nil && e.weapon.NeedsAmmo() {
-		return !e.weapon.IsUnloaded()
+	if e.weapon != nil && e.Weapon().NeedsAmmo() {
+		return !e.Weapon().IsUnloaded()
 	}
 	return true
 

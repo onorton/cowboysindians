@@ -39,7 +39,7 @@ func NewReadable(name string, values map[string]string) *Item {
 	for key, value := range values {
 		description = strings.Replace(description, "["+key+"]", value, -1)
 	}
-	return &Item{name, "", item.Icon, item.Weight, item.Value, map[string]component{}, &description, nil, nil, nil}
+	return &Item{name, "", item.Icon, item.Weight, item.Value, map[string]component{}, &description, nil, nil}
 }
 
 func GenerateReadable() *Item {
