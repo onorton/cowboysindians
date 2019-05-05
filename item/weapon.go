@@ -82,7 +82,7 @@ func NewWeapon(name string) *Item {
 		weaponCapacity = &WeaponCapacity{weapon.Capacity, 0}
 	}
 	wc := weaponComponent{weapon.Range, weapon.Type, weaponCapacity, Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
-	return &Item{name, "", weapon.Icon, weapon.Weight, weapon.Value, nil, nil, nil, nil, nil, &wc, nil}
+	return &Item{name, "", weapon.Icon, weapon.Weight, weapon.Value, map[string]tag{}, nil, nil, nil, &wc, nil}
 }
 
 func GenerateWeapon() *Item {

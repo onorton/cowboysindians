@@ -556,7 +556,7 @@ func (m Map) RenderTile(x, y int) ui.Element {
 		if m.HasItems(x, y) {
 			// pick an item that gives cover if it exists
 			for _, item := range m.grid.items[y][x] {
-				if item.GivesCover() {
+				if item.HasComponent("cover") {
 					return item.Render()
 				}
 			}
@@ -623,7 +623,7 @@ func (m *Map) givesCover(x, y int) bool {
 	cover := !m.grid.passable[y][x]
 
 	for _, item := range m.grid.items[y][x] {
-		cover = cover || item.GivesCover()
+		cover = cover || item.HasComponent("cover")
 	}
 	return cover
 }

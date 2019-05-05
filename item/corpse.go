@@ -30,9 +30,9 @@ func fetchCorpseData() {
 func NewCorpse(corpseType string, owner string, ownerName string, ownerIcon icon.Icon) *Item {
 	corpse := corpseData[corpseType]
 	name := fmt.Sprintf("%s's %s", ownerName, corpseType)
-	var cover *tag = nil
+	components := map[string]tag{"corpse": tag{}}
 	if corpse.Cover {
-		cover = &tag{}
+		components["cover"] = tag{}
 	}
-	return &Item{name, owner, icon.NewCorpseIcon(ownerIcon), corpse.Weight, corpse.Value, cover, nil, &tag{}, nil, nil, nil, nil}
+	return &Item{name, owner, icon.NewCorpseIcon(ownerIcon), corpse.Weight, corpse.Value, components, nil, nil, nil, nil, nil}
 }

@@ -13,8 +13,8 @@ type corpseMarshallingPair struct {
 }
 
 var corpseMarshallingTests = []corpseMarshallingPair{
-	{Item{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000, nil, nil, &tag{}, nil, nil, nil, nil}, "{\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000,\"Cover\":null,\"Description\":null,\"Corpse\":{},\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
-	{Item{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500, &tag{}, nil, &tag{}, nil, nil, nil, nil}, "{\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500,\"Cover\":{},\"Description\":null,\"Corpse\":{},\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000, map[string]tag{"corpse": tag{}}, nil, nil, nil, nil, nil}, "{\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000,\"Components\":{\"corpse\":{}},\"Description\":null,\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500, map[string]tag{"corpse": tag{}, "cover": tag{}}, nil, nil, nil, nil, nil}, "{\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500,\"Components\":{\"corpse\":{},\"cover\":{}},\"Description\":null,\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
 }
 
 type corpseUnmarshallingPair struct {
@@ -23,8 +23,8 @@ type corpseUnmarshallingPair struct {
 }
 
 var corpseUnmarshallingTests = []corpseUnmarshallingPair{
-	{"{\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000,\"Cover\":null,\"Corpse\":{},\"Armour\":null,\"Weapon\":null,\"Consumable\":null}", Item{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000, nil, nil, &tag{}, nil, nil, nil, nil}},
-	{"{\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500,\"Cover\":{},\"Corpse\":{},\"Armour\":null,\"Weapon\":null,\"Consumable\":null}", Item{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500, &tag{}, nil, &tag{}, nil, nil, nil, nil}},
+	{"{\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000,\"Components\":{\"corpse\":{}},\"Armour\":null,\"Weapon\":null,\"Consumable\":null}", Item{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000, map[string]tag{"corpse": tag{}}, nil, nil, nil, nil, nil}},
+	{"{\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500,\"Components\":{\"corpse\":{},\"cover\":{}},\"Armour\":null,\"Weapon\":null,\"Consumable\":null}", Item{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500, map[string]tag{"corpse": tag{}, "cover": tag{}}, nil, nil, nil, nil, nil}},
 }
 
 func TestCorpseMarshalling(t *testing.T) {
@@ -94,35 +94,19 @@ func TestCorpseUnmarshalling(t *testing.T) {
 			)
 		}
 
-		if (corpse.cover == nil && pair.corpse.cover != nil) || (corpse.cover != nil && pair.corpse.cover == nil) {
+		if corpse.HasComponent("cover") != pair.corpse.HasComponent("cover") {
 			t.Error(
 				"For", "Gives cover",
-				"expected", pair.corpse.cover,
-				"got", corpse.cover,
+				"expected", pair.corpse.HasComponent("cover"),
+				"got", corpse.HasComponent("cover"),
 			)
 		}
 
-		if corpse.cover != nil && pair.corpse.cover != nil && *(corpse.cover) != *(pair.corpse.cover) {
-			t.Error(
-				"For", "Gives cover",
-				"expected", *(pair.corpse.cover),
-				"got", *(corpse.cover),
-			)
-		}
-
-		if (corpse.corpse == nil && pair.corpse.corpse != nil) || (corpse.corpse != nil && pair.corpse.corpse == nil) {
+		if corpse.HasComponent("corpse") != pair.corpse.HasComponent("corpse") {
 			t.Error(
 				"For", "Corpse",
-				"expected", pair.corpse.corpse,
-				"got", corpse.corpse,
-			)
-		}
-
-		if corpse.corpse != nil && pair.corpse.corpse != nil && *(corpse.corpse) != *(pair.corpse.corpse) {
-			t.Error(
-				"For", "Corpse",
-				"expected", *(pair.corpse.corpse),
-				"got", *(corpse.corpse),
+				"expected", pair.corpse.HasComponent("corpse"),
+				"got", corpse.HasComponent("corpse"),
 			)
 		}
 

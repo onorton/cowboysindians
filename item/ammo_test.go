@@ -16,8 +16,8 @@ var shotgun WeaponType = Shotgun
 var pistol WeaponType = Pistol
 
 var ammoMarshallingTests = []ammoMarshallingPair{
-	{Item{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20, nil, nil, nil, &shotgun, nil, nil, nil}, "{\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Weight\":0.2,\"Value\":20,\"Cover\":null,\"Description\":null,\"Corpse\":null,\"AmmoType\":2,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
-	{Item{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10, nil, nil, nil, &pistol, nil, nil, nil}, "{\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Weight\":0.01,\"Value\":10,\"Cover\":null,\"Description\":null,\"Corpse\":null,\"AmmoType\":1,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20, map[string]tag{}, nil, &shotgun, nil, nil, nil}, "{\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Weight\":0.2,\"Value\":20,\"Components\":{},\"Description\":null,\"AmmoType\":2,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10, map[string]tag{}, nil, &pistol, nil, nil, nil}, "{\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Weight\":0.01,\"Value\":10,\"Components\":{},\"Description\":null,\"AmmoType\":1,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
 }
 
 type ammoUnmarshallingPair struct {
@@ -26,8 +26,8 @@ type ammoUnmarshallingPair struct {
 }
 
 var ammoUnmarshallingTests = []ammoUnmarshallingPair{
-	{"{\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Weight\":0.2,\"Value\":20,\"Cover\":null,\"Description\":null,\"Corpse\":null,\"AmmoType\":2,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}", Item{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20, nil, nil, nil, &shotgun, nil, nil, nil}},
-	{"{\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Weight\":0.01,\"Value\":10,\"Cover\":null,\"Description\":null,\"Corpse\":null,\"AmmoType\":1,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}", Item{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10, nil, nil, nil, &pistol, nil, nil, nil}},
+	{"{\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Weight\":0.2,\"Value\":20,\"Description\":null,\"Components\":{},\"AmmoType\":2,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}", Item{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20, map[string]tag{}, nil, &shotgun, nil, nil, nil}},
+	{"{\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Weight\":0.01,\"Value\":10,\"Description\":null,\"Components\":{},\"AmmoType\":1,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}", Item{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10, map[string]tag{}, nil, &pistol, nil, nil, nil}},
 }
 
 func TestAmmoMarshalling(t *testing.T) {
@@ -103,35 +103,19 @@ func TestAmmoUnmarshalling(t *testing.T) {
 			)
 		}
 
-		if (ammo.cover == nil && pair.ammo.cover != nil) || (ammo.cover != nil && pair.ammo.cover == nil) {
+		if ammo.HasComponent("cover") != pair.ammo.HasComponent("cover") {
 			t.Error(
 				"For", "Gives cover",
-				"expected", pair.ammo.cover,
-				"got", ammo.cover,
+				"expected", pair.ammo.HasComponent("cover"),
+				"got", ammo.HasComponent("cover"),
 			)
 		}
 
-		if ammo.cover != nil && pair.ammo.cover != nil && *(ammo.cover) != *(pair.ammo.cover) {
-			t.Error(
-				"For", "Gives cover",
-				"expected", *(pair.ammo.cover),
-				"got", *(ammo.cover),
-			)
-		}
-
-		if (ammo.corpse == nil && pair.ammo.corpse != nil) || (ammo.corpse != nil && pair.ammo.corpse == nil) {
+		if ammo.HasComponent("corpse") != pair.ammo.HasComponent("corpse") {
 			t.Error(
 				"For", "Corpse",
-				"expected", pair.ammo.corpse,
-				"got", ammo.corpse,
-			)
-		}
-
-		if ammo.corpse != nil && pair.ammo.corpse != nil && *(ammo.corpse) != *(pair.ammo.corpse) {
-			t.Error(
-				"For", "Corpse",
-				"expected", *(pair.ammo.corpse),
-				"got", *(ammo.corpse),
+				"expected", pair.ammo.HasComponent("corpse"),
+				"got", ammo.HasComponent("corpse"),
 			)
 		}
 

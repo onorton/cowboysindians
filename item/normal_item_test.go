@@ -13,10 +13,10 @@ type marshallingPair struct {
 }
 
 var marshallingTests = []marshallingPair{
-	{Item{"gem", "bandit", icon.NewIcon(42, 4), 2, 2000, nil, nil, nil, nil, nil, nil, nil}, "{\"Name\":\"gem\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":2,\"Value\":2000,\"Cover\":null,\"Description\":null,\"Corpse\":null,\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
-	{Item{"stick", "townsman", icon.NewIcon(30, 7), 5, 2, nil, nil, nil, nil, nil, nil, nil}, "{\"Name\":\"stick\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":30,\"Colour\":7},\"Weight\":5,\"Value\":2,\"Cover\":null,\"Description\":null,\"Corpse\":null,\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
-	{Item{"bowl", "bandit", icon.NewIcon(66, 10), 3, 10, nil, nil, nil, nil, nil, nil, nil}, "{\"Name\":\"bowl\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":66,\"Colour\":10},\"Weight\":3,\"Value\":10,\"Cover\":null,\"Description\":null,\"Corpse\":null,\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
-	{Item{"barrel", "townsman", icon.NewIcon(111, 0), 30, 200, &tag{}, nil, nil, nil, nil, nil, nil}, "{\"Name\":\"barrel\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":111,\"Colour\":0},\"Weight\":30,\"Value\":200,\"Cover\":{},\"Description\":null,\"Corpse\":null,\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"gem", "bandit", icon.NewIcon(42, 4), 2, 2000, map[string]tag{}, nil, nil, nil, nil, nil}, "{\"Name\":\"gem\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":2,\"Value\":2000,\"Components\":{},\"Description\":null,\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"stick", "townsman", icon.NewIcon(30, 7), 5, 2, map[string]tag{}, nil, nil, nil, nil, nil}, "{\"Name\":\"stick\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":30,\"Colour\":7},\"Weight\":5,\"Value\":2,\"Components\":{},\"Description\":null,\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"bowl", "bandit", icon.NewIcon(66, 10), 3, 10, map[string]tag{}, nil, nil, nil, nil, nil}, "{\"Name\":\"bowl\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":66,\"Colour\":10},\"Weight\":3,\"Value\":10,\"Components\":{},\"Description\":null,\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"barrel", "townsman", icon.NewIcon(111, 0), 30, 200, map[string]tag{"cover": tag{}}, nil, nil, nil, nil, nil}, "{\"Name\":\"barrel\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":111,\"Colour\":0},\"Weight\":30,\"Value\":200,\"Components\":{\"cover\":{}},\"Description\":null,\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
 }
 
 type unmarshallingPair struct {
@@ -25,10 +25,10 @@ type unmarshallingPair struct {
 }
 
 var unmarshallingTests = []unmarshallingPair{
-	{"{\"Name\":\"gem\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":2,\"Value\":2000,\"Cover\":null,\"Consumable\":null}", Item{"gem", "bandit", icon.NewIcon(42, 4), 2, 2000, nil, nil, nil, nil, nil, nil, nil}},
-	{"{\"Name\":\"stick\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":30,\"Colour\":7},\"Weight\":5,\"Value\":2,\"Cover\":null,\"Consumable\":null}", Item{"stick", "townsman", icon.NewIcon(30, 7), 5, 2, nil, nil, nil, nil, nil, nil, nil}},
-	{"{\"Name\":\"bowl\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":66,\"Colour\":10},\"Weight\":3,\"Value\":10,\"Cover\":null,\"Consumable\":null}", Item{"bowl", "bandit", icon.NewIcon(66, 10), 3, 10, nil, nil, nil, nil, nil, nil, nil}},
-	{"{\"Name\":\"barrel\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":111,\"Colour\":0},\"Weight\":30,\"Value\":200,\"Cover\":{},\"Consumable\":null}", Item{"barrel", "townsman", icon.NewIcon(111, 0), 30, 200, &tag{}, nil, nil, nil, nil, nil, nil}},
+	{"{\"Name\":\"gem\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":42,\"Colour\":4},\"Weight\":2,\"Value\":2000,\"Components\":{},\"Consumable\":null}", Item{"gem", "bandit", icon.NewIcon(42, 4), 2, 2000, map[string]tag{}, nil, nil, nil, nil, nil}},
+	{"{\"Name\":\"stick\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":30,\"Colour\":7},\"Weight\":5,\"Value\":2,\"Components\":{},\"Consumable\":null}", Item{"stick", "townsman", icon.NewIcon(30, 7), 5, 2, map[string]tag{}, nil, nil, nil, nil, nil}},
+	{"{\"Name\":\"bowl\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":66,\"Colour\":10},\"Weight\":3,\"Value\":10,\"Components\":{},\"Consumable\":null}", Item{"bowl", "bandit", icon.NewIcon(66, 10), 3, 10, map[string]tag{}, nil, nil, nil, nil, nil}},
+	{"{\"Name\":\"barrel\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":111,\"Colour\":0},\"Weight\":30,\"Value\":200,\"Components\":{\"cover\":{}},\"Consumable\":null}", Item{"barrel", "townsman", icon.NewIcon(111, 0), 30, 200, map[string]tag{"cover": tag{}}, nil, nil, nil, nil, nil}},
 }
 
 func TestMarshalling(t *testing.T) {
@@ -97,35 +97,19 @@ func TestUnmarshalling(t *testing.T) {
 			)
 		}
 
-		if (item.cover == nil && pair.item.cover != nil) || (item.cover != nil && pair.item.cover == nil) {
+		if item.HasComponent("cover") != pair.item.HasComponent("cover") {
 			t.Error(
 				"For", "Gives cover",
-				"expected", pair.item.cover,
-				"got", item.cover,
+				"expected", pair.item.HasComponent("cover"),
+				"got", item.HasComponent("cover"),
 			)
 		}
 
-		if item.cover != nil && pair.item.cover != nil && *(item.cover) != *(pair.item.cover) {
-			t.Error(
-				"For", "Gives cover",
-				"expected", *(pair.item.cover),
-				"got", *(item.cover),
-			)
-		}
-
-		if (item.corpse == nil && pair.item.corpse != nil) || (item.corpse != nil && pair.item.corpse == nil) {
+		if item.HasComponent("corpse") != pair.item.HasComponent("corpse") {
 			t.Error(
 				"For", "Corpse",
-				"expected", pair.item.corpse,
-				"got", item.corpse,
-			)
-		}
-
-		if item.corpse != nil && pair.item.corpse != nil && *(item.corpse) != *(pair.item.corpse) {
-			t.Error(
-				"For", "Corpse",
-				"expected", *(pair.item.corpse),
-				"got", *(item.corpse),
+				"expected", pair.item.HasComponent("corpse"),
+				"got", item.HasComponent("corpse"),
 			)
 		}
 	}

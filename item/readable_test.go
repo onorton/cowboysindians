@@ -16,8 +16,8 @@ var signpostDescription string = "\"Welcome to Deadwood!\""
 var bookDescription string = "This book has words in it."
 
 var readableMarshallingTests = []readableMarshallingPair{
-	{Item{"signpost", "", icon.NewIcon(80, 4), 20, 1000, nil, &signpostDescription, nil, nil, nil, nil, nil}, "{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Cover\":null,\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"Corpse\":null,\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
-	{Item{"book", "townsman", icon.NewIcon(98, 6), 1, 1000, nil, &bookDescription, nil, nil, nil, nil, nil}, "{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Cover\":null,\"Description\":\"This book has words in it.\",\"Corpse\":null,\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"signpost", "", icon.NewIcon(80, 4), 20, 1000, map[string]tag{}, &signpostDescription, nil, nil, nil, nil}, "{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Components\":{},\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
+	{Item{"book", "townsman", icon.NewIcon(98, 6), 1, 1000, map[string]tag{}, &bookDescription, nil, nil, nil, nil}, "{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Components\":{},\"Description\":\"This book has words in it.\",\"AmmoType\":null,\"Armour\":null,\"Weapon\":null,\"Consumable\":null}"},
 }
 
 type readableUnmarshallingPair struct {
@@ -26,8 +26,8 @@ type readableUnmarshallingPair struct {
 }
 
 var readableUnmarshallingTests = []readableUnmarshallingPair{
-	{"{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"Corpse\":null}", Item{"signpost", "", icon.NewIcon(80, 4), 20, 1000, nil, &signpostDescription, nil, nil, nil, nil, nil}},
-	{"{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Description\":\"This book has words in it.\",\"Corpse\":null}", Item{"book", "townsman", icon.NewIcon(98, 6), 1, 1000, nil, &bookDescription, nil, nil, nil, nil, nil}},
+	{"{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Description\":\"\\\"Welcome to Deadwood!\\\"\",\"Components\":{}}", Item{"signpost", "", icon.NewIcon(80, 4), 20, 1000, map[string]tag{}, &signpostDescription, nil, nil, nil, nil}},
+	{"{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Description\":\"This book has words in it.\",\"Components\":{}}", Item{"book", "townsman", icon.NewIcon(98, 6), 1, 1000, map[string]tag{}, &bookDescription, nil, nil, nil, nil}},
 }
 
 func TestReadableMarshalling(t *testing.T) {
@@ -95,35 +95,20 @@ func TestReadableUnmarshalling(t *testing.T) {
 				"got", readable.v,
 			)
 		}
-		if (readable.cover == nil && pair.readable.cover != nil) || (readable.cover != nil && pair.readable.cover == nil) {
+
+		if readable.HasComponent("cover") != pair.readable.HasComponent("cover") {
 			t.Error(
 				"For", "Gives cover",
-				"expected", pair.readable.cover,
-				"got", readable.cover,
+				"expected", pair.readable.HasComponent("cover"),
+				"got", readable.HasComponent("cover"),
 			)
 		}
 
-		if readable.cover != nil && pair.readable.cover != nil && *(readable.cover) != *(pair.readable.cover) {
-			t.Error(
-				"For", "Gives cover",
-				"expected", *(pair.readable.cover),
-				"got", *(readable.cover),
-			)
-		}
-
-		if (readable.corpse == nil && pair.readable.corpse != nil) || (readable.corpse != nil && pair.readable.corpse == nil) {
+		if readable.HasComponent("corpse") != pair.readable.HasComponent("corpse") {
 			t.Error(
 				"For", "Corpse",
-				"expected", pair.readable.corpse,
-				"got", readable.corpse,
-			)
-		}
-
-		if readable.corpse != nil && pair.readable.corpse != nil && *(readable.corpse) != *(pair.readable.corpse) {
-			t.Error(
-				"For", "Corpse",
-				"expected", *(pair.readable.corpse),
-				"got", *(readable.corpse),
+				"expected", pair.readable.HasComponent("corpse"),
+				"got", readable.HasComponent("corpse"),
 			)
 		}
 

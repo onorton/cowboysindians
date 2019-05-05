@@ -49,9 +49,8 @@ type Item struct {
 	ic          icon.Icon
 	w           float64
 	v           int
-	cover       *tag
+	components  map[string]tag
 	description *string
-	corpse      *tag
 	ammoType    *WeaponType
 	armour      *armourComponent
 	weapon      *weaponComponent
@@ -158,15 +157,15 @@ func (item *Item) GetValue() int {
 
 func NewNormalItem(name string) *Item {
 	item := normalItemData[name]
-	var cover *tag = nil
+	components := map[string]tag{}
 	if item.Cover {
-		cover = &tag{}
+		components["cover"] = tag{}
 	}
-	return &Item{name, "", item.Icon, item.Weight, item.Value, cover, nil, nil, nil, nil, nil, nil}
+	return &Item{name, "", item.Icon, item.Weight, item.Value, components, nil, nil, nil, nil, nil}
 }
 
 func Money(amount int) *Item {
-	return &Item{"money", "", icon.NewIcon('$', 4), 0, amount, nil, nil, nil, nil, nil, nil, nil}
+	return &Item{"money", "", icon.NewIcon('$', 4), 0, amount, map[string]tag{}, nil, nil, nil, nil, nil}
 }
 
 func GenerateNormalItem() *Item {
@@ -204,12 +203,12 @@ func (item *Item) MarshalJSON() ([]byte, error) {
 	buffer.WriteString(fmt.Sprintf("\"Weight\":%s,", weightValue))
 	buffer.WriteString(fmt.Sprintf("\"Value\":%d,", item.v))
 
-	coverValue, err := json.Marshal(item.cover)
+	componentsValue, err := json.Marshal(item.components)
 	if err != nil {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"Cover\":%s,", coverValue))
+	buffer.WriteString(fmt.Sprintf("\"Components\":%s,", componentsValue))
 
 	descriptionValue, err := json.Marshal(item.description)
 	if err != nil {
@@ -217,13 +216,6 @@ func (item *Item) MarshalJSON() ([]byte, error) {
 	}
 
 	buffer.WriteString(fmt.Sprintf("\"Description\":%s,", descriptionValue))
-
-	corpseValue, err := json.Marshal(item.corpse)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Corpse\":%s,", corpseValue))
 
 	ammoValue, err := json.Marshal(item.ammoType)
 	if err != nil {
@@ -265,9 +257,8 @@ func (item *Item) UnmarshalJSON(data []byte) error {
 		Icon        icon.Icon
 		Weight      float64
 		Value       int
-		Cover       *tag
+		Components  map[string]tag
 		Description *string
-		Corpse      *tag
 		AmmoType    *WeaponType
 		Armour      *armourComponent
 		Weapon      *weaponComponent
@@ -284,9 +275,8 @@ func (item *Item) UnmarshalJSON(data []byte) error {
 	item.ic = v.Icon
 	item.w = v.Weight
 	item.v = v.Value
-	item.cover = v.Cover
+	item.components = v.Components
 	item.description = v.Description
-	item.corpse = v.Corpse
 	item.ammoType = v.AmmoType
 	item.armour = v.Armour
 	item.weapon = v.Weapon
@@ -300,14 +290,14 @@ func (item *Item) Owner() string {
 }
 
 func (item *Item) Owned(id string) bool {
-	if item.owner == "" || item.corpse != nil {
+	if item.owner == "" || item.HasComponent("corpse") {
 		return true
 	}
 	return item.owner == id
 }
 
 func (item *Item) TransferOwner(newOwner string) {
-	if item.corpse != nil {
+	if item.HasComponent("corpse") {
 		return
 	}
 
@@ -319,10 +309,6 @@ func (item *Item) TransferOwner(newOwner string) {
 
 func (item *Item) IsReadable() bool {
 	return item.description != nil
-}
-
-func (item *Item) IsCorpse() bool {
-	return item.corpse != nil
 }
 
 func (item *Item) IsAmmo() bool {
@@ -355,8 +341,9 @@ func (item *Item) Effects(attr string) []Effect {
 	return []Effect{}
 }
 
-func (item *Item) GivesCover() bool {
-	return item.cover != nil
+func (item *Item) HasComponent(key string) bool {
+	_, ok := item.components[key]
+	return ok
 }
 
 type tag struct{}
