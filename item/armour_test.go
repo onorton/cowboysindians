@@ -13,9 +13,9 @@ type armourMarshallingPair struct {
 }
 
 var armourMarshallingTests = []armourMarshallingPair{
-	{Item{"leather jacket", "bandit", icon.NewIcon(91, 100), 2, 1000, map[string]component{}, &armourComponent{1}}, "{\"Name\":\"leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Weight\":2,\"Value\":1000,\"Components\":{},\"Armour\":{\"Bonus\":1}}"},
-	{Item{"metal breastplate", "bandit", icon.NewIcon(91, 50), 5, 2000, map[string]component{}, &armourComponent{3}}, "{\"Name\":\"metal breastplate\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Weight\":5,\"Value\":2000,\"Components\":{},\"Armour\":{\"Bonus\":3}}"},
-	{Item{"reinforced leather jacket", "bandit", icon.NewIcon(91, 70), 3, 1500, map[string]component{}, &armourComponent{2}}, "{\"Name\":\"reinforced leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Weight\":3,\"Value\":1500,\"Components\":{},\"Armour\":{\"Bonus\":2}}"},
+	{Item{"leather jacket", "bandit", icon.NewIcon(91, 100), 2, 1000, map[string]component{"armour": ArmourComponent{1}}}, "{\"Name\":\"leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Weight\":2,\"Value\":1000,\"Components\":{\"armour\":{\"Bonus\":1}}}"},
+	{Item{"metal breastplate", "bandit", icon.NewIcon(91, 50), 5, 2000, map[string]component{"armour": ArmourComponent{3}}}, "{\"Name\":\"metal breastplate\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Weight\":5,\"Value\":2000,\"Components\":{\"armour\":{\"Bonus\":3}}}"},
+	{Item{"reinforced leather jacket", "bandit", icon.NewIcon(91, 70), 3, 1500, map[string]component{"armour": ArmourComponent{2}}}, "{\"Name\":\"reinforced leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Weight\":3,\"Value\":1500,\"Components\":{\"armour\":{\"Bonus\":2}}}"},
 }
 
 type armourUnmarshallingPair struct {
@@ -24,9 +24,9 @@ type armourUnmarshallingPair struct {
 }
 
 var armourUnmarshallingTests = []armourUnmarshallingPair{
-	{"{\"Name\":\"leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Weight\":2,\"Value\":1000,\"Components\":{},\"Armour\":{\"Bonus\":1}}", Item{"leather jacket", "bandit", icon.NewIcon(91, 100), 2, 1000, map[string]component{}, &armourComponent{1}}},
-	{"{\"Name\":\"metal breastplate\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Weight\":5,\"Value\":2000,\"Components\":{},\"Armour\":{\"Bonus\":3}}", Item{"metal breastplate", "bandit", icon.NewIcon(91, 50), 5, 2000, map[string]component{}, &armourComponent{3}}},
-	{"{\"Name\":\"reinforced leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Weight\":3,\"Value\":1500,\"Components\":{},\"Armour\":{\"Bonus\":2}}", Item{"reinforced leather jacket", "bandit", icon.NewIcon(91, 70), 3, 1500, map[string]component{}, &armourComponent{2}}},
+	{"{\"Name\":\"leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":100},\"Weight\":2,\"Value\":1000,\"Components\":{\"armour\":{\"Bonus\":1}}}", Item{"leather jacket", "bandit", icon.NewIcon(91, 100), 2, 1000, map[string]component{"armour": ArmourComponent{1}}}},
+	{"{\"Name\":\"metal breastplate\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":50},\"Weight\":5,\"Value\":2000,\"Components\":{\"armour\":{\"Bonus\":3}}}", Item{"metal breastplate", "bandit", icon.NewIcon(91, 50), 5, 2000, map[string]component{"armour": ArmourComponent{3}}}},
+	{"{\"Name\":\"reinforced leather jacket\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":91,\"Colour\":70},\"Weight\":3,\"Value\":1500,\"Components\":{\"armour\":{\"Bonus\":2}}}", Item{"reinforced leather jacket", "bandit", icon.NewIcon(91, 70), 3, 1500, map[string]component{"armour": ArmourComponent{2}}}},
 }
 
 func TestArmourMarshalling(t *testing.T) {
@@ -87,11 +87,11 @@ func TestArmourUnmarshalling(t *testing.T) {
 			)
 		}
 
-		if *(armour.armour) != *(pair.armour.armour) {
+		if armour.Component("armour") != pair.armour.Component("armour") {
 			t.Error(
 				"For", "Armour",
-				"expected", *(pair.armour.armour),
-				"got", *(armour.armour),
+				"expected", pair.armour.Component("armour"),
+				"got", armour.Component("armour"),
 			)
 		}
 

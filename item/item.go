@@ -50,7 +50,6 @@ type Item struct {
 	w          float64
 	v          int
 	components map[string]component
-	armour     *armourComponent
 }
 
 var typeProbabilities = map[string]float64{
@@ -157,11 +156,11 @@ func NewNormalItem(name string) *Item {
 	if item.Cover {
 		components["cover"] = tag{}
 	}
-	return &Item{name, "", item.Icon, item.Weight, item.Value, components, nil}
+	return &Item{name, "", item.Icon, item.Weight, item.Value, components}
 }
 
 func Money(amount int) *Item {
-	return &Item{"money", "", icon.NewIcon('$', 4), 0, amount, map[string]component{}, nil}
+	return &Item{"money", "", icon.NewIcon('$', 4), 0, amount, map[string]component{}}
 }
 
 func GenerateNormalItem() *Item {
@@ -204,14 +203,7 @@ func (item *Item) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"Components\":%s,", componentsValue))
-
-	armourValue, err := json.Marshal(item.armour)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Armour\":%s", armourValue))
+	buffer.WriteString(fmt.Sprintf("\"Components\":%s", componentsValue))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -220,15 +212,12 @@ func (item *Item) MarshalJSON() ([]byte, error) {
 func (item *Item) UnmarshalJSON(data []byte) error {
 
 	type itemJson struct {
-		Name        string
-		Owner       string
-		Icon        icon.Icon
-		Weight      float64
-		Value       int
-		Components  map[string]interface{}
-		Description *string
-		AmmoType    *WeaponType
-		Armour      *armourComponent
+		Name       string
+		Owner      string
+		Icon       icon.Icon
+		Weight     float64
+		Value      int
+		Components map[string]interface{}
 	}
 	var v itemJson
 
@@ -242,7 +231,6 @@ func (item *Item) UnmarshalJSON(data []byte) error {
 	item.w = v.Weight
 	item.v = v.Value
 	item.components = UnmarshalComponents(v.Components)
-	item.armour = v.Armour
 
 	return nil
 }
@@ -278,6 +266,11 @@ func UnmarshalComponents(cs map[string]interface{}) map[string]component {
 			err := json.Unmarshal(componentJson, &ammo)
 			check(err)
 			component = ammo
+		case "armour":
+			var armour ArmourComponent
+			err := json.Unmarshal(componentJson, &armour)
+			check(err)
+			component = armour
 		}
 		components[key] = component
 
@@ -307,16 +300,6 @@ func (item *Item) TransferOwner(newOwner string) {
 	}
 }
 
-func (item *Item) IsArmour() bool {
-	return item.armour != nil
-}
-
-func (item *Item) ACBonus() int {
-	if item.armour != nil {
-		return item.armour.Bonus
-	}
-	return 0
-}
 func (item *Item) HasComponent(key string) bool {
 	_, ok := item.components[key]
 	return ok

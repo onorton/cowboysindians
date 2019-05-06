@@ -13,8 +13,8 @@ type readableMarshallingPair struct {
 }
 
 var readableMarshallingTests = []readableMarshallingPair{
-	{Item{"signpost", "", icon.NewIcon(80, 4), 20, 1000, map[string]component{"readable": ReadableComponent{"\"Welcome to Deadwood!\""}}, nil}, "{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Components\":{\"readable\":{\"Description\":\"\\\"Welcome to Deadwood!\\\"\"}},\"Armour\":null}"},
-	{Item{"book", "townsman", icon.NewIcon(98, 6), 1, 1000, map[string]component{"readable": ReadableComponent{"This book has words in it."}}, nil}, "{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Components\":{\"readable\":{\"Description\":\"This book has words in it.\"}},\"Armour\":null}"},
+	{Item{"signpost", "", icon.NewIcon(80, 4), 20, 1000, map[string]component{"readable": ReadableComponent{"\"Welcome to Deadwood!\""}}}, "{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Components\":{\"readable\":{\"Description\":\"\\\"Welcome to Deadwood!\\\"\"}}}"},
+	{Item{"book", "townsman", icon.NewIcon(98, 6), 1, 1000, map[string]component{"readable": ReadableComponent{"This book has words in it."}}}, "{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Components\":{\"readable\":{\"Description\":\"This book has words in it.\"}}}"},
 }
 
 type readableUnmarshallingPair struct {
@@ -23,8 +23,8 @@ type readableUnmarshallingPair struct {
 }
 
 var readableUnmarshallingTests = []readableUnmarshallingPair{
-	{"{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Components\":{\"readable\":{\"Description\":\"\\\"Welcome to Deadwood!\\\"\"}}}", Item{"signpost", "", icon.NewIcon(80, 4), 20, 1000, map[string]component{"readable": ReadableComponent{"\"Welcome to Deadwood!\""}}, nil}},
-	{"{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Components\":{\"readable\":{\"Description\":\"This book has words in it.\"}}}", Item{"book", "townsman", icon.NewIcon(98, 6), 1, 1000, map[string]component{"readable": ReadableComponent{"This book has words in it."}}, nil}},
+	{"{\"Name\":\"signpost\",\"Owner\":\"\",\"Icon\":{\"Icon\":80,\"Colour\":4},\"Weight\":20,\"Value\":1000,\"Components\":{\"readable\":{\"Description\":\"\\\"Welcome to Deadwood!\\\"\"}}}", Item{"signpost", "", icon.NewIcon(80, 4), 20, 1000, map[string]component{"readable": ReadableComponent{"\"Welcome to Deadwood!\""}}}},
+	{"{\"Name\":\"book\",\"Owner\":\"townsman\",\"Icon\":{\"Icon\":98,\"Colour\":6},\"Weight\":1,\"Value\":1000,\"Components\":{\"readable\":{\"Description\":\"This book has words in it.\"}}}", Item{"book", "townsman", icon.NewIcon(98, 6), 1, 1000, map[string]component{"readable": ReadableComponent{"This book has words in it."}}}},
 }
 
 func TestReadableMarshalling(t *testing.T) {

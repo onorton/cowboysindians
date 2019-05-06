@@ -13,8 +13,8 @@ type ammoMarshallingPair struct {
 }
 
 var ammoMarshallingTests = []ammoMarshallingPair{
-	{Item{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20, map[string]component{"ammo": AmmoComponent{Shotgun}}, nil}, "{\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Weight\":0.2,\"Value\":20,\"Components\":{\"ammo\":{\"AmmoType\":2}},\"Armour\":null}"},
-	{Item{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10, map[string]component{"ammo": AmmoComponent{Pistol}}, nil}, "{\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Weight\":0.01,\"Value\":10,\"Components\":{\"ammo\":{\"AmmoType\":1}},\"Armour\":null}"},
+	{Item{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20, map[string]component{"ammo": AmmoComponent{Shotgun}}}, "{\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Weight\":0.2,\"Value\":20,\"Components\":{\"ammo\":{\"AmmoType\":2}}}"},
+	{Item{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10, map[string]component{"ammo": AmmoComponent{Pistol}}}, "{\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Weight\":0.01,\"Value\":10,\"Components\":{\"ammo\":{\"AmmoType\":1}}}"},
 }
 
 type ammoUnmarshallingPair struct {
@@ -23,8 +23,8 @@ type ammoUnmarshallingPair struct {
 }
 
 var ammoUnmarshallingTests = []ammoUnmarshallingPair{
-	{"{\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Weight\":0.2,\"Value\":20,\"Components\":{\"ammo\":{\"AmmoType\":2}},\"Armour\":null}", Item{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20, map[string]component{"ammo": AmmoComponent{Shotgun}}, nil}},
-	{"{\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Weight\":0.01,\"Value\":10,\"Components\":{\"ammo\":{\"AmmoType\":1}},\"Armour\":null}", Item{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10, map[string]component{"ammo": AmmoComponent{Pistol}}, nil}},
+	{"{\"Name\":\"shotgun shell\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":2},\"Weight\":0.2,\"Value\":20,\"Components\":{\"ammo\":{\"AmmoType\":2}}}", Item{"shotgun shell", "bandit", icon.NewIcon(44, 2), 0.2, 20, map[string]component{"ammo": AmmoComponent{Shotgun}}}},
+	{"{\"Name\":\"pistol bullet\",\"Owner\":\"bandit\",\"Icon\":{\"Icon\":44,\"Colour\":3},\"Weight\":0.01,\"Value\":10,\"Components\":{\"ammo\":{\"AmmoType\":1}}}", Item{"pistol bullet", "bandit", icon.NewIcon(44, 3), 0.01, 10, map[string]component{"ammo": AmmoComponent{Pistol}}}},
 }
 
 func TestAmmoMarshalling(t *testing.T) {

@@ -256,7 +256,7 @@ func (p *Player) PrintWeapons() {
 func (p *Player) PrintArmour() {
 	position := 0
 	for k, items := range p.inventory {
-		if !p.inventory[k][0].IsArmour() {
+		if !p.inventory[k][0].HasComponent("armour") {
 			continue
 		}
 		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
@@ -394,7 +394,7 @@ func (p *Player) GetArmourKeys() string {
 	keysSet := make([]bool, 128)
 	for k := range p.inventory {
 
-		if p.inventory[k][0].IsArmour() {
+		if p.inventory[k][0].HasComponent("armour") {
 			keysSet[k] = true
 		}
 	}
@@ -565,7 +565,7 @@ func (p *Player) WearArmour() bool {
 				message.PrintMessage("You don't have that piece of armour.")
 				ui.GetInput()
 			} else {
-				if itm.IsArmour() {
+				if itm.HasComponent("armour") {
 					other := p.armour
 					p.armour = itm
 					if other != nil {
@@ -1309,8 +1309,8 @@ func (p *Player) Update() {
 
 	// Apply armour AC bonus
 	if p.armour != nil {
-		p.attributes["ac"].AddEffect(item.NewEffect(p.armour.ACBonus(), 1, true))
-		p.attributes["ac"].AddEffect(item.NewEffect(p.armour.ACBonus(), 1, false))
+		p.attributes["ac"].AddEffect(item.NewEffect(p.armour.Component("armour").(item.ArmourComponent).Bonus, 1, true))
+		p.attributes["ac"].AddEffect(item.NewEffect(p.armour.Component("armour").(item.ArmourComponent).Bonus, 1, false))
 	}
 
 	if p.mount != nil {

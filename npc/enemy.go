@@ -238,13 +238,13 @@ func (e *Enemy) wieldItem() bool {
 func (e *Enemy) wearArmour() bool {
 	changed := false
 	for i, itm := range e.inventory {
-		if itm.IsArmour() {
+		if itm.HasComponent("armour") {
 			if e.armour == nil {
 				e.armour = itm
 				e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
 				changed = true
 
-			} else if itm.ACBonus() > e.armour.ACBonus() {
+			} else if itm.Component("armour").(item.ArmourComponent).Bonus > e.armour.Component("armour").(item.ArmourComponent).Bonus {
 				e.inventory[i] = e.weapon
 				e.armour = itm
 				changed = true
@@ -280,8 +280,8 @@ func (e *Enemy) Update() {
 
 	// Apply armour AC bonus
 	if e.armour != nil {
-		e.attributes["ac"].AddEffect(item.NewEffect(e.armour.ACBonus(), 1, true))
-		e.attributes["ac"].AddEffect(item.NewEffect(e.armour.ACBonus(), 1, false))
+		e.attributes["ac"].AddEffect(item.NewEffect(e.armour.Component("armour").(item.ArmourComponent).Bonus, 1, true))
+		e.attributes["ac"].AddEffect(item.NewEffect(e.armour.Component("armour").(item.ArmourComponent).Bonus, 1, false))
 	}
 
 	if e.IsDead() {

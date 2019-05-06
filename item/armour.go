@@ -32,13 +32,13 @@ func fetchArmourData() {
 	}
 }
 
-type armourComponent struct {
+type ArmourComponent struct {
 	Bonus int
 }
 
 func NewArmour(name string) *Item {
 	armour := armourData[name]
-	return &Item{name, "", armour.Icon, armour.Weight, armour.Value, map[string]component{}, &armourComponent{armour.Bonus}}
+	return &Item{name, "", armour.Icon, armour.Weight, armour.Value, map[string]component{"armour": ArmourComponent{armour.Bonus}}}
 }
 
 func GenerateArmour() *Item {

@@ -331,13 +331,13 @@ func (npc *Npc) wieldItem() bool {
 func (npc *Npc) wearArmour() bool {
 	changed := false
 	for i, itm := range npc.inventory {
-		if itm.IsArmour() {
+		if itm.HasComponent("armour") {
 			if npc.armour == nil {
 				npc.armour = itm
 				npc.inventory = append(npc.inventory[:i], npc.inventory[i+1:]...)
 				changed = true
 
-			} else if itm.ACBonus() > npc.armour.ACBonus() {
+			} else if itm.Component("armour").(item.ArmourComponent).Bonus > npc.armour.Component("armour").(item.ArmourComponent).Bonus {
 				npc.inventory[i] = npc.weapon
 				npc.armour = itm
 				changed = true
@@ -372,8 +372,8 @@ func (npc *Npc) Update() {
 
 	// Apply armour AC bonus
 	if npc.armour != nil {
-		npc.attributes["ac"].AddEffect(item.NewEffect(npc.armour.ACBonus(), 1, true))
-		npc.attributes["ac"].AddEffect(item.NewEffect(npc.armour.ACBonus(), 1, false))
+		npc.attributes["ac"].AddEffect(item.NewEffect(npc.armour.Component("armour").(item.ArmourComponent).Bonus, 1, true))
+		npc.attributes["ac"].AddEffect(item.NewEffect(npc.armour.Component("armour").(item.ArmourComponent).Bonus, 1, false))
 	}
 
 	if npc.IsDead() {
