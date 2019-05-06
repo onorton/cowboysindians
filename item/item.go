@@ -44,15 +44,13 @@ func fetchItemData() {
 }
 
 type Item struct {
-	name        string
-	owner       string
-	ic          icon.Icon
-	w           float64
-	v           int
-	components  map[string]component
-	description *string
-	ammoType    *WeaponType
-	armour      *armourComponent
+	name       string
+	owner      string
+	ic         icon.Icon
+	w          float64
+	v          int
+	components map[string]component
+	armour     *armourComponent
 }
 
 var typeProbabilities = map[string]float64{
@@ -159,11 +157,11 @@ func NewNormalItem(name string) *Item {
 	if item.Cover {
 		components["cover"] = tag{}
 	}
-	return &Item{name, "", item.Icon, item.Weight, item.Value, components, nil, nil, nil}
+	return &Item{name, "", item.Icon, item.Weight, item.Value, components, nil}
 }
 
 func Money(amount int) *Item {
-	return &Item{"money", "", icon.NewIcon('$', 4), 0, amount, map[string]component{}, nil, nil, nil}
+	return &Item{"money", "", icon.NewIcon('$', 4), 0, amount, map[string]component{}, nil}
 }
 
 func GenerateNormalItem() *Item {
@@ -208,20 +206,6 @@ func (item *Item) MarshalJSON() ([]byte, error) {
 
 	buffer.WriteString(fmt.Sprintf("\"Components\":%s,", componentsValue))
 
-	descriptionValue, err := json.Marshal(item.description)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Description\":%s,", descriptionValue))
-
-	ammoValue, err := json.Marshal(item.ammoType)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"AmmoType\":%s,", ammoValue))
-
 	armourValue, err := json.Marshal(item.armour)
 	if err != nil {
 		return nil, err
@@ -258,8 +242,6 @@ func (item *Item) UnmarshalJSON(data []byte) error {
 	item.w = v.Weight
 	item.v = v.Value
 	item.components = UnmarshalComponents(v.Components)
-	item.description = v.Description
-	item.ammoType = v.AmmoType
 	item.armour = v.Armour
 
 	return nil
@@ -286,6 +268,16 @@ func UnmarshalComponents(cs map[string]interface{}) map[string]component {
 			err := json.Unmarshal(componentJson, &weapon)
 			check(err)
 			component = weapon
+		case "readable":
+			var readable ReadableComponent
+			err := json.Unmarshal(componentJson, &readable)
+			check(err)
+			component = readable
+		case "ammo":
+			var ammo AmmoComponent
+			err := json.Unmarshal(componentJson, &ammo)
+			check(err)
+			component = ammo
 		}
 		components[key] = component
 
@@ -313,14 +305,6 @@ func (item *Item) TransferOwner(newOwner string) {
 	if item.owner == "" {
 		item.owner = newOwner
 	}
-}
-
-func (item *Item) IsReadable() bool {
-	return item.description != nil
-}
-
-func (item *Item) IsAmmo() bool {
-	return item.ammoType != nil
 }
 
 func (item *Item) IsArmour() bool {

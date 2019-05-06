@@ -13,8 +13,8 @@ type corpseMarshallingPair struct {
 }
 
 var corpseMarshallingTests = []corpseMarshallingPair{
-	{Item{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000, map[string]component{"corpse": tag{}}, nil, nil, nil}, "{\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000,\"Components\":{\"corpse\":{}},\"Description\":null,\"AmmoType\":null,\"Armour\":null}"},
-	{Item{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500, map[string]component{"corpse": tag{}, "cover": tag{}}, nil, nil, nil}, "{\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500,\"Components\":{\"corpse\":{},\"cover\":{}},\"Description\":null,\"AmmoType\":null,\"Armour\":null}"},
+	{Item{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000, map[string]component{"corpse": tag{}}, nil}, "{\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000,\"Components\":{\"corpse\":{}},\"Armour\":null}"},
+	{Item{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500, map[string]component{"corpse": tag{}, "cover": tag{}}, nil}, "{\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500,\"Components\":{\"corpse\":{},\"cover\":{}},\"Armour\":null}"},
 }
 
 type corpseUnmarshallingPair struct {
@@ -23,8 +23,8 @@ type corpseUnmarshallingPair struct {
 }
 
 var corpseUnmarshallingTests = []corpseUnmarshallingPair{
-	{"{\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000,\"Components\":{\"corpse\":{}},\"Armour\":null}", Item{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000, map[string]component{"corpse": tag{}}, nil, nil, nil}},
-	{"{\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500,\"Components\":{\"corpse\":{},\"cover\":{}},\"Armour\":null}", Item{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500, map[string]component{"corpse": tag{}, "cover": tag{}}, nil, nil, nil}},
+	{"{\"Name\":\"bandit's head\",\"Owner\":\"some bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":10.5,\"Value\":1000,\"Components\":{\"corpse\":{}},\"Armour\":null}", Item{"bandit's head", "some bandit", icon.NewIcon(37, 5), 10.5, 1000, map[string]component{"corpse": tag{}}, nil}},
+	{"{\"Name\":\"bandit's body\",\"Owner\":\"another bandit\",\"Icon\":{\"Icon\":37,\"Colour\":5},\"Weight\":140,\"Value\":500,\"Components\":{\"corpse\":{},\"cover\":{}},\"Armour\":null}", Item{"bandit's body", "another bandit", icon.NewIcon(37, 5), 140.0, 500, map[string]component{"corpse": tag{}, "cover": tag{}}, nil}},
 }
 
 func TestCorpseMarshalling(t *testing.T) {

@@ -38,7 +38,7 @@ type armourComponent struct {
 
 func NewArmour(name string) *Item {
 	armour := armourData[name]
-	return &Item{name, "", armour.Icon, armour.Weight, armour.Value, map[string]component{}, nil, nil, &armourComponent{armour.Bonus}}
+	return &Item{name, "", armour.Icon, armour.Weight, armour.Value, map[string]component{}, &armourComponent{armour.Bonus}}
 }
 
 func GenerateArmour() *Item {

@@ -287,7 +287,7 @@ func (p *Player) PrintConsumables() {
 func (p *Player) PrintReadables() {
 	position := 0
 	for k, items := range p.inventory {
-		if !p.inventory[k][0].IsReadable() {
+		if !p.inventory[k][0].HasComponent("readable") {
 			continue
 		}
 		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
@@ -344,7 +344,7 @@ func (p *Player) RangedAttack() bool {
 
 func (p *Player) getAmmo() *item.Item {
 	for k, items := range p.inventory {
-		if items[0].IsAmmo() && p.Weapon().AmmoTypeMatches(items[0]) {
+		if items[0].HasComponent("ammo") && p.Weapon().AmmoTypeMatches(items[0]) {
 			return p.GetItem(k)
 		}
 	}
@@ -444,7 +444,7 @@ func (p *Player) GetReadableKeys() string {
 	keysSet := make([]bool, 128)
 	for k := range p.inventory {
 
-		if p.inventory[k][0].IsReadable() {
+		if p.inventory[k][0].HasComponent("readable") {
 			keysSet[k] = true
 		}
 	}
@@ -668,7 +668,7 @@ func (p *Player) weaponFullyLoaded() bool {
 // Check whether player has ammo for particular wielded weapon
 func (p *Player) hasAmmo() bool {
 	for _, items := range p.inventory {
-		if items[0].IsAmmo() && p.Weapon().AmmoTypeMatches(items[0]) {
+		if items[0].HasComponent("readable") && p.Weapon().AmmoTypeMatches(items[0]) {
 			return true
 		}
 	}
@@ -1221,7 +1221,7 @@ func (p *Player) Read() {
 	readables := make([]*item.Item, 0)
 
 	for _, itm := range items {
-		if itm.IsReadable() {
+		if itm.HasComponent("readable") {
 			readables = append(readables, itm)
 		}
 	}
@@ -1236,7 +1236,7 @@ func (p *Player) Read() {
 			message.PrintMessage(fmt.Sprintf("Would you like to read the %s on the ground? [yn]", readable.GetName()))
 			selection := ui.GetInput()
 			if selection == ui.Confirm {
-				message.PrintMessage(readable.Read())
+				message.PrintMessage(readable.Component("readable").(item.ReadableComponent).Description)
 				// if last item don't bother waiting for input
 				if i != len(readables)-1 {
 					ui.GetInput()
@@ -1266,8 +1266,8 @@ func (p *Player) Read() {
 				message.PrintMessage("You don't have that to read.")
 				ui.GetInput()
 			} else {
-				if itm.IsReadable() {
-					message.PrintMessage(itm.Read())
+				if itm.HasComponent("readable") {
+					message.PrintMessage(itm.Component("readable").(item.ReadableComponent).Description)
 					return
 				} else {
 					message.PrintMessage("That is not something that you can read.")

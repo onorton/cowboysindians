@@ -345,7 +345,7 @@ func (e *Enemy) EmptyInventory() {
 
 func (e *Enemy) getAmmo() *item.Item {
 	for i, itm := range e.inventory {
-		if itm.IsAmmo() && e.Weapon().AmmoTypeMatches(itm) {
+		if itm.HasComponent("ammo") && e.Weapon().AmmoTypeMatches(itm) {
 			e.inventory = append(e.inventory[:i], e.inventory[i+1:]...)
 			return itm
 		}
@@ -393,7 +393,7 @@ func (e *Enemy) weaponFullyLoaded() bool {
 // Check whether enemy has ammo for particular wielded weapon
 func (e *Enemy) hasAmmo() bool {
 	for _, itm := range e.inventory {
-		if itm.IsAmmo() && e.Weapon().AmmoTypeMatches(itm) {
+		if itm.HasComponent("ammo") && e.Weapon().AmmoTypeMatches(itm) {
 			return true
 		}
 	}

@@ -34,9 +34,13 @@ func fetchAmmoData() {
 
 func NewAmmo(name string) *Item {
 	ammo := ammoData[name]
-	return &Item{name, "", ammo.Icon, ammo.Weight, ammo.Value, map[string]component{}, nil, &(ammo.Type), nil}
+	return &Item{name, "", ammo.Icon, ammo.Weight, ammo.Value, map[string]component{"ammo": AmmoComponent{ammo.Type}}, nil}
 }
 
 func GenerateAmmo() *Item {
 	return NewAmmo(Choose(ammoProbabilities))
+}
+
+type AmmoComponent struct {
+	AmmoType WeaponType
 }
