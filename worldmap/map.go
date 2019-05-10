@@ -4,30 +4,119 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math"
 
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/ui"
 )
 
-type Alignment int
-
-const (
-	Player Alignment = iota
-	Enemy
-	Neutral
-)
-
+const chunkSize = 64
 const padding = 5
 
-func NewMap(grid *Grid, viewerWidth, viewerHeight int) *Map {
+type Alignment int
 
-	viewer := new(Viewer)
-	viewer.x = 0
-	viewer.y = 0
-	viewer.width = viewerWidth
-	viewer.height = viewerHeight
-	return &Map{grid, viewer}
+func NewMap(filename string, width, height int, viewer *Viewer, player Creature, creatures []Creature) *Map {
+
+	newMap := new(Map)
+	newMap.v = viewer
+	newMap.width = width
+	newMap.height = height
+	newMap.filename = filename
+	newMap.player = player
+	newMap.creatures = creatures
+	return newMap
+}
+
+type Map struct {
+	activeChunks [3][3]*Grid
+	filename     string
+	v            *Viewer
+	width        int
+	height       int
+	player       Creature
+	creatures    []Creature
+}
+
+type Coordinates struct {
+	X int
+	Y int
+}
+
+type ChunkCoordinates struct {
+	ChunkX int
+	ChunkY int
+	Local  Coordinates
+}
+
+type worldJson struct {
+	World World
+}
+
+func (m Map) firstInitialised() bool {
+	initialised := true
+	for _, row := range m.activeChunks {
+		for _, chunk := range row {
+			initialised = initialised && chunk == nil
+		}
+	}
+	return initialised
+}
+
+func (m *Map) LoadActiveChunks() {
+
+	m.activeChunks = [3][3]*Grid{}
+	pX, pY := m.player.GetCoordinates()
+	newPlayerLocation := globalToChunkCoordinates(pX, pY)
+	data, err := ioutil.ReadFile(m.filename)
+	check(err)
+
+	var world worldJson
+	err = json.Unmarshal(data, &world)
+	check(err)
+
+	for y := 0; y < 3; y++ {
+		for x := 0; x < 3; x++ {
+			cX, cY := newPlayerLocation.ChunkX+x-1, newPlayerLocation.ChunkY+y-1
+			if cX >= 0 && cX < m.width/chunkSize && cY >= 0 && cY < m.height/chunkSize {
+				m.activeChunks[y][x] = world.World[cY][cX]
+			}
+		}
+	}
+	// Place creatures
+	for _, c := range m.creatures {
+		x, y := c.GetCoordinates()
+		if m.InActiveChunks(x, y) {
+			m.Move(c, x, y)
+		}
+	}
+}
+
+func (m *Map) SaveChunks() {
+	data, err := ioutil.ReadFile(m.filename)
+	check(err)
+
+	pX, pY := m.player.GetCoordinates()
+	newPlayerLocation := globalToChunkCoordinates(pX, pY)
+
+	var world worldJson
+	err = json.Unmarshal(data, &world)
+	check(err)
+	for y := 0; y < 3; y++ {
+		for x := 0; x < 3; x++ {
+			cX, cY := newPlayerLocation.ChunkX+x-1, newPlayerLocation.ChunkY+y-1
+			if cX >= 0 && cX < m.width/chunkSize && cY >= 0 && cY < m.height/chunkSize {
+				world.World[cY][cX] = m.activeChunks[y][x]
+			}
+		}
+	}
+
+	worldJson, err := json.Marshal(world)
+	check(err)
+	buffer := bytes.NewBuffer(worldJson)
+
+	err = ioutil.WriteFile(m.filename, buffer.Bytes(), 0644)
+	check(err)
 }
 
 type Viewer struct {
@@ -35,11 +124,6 @@ type Viewer struct {
 	y      int
 	width  int
 	height int
-}
-
-type Map struct {
-	grid *Grid
-	v    *Viewer
 }
 
 func (v *Viewer) MarshalJSON() ([]byte, error) {
@@ -99,88 +183,57 @@ func (v *Viewer) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (m *Map) GetViewerX() int {
+func NewViewer(x, y, viewerWidth, viewerHeight int) *Viewer {
+	return &Viewer{x, y, viewerWidth, viewerHeight}
+}
+
+func (m Map) GetViewerX() int {
 	return m.v.x
 }
 
-func (m *Map) GetViewerY() int {
+func (m Map) GetViewerY() int {
 	return m.v.y
 }
 
-func (m *Map) GetViewerWidth() int {
+func (m Map) GetViewerWidth() int {
 	return m.v.width
 }
 
-func (m *Map) GetViewerHeight() int {
+func (m Map) GetViewerHeight() int {
 	return m.v.height
-}
-
-func (m *Map) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{")
-
-	gridValue, err := json.Marshal(m.grid)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Map\":%s,", gridValue))
-
-	viewerValue, err := json.Marshal(m.v)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Viewer\":%s", viewerValue))
-	buffer.WriteString("}")
-
-	return buffer.Bytes(), nil
-}
-
-func (m *Map) UnmarshalJSON(data []byte) error {
-	type mapJson struct {
-		Map    *Grid
-		Viewer *Viewer
-	}
-
-	v := mapJson{}
-
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-
-	m.grid = v.Map
-	m.v = v.Viewer
-
-	return nil
 }
 
 func (m Map) HasPlayer(x, y int) bool {
 	if m.IsOccupied(x, y) {
-		return m.grid.c[y][x].GetAlignment() == Player
+		return m.GetCreature(x, y).GetAlignment() == Player
 	}
 	return false
 }
 
 // Coordinates within confines of the map
 func (m Map) IsValid(x, y int) bool {
-	return x >= 0 && x < m.GetWidth() && y >= 0 && y < m.GetHeight()
-
+	inWorld := x >= 0 && x < m.width && y >= 0 && y < m.height
+	chunk, _, _ := m.globalToChunkAndLocal(x, y)
+	return inWorld && chunk != nil
 }
 
 func (m Map) IsPassable(x, y int) bool {
-	return m.grid.passable[y][x]
+	chunk, cX, cY := m.globalToChunkAndLocal(x, y)
+	return chunk.passable[cY][cX]
 }
 
 func (m Map) blocksVision(x, y int) bool {
-	return m.grid.blocksVision[y][x]
+	chunk, cX, cY := m.globalToChunkAndLocal(x, y)
+	return chunk.blocksVision[cY][cX]
 }
 
 func (m Map) IsOccupied(x, y int) bool {
-	return m.grid.c[y][x] != nil
+	return m.GetCreature(x, y) != nil
 }
 
 func (m Map) HasItems(x, y int) bool {
-	return len(m.grid.items[y][x]) > 0
+	chunk, cX, cY := m.globalToChunkAndLocal(x, y)
+	return len(chunk.items[cY][cX]) > 0
 }
 
 // Bresenham algorithm to check if creature c can see square x1, y1.
@@ -465,16 +518,17 @@ func (m Map) BehindCover(x1, y1 int, a Creature) bool {
 	return false
 }
 
-func (m Map) PlaceItem(x, y int, itm *item.Item) {
-	m.grid.items[y][x] = append([]*item.Item{itm}, m.grid.items[y][x]...)
+func (m *Map) PlaceItem(x, y int, itm *item.Item) {
+	chunk, cX, cY := m.globalToChunkAndLocal(x, y)
+	chunk.items[cY][cX] = append([]*item.Item{itm}, chunk.items[cY][cX]...)
 }
 
 func (m Map) GetWidth() int {
-	return m.grid.Width()
+	return m.width
 }
 
 func (m Map) GetHeight() int {
-	return m.grid.Height()
+	return m.height
 }
 
 // Adjust the viewer according to the new position of the player
@@ -510,70 +564,84 @@ func (m Map) MoveCreature(c Creature, x, y int) {
 	m.Move(c, x, y)
 }
 
+func (m *Map) MovePlayer(player Creature, x, y int) {
+	oldX, oldY := player.GetCoordinates()
+
+	oldChunkCoordinates, newChunkCoordinates := globalToChunkCoordinates(oldX, oldY), globalToChunkCoordinates(x, y)
+	movingToNewChunk := oldChunkCoordinates.ChunkX != newChunkCoordinates.ChunkX || oldChunkCoordinates.ChunkY != newChunkCoordinates.ChunkY
+
+	if movingToNewChunk {
+		m.SaveChunks()
+	}
+	m.Move(player, x, y)
+	// If player moves to a new chunk, reload chunks
+	if movingToNewChunk {
+		m.LoadActiveChunks()
+	}
+
+}
+
 func (m Map) Move(c Creature, x, y int) {
 
 	if !m.IsPassable(x, y) {
 		return
 	}
 
-	cX, cY := c.GetCoordinates()
-	m.grid.c[cY][cX] = nil
+	oldX, oldY := c.GetCoordinates()
+	oldChunk, cX, cY := m.globalToChunkAndLocal(oldX, oldY)
+	oldChunk.c[cY][cX] = nil
 	c.SetCoordinates(x, y)
-	m.grid.c[y][x] = c
+	newChunk, newX, newY := m.globalToChunkAndLocal(x, y)
+	newChunk.c[newY][newX] = c
 }
 
 func (m Map) GetItems(x, y int) []*item.Item {
-	items := m.grid.items[y][x]
-	m.grid.items[y][x] = make([]*item.Item, 0)
+	chunk, cX, cY := m.globalToChunkAndLocal(x, y)
+	items := chunk.items[cY][cX]
+	chunk.items[cY][cX] = make([]*item.Item, 0)
 	return items
 }
 
 func (m Map) GetPlayer() Creature {
-	for _, row := range m.grid.c {
-		for _, c := range row {
-			if c == nil {
-				continue
-			}
-
-			if c.GetAlignment() == Player {
-				return c
-			}
-
-		}
-	}
-	return nil
+	return m.player
 }
 
 func (m Map) GetCreature(x, y int) Creature {
-	return m.grid.c[y][x]
+	chunk, cX, cY := m.globalToChunkAndLocal(x, y)
+	return chunk.c[cY][cX]
 }
 
-func (m Map) RenderTile(x, y int) ui.Element {
+func (m *Map) RenderTile(x, y int) ui.Element {
+	chunk, cX, cY := m.globalToChunkAndLocal(x, y)
+	if chunk == nil {
+		return ui.EmptyElement()
+	}
 
 	if m.GetCreature(x, y) != nil {
 		return m.GetCreature(x, y).Render()
 	} else if m.IsPassable(x, y) {
 		if m.HasItems(x, y) {
 			// pick an item that gives cover if it exists
-			for _, item := range m.grid.items[y][x] {
+			for _, item := range chunk.items[cY][cX] {
 				if item.HasComponent("cover") {
 					return item.Render()
 				}
 			}
 
-			return m.grid.items[y][x][0].Render()
+			return chunk.items[cY][cX][0].Render()
 		}
+
 		if m.IsDoor(x, y) {
 			return terrainData["ground"].Icon.Render()
 		}
 	}
-	return m.grid.terrain[y][x].Render()
-
+	return chunk.terrain[cY][cX].Render()
 }
 
 func (m Map) DeleteCreature(c Creature) {
 	x, y := c.GetCoordinates()
-	m.grid.c[y][x] = nil
+	chunk, cX, cY := m.globalToChunkAndLocal(x, y)
+	chunk.c[cY][cX] = nil
 }
 
 func (m Map) Render() {
@@ -585,8 +653,8 @@ func (m Map) Render() {
 		elems[i] = make([]ui.Element, m.v.width, m.v.width)
 	}
 
-	for y := 0; y < m.GetHeight(); y++ {
-		for x := 0; x < m.GetWidth(); x++ {
+	for y := 0; y < m.height; y++ {
+		for x := 0; x < m.width; x++ {
 			rX := x - m.v.x
 			rY := y - m.v.y
 			if rX >= 0 && rX < m.v.width && rY >= 0 && rY < m.v.height {
@@ -601,34 +669,36 @@ func (m Map) Render() {
 	ui.RenderGrid(0, 0, elems)
 }
 
-func (m *Map) IsDoor(x, y int) bool {
-	return m.grid.door[y][x]
+func (m Map) IsDoor(x, y int) bool {
+	chunk, cX, cY := m.globalToChunkAndLocal(x, y)
+	return chunk.door[cY][cX]
 }
 
-func (m *Map) ToggleDoor(x, y int, open bool) {
+func (m Map) ToggleDoor(x, y int, open bool) {
+	chunk, cX, cY := m.globalToChunkAndLocal(x, y)
 
-	if m.grid.door[y][x] {
+	if chunk.door[cY][cX] {
 		if open {
-			m.grid.passable[y][x] = true
-			m.grid.blocksVision[y][x] = false
+			chunk.passable[cY][cX] = true
+			chunk.blocksVision[cY][cX] = false
 		} else {
-			m.grid.passable[y][x] = false
-			m.grid.blocksVision[y][x] = m.grid.blocksVClosed[y][x]
+			chunk.passable[cY][cX] = false
+			chunk.blocksVision[cY][cX] = chunk.blocksVClosed[cY][cX]
 		}
 	}
 }
 
-func (m *Map) givesCover(x, y int) bool {
+func (m Map) givesCover(x, y int) bool {
+	chunk, cX, cY := m.globalToChunkAndLocal(x, y)
+	cover := !chunk.passable[cY][cX]
 
-	cover := !m.grid.passable[y][x]
-
-	for _, item := range m.grid.items[y][x] {
+	for _, item := range chunk.items[cY][cX] {
 		cover = cover || item.HasComponent("cover")
 	}
 	return cover
 }
 
-func (m *Map) isAdjacent(x1, y1, x2, y2 int) bool {
+func (m Map) isAdjacent(x1, y1, x2, y2 int) bool {
 	if x1 == x2 && y1 == y2 {
 		return false
 	}
@@ -643,7 +713,28 @@ func GetBonus(score int) int {
 	return (score - 10) / 2
 }
 
-type Coordinates struct {
-	X int
-	Y int
+func (m Map) InActiveChunks(x, y int) bool {
+	return m.chunk(globalToChunkCoordinates(x, y)) != nil
+}
+
+func (m Map) chunk(location ChunkCoordinates) *Grid {
+	pX, pY := m.player.GetCoordinates()
+	playerChunkCoordinates := globalToChunkCoordinates(pX, pY)
+	dX := location.ChunkX - playerChunkCoordinates.ChunkX
+	dY := location.ChunkY - playerChunkCoordinates.ChunkY
+
+	if math.Abs(float64(dX)) > 1 || math.Abs(float64(dY)) > 1 {
+		return nil
+	}
+	return m.activeChunks[dY+1][dX+1]
+}
+
+func globalToChunkCoordinates(x, y int) ChunkCoordinates {
+	return ChunkCoordinates{x / chunkSize, y / chunkSize, Coordinates{x % chunkSize, y % chunkSize}}
+}
+
+func (m Map) globalToChunkAndLocal(x, y int) (*Grid, int, int) {
+	chunkCoordinates := globalToChunkCoordinates(x, y)
+	chunk := m.chunk(chunkCoordinates)
+	return chunk, chunkCoordinates.Local.X, chunkCoordinates.Local.Y
 }

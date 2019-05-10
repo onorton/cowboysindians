@@ -75,7 +75,7 @@ func NewGrid(width int, height int) *Grid {
 
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
-			grid.NewTile("ground", x, y)
+			grid.newTile("ground", x, y)
 		}
 	}
 
@@ -83,15 +83,15 @@ func NewGrid(width int, height int) *Grid {
 
 }
 
-func (grid *Grid) Width() int {
+func (grid *Grid) width() int {
 	return len(grid.terrain[0])
 }
 
-func (grid *Grid) Height() int {
+func (grid *Grid) height() int {
 	return len(grid.terrain)
 }
 
-func (grid *Grid) NewTile(tileType string, x, y int) {
+func (grid *Grid) newTile(tileType string, x, y int) {
 	terrain := terrainData[tileType]
 	grid.terrain[y][x] = terrain.Icon
 	grid.passable[y][x] = terrain.Passable
@@ -154,9 +154,9 @@ func (grid *Grid) UnmarshalJSON(data []byte) error {
 	grid.blocksVision = v.BlocksVision
 	grid.blocksVClosed = v.BlocksVisionClosed
 	grid.items = v.Items
-	grid.c = make([][]Creature, grid.Height())
-	for y := 0; y < grid.Height(); y++ {
-		grid.c[y] = make([]Creature, grid.Width())
+	grid.c = make([][]Creature, grid.height())
+	for y := 0; y < grid.height(); y++ {
+		grid.c[y] = make([]Creature, grid.width())
 	}
 	return nil
 

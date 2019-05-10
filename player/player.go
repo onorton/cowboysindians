@@ -668,7 +668,7 @@ func (p *Player) weaponFullyLoaded() bool {
 // Check whether player has ammo for particular wielded weapon
 func (p *Player) hasAmmo() bool {
 	for _, items := range p.inventory {
-		if items[0].HasComponent("readable") && p.Weapon().AmmoTypeMatches(items[0]) {
+		if items[0].HasComponent("ammo") && p.Weapon().AmmoTypeMatches(items[0]) {
 			return true
 		}
 	}
@@ -768,7 +768,7 @@ func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
 
 		// If mount has not moved already, player can still do an action
 		if !p.mount.Moved() {
-			p.world.Move(p, newX, newY)
+			p.world.MovePlayer(p, newX, newY)
 			p.world.AdjustViewer()
 			p.mount.Move()
 			return false, ui.NoAction
@@ -777,7 +777,7 @@ func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
 		}
 	}
 
-	p.world.Move(p, newX, newY)
+	p.world.MovePlayer(p, newX, newY)
 	p.world.AdjustViewer()
 	return true, ui.NoAction
 }

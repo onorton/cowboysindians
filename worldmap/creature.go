@@ -118,6 +118,7 @@ type Creature interface {
 	GetAlignment() Alignment
 	Update()
 	GetID() string
+	SetMap(*Map)
 }
 
 type hasPosition interface {
@@ -135,3 +136,9 @@ type CanCrouch interface {
 	Standup()
 	Crouch()
 }
+
+const (
+	Player Alignment = iota
+	Enemy
+	Neutral
+)

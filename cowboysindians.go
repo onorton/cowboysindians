@@ -21,9 +21,10 @@ import (
 
 const windowWidth = 100
 const windowHeight = 25
-const width = 200
-const height = 200
+const width = 256
+const height = 256
 const saveFilename = "game.json"
+const worldSaveFilename = "game_world.json"
 
 func check(e error) {
 	if e != nil {
@@ -34,7 +35,7 @@ func check(e error) {
 type GameState struct {
 	PlayerIndex int
 	Time        int
-	Map         *worldmap.Map
+	Viewer      *worldmap.Viewer
 	Mounts      []*npc.Mount
 	Enemies     []*npc.Enemy
 	Npcs        []*npc.Npc
@@ -42,15 +43,17 @@ type GameState struct {
 	Target      string
 }
 
-func save(state GameState) {
+func save(state GameState, m *worldmap.Map) {
+	m.SaveChunks()
+
 	buffer := bytes.NewBufferString("{")
 
 	buffer.WriteString(fmt.Sprintf("\"PlayerIndex\":%d,\n", state.PlayerIndex))
 	buffer.WriteString(fmt.Sprintf("\"Time\":%d,\n", state.Time))
 
-	mapValue, err := json.Marshal(state.Map)
+	viewerValue, err := json.Marshal(state.Viewer)
 	check(err)
-	buffer.WriteString(fmt.Sprintf("\"Map\":%s,\n", mapValue))
+	buffer.WriteString(fmt.Sprintf("\"Viewer\":%s,\n", viewerValue))
 
 	enemiesValue, err := json.Marshal(state.Enemies)
 	check(err)
@@ -87,20 +90,13 @@ func load() GameState {
 	err = json.Unmarshal(data, &state)
 	check(err)
 
-	state.Player.SetMap(state.Map)
 	state.Player.LoadMount(state.Mounts)
 
 	for _, enemy := range state.Enemies {
-		enemy.SetMap(state.Map)
 		enemy.LoadMount(state.Mounts)
 	}
 
-	for _, mount := range state.Mounts {
-		mount.SetMap(state.Map)
-	}
-
 	for _, npc := range state.Npcs {
-		npc.SetMap(state.Map)
 		npc.LoadMount(state.Mounts)
 	}
 
@@ -171,9 +167,10 @@ func main() {
 	}
 
 	if !loaded {
-		m, mounts, enemies, npcs := world.GenerateWorld(width, height, windowWidth, windowHeight)
-		state.Map = m
-		state.Player = player.NewPlayer(state.Map)
+		mounts, enemies, npcs := world.GenerateWorld(worldSaveFilename, width, height)
+		state.Player = player.NewPlayer(nil)
+		x, y := state.Player.GetCoordinates()
+		state.Viewer = worldmap.NewViewer(x, y, windowWidth, windowHeight)
 		state.Mounts = mounts
 		state.Enemies = enemies
 		state.Npcs = npcs
@@ -185,16 +182,16 @@ func main() {
 		printOpeningText(target.GetName().FullName())
 	}
 
-	worldMap := state.Map
 	player := state.Player
 	mounts := state.Mounts
 	enemies := state.Enemies
 	npcs := state.Npcs
 
 	all := allCreatures(enemies, mounts, npcs, player)
+	worldMap := worldmap.NewMap(worldSaveFilename, width, height, state.Viewer, state.Player, all)
+	worldMap.LoadActiveChunks()
 	for _, c := range all {
-		x, y := c.GetCoordinates()
-		worldMap.Move(c, x, y)
+		c.SetMap(worldMap)
 	}
 
 	// Initial action is nothing
@@ -261,7 +258,7 @@ func main() {
 							message.PrintMessage("Do you wish to save? [yn]")
 
 							if quitAction := ui.GetInput(); quitAction == ui.Confirm {
-								save(state)
+								save(state, worldMap)
 							}
 							quit = true
 						case ui.Wait:
@@ -306,6 +303,10 @@ func main() {
 				}
 			} else {
 				if c.IsDead() {
+					continue
+				}
+				cX, cY := c.GetCoordinates()
+				if !worldMap.InActiveChunks(cX, cY) {
 					continue
 				}
 				c.Update()
