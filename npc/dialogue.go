@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"strings"
 
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/worldmap"
@@ -98,14 +99,17 @@ type shopkeeperDialogue struct {
 	seenPlayer bool
 	world      *worldmap.Map
 	b          worldmap.Building
+	t          worldmap.Town
 }
 
 func (d *shopkeeperDialogue) initialGreeting() {
 	pX, pY := d.world.GetPlayer().GetCoordinates()
 
-	storeGreetings := dialogueData[d.b.T.String()]
 	if !d.seenPlayer && d.b.Inside(pX, pY) {
-		message.Enqueue(fmt.Sprintf("\"%s %s\"", dialogueData["Greetings"][rand.Intn(len(dialogueData["Greetings"]))], storeGreetings[rand.Intn(len(storeGreetings))]))
+		storeGreetings := dialogueData[d.b.T.String()]
+		dialogue := dialogueData["Greetings"][rand.Intn(len(dialogueData["Greetings"]))] + " " + storeGreetings[rand.Intn(len(storeGreetings))]
+		dialogue = addTownToDialogue(dialogue, d.t.Name)
+		message.Enqueue(fmt.Sprintf("\"%s\"", dialogue))
 		d.seenPlayer = true
 	}
 	if d.seenPlayer && !d.b.Inside(pX, pY) {
@@ -151,8 +155,13 @@ func (d *shopkeeperDialogue) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	buffer.WriteString(fmt.Sprintf("\"Building\":%s", buildingValue))
+	buffer.WriteString(fmt.Sprintf("\"Building\":%s,", buildingValue))
 
+	townValue, err := json.Marshal(d.t)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Town\":%s", townValue))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -163,6 +172,7 @@ func (sd *shopkeeperDialogue) UnmarshalJSON(data []byte) error {
 	type sdJson struct {
 		SeenPlayer bool
 		Building   worldmap.Building
+		Town       worldmap.Town
 	}
 
 	var v sdJson
@@ -172,6 +182,7 @@ func (sd *shopkeeperDialogue) UnmarshalJSON(data []byte) error {
 	}
 	sd.seenPlayer = v.SeenPlayer
 	sd.b = v.Building
+	sd.t = v.Town
 
 	return nil
 }
@@ -180,13 +191,15 @@ type sheriffDialogue struct {
 	seenPlayer bool
 	world      *worldmap.Map
 	b          worldmap.Building
+	t          worldmap.Town
 }
 
 func (d *sheriffDialogue) initialGreeting() {
 	pX, pY := d.world.GetPlayer().GetCoordinates()
-
 	if !d.seenPlayer && d.b.Inside(pX, pY) {
-		message.Enqueue(fmt.Sprintf("\"%s %s\"", dialogueData["Greetings"][rand.Intn(len(dialogueData["Greetings"]))], dialogueData["Sheriff"][rand.Intn(len(dialogueData["Sheriff"]))]))
+		dialogue := dialogueData["Greetings"][rand.Intn(len(dialogueData["Greetings"]))] + " " + dialogueData["Sheriff"][rand.Intn(len(dialogueData["Sheriff"]))]
+		dialogue = addTownToDialogue(dialogue, d.t.Name)
+		message.Enqueue(fmt.Sprintf("\"%s\"", dialogue))
 		d.seenPlayer = true
 	}
 	if d.seenPlayer && !d.b.Inside(pX, pY) {
@@ -213,6 +226,10 @@ func (d *sheriffDialogue) setMap(world *worldmap.Map) {
 	d.world = world
 }
 
+func addTownToDialogue(dialogue string, townName string) string {
+	return strings.Replace(dialogue, "[town]", townName, -1)
+}
+
 func (d *sheriffDialogue) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
@@ -232,7 +249,13 @@ func (d *sheriffDialogue) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	buffer.WriteString(fmt.Sprintf("\"Building\":%s", buildingValue))
+	buffer.WriteString(fmt.Sprintf("\"Building\":%s,", buildingValue))
+
+	townValue, err := json.Marshal(d.t)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Town\":%s", townValue))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -243,7 +266,6 @@ func (sd *sheriffDialogue) UnmarshalJSON(data []byte) error {
 	type sdJson struct {
 		SeenPlayer bool
 		Building   worldmap.Building
-		Bounties   Bounties
 		Town       worldmap.Town
 	}
 
@@ -254,6 +276,7 @@ func (sd *sheriffDialogue) UnmarshalJSON(data []byte) error {
 	}
 	sd.seenPlayer = v.SeenPlayer
 	sd.b = v.Building
+	sd.t = v.Town
 	return nil
 }
 

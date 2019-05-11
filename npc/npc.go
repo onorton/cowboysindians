@@ -79,9 +79,9 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 	case Basic:
 		dialogue = &basicDialogue{false}
 	case Shopkeeper:
-		dialogue = &shopkeeperDialogue{false, world, b}
+		dialogue = &shopkeeperDialogue{false, world, b, t}
 	case Sheriff:
-		dialogue = &sheriffDialogue{false, world, b}
+		dialogue = &sheriffDialogue{false, world, b, t}
 	}
 
 	location := worldmap.Coordinates{x, y}

@@ -1,7 +1,7 @@
 {
   "Greetings": ["Howdy, partner!", "Howdy!", "Howdy, stranger!"],
-  "GunShop": ["Welcome to my store.", "Can I interest you in any of my wares?", "Welcome!"],
-  "Saloon": ["Have a drink.", "What's your poison?", "You look like you could use a drink."],
-  "Sheriff": ["What can I do ya for?", "What's the problem?"]
+  "GunShop": ["Welcome to my store.", "Can I interest you in any of my wares?", "Welcome!", "Welcome to the best gun store in the whole of [town]!", "You name a gun and I've probably got one somewhere."],
+  "Saloon": ["Have a drink.", "What's your poison?", "You look like you could use a drink.", "Here you'll find the best beer in all of [town]."],
+  "Sheriff": ["What can I do ya for?", "What's the problem?", "We're here to keep the law of [town]."]
 
 }
