@@ -1,11 +1,13 @@
 package worldmap
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math"
+	"os"
+	"strings"
 
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/ui"
@@ -50,7 +52,7 @@ type ChunkCoordinates struct {
 }
 
 type worldJson struct {
-	World World
+	World []*Grid
 }
 
 func (m Map) firstInitialised() bool {
@@ -68,21 +70,39 @@ func (m *Map) LoadActiveChunks() {
 	m.activeChunks = [3][3]*Grid{}
 	pX, pY := m.player.GetCoordinates()
 	newPlayerLocation := globalToChunkCoordinates(pX, pY)
-	data, err := ioutil.ReadFile(m.filename)
-	check(err)
 
-	var world worldJson
-	err = json.Unmarshal(data, &world)
+	file, err := os.Open(m.filename)
 	check(err)
+	defer file.Close()
 
+	reader := bufio.NewReader(file)
+	// Determine what the line numbers are for the chunks
+	lineToChunks := map[int]Coordinates{}
 	for y := 0; y < 3; y++ {
 		for x := 0; x < 3; x++ {
-			cX, cY := newPlayerLocation.ChunkX+x-1, newPlayerLocation.ChunkY+y-1
-			if cX >= 0 && cX < m.width/chunkSize && cY >= 0 && cY < m.height/chunkSize {
-				m.activeChunks[y][x] = world.World[cY][cX]
+			index := m.verticalChunks()*(newPlayerLocation.ChunkY+y-1) + newPlayerLocation.ChunkX + x - 1
+			if index >= 0 && index < m.verticalChunks()*m.horizontalChunks() {
+				lineToChunks[index] = Coordinates{x, y}
 			}
 		}
 	}
+	currentLine := 1
+	reader.ReadString('\n')
+	for {
+		line, err := reader.ReadString('\n')
+		if coordinates, ok := lineToChunks[currentLine-1]; ok {
+			var chunk Grid
+			err := json.Unmarshal([]byte(strings.Trim(line, ",\n")), &chunk)
+			check(err)
+			m.activeChunks[coordinates.Y][coordinates.X] = &chunk
+		}
+
+		currentLine++
+		if err != nil {
+			break
+		}
+	}
+
 	// Place creatures
 	for _, c := range m.creatures {
 		x, y := c.GetCoordinates()
@@ -93,29 +113,52 @@ func (m *Map) LoadActiveChunks() {
 }
 
 func (m *Map) SaveChunks() {
-	data, err := ioutil.ReadFile(m.filename)
-	check(err)
-
 	pX, pY := m.player.GetCoordinates()
 	newPlayerLocation := globalToChunkCoordinates(pX, pY)
 
-	var world worldJson
-	err = json.Unmarshal(data, &world)
+	file, err := os.Open(m.filename)
 	check(err)
+	outputFile, err := os.Create("tmp_" + m.filename)
+	check(err)
+	defer file.Close()
+	defer outputFile.Close()
+
+	reader := bufio.NewReader(file)
+	writer := bufio.NewWriter(outputFile)
+	// Determine what the line numbers are for the chunks
+
+	lineToChunks := map[int]Coordinates{}
 	for y := 0; y < 3; y++ {
 		for x := 0; x < 3; x++ {
-			cX, cY := newPlayerLocation.ChunkX+x-1, newPlayerLocation.ChunkY+y-1
-			if cX >= 0 && cX < m.width/chunkSize && cY >= 0 && cY < m.height/chunkSize {
-				world.World[cY][cX] = m.activeChunks[y][x]
+			index := m.verticalChunks()*(newPlayerLocation.ChunkY+y-1) + newPlayerLocation.ChunkX + x - 1
+			if index >= 0 && index < m.verticalChunks()*m.horizontalChunks() {
+				lineToChunks[index] = Coordinates{x, y}
 			}
 		}
 	}
-
-	worldJson, err := json.Marshal(world)
+	currentLine := 1
+	firstLine, err := reader.ReadString('\n')
 	check(err)
-	buffer := bytes.NewBuffer(worldJson)
+	writer.WriteString(firstLine)
+	for {
+		line, err := reader.ReadString('\n')
+		if coordinates, ok := lineToChunks[currentLine-1]; ok {
+			chunkData, err := m.activeChunks[coordinates.Y][coordinates.X].MarshalJSON()
+			check(err)
+			writer.Write(chunkData)
+			writer.WriteString("\n")
+		} else {
+			writer.WriteString(line)
+		}
 
-	err = ioutil.WriteFile(m.filename, buffer.Bytes(), 0644)
+		currentLine++
+		if err != nil {
+			break
+		}
+	}
+	err = writer.Flush()
+	check(err)
+	err = os.Rename("tmp_"+m.filename, m.filename)
 	check(err)
 }
 
@@ -529,6 +572,14 @@ func (m Map) GetWidth() int {
 
 func (m Map) GetHeight() int {
 	return m.height
+}
+
+func (m Map) horizontalChunks() int {
+	return m.width / chunkSize
+}
+
+func (m Map) verticalChunks() int {
+	return m.height / chunkSize
 }
 
 // Adjust the viewer according to the new position of the player

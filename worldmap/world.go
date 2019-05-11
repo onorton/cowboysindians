@@ -1,6 +1,11 @@
 package worldmap
 
-import "github.com/onorton/cowboysindians/item"
+import (
+	"bytes"
+	"encoding/json"
+
+	"github.com/onorton/cowboysindians/item"
+)
 
 type World [][]*Grid
 
@@ -53,4 +58,22 @@ func (world World) Height() int {
 func (world World) globalToChunkAndLocal(x, y int) (*Grid, int, int) {
 	chunkCoordinates := globalToChunkCoordinates(x, y)
 	return world[chunkCoordinates.ChunkY][chunkCoordinates.ChunkX], chunkCoordinates.Local.X, chunkCoordinates.Local.Y
+}
+
+func (world World) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("[\n")
+
+	for _, row := range world {
+		for _, chunk := range row {
+			chunkJson, err := json.Marshal(chunk)
+			check(err)
+			buffer.Write(chunkJson)
+			buffer.WriteString(",\n")
+		}
+	}
+	buffer = bytes.NewBuffer(bytes.TrimRight(buffer.Bytes(), ",\n"))
+	buffer.WriteRune('\n')
+
+	buffer.WriteString("]\n")
+	return buffer.Bytes(), nil
 }

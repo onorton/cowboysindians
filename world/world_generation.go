@@ -2,7 +2,6 @@ package world
 
 import (
 	"bytes"
-	"encoding/json"
 	"io/ioutil"
 	"math"
 	"math/rand"
@@ -41,7 +40,7 @@ func GenerateWorld(filename string, width, height int) ([]*npc.Mount, []*npc.Ene
 	enemies := generateEnemies(world, 2)
 	npcs := generateNpcs(world, towns, buildings, 10)
 
-	worldJson, err := json.Marshal(world)
+	worldJson, err := world.MarshalJSON()
 	check(err)
 	buffer := bytes.NewBufferString("{")
 	buffer.WriteString("\"World\":")
