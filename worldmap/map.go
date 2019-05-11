@@ -18,18 +18,6 @@ const padding = 5
 
 type Alignment int
 
-func NewMap(filename string, width, height int, viewer *Viewer, player Creature, creatures []Creature) *Map {
-
-	newMap := new(Map)
-	newMap.v = viewer
-	newMap.width = width
-	newMap.height = height
-	newMap.filename = filename
-	newMap.player = player
-	newMap.creatures = creatures
-	return newMap
-}
-
 type Map struct {
 	activeChunks [3][3]*Grid
 	filename     string
@@ -51,18 +39,15 @@ type ChunkCoordinates struct {
 	Local  Coordinates
 }
 
-type worldJson struct {
-	World []*Grid
-}
-
-func (m Map) firstInitialised() bool {
-	initialised := true
-	for _, row := range m.activeChunks {
-		for _, chunk := range row {
-			initialised = initialised && chunk == nil
-		}
-	}
-	return initialised
+func NewMap(filename string, width, height int, viewer *Viewer, player Creature, creatures []Creature) *Map {
+	newMap := new(Map)
+	newMap.v = viewer
+	newMap.width = width
+	newMap.height = height
+	newMap.filename = filename
+	newMap.player = player
+	newMap.creatures = creatures
+	return newMap
 }
 
 func (m *Map) LoadActiveChunks() {
@@ -332,7 +317,7 @@ func (m Map) IsVisible(c CanSee, x1, y1 int) bool {
 			}
 
 			// If square in path gives cover, is adjacent to the target square and c is crouching then target square is invisible
-			if m.IsValid(x, y) && m.isAdjacent(x, y, x1, y1) && crouching && m.givesCover(x, y) {
+			if m.IsValid(x, y) && isAdjacent(x, y, x1, y1) && crouching && m.givesCover(x, y) {
 				return false
 			}
 		}
@@ -352,7 +337,7 @@ func (m Map) IsVisible(c CanSee, x1, y1 int) bool {
 			}
 
 			// If square in path gives cover, is adjacent to the target square and c is crouching then target square is invisible
-			if m.IsValid(x, y) && m.isAdjacent(x, y, x1, y1) && crouching && m.givesCover(x, y) {
+			if m.IsValid(x, y) && isAdjacent(x, y, x1, y1) && crouching && m.givesCover(x, y) {
 				return false
 			}
 
@@ -468,7 +453,7 @@ func (m Map) TargetBehindCover(a hasPosition, t Creature) bool {
 			}
 
 			// If square in path gives cover, is adjacent to the target square and target is crouching then target is behind cover
-			if m.IsValid(x, y) && m.isAdjacent(x, y, x1, y1) && t.IsCrouching() && m.givesCover(x, y) {
+			if m.IsValid(x, y) && isAdjacent(x, y, x1, y1) && t.IsCrouching() && m.givesCover(x, y) {
 				return true
 			}
 		}
@@ -488,7 +473,7 @@ func (m Map) TargetBehindCover(a hasPosition, t Creature) bool {
 			}
 
 			// If square in path gives cover, is adjacent to the target square and target is crouching then target is behind cover
-			if m.IsValid(x, y) && m.isAdjacent(x, y, x1, y1) && t.IsCrouching() && m.givesCover(x, y) {
+			if m.IsValid(x, y) && isAdjacent(x, y, x1, y1) && t.IsCrouching() && m.givesCover(x, y) {
 				return true
 			}
 		}
@@ -533,7 +518,7 @@ func (m Map) BehindCover(x1, y1 int, a Creature) bool {
 			}
 
 			// If square in path gives cover, is adjacent to the target square then target square would be behind cover
-			if m.IsValid(x, y) && m.isAdjacent(x, y, x1, y1) && m.givesCover(x, y) {
+			if m.IsValid(x, y) && isAdjacent(x, y, x1, y1) && m.givesCover(x, y) {
 				return true
 			}
 		}
@@ -553,7 +538,7 @@ func (m Map) BehindCover(x1, y1 int, a Creature) bool {
 			}
 
 			// If square in path gives cover, is adjacent to the target square then target square would be behind cover
-			if m.IsValid(x, y) && m.isAdjacent(x, y, x1, y1) && m.givesCover(x, y) {
+			if m.IsValid(x, y) && isAdjacent(x, y, x1, y1) && m.givesCover(x, y) {
 				return true
 			}
 		}
@@ -749,7 +734,7 @@ func (m Map) givesCover(x, y int) bool {
 	return cover
 }
 
-func (m Map) isAdjacent(x1, y1, x2, y2 int) bool {
+func isAdjacent(x1, y1, x2, y2 int) bool {
 	if x1 == x2 && y1 == y2 {
 		return false
 	}
