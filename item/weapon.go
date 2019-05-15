@@ -33,6 +33,8 @@ const (
 	NoAmmo WeaponType = iota
 	Pistol
 	Shotgun
+	Rifle
+	Bow
 )
 
 var weaponData map[string]WeaponAttributes

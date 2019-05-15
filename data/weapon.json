@@ -12,7 +12,7 @@
 			"Bonus": 0
 
 		},
-		"Probability": 1
+		"Probability": 1.0
 	},
 
 	"pistol" : {
@@ -27,7 +27,7 @@
 			"Number": 1,
 			"Bonus": -1
 		},
-		"Probability": 1
+		"Probability": 1.0
 
 	},
 
@@ -37,13 +37,43 @@
 		"Type": 2,
 		"Capacity": 2,
 		"Weight": 15,
-		"Value": 3000,
+		"Value": 4000,
 		"Damage": {
 			"Dice": 6,
 			"Number": 1,
 			"Bonus": 3
 		},
 		"Probability": 0.7
+	},
+
+	"rifle" : {
+		"Icon": {"Icon": 114, "Colour": 2},
+		"Range": 20,
+		"Type": 3,
+		"Capacity": 15,
+		"Weight": 12,
+		"Value": 8000,
+		"Damage": {
+			"Dice": 4,
+			"Number": 1,
+			"Bonus": 0
+		},
+		"Probability": 1.0
+	},
+
+	"hunting bow" : {
+		"Icon": {"Icon": 41, "Colour": 8},
+		"Range": 18,
+		"Type": 4,
+		"Capacity": 1,
+		"Weight": 10,
+		"Value": 3000,
+		"Damage": {
+			"Dice": 6,
+			"Number": 1,
+			"Bonus": 2
+		},
+		"Probability": 1.0
 	},
 
 	"baseball bat" : {
@@ -59,7 +89,35 @@
 			"Bonus": 0
 		},
 		"Probability": 1.0
+	},
+
+	"bowie knife" : {
+		"Icon": {"Icon": 107, "Colour": 8},
+		"Range": 0,
+		"Type": 0,
+		"Capacity": 0,
+		"Weight": 2,
+		"Value": 1000,
+		"Damage": {
+			"Dice": 6,
+			"Number": 1,
+			"Bonus": 2
+		},
+		"Probability": 1.0
+	},
+
+	"spear" : {
+		"Icon": {"Icon": 124, "Colour": 8},
+		"Range": 0,
+		"Type": 0,
+		"Capacity": 0,
+		"Weight": 5,
+		"Value": 200,
+		"Damage": {
+			"Dice": 4,
+			"Number": 1,
+			"Bonus": 2
+		},
+		"Probability": 1.0
 	}
-
-
 }
