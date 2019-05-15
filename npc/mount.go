@@ -51,6 +51,43 @@ func NewMount(name string, x, y int, world *worldmap.Map) *Mount {
 	m := &Mount{&ui.PlainName{name}, id, location, mount.Icon, mount.Initiative, attributes, nil, world, false, ai}
 	return m
 }
+
+func generateMount(mountProbabilities map[string]float64, x, y int) *Mount {
+	if mountProbabilities == nil {
+		return nil
+	}
+
+	mountType := chooseMount(mountProbabilities)
+	if mountType != "None" {
+		return NewMount(mountType, x, y, nil)
+	}
+	return nil
+}
+
+func chooseMount(probabilites map[string]float64) string {
+	max := 0.0
+
+	for _, probability := range probabilites {
+		if probability > 0 {
+			inverse := 1.0 / probability
+			if inverse > max {
+				max = inverse
+			}
+		}
+	}
+	items := make([]string, 0)
+
+	for name, probability := range probabilites {
+		count := int(probability * max)
+		for i := 0; i < count; i++ {
+			items = append(items, name)
+		}
+	}
+
+	n := rand.Intn(len(items))
+	return items[n]
+}
+
 func (m *Mount) Render() ui.Element {
 	return m.icon.Render()
 }

@@ -18,6 +18,7 @@ const (
 	Basic dialogueType = iota
 	Shopkeeper
 	Sheriff
+	EnemyDialogue
 )
 
 type interaction int
@@ -197,7 +198,7 @@ type sheriffDialogue struct {
 func (d *sheriffDialogue) initialGreeting() {
 	pX, pY := d.world.GetPlayer().GetCoordinates()
 	if !d.seenPlayer && d.b.Inside(pX, pY) {
-		dialogue := dialogueData["Greetings"][rand.Intn(len(dialogueData["Greetings"]))] + " " + dialogueData["Sheriff"][rand.Intn(len(dialogueData["Sheriff"]))]
+		dialogue := choose(dialogueData["Greetings"]) + " " + choose(dialogueData["Sheriff"])
 		dialogue = addTownToDialogue(dialogue, d.t.Name)
 		message.Enqueue(fmt.Sprintf("\"%s\"", dialogue))
 		d.seenPlayer = true
@@ -224,10 +225,6 @@ func (d *sheriffDialogue) resetSeen() {
 
 func (d *sheriffDialogue) setMap(world *worldmap.Map) {
 	d.world = world
-}
-
-func addTownToDialogue(dialogue string, townName string) string {
-	return strings.Replace(dialogue, "[town]", townName, -1)
 }
 
 func (d *sheriffDialogue) MarshalJSON() ([]byte, error) {
@@ -280,6 +277,75 @@ func (sd *sheriffDialogue) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type enemyDialogue struct {
+	seenPlayer bool
+}
+
+func (d *enemyDialogue) initialGreeting() {
+	if !d.seenPlayer {
+		message.Enqueue(fmt.Sprintf("\"%s\"", choose(dialogueData["Enemy Greetings"])))
+		d.seenPlayer = true
+	}
+}
+
+func (d *enemyDialogue) interact() interaction {
+	message.PrintMessage(fmt.Sprintf("\"%s\"", choose(dialogueData["Threats"])))
+	return Normal
+}
+
+func (d *enemyDialogue) resetSeen() {
+	d.seenPlayer = false
+}
+
+func (d *enemyDialogue) potentiallyThreaten() {
+	// chance of threatening player
+	if rand.Intn(10) == 0 {
+		message.Enqueue(fmt.Sprintf("\"%s\"", choose(dialogueData["Threats"])))
+	}
+}
+
+func (d *enemyDialogue) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+	typeValue, err := json.Marshal(EnemyDialogue)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Type\":%s,", typeValue))
+
+	seenPlayerValue, err := json.Marshal(d.seenPlayer)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"SeenPlayer\":%s", seenPlayerValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (d *enemyDialogue) UnmarshalJSON(data []byte) error {
+
+	type edJson struct {
+		SeenPlayer bool
+	}
+
+	var v edJson
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	d.seenPlayer = v.SeenPlayer
+
+	return nil
+}
+
+func choose(dialogueChoices []string) string {
+	return dialogueChoices[rand.Intn(len(dialogueChoices))]
+}
+
+func addTownToDialogue(dialogue string, townName string) string {
+	return strings.Replace(dialogue, "[town]", townName, -1)
+}
+
 func unmarshalDialogue(dialogue map[string]interface{}) dialogue {
 	dialogueJson, err := json.Marshal(dialogue)
 	check(err)
@@ -300,10 +366,13 @@ func unmarshalDialogue(dialogue map[string]interface{}) dialogue {
 		err = json.Unmarshal(dialogueJson, &sd)
 		check(err)
 		return &sd
+	case EnemyDialogue:
+		var ed enemyDialogue
+		err = json.Unmarshal(dialogueJson, &ed)
+		check(err)
+		return &ed
 	}
-
 	return nil
-
 }
 
 type dialogue interface {

@@ -492,9 +492,17 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 }
 
 type enemyAi struct {
+	dialogue *enemyDialogue
 }
 
 func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
+	target := world.GetPlayer()
+	tX, tY := target.GetCoordinates()
+
+	if world.InConversationRange(c.(worldmap.Creature), target) {
+		ai.dialogue.initialGreeting()
+	}
+
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
 
@@ -532,6 +540,9 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 				}
 			} else {
 				l := possibleLocations[rand.Intn(len(possibleLocations))]
+				if l == (worldmap.Coordinates{tX, tY}) {
+					ai.dialogue.potentiallyThreaten()
+				}
 				return MountedMoveAction{r, world, l.X, l.Y}
 			}
 		}
@@ -564,11 +575,10 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 		return NoAction{}
 	}
 
-	target := world.GetPlayer()
-	tX, tY := target.GetCoordinates()
-
 	if itemUser, ok := c.(usesItems); ok {
 		if distance := worldmap.Distance(location.X, location.Y, tX, tY); itemUser.ranged() && distance < float64(itemUser.Weapon().Range) && world.IsVisible(c, tX, tY) {
+
+			ai.dialogue.potentiallyThreaten()
 			// if weapon loaded, shoot at target else if enemy has ammo, load weapon
 			if itemUser.weaponLoaded() {
 				return RangedAttackAction{c, world, target}
@@ -608,6 +618,9 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 			}
 		} else if r, ok := c.(Rider); ok && (r.Mount() == nil || !r.Mount().Moved()) {
 			l := possibleLocations[rand.Intn(len(possibleLocations))]
+			if l == (worldmap.Coordinates{tX, tY}) {
+				ai.dialogue.potentiallyThreaten()
+			}
 			return MoveAction{c, world, l.X, l.Y}
 		}
 	} else if itemHolder, ok := c.(holdsItems); ok {
@@ -650,10 +663,30 @@ func unmarshalAi(ai map[string]interface{}) ai {
 func (ai enemyAi) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	buffer.WriteString("\"Type\":\"enemy\"")
+	buffer.WriteString("\"Type\":\"enemy\",")
+
+	dialogueValue, err := json.Marshal(ai.dialogue)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Dialogue\":%s", dialogueValue))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
+}
+
+func (ai *enemyAi) UnmarshalJSON(data []byte) error {
+	type enemyAiJson struct {
+		Dialogue map[string]interface{}
+	}
+
+	var v enemyAiJson
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	ai.dialogue = unmarshalDialogue(v.Dialogue).(*enemyDialogue)
+	return nil
 }
 
 func generateMap(world *worldmap.Map, goals []worldmap.Coordinates, location worldmap.Coordinates, d int) [][]int {

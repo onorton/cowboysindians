@@ -34,6 +34,7 @@ type NpcAttributes struct {
 	Inventory     []*item.ItemDefinition
 	ShopInventory map[string]int
 	DialogueType  dialogueType
+	Mount         map[string]float64
 }
 
 var npcData map[string]NpcAttributes = fetchNpcData()
@@ -65,7 +66,7 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 		"str":         worldmap.NewAttribute(n.Str, n.Str),
 		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
 		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
-	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", nil, world, npcAi{worldmap.NewRandomWaypoint(world, location)}, &basicDialogue{false}}
+	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, npcAi{worldmap.NewRandomWaypoint(world, location)}, &basicDialogue{false}}
 	npc.initialiseInventory(n.Inventory)
 	event.Subscribe(npc)
 	return npc
@@ -107,7 +108,7 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
 		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
 
-	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", nil, world, ai, dialogue}
+	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue}
 	for c, count := range n.ShopInventory {
 
 		for i := 0; i < count; i++ {

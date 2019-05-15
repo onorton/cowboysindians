@@ -26,6 +26,7 @@ type EnemyAttributes struct {
 	Encumbrance int
 	Money       int
 	Inventory   []*item.ItemDefinition
+	Mount       map[string]float64
 }
 
 var enemyData map[string]EnemyAttributes = fetchEnemyData()
@@ -48,7 +49,7 @@ func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 		"str":         worldmap.NewAttribute(enemy.Str, enemy.Str),
 		"dex":         worldmap.NewAttribute(enemy.Dex, enemy.Dex),
 		"encumbrance": worldmap.NewAttribute(enemy.Encumbrance, enemy.Encumbrance)}
-	e := &Enemy{&ui.PlainName{name}, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, false, enemy.Money, nil, nil, make([]*item.Item, 0), "", nil, world, enemyAi{}}
+	e := &Enemy{&ui.PlainName{name}, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, false, enemy.Money, nil, nil, make([]*item.Item, 0), "", generateMount(enemy.Mount, x, y), world, enemyAi{&enemyDialogue{false}}}
 	for _, itemDefinition := range enemy.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm *item.Item = nil

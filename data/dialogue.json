@@ -1,5 +1,7 @@
 {
   "Greetings": ["Howdy, partner!", "Howdy!", "Howdy, stranger!"],
+  "Enemy Greetings": ["Don't move!", "I'll be takin' your things. Then nobody gets hurt.", "Where do ya think you're goin'?"],
+  "Threats": ["I'll gut you like a fish!", "You are dead!", "Think this is my first fight?", "I'm gonna put a hole right through your head!"],
   "GunShop": ["Welcome to my store.", "Can I interest you in any of my wares?", "Welcome!", "Welcome to the best gun store in the whole of [town]!", "You name a gun and I've probably got one somewhere."],
   "Saloon": ["Have a drink.", "What's your poison?", "You look like you could use a drink.", "Here you'll find the best beer in all of [town]."],
   "Sheriff": ["What can I do ya for?", "What's the problem?", "We're here to keep the law of [town]."]
