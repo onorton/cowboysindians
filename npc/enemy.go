@@ -26,6 +26,7 @@ type EnemyAttributes struct {
 	Encumbrance  int
 	Money        int
 	DialogueType *dialogueType
+	AiType       string
 	Inventory    []*item.ItemDefinition
 	Mount        map[string]float64
 }
@@ -44,13 +45,15 @@ func fetchEnemyData() map[string]EnemyAttributes {
 func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 	enemy := enemyData[name]
 	id := xid.New().String()
+	dialogue := newDialogue(enemy.DialogueType, world, nil, nil)
+	ai := newAi(enemy.AiType, world, worldmap.Coordinates{x, y}, nil, nil, dialogue)
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(enemy.Hp, enemy.Hp),
 		"ac":          worldmap.NewAttribute(enemy.Ac, enemy.Ac),
 		"str":         worldmap.NewAttribute(enemy.Str, enemy.Str),
 		"dex":         worldmap.NewAttribute(enemy.Dex, enemy.Dex),
 		"encumbrance": worldmap.NewAttribute(enemy.Encumbrance, enemy.Encumbrance)}
-	e := &Enemy{&ui.PlainName{name}, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, false, enemy.Money, nil, nil, make([]*item.Item, 0), "", generateMount(enemy.Mount, x, y), world, enemyAi{&enemyDialogue{false}}}
+	e := &Enemy{&ui.PlainName{name}, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, false, enemy.Money, nil, nil, make([]*item.Item, 0), "", generateMount(enemy.Mount, x, y), world, ai}
 	for _, itemDefinition := range enemy.Inventory {
 		for i := 0; i < itemDefinition.Amount; i++ {
 			var itm *item.Item = nil

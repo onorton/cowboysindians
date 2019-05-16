@@ -6,6 +6,7 @@
     "Ac": 12,
     "Str": 13,
     "Dex": 12,
-    "Encumbrance": 100
+    "Encumbrance": 100,
+    "AiType": "mount"
   }
 }

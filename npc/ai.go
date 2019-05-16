@@ -48,6 +48,24 @@ type ai interface {
 	update(hasAi, *worldmap.Map) Action
 }
 
+func newAi(aiType string, world *worldmap.Map, location worldmap.Coordinates, town *worldmap.Town, building *worldmap.Building, dialogue dialogue) ai {
+	switch aiType {
+	case "mount":
+		return mountAi{worldmap.NewRandomWaypoint(world, location)}
+	case "npc":
+		if building != nil {
+			return npcAi{worldmap.NewWithinBuilding(world, *building, location)}
+		} else {
+			return npcAi{worldmap.NewRandomWaypoint(world, location)}
+		}
+	case "sheriff":
+		return newSheriffAi(location, *town)
+	case "enemy":
+		return enemyAi{dialogue.(*enemyDialogue)}
+	}
+	return nil
+}
+
 type mountAi struct {
 	waypoint worldmap.WaypointSystem
 }

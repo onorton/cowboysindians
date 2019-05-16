@@ -34,6 +34,7 @@ type NpcAttributes struct {
 	Inventory     []*item.ItemDefinition
 	ShopInventory map[string]int
 	DialogueType  *dialogueType
+	AiType        string
 	Mount         map[string]float64
 }
 
@@ -58,8 +59,10 @@ func generateName(npcType string) *npcName {
 func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 	n := npcData[npcType]
 	id := xid.New().String()
-	dialogue := getDialogue(n.DialogueType, world, worldmap.Town{}, worldmap.Building{})
+	dialogue := newDialogue(n.DialogueType, world, nil, nil)
 	location := worldmap.Coordinates{x, y}
+	ai := newAi(n.AiType, world, location, nil, nil, dialogue)
+
 	name := generateName(npcType)
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(n.Hp, n.Hp),
@@ -67,7 +70,7 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 		"str":         worldmap.NewAttribute(n.Str, n.Str),
 		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
 		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
-	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, npcAi{worldmap.NewRandomWaypoint(world, location)}, dialogue}
+	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue}
 	npc.initialiseInventory(n.Inventory)
 	event.Subscribe(npc)
 	return npc
@@ -76,7 +79,7 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Town, b worldmap.Building) *Npc {
 	n := npcData[npcType]
 	id := xid.New().String()
-	dialogue := getDialogue(n.DialogueType, world, t, b)
+	dialogue := newDialogue(n.DialogueType, world, &t, &b)
 
 	location := worldmap.Coordinates{x, y}
 
@@ -86,13 +89,7 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 	} else {
 		name = generateName(npcType)
 	}
-
-	var ai ai
-	if npcType == "sheriff" {
-		ai = newSheriffAi(location, t)
-	} else {
-		ai = npcAi{worldmap.NewWithinBuilding(world, b, location)}
-	}
+	ai := newAi(n.AiType, world, location, &t, &b, dialogue)
 
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(n.Hp, n.Hp),

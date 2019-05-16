@@ -40,7 +40,7 @@ func fetchDialogueData() map[string][]string {
 	return eD
 }
 
-func getDialogue(dialogueType *dialogueType, world *worldmap.Map, t worldmap.Town, b worldmap.Building) dialogue {
+func newDialogue(dialogueType *dialogueType, world *worldmap.Map, t *worldmap.Town, b *worldmap.Building) dialogue {
 	if dialogueType == nil {
 		return nil
 	}
@@ -49,9 +49,9 @@ func getDialogue(dialogueType *dialogueType, world *worldmap.Map, t worldmap.Tow
 	case Basic:
 		return &basicDialogue{false}
 	case Shopkeeper:
-		return &shopkeeperDialogue{false, world, b, t}
+		return &shopkeeperDialogue{false, world, *b, *t}
 	case Sheriff:
-		return &sheriffDialogue{false, world, b, t}
+		return &sheriffDialogue{false, world, *b, *t}
 	case EnemyDialogue:
 		return &enemyDialogue{false}
 	}
