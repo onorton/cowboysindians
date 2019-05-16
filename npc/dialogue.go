@@ -40,6 +40,24 @@ func fetchDialogueData() map[string][]string {
 	return eD
 }
 
+func getDialogue(dialogueType *dialogueType, world *worldmap.Map, t worldmap.Town, b worldmap.Building) dialogue {
+	if dialogueType == nil {
+		return nil
+	}
+
+	switch *dialogueType {
+	case Basic:
+		return &basicDialogue{false}
+	case Shopkeeper:
+		return &shopkeeperDialogue{false, world, b, t}
+	case Sheriff:
+		return &sheriffDialogue{false, world, b, t}
+	case EnemyDialogue:
+		return &enemyDialogue{false}
+	}
+	return &basicDialogue{false}
+}
+
 type basicDialogue struct {
 	seenPlayer bool
 }

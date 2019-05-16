@@ -33,7 +33,7 @@ type NpcAttributes struct {
 	Money         int
 	Inventory     []*item.ItemDefinition
 	ShopInventory map[string]int
-	DialogueType  dialogueType
+	DialogueType  *dialogueType
 	Mount         map[string]float64
 }
 
@@ -58,6 +58,7 @@ func generateName(npcType string) *npcName {
 func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 	n := npcData[npcType]
 	id := xid.New().String()
+	dialogue := getDialogue(n.DialogueType, world, worldmap.Town{}, worldmap.Building{})
 	location := worldmap.Coordinates{x, y}
 	name := generateName(npcType)
 	attributes := map[string]*worldmap.Attribute{
@@ -66,7 +67,7 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 		"str":         worldmap.NewAttribute(n.Str, n.Str),
 		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
 		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
-	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, npcAi{worldmap.NewRandomWaypoint(world, location)}, &basicDialogue{false}}
+	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, npcAi{worldmap.NewRandomWaypoint(world, location)}, dialogue}
 	npc.initialiseInventory(n.Inventory)
 	event.Subscribe(npc)
 	return npc
@@ -75,15 +76,7 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Town, b worldmap.Building) *Npc {
 	n := npcData[npcType]
 	id := xid.New().String()
-	var dialogue dialogue
-	switch n.DialogueType {
-	case Basic:
-		dialogue = &basicDialogue{false}
-	case Shopkeeper:
-		dialogue = &shopkeeperDialogue{false, world, b, t}
-	case Sheriff:
-		dialogue = &sheriffDialogue{false, world, b, t}
-	}
+	dialogue := getDialogue(n.DialogueType, world, t, b)
 
 	location := worldmap.Coordinates{x, y}
 

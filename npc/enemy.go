@@ -17,16 +17,17 @@ import (
 )
 
 type EnemyAttributes struct {
-	Icon        icon.Icon
-	Initiative  int
-	Hp          int
-	Ac          int
-	Str         int
-	Dex         int
-	Encumbrance int
-	Money       int
-	Inventory   []*item.ItemDefinition
-	Mount       map[string]float64
+	Icon         icon.Icon
+	Initiative   int
+	Hp           int
+	Ac           int
+	Str          int
+	Dex          int
+	Encumbrance  int
+	Money        int
+	DialogueType *dialogueType
+	Inventory    []*item.ItemDefinition
+	Mount        map[string]float64
 }
 
 var enemyData map[string]EnemyAttributes = fetchEnemyData()

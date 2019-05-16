@@ -8,7 +8,7 @@
 		"Dex": 13,
 		"Encumbrance": 100,
 		"Money": 1000,
-		"DialogueType": 3, 
+		"DialogueType": 3,
 		"Inventory": [
 		{"Category": "Weapon", "Name": "pistol", "Amount": 1},
 		{"Category": "Ammo", "Name": "pistol bullet","Amount": 5},
