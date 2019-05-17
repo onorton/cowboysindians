@@ -246,6 +246,9 @@ func (m Map) IsValid(x, y int) bool {
 }
 
 func (m Map) IsPassable(x, y int) bool {
+	if !m.InActiveChunks(x, y) {
+		return false
+	}
 	chunk, cX, cY := m.globalToChunkAndLocal(x, y)
 	return chunk.passable[cY][cX]
 }

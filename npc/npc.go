@@ -52,7 +52,12 @@ func fetchNpcData() map[string]NpcAttributes {
 func generateName(npcType string) *npcName {
 	firstName := Names.FirstNames[rand.Intn(len(Names.FirstNames))]
 	lastName := Names.LastNames[rand.Intn(len(Names.LastNames))]
-
+	switch npcType {
+	case "sheriff":
+		return &npcName{fmt.Sprintf("Sheriff %s", lastName), npcType, false}
+	case "deputy":
+		return &npcName{fmt.Sprintf("Deputy %s", lastName), npcType, false}
+	}
 	return &npcName{firstName + " " + lastName, npcType, false}
 }
 
@@ -63,14 +68,13 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 	location := worldmap.Coordinates{x, y}
 	ai := newAi(n.AiType, world, location, nil, nil, dialogue)
 
-	name := generateName(npcType)
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(n.Hp, n.Hp),
 		"ac":          worldmap.NewAttribute(n.Ac, n.Ac),
 		"str":         worldmap.NewAttribute(n.Str, n.Str),
 		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
 		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
-	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue}
+	npc := &Npc{generateName(npcType), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue}
 	npc.initialiseInventory(n.Inventory)
 	event.Subscribe(npc)
 	return npc
@@ -80,15 +84,7 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 	n := npcData[npcType]
 	id := xid.New().String()
 	dialogue := newDialogue(n.DialogueType, world, &t, &b)
-
 	location := worldmap.Coordinates{x, y}
-
-	var name *npcName
-	if npcType == "sheriff" {
-		name = &npcName{fmt.Sprintf("Sheriff %s", Names.LastNames[rand.Intn(len(Names.LastNames))]), npcType, false}
-	} else {
-		name = generateName(npcType)
-	}
 	ai := newAi(n.AiType, world, location, &t, &b, dialogue)
 
 	attributes := map[string]*worldmap.Attribute{
@@ -98,7 +94,7 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
 		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
 
-	npc := &Npc{name, id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue}
+	npc := &Npc{generateName(npcType), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue}
 	for c, count := range n.ShopInventory {
 
 		for i := 0; i < count; i++ {

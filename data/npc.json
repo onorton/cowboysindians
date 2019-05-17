@@ -56,7 +56,21 @@
 		"Inventory": [{"Category": "Weapon", "Name": "pistol", "Amount": 1},
 			{"Category": "Ammo", "Name": "pistol bullet", "Amount": 10}],
 		"Mount": {"horse": 0.8, "None": 0.2}
-
+	},
+	"deputy": {
+		"Icon": {"Icon": 68, "Colour": 4},
+		"Initiative": 1,
+		"Hp": 10,
+		"Ac": 10,
+		"Str": 12,
+		"Dex": 15,
+		"Encumbrance": 100,
+		"Money": 1000,
+		"DialogueType": 0,
+		"AiType": "sheriff",
+		"Inventory": [{"Category": "Weapon", "Name": "pistol", "Amount": 1},
+			{"Category": "Ammo", "Name": "pistol bullet", "Amount": 10}],
+		"Mount": {"horse": 0.5, "None": 0.5}
 	}
 
 

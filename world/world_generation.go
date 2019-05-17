@@ -103,7 +103,7 @@ func addItemsToBuildings(world worldmap.World, buildings []worldmap.Building) {
 				}
 			}
 
-		} else {
+		} else if b.T != worldmap.Sheriff {
 
 			buildingArea := (x2 - x1) * (y2 - y1)
 
@@ -776,7 +776,7 @@ func generateEnemies(m worldmap.World, n int) []*npc.Enemy {
 func generateNpcs(m worldmap.World, towns []worldmap.Town, buildings []worldmap.Building, n int) []*npc.Npc {
 	width := m.Width()
 	height := m.Height()
-	npcs := make([]*npc.Npc, n)
+	npcs := make([]*npc.Npc, 0)
 
 	usedBuildings := make([]worldmap.Building, 0)
 
@@ -791,9 +791,20 @@ func generateNpcs(m worldmap.World, towns []worldmap.Town, buildings []worldmap.
 	// Place npcs in commerical buildings first
 	for ; i < n && i < len(commercialBuildings); i++ {
 		b := commercialBuildings[i]
-		npcs[i] = placeNpcInBuilding(m, findTown(towns, b), b)
-		x, y := npcs[i].GetCoordinates()
-		m.Place(npcs[i], x, y)
+		var n *npc.Npc
+		switch b.T {
+		case worldmap.GunShop:
+			n = placeNpcInBuilding(m, findTown(towns, b), b, "shopkeeper")
+		case worldmap.Saloon:
+			n = placeNpcInBuilding(m, findTown(towns, b), b, "bartender")
+		case worldmap.Sheriff:
+			n = placeNpcInBuilding(m, findTown(towns, b), b, "sheriff")
+			numDeputies := rand.Intn(3)
+			for j := 0; j < numDeputies; j++ {
+				npcs = append(npcs, placeNpcInBuilding(m, findTown(towns, b), b, "deputy"))
+			}
+		}
+		npcs = append(npcs, n)
 		usedBuildings = append(usedBuildings, b)
 	}
 
@@ -815,7 +826,7 @@ func generateNpcs(m worldmap.World, towns []worldmap.Town, buildings []worldmap.
 				i--
 				continue
 			}
-			npcs[i] = placeNpcInBuilding(m, findTown(towns, b), b)
+			npcs = append(npcs, placeNpcInBuilding(m, findTown(towns, b), b, "townsman"))
 			usedBuildings = append(usedBuildings, b)
 
 		} else {
@@ -824,7 +835,7 @@ func generateNpcs(m worldmap.World, towns []worldmap.Town, buildings []worldmap.
 				i--
 				continue
 			}
-			npcs[i] = npc.NewNpc("townsman", x, y, nil)
+			npcs = append(npcs, npc.NewNpc("townsman", x, y, nil))
 		}
 		x, y = npcs[i].GetCoordinates()
 		m.Place(npcs[i], x, y)
@@ -833,7 +844,7 @@ func generateNpcs(m worldmap.World, towns []worldmap.Town, buildings []worldmap.
 	return npcs
 }
 
-func placeNpcInBuilding(m worldmap.World, t worldmap.Town, b worldmap.Building) *npc.Npc {
+func placeNpcInBuilding(m worldmap.World, t worldmap.Town, b worldmap.Building, npcType string) *npc.Npc {
 	var n *npc.Npc
 	for n == nil {
 		x := b.X1 + 1 + rand.Intn(b.X2-b.X1-1)
@@ -843,17 +854,14 @@ func placeNpcInBuilding(m worldmap.World, t worldmap.Town, b worldmap.Building) 
 			continue
 		}
 
-		switch b.T {
-		case worldmap.Residential:
-			n = npc.NewNpc("townsman", x, y, nil)
-		case worldmap.GunShop:
-			n = npc.NewShopkeeper("shopkeeper", x, y, nil, t, b)
-		case worldmap.Saloon:
-			n = npc.NewShopkeeper("bartender", x, y, nil, t, b)
-		case worldmap.Sheriff:
-			n = npc.NewShopkeeper("sheriff", x, y, nil, t, b)
+		if npcType == "townsman" {
+			n = npc.NewNpc(npcType, x, y, nil)
+		} else {
+			n = npc.NewShopkeeper(npcType, x, y, nil, t, b)
 		}
+		m.Place(n, x, y)
 	}
+
 	return n
 }
 
