@@ -61,10 +61,27 @@ var typeProbabilities = map[string]float64{
 	"readable":    0.05,
 }
 
-type ItemDefinition struct {
-	Category string
-	Name     string
-	Amount   int
+type ItemChoice struct {
+	Items       map[string]int
+	Probability float64
+}
+
+// Generates a new item based on the name
+func NewItem(itemType string) *Item {
+	if _, ok := ammoData[itemType]; ok {
+		return NewAmmo(itemType)
+	} else if _, ok := armourData[itemType]; ok {
+		return NewArmour(itemType)
+	} else if _, ok := consumableData[itemType]; ok {
+		return NewConsumable(itemType)
+	} else if _, ok := normalItemData[itemType]; ok {
+		return NewNormalItem(itemType)
+	} else if _, ok := readableData[itemType]; ok {
+		return NewReadable(itemType, map[string]string{})
+	} else if _, ok := weaponData[itemType]; ok {
+		return NewWeapon(itemType)
+	}
+	return nil
 }
 
 func Choose(probabilites map[string]float64) string {

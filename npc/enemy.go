@@ -27,7 +27,7 @@ type EnemyAttributes struct {
 	Money        int
 	DialogueType *dialogueType
 	AiType       string
-	Inventory    []*item.ItemDefinition
+	Inventory    [][]item.ItemChoice
 	Mount        map[string]float64
 }
 
@@ -54,26 +54,12 @@ func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 		"dex":         worldmap.NewAttribute(enemy.Dex, enemy.Dex),
 		"encumbrance": worldmap.NewAttribute(enemy.Encumbrance, enemy.Encumbrance)}
 	e := &Enemy{&ui.PlainName{name}, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, false, enemy.Money, nil, nil, make([]*item.Item, 0), "", generateMount(enemy.Mount, x, y), world, ai}
-	for _, itemDefinition := range enemy.Inventory {
-		for i := 0; i < itemDefinition.Amount; i++ {
-			var itm *item.Item = nil
-			switch itemDefinition.Category {
-			case "Ammo":
-				itm = item.NewAmmo(itemDefinition.Name)
-			case "Armour":
-				itm = item.NewArmour(itemDefinition.Name)
-			case "Consumable":
-				itm = item.NewConsumable(itemDefinition.Name)
-			case "Item":
-				itm = item.NewNormalItem(itemDefinition.Name)
-			case "Weapon":
-				itm = item.NewWeapon(itemDefinition.Name)
-			}
-			e.PickupItem(itm)
-		}
+	for _, itm := range generateInventory(enemy.Inventory) {
+		e.PickupItem(itm)
 	}
 	return e
 }
+
 func (e *Enemy) Render() ui.Element {
 	if e.mount != nil {
 		return icon.MergeIcons(e.icon, e.mount.GetIcon())

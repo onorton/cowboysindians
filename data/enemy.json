@@ -10,10 +10,8 @@
 		"Money": 1000,
 		"DialogueType": 3,
 		"AiType": "enemy",
-		"Inventory": [
-		{"Category": "Weapon", "Name": "pistol", "Amount": 1},
-		{"Category": "Ammo", "Name": "pistol bullet","Amount": 5},
-		{"Category": "Consumable", "Name": "standard ration", "Amount": 2}],
+		"Inventory": [[{"Items":{"pistol": 1, "pistol bullet": 10}, "Probability": 1.0},
+			{"Items":{"shotgun": 1, "shotgun shell": 10}, "Probability": 1.0},{"Items":{"sawn-off shotgun": 1, "shotgun shell": 10}, "Probability": 1.0}],[{"Items":{"standard ration": 1}, "Probability": 1.0}]],
 		"Mount": {"horse": 0.2, "None": 0.8}
 	}
 }

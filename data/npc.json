@@ -10,7 +10,7 @@
 		"Money": 1000,
 		"DialogueType": 0,
 		"AiType": "npc",
-		"Inventory": [{"Category": "Consumable", "Name": "beer", "Amount": 2}],
+		"Inventory": [[{"Items": {"beer": 1}, "Probability": 1.0}]],
 		"Mount": {"horse": 0.1, "None": 0.9}
 	},
 
@@ -53,8 +53,7 @@
 		"Money": 2000,
 		"DialogueType": 2,
 		"AiType": "sheriff",
-		"Inventory": [{"Category": "Weapon", "Name": "pistol", "Amount": 1},
-			{"Category": "Ammo", "Name": "pistol bullet", "Amount": 10}],
+		"Inventory": [[{"Items": {"pistol": 1, "pistol bullet": 10}, "Probability": 1.0},{"Items": {"shotgun": 1, "shotgun shell": 10}, "Probability": 1.0}]],
 		"Mount": {"horse": 0.8, "None": 0.2}
 	},
 	"deputy": {
@@ -68,8 +67,7 @@
 		"Money": 1000,
 		"DialogueType": 0,
 		"AiType": "sheriff",
-		"Inventory": [{"Category": "Weapon", "Name": "pistol", "Amount": 1},
-			{"Category": "Ammo", "Name": "pistol bullet", "Amount": 10}],
+		"Inventory": [[{"Items": {"pistol": 1, "pistol bullet": 10}, "Probability": 1.0},{"Items": {"shotgun": 1, "shotgun shell": 10}, "Probability": 1.0}]],
 		"Mount": {"horse": 0.5, "None": 0.5}
 	}
 

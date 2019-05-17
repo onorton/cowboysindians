@@ -31,7 +31,7 @@ type NpcAttributes struct {
 	Dex           int
 	Encumbrance   int
 	Money         int
-	Inventory     []*item.ItemDefinition
+	Inventory     [][]item.ItemChoice
 	ShopInventory map[string]int
 	DialogueType  *dialogueType
 	AiType        string
@@ -75,7 +75,9 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
 		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
 	npc := &Npc{generateName(npcType), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue}
-	npc.initialiseInventory(n.Inventory)
+	for _, itm := range generateInventory(n.Inventory) {
+		npc.PickupItem(itm)
+	}
 	event.Subscribe(npc)
 	return npc
 }
@@ -113,30 +115,54 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 		}
 	}
 
-	npc.initialiseInventory(n.Inventory)
+	for _, itm := range generateInventory(n.Inventory) {
+		npc.PickupItem(itm)
+	}
 	event.Subscribe(npc)
 	return npc
 }
 
-func (npc *Npc) initialiseInventory(inventory []*item.ItemDefinition) {
-	for _, itemDefinition := range inventory {
-		for i := 0; i < itemDefinition.Amount; i++ {
-			var itm *item.Item = nil
-			switch itemDefinition.Category {
-			case "Ammo":
-				itm = item.NewAmmo(itemDefinition.Name)
-			case "Armour":
-				itm = item.NewArmour(itemDefinition.Name)
-			case "Consumable":
-				itm = item.NewConsumable(itemDefinition.Name)
-			case "Item":
-				itm = item.NewNormalItem(itemDefinition.Name)
-			case "Weapon":
-				itm = item.NewWeapon(itemDefinition.Name)
+func chooseItems(probabilites []float64) int {
+	max := 0.0
+
+	for _, probability := range probabilites {
+		if probability > 0 {
+			inverse := 1.0 / probability
+			if inverse > max {
+				max = inverse
 			}
-			npc.PickupItem(itm)
 		}
 	}
+	choices := make([]int, 0)
+
+	for index, probability := range probabilites {
+		count := int(probability * max)
+		for i := 0; i < count; i++ {
+			choices = append(choices, index)
+		}
+	}
+
+	n := rand.Intn(len(choices))
+	return choices[n]
+}
+
+func generateInventory(itemChoices [][]item.ItemChoice) []*item.Item {
+
+	inventory := make([]*item.Item, 0)
+	for _, selection := range itemChoices {
+		choices := make([]float64, 0)
+		for _, choice := range selection {
+			choices = append(choices, choice.Probability)
+		}
+
+		choice := chooseItems(choices)
+		for itemType, count := range selection[choice].Items {
+			for i := 0; i < count; i++ {
+				inventory = append(inventory, item.NewItem(itemType))
+			}
+		}
+	}
+	return inventory
 }
 
 func (npc *Npc) Render() ui.Element {
