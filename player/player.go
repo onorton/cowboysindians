@@ -238,71 +238,10 @@ func (p *Player) PrintInventory() {
 	}
 }
 
-func (p *Player) PrintWeapons() {
+func (p *Player) PrintItemsByType(itemType string) {
 	position := 0
 	for k, items := range p.inventory {
-		if !p.inventory[k][0].HasComponent("weapon") {
-			continue
-		}
-		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
-		if len(items) > 1 {
-			itemString += fmt.Sprintf(" x%d", len(items))
-		}
-		ui.WriteText(0, position, itemString)
-		position++
-	}
-}
-
-func (p *Player) PrintArmour() {
-	position := 0
-	for k, items := range p.inventory {
-		if !p.inventory[k][0].HasComponent("armour") {
-			continue
-		}
-		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
-		if len(items) > 1 {
-			itemString += fmt.Sprintf(" x%d", len(items))
-		}
-		ui.WriteText(0, position, itemString)
-		position++
-	}
-}
-
-func (p *Player) PrintConsumables() {
-	position := 0
-	for k, items := range p.inventory {
-		if !p.inventory[k][0].HasComponent("consumable") {
-			continue
-		}
-		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
-		if len(items) > 1 {
-			itemString += fmt.Sprintf(" x%d", len(items))
-		}
-		ui.WriteText(0, position, itemString)
-
-		position++
-	}
-}
-
-func (p *Player) PrintReadables() {
-	position := 0
-	for k, items := range p.inventory {
-		if !p.inventory[k][0].HasComponent("readable") {
-			continue
-		}
-		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
-		if len(items) > 1 {
-			itemString += fmt.Sprintf(" x%d", len(items))
-		}
-		ui.WriteText(0, position, itemString)
-		position++
-	}
-}
-
-func (p *Player) PrintUsables() {
-	position := 0
-	for k, items := range p.inventory {
-		if !p.inventory[k][0].HasComponent("usable") {
+		if !p.inventory[k][0].HasComponent(itemType) {
 			continue
 		}
 		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
@@ -380,111 +319,10 @@ func (p *Player) AddItem(itm *item.Item) {
 	itm.TransferOwner(p.GetID())
 }
 
-func (p *Player) GetWeaponKeys() string {
+func (p *Player) KeysByType(itemType string) string {
 	keysSet := make([]bool, 128)
 	for k := range p.inventory {
-
-		if p.inventory[k][0].HasComponent("weapon") {
-			keysSet[k] = true
-		}
-	}
-	keys := ""
-	for i, _ := range keysSet {
-		if i < 33 || i == 127 || !keysSet[i] {
-			continue
-		}
-
-		if keysSet[i-1] && !keysSet[i+1] {
-			keys += string(rune(i))
-		} else if !keysSet[i-1] {
-			keys += string(rune(i))
-		} else if keysSet[i-1] && !keysSet[i-2] && keysSet[i+1] {
-			keys += "-"
-		}
-	}
-	return keys
-}
-
-func (p *Player) GetArmourKeys() string {
-	keysSet := make([]bool, 128)
-	for k := range p.inventory {
-
-		if p.inventory[k][0].HasComponent("armour") {
-			keysSet[k] = true
-		}
-	}
-	keys := ""
-	for i, _ := range keysSet {
-		if i < 33 || i == 127 || !keysSet[i] {
-			continue
-		}
-
-		if keysSet[i-1] && !keysSet[i+1] {
-			keys += string(rune(i))
-		} else if !keysSet[i-1] {
-			keys += string(rune(i))
-		} else if keysSet[i-1] && !keysSet[i-2] && keysSet[i+1] {
-			keys += "-"
-		}
-	}
-	return keys
-}
-
-func (p *Player) GetConsumableKeys() string {
-	keysSet := make([]bool, 128)
-	for k := range p.inventory {
-
-		if p.inventory[k][0].HasComponent("consumable") {
-			keysSet[k] = true
-		}
-	}
-	keys := ""
-	for i, _ := range keysSet {
-		if i < 33 || i == 127 || !keysSet[i] {
-			continue
-		}
-
-		if keysSet[i-1] && !keysSet[i+1] {
-			keys += string(rune(i))
-		} else if !keysSet[i-1] {
-			keys += string(rune(i))
-		} else if keysSet[i-1] && !keysSet[i-2] && keysSet[i+1] {
-			keys += "-"
-		}
-	}
-	return keys
-}
-
-func (p *Player) GetReadableKeys() string {
-	keysSet := make([]bool, 128)
-	for k := range p.inventory {
-
-		if p.inventory[k][0].HasComponent("readable") {
-			keysSet[k] = true
-		}
-	}
-	keys := ""
-	for i, _ := range keysSet {
-		if i < 33 || i == 127 || !keysSet[i] {
-			continue
-		}
-
-		if keysSet[i-1] && !keysSet[i+1] {
-			keys += string(rune(i))
-		} else if !keysSet[i-1] {
-			keys += string(rune(i))
-		} else if keysSet[i-1] && !keysSet[i-2] && keysSet[i+1] {
-			keys += "-"
-		}
-	}
-	return keys
-}
-
-func (p *Player) GetUsableKeys() string {
-	keysSet := make([]bool, 128)
-	for k := range p.inventory {
-
-		if p.inventory[k][0].HasComponent("usable") {
+		if p.inventory[k][0].HasComponent(itemType) {
 			keysSet[k] = true
 		}
 	}
@@ -544,7 +382,7 @@ func (p *Player) GetItem(key rune) *item.Item {
 
 func (p *Player) WieldItem() bool {
 	for {
-		message.PrintMessage(fmt.Sprintf("What item do you want to wield? [%s or ?*]", p.GetWeaponKeys()))
+		message.PrintMessage(fmt.Sprintf("What item do you want to wield? [%s or ?*]", p.KeysByType("weapon")))
 		s, c := ui.GetItemSelection()
 
 		switch s {
@@ -552,7 +390,7 @@ func (p *Player) WieldItem() bool {
 			p.PrintInventory()
 			continue
 		case ui.AllRelevant:
-			p.PrintWeapons()
+			p.PrintItemsByType("weapon")
 			continue
 		case ui.Cancel:
 			message.PrintMessage("Never mind.")
@@ -586,7 +424,7 @@ func (p *Player) WieldItem() bool {
 
 func (p *Player) WearArmour() bool {
 	for {
-		message.PrintMessage(fmt.Sprintf("What item do you want to wear? [%s or ?*]", p.GetArmourKeys()))
+		message.PrintMessage(fmt.Sprintf("What item do you want to wear? [%s or ?*]", p.KeysByType("armour")))
 		s, c := ui.GetItemSelection()
 
 		switch s {
@@ -594,7 +432,7 @@ func (p *Player) WearArmour() bool {
 			p.PrintInventory()
 			continue
 		case ui.AllRelevant:
-			p.PrintArmour()
+			p.PrintItemsByType("armour")
 			continue
 		case ui.Cancel:
 			message.PrintMessage("Never mind.")
@@ -657,7 +495,7 @@ func (p *Player) LoadWeapon() bool {
 func (p *Player) ConsumeItem() bool {
 
 	for {
-		message.PrintMessage(fmt.Sprintf("What item do you want to eat? [%s or ?*]", p.GetConsumableKeys()))
+		message.PrintMessage(fmt.Sprintf("What item do you want to eat? [%s or ?*]", p.KeysByType("consumable")))
 		s, c := ui.GetItemSelection()
 
 		switch s {
@@ -665,7 +503,7 @@ func (p *Player) ConsumeItem() bool {
 			p.PrintInventory()
 			continue
 		case ui.AllRelevant:
-			p.PrintConsumables()
+			p.PrintItemsByType("consumable")
 			continue
 		case ui.Cancel:
 			message.PrintMessage("Never mind.")
@@ -1291,7 +1129,7 @@ func (p *Player) Read() {
 	}
 
 	for {
-		message.PrintMessage(fmt.Sprintf("What item do you want to read? [%s or ?*]", p.GetReadableKeys()))
+		message.PrintMessage(fmt.Sprintf("What item do you want to read? [%s or ?*]", p.KeysByType("readable")))
 		s, c := ui.GetItemSelection()
 
 		switch s {
@@ -1299,7 +1137,7 @@ func (p *Player) Read() {
 			p.PrintInventory()
 			continue
 		case ui.AllRelevant:
-			p.PrintReadables()
+			p.PrintItemsByType("readable")
 			continue
 		case ui.Cancel:
 			message.PrintMessage("Never mind.")
@@ -1326,7 +1164,7 @@ func (p *Player) Read() {
 
 func (p *Player) Use() bool {
 	for {
-		message.PrintMessage(fmt.Sprintf("What do you want to use or apply? [%s or ?*]", p.GetUsableKeys()))
+		message.PrintMessage(fmt.Sprintf("What do you want to use or apply? [%s or ?*]", p.KeysByType("usable")))
 		s, c := ui.GetItemSelection()
 
 		switch s {
@@ -1334,7 +1172,7 @@ func (p *Player) Use() bool {
 			p.PrintInventory()
 			continue
 		case ui.AllRelevant:
-			p.PrintUsables()
+			p.PrintItemsByType("usable")
 			continue
 		case ui.Cancel:
 			message.PrintMessage("Never mind.")
