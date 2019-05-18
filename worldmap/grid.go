@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
@@ -35,19 +36,18 @@ func fetchTerrainData() map[string]TileAttributes {
 }
 
 type Grid struct {
-	terrain       [][]icon.Icon
-	passable      [][]bool
-	door          [][]bool
-	blocksVision  [][]bool
-	blocksVClosed [][]bool
-	c             [][]Creature
-	items         [][][]*item.Item
+	terrain      [][]icon.Icon
+	passable     [][]bool
+	door         [][]*doorComponent
+	blocksVision [][]bool
+	c            [][]Creature
+	items        [][][]*item.Item
 }
 
 func NewGrid(width int, height int) *Grid {
 	terrain := make([][]icon.Icon, height)
 	passable := make([][]bool, height)
-	door := make([][]bool, height)
+	door := make([][]*doorComponent, height)
 	blocksVision := make([][]bool, height)
 	blocksVClosed := make([][]bool, height)
 	c := make([][]Creature, height)
@@ -58,7 +58,7 @@ func NewGrid(width int, height int) *Grid {
 	for y := 0; y < height; y++ {
 		terrain[y] = make([]icon.Icon, width)
 		passable[y] = make([]bool, width)
-		door[y] = make([]bool, width)
+		door[y] = make([]*doorComponent, width)
 		blocksVision[y] = make([]bool, width)
 		blocksVClosed[y] = make([]bool, width)
 		c[y] = make([]Creature, width)
@@ -69,7 +69,6 @@ func NewGrid(width int, height int) *Grid {
 	grid.passable = passable
 	grid.door = door
 	grid.blocksVision = blocksVision
-	grid.blocksVClosed = blocksVClosed
 	grid.c = c
 	grid.items = items
 
@@ -95,22 +94,22 @@ func (grid *Grid) newTile(tileType string, x, y int) {
 	terrain := terrainData[tileType]
 	grid.terrain[y][x] = terrain.Icon
 	grid.passable[y][x] = terrain.Passable
-	grid.door[y][x] = terrain.Door
+	if terrain.Door {
+		grid.door[y][x] = &doorComponent{false, rand.Int(), terrain.BlocksVision, true}
+	}
 	grid.blocksVision[y][x] = terrain.BlocksVision
-	grid.blocksVClosed[y][x] = terrain.BlocksVision
 }
 
 func (grid *Grid) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
-	keys := []string{"Terrain", "Passable", "Door", "BlocksVision", "BlocksVisionClosed", "Items"}
+	keys := []string{"Terrain", "Passable", "Door", "BlocksVision", "Items"}
 
 	gridValues := map[string]interface{}{
-		"Terrain":            grid.terrain,
-		"Passable":           grid.passable,
-		"Door":               grid.door,
-		"BlocksVision":       grid.blocksVision,
-		"BlocksVisionClosed": grid.blocksVClosed,
-		"Items":              grid.items,
+		"Terrain":      grid.terrain,
+		"Passable":     grid.passable,
+		"Door":         grid.door,
+		"BlocksVision": grid.blocksVision,
+		"Items":        grid.items,
 	}
 
 	length := len(gridValues)
@@ -137,7 +136,7 @@ func (grid *Grid) UnmarshalJSON(data []byte) error {
 	type gridJson struct {
 		Terrain            [][]icon.Icon
 		Passable           [][]bool
-		Door               [][]bool
+		Door               [][]*doorComponent
 		BlocksVision       [][]bool
 		BlocksVisionClosed [][]bool
 		Items              [][][]*item.Item
@@ -152,7 +151,6 @@ func (grid *Grid) UnmarshalJSON(data []byte) error {
 	grid.passable = v.Passable
 	grid.door = v.Door
 	grid.blocksVision = v.BlocksVision
-	grid.blocksVClosed = v.BlocksVisionClosed
 	grid.items = v.Items
 	grid.c = make([][]Creature, grid.height())
 	for y := 0; y < grid.height(); y++ {

@@ -670,7 +670,7 @@ func (m *Map) RenderTile(x, y int) ui.Element {
 			return chunk.items[cY][cX][0].Render()
 		}
 
-		if m.IsDoor(x, y) {
+		if m.IsDoor(x, y) && m.Door(x, y).Open() {
 			return terrainData["ground"].Icon.Render()
 		}
 	}
@@ -710,21 +710,28 @@ func (m Map) Render() {
 
 func (m Map) IsDoor(x, y int) bool {
 	chunk, cX, cY := m.globalToChunkAndLocal(x, y)
+	return chunk.door[cY][cX] != nil
+}
+
+func (m Map) Door(x, y int) *doorComponent {
+	chunk, cX, cY := m.globalToChunkAndLocal(x, y)
 	return chunk.door[cY][cX]
 }
 
 func (m Map) ToggleDoor(x, y int, open bool) {
 	chunk, cX, cY := m.globalToChunkAndLocal(x, y)
 
-	if chunk.door[cY][cX] {
+	if chunk.door[cY][cX] != nil {
 		if open {
 			chunk.passable[cY][cX] = true
 			chunk.blocksVision[cY][cX] = false
 		} else {
 			chunk.passable[cY][cX] = false
-			chunk.blocksVision[cY][cX] = chunk.blocksVClosed[cY][cX]
+			chunk.blocksVision[cY][cX] = chunk.door[cY][cX].blocksVClosed
 		}
 	}
+	chunk.door[cY][cX].open = open
+
 }
 
 func (m Map) givesCover(x, y int) bool {
