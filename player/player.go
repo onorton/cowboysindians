@@ -299,6 +299,21 @@ func (p *Player) PrintReadables() {
 	}
 }
 
+func (p *Player) PrintUsables() {
+	position := 0
+	for k, items := range p.inventory {
+		if !p.inventory[k][0].HasComponent("usable") {
+			continue
+		}
+		itemString := fmt.Sprintf("%s - %s", string(k), items[0].GetName())
+		if len(items) > 1 {
+			itemString += fmt.Sprintf(" x%d", len(items))
+		}
+		ui.WriteText(0, position, itemString)
+		position++
+	}
+}
+
 func (p *Player) IsDead() bool {
 	return p.attributes["hp"].Value() == 0 || p.attributes["hunger"].Value() == p.attributes["hunger"].Maximum() || p.attributes["thirst"].Value() == p.attributes["thirst"].Maximum()
 }
@@ -445,6 +460,31 @@ func (p *Player) GetReadableKeys() string {
 	for k := range p.inventory {
 
 		if p.inventory[k][0].HasComponent("readable") {
+			keysSet[k] = true
+		}
+	}
+	keys := ""
+	for i, _ := range keysSet {
+		if i < 33 || i == 127 || !keysSet[i] {
+			continue
+		}
+
+		if keysSet[i-1] && !keysSet[i+1] {
+			keys += string(rune(i))
+		} else if !keysSet[i-1] {
+			keys += string(rune(i))
+		} else if keysSet[i-1] && !keysSet[i-2] && keysSet[i+1] {
+			keys += "-"
+		}
+	}
+	return keys
+}
+
+func (p *Player) GetUsableKeys() string {
+	keysSet := make([]bool, 128)
+	for k := range p.inventory {
+
+		if p.inventory[k][0].HasComponent("usable") {
 			keysSet[k] = true
 		}
 	}
@@ -1272,13 +1312,139 @@ func (p *Player) Read() {
 			} else {
 				if itm.HasComponent("readable") {
 					message.PrintMessage(itm.Component("readable").(item.ReadableComponent).Description)
+					p.AddItem(itm)
 					return
 				} else {
 					message.PrintMessage("That is not something that you can read.")
+					p.AddItem(itm)
 				}
 			}
 
 		}
+	}
+}
+
+func (p *Player) Use() bool {
+	for {
+		message.PrintMessage(fmt.Sprintf("What do you want to use or apply? [%s or ?*]", p.GetUsableKeys()))
+		s, c := ui.GetItemSelection()
+
+		switch s {
+		case ui.All:
+			p.PrintInventory()
+			continue
+		case ui.AllRelevant:
+			p.PrintUsables()
+			continue
+		case ui.Cancel:
+			message.PrintMessage("Never mind.")
+			return false
+		case ui.SpecificItem:
+			itm := p.GetItem(c)
+			if itm == nil {
+				message.PrintMessage("You don't have that.")
+				ui.GetInput()
+			} else {
+				if itm.HasComponent("usable") {
+					if itm.HasComponent("key") {
+						// Keys are multiple use
+						p.AddItem(itm)
+						message.PrintMessage("Which direction?")
+						height := p.world.GetHeight()
+						width := p.world.GetWidth()
+						x, y := p.GetCoordinates()
+
+						// Select direction
+						for {
+							validMove := true
+							action := ui.GetInput()
+
+							if action.IsMovementAction() {
+								switch action {
+								case ui.MoveWest:
+									if x != 0 {
+										x--
+									}
+								case ui.MoveEast:
+									if x < width-1 {
+										x++
+									}
+								case ui.MoveNorth:
+									if y != 0 {
+										y--
+									}
+								case ui.MoveSouth:
+									if y < height-1 {
+										y++
+									}
+								case ui.MoveSouthWest:
+									if x != 0 && y < height-1 {
+										x--
+										y++
+									}
+
+								case ui.MoveSouthEast:
+									if x < width-1 && y < height-1 {
+										x++
+										y++
+									}
+								case ui.MoveNorthWest:
+									if x != 0 && y != 0 {
+										x--
+										y--
+									}
+								case ui.MoveNorthEast:
+									if y != 0 && x < width-1 {
+										y--
+										x++
+									}
+								}
+							} else if action == ui.CancelAction {
+								message.PrintMessage("Never mind...")
+								return false
+							} else {
+								message.PrintMessage("Invalid direction.")
+								validMove = false
+							}
+
+							if validMove {
+								break
+							}
+						}
+						if !p.world.IsDoor(x, y) {
+							message.Enqueue("You see no door here.")
+						} else {
+							door := p.world.Door(x, y)
+							// Can have multiple keys that unlock different doors
+							allKeys := p.inventory[c]
+							anyFit := false
+							for _, key := range allKeys {
+								anyFit = anyFit || door.KeyFits(key)
+							}
+
+							if anyFit {
+								door.ToggleLocked()
+								if door.Locked() {
+									message.Enqueue("You lock the door.")
+								} else {
+									message.Enqueue("You unlock the door.")
+								}
+							} else {
+								message.Enqueue("This does not work for this door.")
+							}
+						}
+					}
+					return true
+				} else {
+					message.PrintMessage("You can't use that.")
+					p.AddItem(itm)
+					ui.GetInput()
+					return false
+				}
+			}
+
+		}
+
 	}
 }
 

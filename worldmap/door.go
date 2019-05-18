@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+
+	"github.com/onorton/cowboysindians/item"
 )
 
 type doorComponent struct {
 	locked        bool
-	key           int
+	key           int32
 	blocksVClosed bool
 	open          bool
 }
@@ -17,7 +19,7 @@ func (door *doorComponent) Open() bool {
 	return door.open
 }
 
-func (door *doorComponent) Key() int {
+func (door *doorComponent) Key() int32 {
 	return door.key
 }
 
@@ -25,8 +27,20 @@ func (door *doorComponent) Lock() {
 	door.locked = true
 }
 
+func (door *doorComponent) ToggleLocked() {
+	door.locked = !door.locked
+}
+
 func (door *doorComponent) Locked() bool {
 	return door.locked
+}
+
+func (door *doorComponent) KeyFits(itm *item.Item) bool {
+	keyComponent := itm.Component("key").(item.KeyComponent)
+	if keyComponent.Key == -1 {
+		return true
+	}
+	return keyComponent.Key == door.Key()
 }
 
 func (door *doorComponent) MarshalJSON() ([]byte, error) {
@@ -63,7 +77,7 @@ func (door *doorComponent) UnmarshalJSON(data []byte) error {
 
 	type doorJson struct {
 		Locked             bool
-		Key                int
+		Key                int32
 		BlocksVisionClosed bool
 		Open               bool
 	}

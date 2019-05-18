@@ -43,6 +43,7 @@ const (
 	Sell
 	Claim
 	Read
+	Use
 	Confirm
 	CancelAction
 	NoAction
@@ -148,6 +149,8 @@ func GetInput() (action PlayerAction) {
 				action = Sell
 			case 'r':
 				action = Read
+			case 'a':
+				action = Use
 			case 'y':
 				action = Confirm
 			default:
