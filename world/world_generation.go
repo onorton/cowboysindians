@@ -72,6 +72,20 @@ func addItemsToBuildings(world worldmap.World, buildings []worldmap.Building) {
 		x1, y1 := b.X1+1, b.Y1+1
 		x2, y2 := b.X2-1, b.Y2-1
 
+		// Create and place a key for the door somewhere in the building
+		keyValue := world.Door(b.DoorLocation.X, b.DoorLocation.Y).Key()
+
+		for {
+			// Select a random location
+			x := x1 + rand.Intn(x2-x1)
+			y := y1 + rand.Intn(y2-y1)
+
+			if world.IsPassable(x, y) {
+				world.PlaceItem(x, y, item.NewKey(keyValue))
+				break
+			}
+		}
+
 		// If Saloon, place chairs and tables
 		if b.T == worldmap.Saloon {
 

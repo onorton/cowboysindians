@@ -23,6 +23,7 @@ type itemAttributes struct {
 	Weight      float64
 	Value       int
 	Cover       bool
+	Key         *keyComponent
 	Probability float64
 }
 
@@ -141,6 +142,9 @@ func LoadAllData() {
 	fetchReadableData()
 }
 
+type Key struct {
+}
+
 func (item *Item) Render() ui.Element {
 	return item.ic.Render()
 }
@@ -173,7 +177,21 @@ func NewNormalItem(name string) *Item {
 	if item.Cover {
 		components["cover"] = tag{}
 	}
+
+	if item.Key != nil {
+		components["key"] = *(item.Key)
+	}
 	return &Item{name, "", item.Icon, item.Weight, item.Value, components}
+}
+
+type keyComponent struct {
+	Key int
+}
+
+func NewKey(keyValue int) *Item {
+	key := NewNormalItem("key")
+	key.components["key"] = keyComponent{keyValue}
+	return key
 }
 
 func Money(amount int) *Item {
@@ -288,6 +306,11 @@ func UnmarshalComponents(cs map[string]interface{}) map[string]component {
 			err := json.Unmarshal(componentJson, &armour)
 			check(err)
 			component = armour
+		case "key":
+			var key keyComponent
+			err := json.Unmarshal(componentJson, &key)
+			check(err)
+			component = key
 		}
 		components[key] = component
 

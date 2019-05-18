@@ -47,6 +47,11 @@ func (world World) NewTile(tileType string, x, y int) {
 	chunk.newTile(tileType, cX, cY)
 }
 
+func (world World) Door(x, y int) *doorComponent {
+	chunk, cX, cY := world.globalToChunkAndLocal(x, y)
+	return chunk.door[cY][cX]
+}
+
 func (world World) Width() int {
 	return len(world[0]) * chunkSize
 }

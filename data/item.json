@@ -26,5 +26,21 @@
 		"Value": 400,
 		"Cover": true,
 		"Probability": 1.0
+	},
+	"key":{
+		"Icon": {"Icon": 40, "Colour": 9},
+		"Weight": 0.1,
+		"Value": 200,
+		"Cover": false,
+		"Key": {"key": 0},
+		"Probability": 1.0
+	},
+	"skeleton key":{
+		"Icon": {"Icon": 40, "Colour": 9},
+		"Weight": 0.2,
+		"Value": 5000,
+		"Cover": false,
+		"Key": {"key": -1},
+		"Probability": 0.2
 	}
 }

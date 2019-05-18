@@ -95,7 +95,7 @@ func (grid *Grid) newTile(tileType string, x, y int) {
 	grid.terrain[y][x] = terrain.Icon
 	grid.passable[y][x] = terrain.Passable
 	if terrain.Door {
-		grid.door[y][x] = &doorComponent{false, rand.Int(), terrain.BlocksVision, true}
+		grid.door[y][x] = &doorComponent{false, rand.Int() + 1, terrain.BlocksVision, true}
 	}
 	grid.blocksVision[y][x] = terrain.BlocksVision
 }
