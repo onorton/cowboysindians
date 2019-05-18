@@ -205,7 +205,7 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) Action {
 	for i := -1; i <= 1; i++ {
 		for j := -1; j <= 1; j++ {
 			x, y := location.X+j, location.Y+i
-			if world.IsValid(x, y) && world.IsDoor(x, y) && !world.IsPassable(x, y) {
+			if world.IsValid(x, y) && world.IsDoor(x, y) && !world.Door(x, y).Open() {
 				return OpenAction{world, x, y}
 			}
 		}
@@ -438,7 +438,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	for i := -1; i <= 1; i++ {
 		for j := -1; j <= 1; j++ {
 			x, y := location.X+j, location.Y+i
-			if world.IsValid(x, y) && world.IsDoor(x, y) && !world.IsPassable(x, y) {
+			if world.IsValid(x, y) && world.IsDoor(x, y) && !world.Door(x, y).Open() {
 				return OpenAction{world, x, y}
 			}
 		}
@@ -623,7 +623,7 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 	for i := -1; i <= 1; i++ {
 		for j := -1; j <= 1; j++ {
 			x, y := location.X+j, location.Y+i
-			if world.IsValid(x, y) && world.IsDoor(x, y) && !world.IsPassable(x, y) {
+			if world.IsValid(x, y) && world.IsDoor(x, y) && !world.Door(x, y).Open() {
 				return OpenAction{world, x, y}
 			}
 		}

@@ -21,6 +21,14 @@ func (door *doorComponent) Key() int {
 	return door.key
 }
 
+func (door *doorComponent) Lock() {
+	door.locked = true
+}
+
+func (door *doorComponent) Locked() bool {
+	return door.locked
+}
+
 func (door *doorComponent) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 	keys := []string{"Locked", "Key", "BlocksVisionClosed", "Open"}

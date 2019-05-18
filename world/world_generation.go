@@ -212,6 +212,7 @@ func generateBuildingOutsideTown(world worldmap.World, towns *[]worldmap.Town, b
 				doorX = x1
 			}
 			world.NewTile("door", doorX, doorY)
+			world.Door(doorX, doorY).Lock()
 			b.DoorLocation = &worldmap.Coordinates{doorX, doorY}
 
 			// Add number of windows accbording total perimeter of building
@@ -375,6 +376,10 @@ func generateBuildingInTown(world worldmap.World, t *worldmap.Town, buildings *[
 				}
 			}
 			world.NewTile("door", doorX, doorY)
+			// Lock door if residential
+			if b.T == worldmap.Residential {
+				world.Door(doorX, doorY).Lock()
+			}
 			b.DoorLocation = &worldmap.Coordinates{doorX, doorY}
 
 			// If not residential add counter

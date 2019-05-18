@@ -722,15 +722,16 @@ func (m Map) ToggleDoor(x, y int, open bool) {
 	chunk, cX, cY := m.globalToChunkAndLocal(x, y)
 
 	if chunk.door[cY][cX] != nil {
-		if open {
+		if open && !chunk.door[cY][cX].locked {
 			chunk.passable[cY][cX] = true
 			chunk.blocksVision[cY][cX] = false
+			chunk.door[cY][cX].open = true
 		} else {
 			chunk.passable[cY][cX] = false
 			chunk.blocksVision[cY][cX] = chunk.door[cY][cX].blocksVClosed
+			chunk.door[cY][cX].open = false
 		}
 	}
-	chunk.door[cY][cX].open = open
 
 }
 

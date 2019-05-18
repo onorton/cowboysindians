@@ -1027,10 +1027,14 @@ func (p *Player) ToggleDoor(open bool) bool {
 	}
 	// If there is a door, toggle its position if it's not already there
 	if p.world.IsDoor(x, y) {
-		if p.world.IsPassable(x, y) != open {
+		if p.world.Door(x, y).Open() != open {
 			p.world.ToggleDoor(x, y, open)
 			if open {
-				message.Enqueue("The door opens.")
+				if p.world.Door(x, y).Locked() {
+					message.Enqueue("The door is locked.")
+				} else {
+					message.Enqueue("The door opens.")
+				}
 			} else {
 				message.Enqueue("The door closes.")
 			}
