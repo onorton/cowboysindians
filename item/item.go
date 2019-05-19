@@ -86,10 +86,10 @@ func NewItem(itemType string) *Item {
 	return nil
 }
 
-func Choose(probabilites map[string]float64) string {
+func Choose(probabilities map[string]float64) string {
 	max := 0.0
 
-	for _, probability := range probabilites {
+	for _, probability := range probabilities {
 		if probability > 0 {
 			inverse := 1.0 / probability
 			if inverse > max {
@@ -99,7 +99,7 @@ func Choose(probabilites map[string]float64) string {
 	}
 	items := make([]string, 0)
 
-	for name, probability := range probabilites {
+	for name, probability := range probabilities {
 		count := int(probability * max)
 		for i := 0; i < count; i++ {
 			items = append(items, name)

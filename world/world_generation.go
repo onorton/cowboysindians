@@ -854,7 +854,7 @@ func generateNpcs(m worldmap.World, towns []worldmap.Town, buildings []worldmap.
 				i--
 				continue
 			}
-			npcs = append(npcs, npc.NewNpc("townsman", x, y, nil))
+			npcs = append(npcs, npc.NewNpc(npc.RandomNpcType(), x, y, nil))
 		}
 		x, y = npcs[i].GetCoordinates()
 		m.Place(npcs[i], x, y)

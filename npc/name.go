@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+
+	"github.com/onorton/cowboysindians/ui"
 )
 
 type nameData struct {
@@ -58,6 +60,10 @@ func (n npcName) FullName() string {
 	return n.name
 }
 
+func (n npcName) PlayerKnows() {
+	n.known = true
+}
+
 func (n npcName) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
@@ -105,4 +111,19 @@ func (n *npcName) UnmarshalJSON(data []byte) error {
 	n.known = v.Known
 
 	return nil
+}
+
+func unmarshalName(name map[string]interface{}) ui.Name {
+	nameJson, err := json.Marshal(name)
+	check(err)
+	if _, ok := name["Known"]; ok {
+		var npcName npcName
+		err = json.Unmarshal(nameJson, &npcName)
+		check(err)
+		return &npcName
+	}
+	var plainName ui.PlainName
+	err = json.Unmarshal(nameJson, &plainName)
+	check(err)
+	return &plainName
 }

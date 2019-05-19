@@ -176,7 +176,13 @@ func main() {
 		state.Npcs = npcs
 		state.Time = 1
 		state.PlayerIndex = 0
-		target := npcs[rand.Intn(len(npcs))]
+		targets := make([]*npc.Npc, 0)
+		for _, npc := range state.Npcs {
+			if npc.Human() {
+				targets = append(targets, npc)
+			}
+		}
+		target := targets[rand.Intn(len(targets))]
 		state.Target = target.GetID()
 
 		printOpeningText(target.GetName().FullName())
@@ -293,6 +299,8 @@ func main() {
 							player.Talk()
 						case ui.Read:
 							player.Read()
+						case ui.Use:
+							endTurn = player.Use()
 						}
 						action = ui.NoAction
 					}

@@ -440,7 +440,7 @@ func (e *Enemy) SetMap(world *worldmap.Map) {
 	e.world = world
 
 	switch ai := e.ai.(type) {
-	case mountAi:
+	case animalAi:
 		ai.setMap(world)
 	case npcAi:
 		ai.setMap(world)

@@ -275,6 +275,7 @@ type Name interface {
 	WithIndefinite() string
 	FullName() string
 	String() string
+	PlayerKnows()
 }
 
 type PlainName struct {
@@ -298,3 +299,5 @@ func (n PlainName) String() string {
 func (n PlainName) FullName() string {
 	return n.String()
 }
+
+func (n PlainName) PlayerKnows() {}

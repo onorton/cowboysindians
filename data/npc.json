@@ -11,7 +11,9 @@
 		"DialogueType": 0,
 		"AiType": "npc",
 		"Inventory": [[{"Items": {"beer": 1}, "Probability": 1.0}]],
-		"Mount": {"horse": 0.1, "None": 0.9}
+		"Mount": {"horse": 0.1, "None": 0.9},
+		"Probability": 1.0,
+		"Human": true
 	},
 
 	"shopkeeper": {
@@ -26,7 +28,9 @@
 		"DialogueType": 1,
 		"AiType": "npc",
 		"ShopInventory": {"Weapon":5,  "Ammo": 30},
-		"Inventory": []
+		"Inventory": [],
+		"Probability": 0,
+		"Human": true
 	},
 	"bartender": {
 		"Icon": {"Icon": 64, "Colour": 4},
@@ -40,7 +44,9 @@
 		"DialogueType": 1,
 		"AiType": "npc",
 		"ShopInventory": {"Consumable": 30},
-		"Inventory": []
+		"Inventory": [],
+		"Probability": 0,
+		"Human": true
 	},
 	"sheriff": {
 		"Icon": {"Icon": 64, "Colour": 4},
@@ -54,7 +60,9 @@
 		"DialogueType": 2,
 		"AiType": "sheriff",
 		"Inventory": [[{"Items": {"pistol": 1, "pistol bullet": 10}, "Probability": 1.0},{"Items": {"shotgun": 1, "shotgun shell": 10}, "Probability": 1.0}]],
-		"Mount": {"horse": 0.8, "None": 0.2}
+		"Mount": {"horse": 0.8, "None": 0.2},
+		"Probability": 0,
+		"Human": true
 	},
 	"deputy": {
 		"Icon": {"Icon": 68, "Colour": 4},
@@ -68,7 +76,51 @@
 		"DialogueType": 0,
 		"AiType": "sheriff",
 		"Inventory": [[{"Items": {"pistol": 1, "pistol bullet": 10}, "Probability": 1.0},{"Items": {"shotgun": 1, "shotgun shell": 10}, "Probability": 1.0}]],
-		"Mount": {"horse": 0.5, "None": 0.5}
+		"Mount": {"horse": 0.5, "None": 0.5},
+		"Probability": 0,
+		"Human": true
+	},
+	"cow": {
+		"Icon": {"Icon": 99, "Colour": 4},
+		"Initiative": 1,
+		"Hp": 20,
+		"Ac": 11,
+		"Str": 15,
+		"Dex": 8,
+		"Encumbrance": 100,
+		"Money": 0,
+		"AiType": "animal",
+		"Inventory": [],
+		"Probability": 1.0,
+		"Human": false
+	},
+	"chicken": {
+		"Icon": {"Icon": 99, "Colour": 8},
+		"Initiative": 1,
+		"Hp": 3,
+		"Ac": 9,
+		"Str": 6,
+		"Dex": 10,
+		"Encumbrance": 2,
+		"Money": 0,
+		"AiType": "animal",
+		"Inventory": [],
+		"Probability": 1.0,
+		"Human": false
+	},
+	"pig": {
+		"Icon": {"Icon": 112, "Colour": 208},
+		"Initiative": 1,
+		"Hp": 15,
+		"Ac": 8,
+		"Str": 10,
+		"Dex": 7,
+		"Encumbrance": 20,
+		"Money": 0,
+		"AiType": "animal",
+		"Inventory": [],
+		"Probability": 1.0,
+		"Human": false
 	}
 
 

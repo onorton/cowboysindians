@@ -36,6 +36,8 @@ type NpcAttributes struct {
 	DialogueType  *dialogueType
 	AiType        string
 	Mount         map[string]float64
+	Probability   float64
+	Human         bool
 }
 
 var npcData map[string]NpcAttributes = fetchNpcData()
@@ -49,7 +51,10 @@ func fetchNpcData() map[string]NpcAttributes {
 	return eD
 }
 
-func generateName(npcType string) *npcName {
+func generateName(npcType string, human bool) ui.Name {
+	if !human {
+		return &ui.PlainName{npcType}
+	}
 	firstName := Names.FirstNames[rand.Intn(len(Names.FirstNames))]
 	lastName := Names.LastNames[rand.Intn(len(Names.LastNames))]
 	switch npcType {
@@ -59,6 +64,34 @@ func generateName(npcType string) *npcName {
 		return &npcName{fmt.Sprintf("Deputy %s", lastName), npcType, false}
 	}
 	return &npcName{firstName + " " + lastName, npcType, false}
+}
+
+func RandomNpcType() string {
+	probabilities := map[string]float64{}
+	for npcType, npcInfo := range npcData {
+		probabilities[npcType] = npcInfo.Probability
+	}
+	max := 0.0
+
+	for _, probability := range probabilities {
+		if probability > 0 {
+			inverse := 1.0 / probability
+			if inverse > max {
+				max = inverse
+			}
+		}
+	}
+	possibleNpcs := make([]string, 0)
+
+	for name, probability := range probabilities {
+		count := int(probability * max)
+		for i := 0; i < count; i++ {
+			possibleNpcs = append(possibleNpcs, name)
+		}
+	}
+
+	n := rand.Intn(len(possibleNpcs))
+	return possibleNpcs[n]
 }
 
 func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
@@ -74,7 +107,7 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 		"str":         worldmap.NewAttribute(n.Str, n.Str),
 		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
 		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
-	npc := &Npc{generateName(npcType), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue}
+	npc := &Npc{generateName(npcType, n.Human), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue, n.Human}
 	for _, itm := range generateInventory(n.Inventory) {
 		npc.PickupItem(itm)
 	}
@@ -96,7 +129,7 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
 		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
 
-	npc := &Npc{generateName(npcType), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue}
+	npc := &Npc{generateName(npcType, n.Human), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue, n.Human}
 	for c, count := range n.ShopInventory {
 
 		for i := 0; i < count; i++ {
@@ -175,7 +208,7 @@ func (npc *Npc) Render() ui.Element {
 func (npc *Npc) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID", "Ai", "Dialogue"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID", "Ai", "Dialogue", "Human"}
 
 	mountID := ""
 	if npc.mount != nil {
@@ -197,6 +230,7 @@ func (npc *Npc) MarshalJSON() ([]byte, error) {
 		"MountID":    mountID,
 		"Ai":         npc.ai,
 		"Dialogue":   npc.dialogue,
+		"Human":      npc.human,
 	}
 
 	length := len(npcValues)
@@ -221,14 +255,17 @@ func (npc *Npc) MarshalJSON() ([]byte, error) {
 }
 
 func (npc *Npc) Talk() interaction {
-	npc.name.known = true
+	if npc.dialogue == nil {
+		return DoesNotSpeak
+	}
+	npc.name.PlayerKnows()
 	return npc.dialogue.interact()
 }
 
 func (npc *Npc) UnmarshalJSON(data []byte) error {
 
 	type npcJson struct {
-		Name       *npcName
+		Name       map[string]interface{}
 		Id         string
 		Location   worldmap.Coordinates
 		Icon       icon.Icon
@@ -242,12 +279,13 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 		MountID    string
 		Ai         map[string]interface{}
 		Dialogue   map[string]interface{}
+		Human      bool
 	}
 	var v npcJson
 
 	json.Unmarshal(data, &v)
 
-	npc.name = v.Name
+	npc.name = unmarshalName(v.Name)
 	npc.id = v.Id
 	npc.location = v.Location
 	npc.icon = v.Icon
@@ -261,6 +299,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 	npc.mountID = v.MountID
 	npc.ai = unmarshalAi(v.Ai)
 	npc.dialogue = unmarshalDialogue(v.Dialogue)
+	npc.human = v.Human
 
 	return nil
 }
@@ -395,9 +434,9 @@ func (npc *Npc) Update() {
 
 	p := npc.world.GetPlayer()
 	pX, pY := p.GetCoordinates()
-	if npc.world.InConversationRange(npc, p) {
+	if npc.world.InConversationRange(npc, p) && npc.dialogue != nil {
 		npc.dialogue.initialGreeting()
-	} else if npc.world.IsVisible(npc, pX, pY) {
+	} else if npc.world.IsVisible(npc, pX, pY) && npc.dialogue != nil {
 		npc.dialogue.resetSeen()
 	}
 	action := npc.ai.update(npc, npc.world)
@@ -550,7 +589,7 @@ func (npc *Npc) SetMap(world *worldmap.Map) {
 	npc.world = world
 
 	switch ai := npc.ai.(type) {
-	case mountAi:
+	case animalAi:
 		ai.setMap(world)
 	case npcAi:
 		ai.setMap(world)
@@ -621,6 +660,9 @@ func (npc *Npc) RemoveMoney(amount int) {
 	npc.money += amount
 }
 
+func (npc *Npc) Human() bool {
+	return npc.human
+}
 func (npc *Npc) GetID() string {
 	return npc.id
 }
@@ -633,13 +675,13 @@ func (npc *Npc) GetBounties() *Bounties {
 }
 
 func (npc *Npc) ProcessEvent(e event.Event) {
-	if ev, ok := e.(event.CrimeEvent); ok {
+	if ev, ok := e.(event.CrimeEvent); ok && npc.Human() {
 		ev.Witness(npc.world, npc)
 	}
 }
 
 type Npc struct {
-	name       *npcName
+	name       ui.Name
 	id         string
 	location   worldmap.Coordinates
 	icon       icon.Icon
@@ -655,4 +697,5 @@ type Npc struct {
 	world      *worldmap.Map
 	ai         ai
 	dialogue   dialogue
+	human      bool
 }

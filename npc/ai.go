@@ -50,8 +50,8 @@ type ai interface {
 
 func newAi(aiType string, world *worldmap.Map, location worldmap.Coordinates, town *worldmap.Town, building *worldmap.Building, dialogue dialogue) ai {
 	switch aiType {
-	case "mount":
-		return mountAi{worldmap.NewRandomWaypoint(world, location)}
+	case "animal":
+		return animalAi{worldmap.NewRandomWaypoint(world, location)}
 	case "npc":
 		if building != nil {
 			return npcAi{worldmap.NewWithinBuilding(world, *building, location)}
@@ -66,11 +66,11 @@ func newAi(aiType string, world *worldmap.Map, location worldmap.Coordinates, to
 	return nil
 }
 
-type mountAi struct {
+type animalAi struct {
 	waypoint worldmap.WaypointSystem
 }
 
-func (ai mountAi) update(c hasAi, world *worldmap.Map) Action {
+func (ai animalAi) update(c hasAi, world *worldmap.Map) Action {
 	x, y := c.GetCoordinates()
 	location := worldmap.Coordinates{x, y}
 	waypoint := ai.waypoint.NextWaypoint(location)
@@ -98,7 +98,7 @@ func (ai mountAi) update(c hasAi, world *worldmap.Map) Action {
 	return NoAction{}
 }
 
-func (ai mountAi) setMap(world *worldmap.Map) {
+func (ai animalAi) setMap(world *worldmap.Map) {
 	switch w := ai.waypoint.(type) {
 	case *worldmap.RandomWaypoint:
 		w.SetMap(world)
@@ -108,10 +108,10 @@ func (ai mountAi) setMap(world *worldmap.Map) {
 	}
 }
 
-func (ai mountAi) MarshalJSON() ([]byte, error) {
+func (ai animalAi) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	buffer.WriteString("\"Type\":\"mount\",")
+	buffer.WriteString("\"Type\":\"animal\",")
 
 	waypointValue, err := json.Marshal(ai.waypoint)
 	if err != nil {
@@ -124,12 +124,12 @@ func (ai mountAi) MarshalJSON() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func (ai *mountAi) UnmarshalJSON(data []byte) error {
-	type mountAiJson struct {
+func (ai *animalAi) UnmarshalJSON(data []byte) error {
+	type animalAiJson struct {
 		Waypoint map[string]interface{}
 	}
 
-	var v mountAiJson
+	var v animalAiJson
 	if err := json.Unmarshal(data, &v); err != nil {
 		return err
 	}
@@ -654,8 +654,8 @@ func unmarshalAi(ai map[string]interface{}) ai {
 	check(err)
 
 	switch ai["Type"] {
-	case "mount":
-		var mAi mountAi
+	case "animal":
+		var mAi animalAi
 		err = json.Unmarshal(aiJson, &mAi)
 		check(err)
 		return mAi

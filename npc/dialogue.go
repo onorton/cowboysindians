@@ -27,6 +27,7 @@ const (
 	Normal interaction = iota
 	Trade
 	Bounty
+	DoesNotSpeak
 )
 
 var dialogueData map[string][]string = fetchDialogueData()
@@ -365,6 +366,9 @@ func addTownToDialogue(dialogue string, townName string) string {
 }
 
 func unmarshalDialogue(dialogue map[string]interface{}) dialogue {
+	if dialogue == nil {
+		return nil
+	}
 	dialogueJson, err := json.Marshal(dialogue)
 	check(err)
 

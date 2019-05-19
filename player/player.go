@@ -1081,6 +1081,8 @@ func (p *Player) Talk() {
 						case npc.Bounty:
 							ui.GetInput()
 							claimBounties(p, c)
+						case npc.DoesNotSpeak:
+							message.PrintMessage(fmt.Sprintf("You try to talk to %s. It doesn't seem to respond.", c.GetName().WithDefinite()))
 						}
 						return
 					}
