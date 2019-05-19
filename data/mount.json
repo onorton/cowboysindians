@@ -1,6 +1,6 @@
 {
   "horse": {
-    "Icon": {"Icon": 104, "Colour": 20},
+    "Icon": {"Icon": 104, "Colour": 4},
     "Hp": 20,
     "Initiative": 2,
     "Ac": 12,

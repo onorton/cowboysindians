@@ -68,6 +68,7 @@ func Init(width int) {
 	if err != nil {
 		panic(err)
 	}
+	termbox.SetOutputMode(termbox.Output256)
 }
 
 // Close closes the termbox instance
