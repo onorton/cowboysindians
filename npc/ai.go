@@ -206,6 +206,14 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) Action {
 		for j := -1; j <= 1; j++ {
 			x, y := location.X+j, location.Y+i
 			if world.IsValid(x, y) && world.IsDoor(x, y) && !world.Door(x, y).Open() {
+				if itemHolder, ok := c.(holdsItems); ok && world.Door(x, y).Locked() {
+					// If there is a key that fits, unlock door
+					for _, itm := range itemHolder.Inventory() {
+						if itm.HasComponent("key") && world.Door(x, y).KeyFits(itm) {
+							return LockAction{itm, world, x, y}
+						}
+					}
+				}
 				return OpenAction{world, x, y}
 			}
 		}
@@ -439,6 +447,14 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 		for j := -1; j <= 1; j++ {
 			x, y := location.X+j, location.Y+i
 			if world.IsValid(x, y) && world.IsDoor(x, y) && !world.Door(x, y).Open() {
+				if itemHolder, ok := c.(holdsItems); ok && world.Door(x, y).Locked() {
+					// If there is a key that fits, unlock door
+					for _, itm := range itemHolder.Inventory() {
+						if itm.HasComponent("key") && world.Door(x, y).KeyFits(itm) {
+							return LockAction{itm, world, x, y}
+						}
+					}
+				}
 				return OpenAction{world, x, y}
 			}
 		}
@@ -624,6 +640,14 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 		for j := -1; j <= 1; j++ {
 			x, y := location.X+j, location.Y+i
 			if world.IsValid(x, y) && world.IsDoor(x, y) && !world.Door(x, y).Open() {
+				if itemHolder, ok := c.(holdsItems); ok && world.Door(x, y).Locked() {
+					// If there is a key that fits, unlock door
+					for _, itm := range itemHolder.Inventory() {
+						if itm.HasComponent("key") && world.Door(x, y).KeyFits(itm) {
+							return LockAction{itm, world, x, y}
+						}
+					}
+				}
 				return OpenAction{world, x, y}
 			}
 		}

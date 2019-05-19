@@ -131,6 +131,18 @@ func (a StandupAction) execute() {
 	a.c.Standup()
 }
 
+type LockAction struct {
+	key   *item.Item
+	world *worldmap.Map
+	x, y  int
+}
+
+func (a LockAction) execute() {
+	if a.world.Door(a.x, a.y).KeyFits(a.key) {
+		a.world.Door(a.x, a.y).ToggleLocked()
+	}
+}
+
 type NoAction struct{}
 
 func (a NoAction) execute() {}

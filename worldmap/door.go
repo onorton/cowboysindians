@@ -36,6 +36,10 @@ func (door *doorComponent) Locked() bool {
 }
 
 func (door *doorComponent) KeyFits(itm *item.Item) bool {
+	if itm.Component("key") == nil {
+		return false
+	}
+
 	keyComponent := itm.Component("key").(item.KeyComponent)
 	if keyComponent.Key == -1 {
 		return true
