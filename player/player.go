@@ -1097,8 +1097,84 @@ func (p *Player) Talk() {
 		}
 	}
 	message.PrintMessage("You talk to yourself.")
-
 }
+
+func (p *Player) Pickpocket() bool {
+	message.PrintMessage("Which direction?")
+	height := p.world.GetHeight()
+	width := p.world.GetWidth()
+	x, y := p.GetCoordinates()
+
+	// Select direction
+	for {
+		validMove := true
+		action := ui.GetInput()
+
+		if action.IsMovementAction() {
+			switch action {
+			case ui.MoveWest:
+				if x != 0 {
+					x--
+				}
+			case ui.MoveEast:
+				if x < width-1 {
+					x++
+				}
+			case ui.MoveNorth:
+				if y != 0 {
+					y--
+				}
+			case ui.MoveSouth:
+				if y < height-1 {
+					y++
+				}
+			case ui.MoveSouthWest:
+				if x != 0 && y < height-1 {
+					x--
+					y++
+				}
+			case ui.MoveSouthEast:
+				if x < width-1 && y < height-1 {
+					x++
+					y++
+				}
+			case ui.MoveNorthWest:
+				if x != 0 && y != 0 {
+					x--
+					y--
+				}
+			case ui.MoveNorthEast:
+				if y != 0 && x < width-1 {
+					y--
+					x++
+				}
+			}
+		} else if action == ui.CancelAction {
+			message.PrintMessage("Never mind...")
+			return false
+		} else {
+			message.PrintMessage("Invalid direction.")
+			validMove = false
+		}
+
+		if validMove {
+			break
+		}
+	}
+
+	c := p.world.GetCreature(x, y)
+	if c == nil {
+		message.Enqueue("There is no one there to pickpocket.")
+		return true
+	}
+	if n, ok := c.(*npc.Npc); ok && n.Human() {
+		pickpocket(p, n)
+	} else {
+		message.Enqueue("You can't pickpocket the creature there")
+	}
+	return true
+}
+
 func (p *Player) Read() {
 	items := p.world.GetItems(p.location.X, p.location.Y)
 

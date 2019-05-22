@@ -44,6 +44,7 @@ const (
 	Claim
 	Read
 	Use
+	Pickpocket
 	Confirm
 	CancelAction
 	NoAction
@@ -152,6 +153,8 @@ func GetInput() (action PlayerAction) {
 				action = Read
 			case 'a':
 				action = Use
+			case 'p':
+				action = Pickpocket
 			case 'y':
 				action = Confirm
 			default:

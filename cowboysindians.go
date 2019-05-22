@@ -301,6 +301,8 @@ func main() {
 							player.Read()
 						case ui.Use:
 							endTurn = player.Use()
+						case ui.Pickpocket:
+							endTurn = player.Pickpocket()
 						}
 						action = ui.NoAction
 					}
