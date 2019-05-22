@@ -593,6 +593,8 @@ func (npc *Npc) SetMap(world *worldmap.Map) {
 		ai.setMap(world)
 	case npcAi:
 		ai.setMap(world)
+	case barPatronAi:
+		ai.setMap(world)
 	}
 
 	switch d := npc.dialogue.(type) {

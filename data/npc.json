@@ -16,6 +16,22 @@
 		"Human": true
 	},
 
+	"bar patron": {
+		"Icon": {"Icon": 116, "Colour": 6},
+		"Initiative": 1,
+		"Hp": 5,
+		"Ac": 10,
+		"Str": 10,
+		"Dex": 10,
+		"Encumbrance": 100,
+		"Money": 1000,
+		"DialogueType": 0,
+		"AiType": "bar patron",
+		"Inventory": [[{"Items": {"beer": 1}, "Probability": 1.0},{"Items": {"beer": 2}, "Probability": 1.0}]],
+		"Probability": 0,
+		"Human": true
+	},
+
 	"shopkeeper": {
 		"Icon": {"Icon": 64, "Colour": 4},
 		"Initiative": 1,

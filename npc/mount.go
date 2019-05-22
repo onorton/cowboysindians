@@ -285,6 +285,8 @@ func (m *Mount) SetMap(world *worldmap.Map) {
 		ai.setMap(world)
 	case npcAi:
 		ai.setMap(world)
+	case barPatronAi:
+		ai.setMap(world)
 	}
 }
 

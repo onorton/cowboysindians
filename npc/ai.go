@@ -58,6 +58,8 @@ func newAi(aiType string, world *worldmap.Map, location worldmap.Coordinates, to
 		} else {
 			return npcAi{worldmap.NewRandomWaypoint(world, location)}
 		}
+	case "bar patron":
+		return barPatronAi{worldmap.NewWithinBuilding(world, *building, location), new(int)}
 	case "sheriff":
 		return newSheriffAi(location, *town)
 	case "enemy":
@@ -673,35 +675,6 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 	return NoAction{}
 }
 
-func unmarshalAi(ai map[string]interface{}) ai {
-	aiJson, err := json.Marshal(ai)
-	check(err)
-
-	switch ai["Type"] {
-	case "animal":
-		var mAi animalAi
-		err = json.Unmarshal(aiJson, &mAi)
-		check(err)
-		return mAi
-	case "npc":
-		var nAi npcAi
-		err = json.Unmarshal(aiJson, &nAi)
-		check(err)
-		return nAi
-	case "sheriff":
-		var sAi sheriffAi
-		err = json.Unmarshal(aiJson, &sAi)
-		check(err)
-		return sAi
-	case "enemy":
-		var eAi enemyAi
-		err = json.Unmarshal(aiJson, &eAi)
-		check(err)
-		return eAi
-	}
-	return nil
-}
-
 func (ai enemyAi) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
@@ -728,6 +701,130 @@ func (ai *enemyAi) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	ai.dialogue = unmarshalDialogue(v.Dialogue).(*enemyDialogue)
+	return nil
+}
+
+type barPatronAi struct {
+	waypoint *worldmap.WithinBuilding
+	timeLeft *int
+}
+
+func (ai barPatronAi) update(c hasAi, world *worldmap.Map) Action {
+	*(ai.timeLeft) = *(ai.timeLeft) - 1
+	if *(ai.timeLeft) > 0 {
+		return NoAction{}
+	}
+
+	x, y := c.GetCoordinates()
+	location := worldmap.Coordinates{x, y}
+
+	waypoint := ai.waypoint.NextWaypoint(location)
+	aiMap := getWaypointMap(waypoint, world, location, c.GetVisionDistance())
+	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
+	possibleLocations := make([]worldmap.Coordinates, 0)
+	// Find adjacent locations closer to the goal
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			nX := location.X + i
+			nY := location.Y + j
+			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] <= current {
+				// Add if not occupied
+				if world.IsValid(nX, nY) && !world.IsOccupied(nX, nY) {
+					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
+				}
+			}
+		}
+	}
+	if len(possibleLocations) > 0 {
+		l := possibleLocations[rand.Intn(len(possibleLocations))]
+		// if square character is moving to has chair, wait for a bit
+		items := world.GetItems(l.X, l.Y)
+		for i := len(items) - 1; i >= 0; i-- {
+			// Wait around
+			if items[i].GetName() == "chair" {
+				*(ai.timeLeft) = rand.Intn(10)
+			}
+			world.PlaceItem(l.X, l.Y, items[i])
+		}
+		return MoveAction{c, world, l.X, l.Y}
+	}
+
+	return NoAction{}
+}
+
+func (ai barPatronAi) setMap(world *worldmap.Map) {
+	ai.waypoint.SetMap(world)
+}
+
+func (ai barPatronAi) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString("\"Type\":\"bar patron\",")
+
+	waypointValue, err := json.Marshal(ai.waypoint)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Waypoint\":%s,", waypointValue))
+
+	timeLeftValue, err := json.Marshal(ai.timeLeft)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"TimeLeft\":%s", timeLeftValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (ai *barPatronAi) UnmarshalJSON(data []byte) error {
+	type barPatronAiJson struct {
+		Waypoint *worldmap.WithinBuilding
+		TimeLeft *int
+	}
+
+	var v barPatronAiJson
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	ai.waypoint = v.Waypoint
+	ai.timeLeft = v.TimeLeft
+	return nil
+}
+
+func unmarshalAi(ai map[string]interface{}) ai {
+	aiJson, err := json.Marshal(ai)
+	check(err)
+
+	switch ai["Type"] {
+	case "animal":
+		var mAi animalAi
+		err = json.Unmarshal(aiJson, &mAi)
+		check(err)
+		return mAi
+	case "npc":
+		var nAi npcAi
+		err = json.Unmarshal(aiJson, &nAi)
+		check(err)
+		return nAi
+	case "sheriff":
+		var sAi sheriffAi
+		err = json.Unmarshal(aiJson, &sAi)
+		check(err)
+		return sAi
+	case "enemy":
+		var eAi enemyAi
+		err = json.Unmarshal(aiJson, &eAi)
+		check(err)
+		return eAi
+	case "bar patron":
+		var bAi barPatronAi
+		err = json.Unmarshal(aiJson, &bAi)
+		check(err)
+		return bAi
+	}
 	return nil
 }
 

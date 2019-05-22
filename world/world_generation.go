@@ -816,6 +816,11 @@ func generateNpcs(m worldmap.World, towns []worldmap.Town, buildings []worldmap.
 			n = placeNpcInBuilding(m, findTown(towns, b), b, "shopkeeper")
 		case worldmap.Saloon:
 			n = placeNpcInBuilding(m, findTown(towns, b), b, "bartender")
+			buildingArea := (b.X2 - b.X1) * (b.Y2 - b.Y1)
+			numPatrons := rand.Intn(buildingArea / 3)
+			for j := 0; j < numPatrons; j++ {
+				npcs = append(npcs, placeNpcInBuilding(m, findTown(towns, b), b, "bar patron"))
+			}
 		case worldmap.Sheriff:
 			n = placeNpcInBuilding(m, findTown(towns, b), b, "sheriff")
 			numDeputies := rand.Intn(3)
