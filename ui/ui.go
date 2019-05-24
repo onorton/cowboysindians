@@ -45,6 +45,7 @@ const (
 	Read
 	Use
 	Pickpocket
+	Place
 	Confirm
 	CancelAction
 	NoAction
@@ -155,6 +156,8 @@ func GetInput() (action PlayerAction) {
 				action = Use
 			case 'p':
 				action = Pickpocket
+			case 'P':
+				action = Place
 			case 'y':
 				action = Confirm
 			default:

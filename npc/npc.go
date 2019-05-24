@@ -619,7 +619,7 @@ func (npc *Npc) GetVisionDistance() int {
 	return 20
 }
 
-func (npc *Npc) GetItems() map[rune]([]*item.Item) {
+func (npc *Npc) GetItems(addMoney bool) map[rune]([]*item.Item) {
 	items := make(map[rune]([]*item.Item))
 	for _, itm := range npc.inventory {
 		existing := items[itm.GetKey()]
@@ -629,6 +629,11 @@ func (npc *Npc) GetItems() map[rune]([]*item.Item) {
 		existing = append(existing, itm)
 		items[itm.GetKey()] = existing
 	}
+	if addMoney && npc.money > 0 {
+		money := item.Money(npc.money)
+		items[money.GetKey()] = []*item.Item{money}
+	}
+
 	return items
 }
 
@@ -659,7 +664,7 @@ func (npc *Npc) AddMoney(amount int) {
 }
 
 func (npc *Npc) RemoveMoney(amount int) {
-	npc.money += amount
+	npc.money -= amount
 }
 
 func (npc *Npc) Human() bool {

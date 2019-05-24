@@ -40,6 +40,13 @@ type TheftEvent struct {
 	location    worldmap.Coordinates
 }
 
+type PickpocketEvent struct {
+	id          string
+	perpetrator worldmap.Creature
+	item        *item.Item
+	location    worldmap.Coordinates
+}
+
 func (e MurderEvent) Id() string {
 	return e.id
 }
@@ -100,12 +107,46 @@ func (e TheftEvent) Location() worldmap.Coordinates {
 	return e.location
 }
 
+func (e PickpocketEvent) Id() string {
+	return e.id
+}
+
+func (e PickpocketEvent) Perpetrator() string {
+	return e.perpetrator.GetID()
+}
+
+func (e PickpocketEvent) PerpetratorName() string {
+	return e.perpetrator.GetName().FullName()
+}
+
+func (e PickpocketEvent) Crime() string {
+	return "Pickpocketing"
+}
+
+func (e PickpocketEvent) Value() int {
+	return 2 * e.item.GetValue()
+}
+
+func (e PickpocketEvent) Witness(world *worldmap.Map, c worldmap.Creature) {
+	if e.Perpetrator() != c.GetID() && world.IsVisible(c, e.location.X, e.location.Y) {
+		Emit(WitnessedCrimeEvent{e})
+	}
+}
+
+func (e PickpocketEvent) Location() worldmap.Coordinates {
+	return e.location
+}
+
 func NewMurder(perpetrator worldmap.Creature, victim worldmap.Creature, location worldmap.Coordinates) MurderEvent {
 	return MurderEvent{xid.New().String(), perpetrator, victim, location}
 }
 
 func NewTheft(perpetrator worldmap.Creature, item *item.Item, location worldmap.Coordinates) TheftEvent {
 	return TheftEvent{xid.New().String(), perpetrator, item, location}
+}
+
+func NewPickpocket(perpetrator worldmap.Creature, item *item.Item, location worldmap.Coordinates) PickpocketEvent {
+	return PickpocketEvent{xid.New().String(), perpetrator, item, location}
 }
 
 func Emit(e Event) {

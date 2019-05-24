@@ -366,6 +366,11 @@ func (p *Player) GetInventoryKeys() string {
 }
 
 func (p *Player) GetItem(key rune) *item.Item {
+	money := item.Money(p.money)
+	if key == money.GetKey() {
+		return money
+	}
+
 	items := p.inventory[key]
 	if items == nil {
 		return nil

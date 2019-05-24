@@ -13,7 +13,7 @@ func trade(p *Player, npc *npc.Npc) {
 	for !tradeComplete {
 		printTradeScreen(p, npc)
 		message.PrintMessages()
-		npcItems := npc.GetItems()
+		npcItems := npc.GetItems(false)
 		action := ui.GetInput()
 		if action == ui.Buy {
 			validSelection := false
@@ -33,9 +33,7 @@ func trade(p *Player, npc *npc.Npc) {
 						npc.RemoveItem(item[0])
 					}
 				}
-
 			}
-
 		} else if action == ui.Sell {
 			validSelection := false
 			for !validSelection {
@@ -78,7 +76,7 @@ func printTradeScreen(p *Player, npc *npc.Npc) {
 	}
 
 	i = 0
-	for c, items := range npc.GetItems() {
+	for c, items := range npc.GetItems(false) {
 		ui.WriteText(npcX, padding+i, fmt.Sprintf("%s %dx %s $%.2f", string(c), len(items), items[0].GetName(), float64(items[0].GetValue())/100))
 		i++
 	}
