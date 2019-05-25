@@ -846,68 +846,12 @@ func (p *Player) DropItem() bool {
 }
 
 func (p *Player) ToggleDoor(open bool) bool {
-	message.PrintMessage("Which direction?")
-	height := p.world.GetHeight()
-	width := p.world.GetWidth()
-	x, y := p.GetCoordinates()
 
-	// Select direction
-	for {
-		validMove := true
-		action := ui.GetInput()
-
-		if action.IsMovementAction() {
-			switch action {
-			case ui.MoveWest:
-				if x != 0 {
-					x--
-				}
-			case ui.MoveEast:
-				if x < width-1 {
-					x++
-				}
-			case ui.MoveNorth:
-				if y != 0 {
-					y--
-				}
-			case ui.MoveSouth:
-				if y < height-1 {
-					y++
-				}
-			case ui.MoveSouthWest:
-				if x != 0 && y < height-1 {
-					x--
-					y++
-				}
-
-			case ui.MoveSouthEast:
-				if x < width-1 && y < height-1 {
-					x++
-					y++
-				}
-			case ui.MoveNorthWest:
-				if x != 0 && y != 0 {
-					x--
-					y--
-				}
-			case ui.MoveNorthEast:
-				if y != 0 && x < width-1 {
-					y--
-					x++
-				}
-			}
-		} else if action == ui.CancelAction {
-			message.PrintMessage("Never mind...")
-			return false
-		} else {
-			message.PrintMessage("Invalid direction.")
-			validMove = false
-		}
-
-		if validMove {
-			break
-		}
+	x, y, _ := p.SelectDirection()
+	if p.location == (worldmap.Coordinates{x, y}) {
+		return false
 	}
+
 	// If there is a door, toggle its position if it's not already there
 	if p.world.IsDoor(x, y) {
 		if p.world.Door(x, y).Open() != open {
@@ -935,13 +879,11 @@ func (p *Player) ToggleDoor(open bool) bool {
 	return false
 }
 
-func (p *Player) ToggleMount() bool {
+func (p *Player) SelectDirection() (int, int, ui.PlayerAction) {
 	message.PrintMessage("Which direction?")
 	height := p.world.GetHeight()
 	width := p.world.GetWidth()
 	x, y := p.GetCoordinates()
-
-	mounted := p.mount != nil
 	action := ui.Wait
 	// Select direction
 	for {
@@ -971,6 +913,7 @@ func (p *Player) ToggleMount() bool {
 					x--
 					y++
 				}
+
 			case ui.MoveSouthEast:
 				if x < width-1 && y < height-1 {
 					x++
@@ -989,7 +932,7 @@ func (p *Player) ToggleMount() bool {
 			}
 		} else if action == ui.CancelAction {
 			message.PrintMessage("Never mind...")
-			return false
+			return x, y, ui.Wait
 		} else {
 			message.PrintMessage("Invalid direction.")
 			validMove = false
@@ -999,6 +942,16 @@ func (p *Player) ToggleMount() bool {
 			break
 		}
 	}
+	return x, y, action
+}
+
+func (p *Player) ToggleMount() bool {
+	mounted := p.mount != nil
+
+	x, y, action := p.SelectDirection()
+	if p.location == (worldmap.Coordinates{x, y}) {
+		return false
+	}
 
 	if mounted {
 		if p.world.IsPassable(x, y) {
@@ -1006,6 +959,7 @@ func (p *Player) ToggleMount() bool {
 			p.mount = nil
 			p.Move(action)
 			message.Enqueue("You dismount.")
+			p.location = worldmap.Coordinates{x, y}
 			return true
 		} else {
 			message.PrintMessage("You cannot dismount here.")
@@ -1105,66 +1059,9 @@ func (p *Player) Talk() {
 }
 
 func (p *Player) Pickpocket() bool {
-	message.PrintMessage("Which direction?")
-	height := p.world.GetHeight()
-	width := p.world.GetWidth()
-	x, y := p.GetCoordinates()
-
-	// Select direction
-	for {
-		validMove := true
-		action := ui.GetInput()
-
-		if action.IsMovementAction() {
-			switch action {
-			case ui.MoveWest:
-				if x != 0 {
-					x--
-				}
-			case ui.MoveEast:
-				if x < width-1 {
-					x++
-				}
-			case ui.MoveNorth:
-				if y != 0 {
-					y--
-				}
-			case ui.MoveSouth:
-				if y < height-1 {
-					y++
-				}
-			case ui.MoveSouthWest:
-				if x != 0 && y < height-1 {
-					x--
-					y++
-				}
-			case ui.MoveSouthEast:
-				if x < width-1 && y < height-1 {
-					x++
-					y++
-				}
-			case ui.MoveNorthWest:
-				if x != 0 && y != 0 {
-					x--
-					y--
-				}
-			case ui.MoveNorthEast:
-				if y != 0 && x < width-1 {
-					y--
-					x++
-				}
-			}
-		} else if action == ui.CancelAction {
-			message.PrintMessage("Never mind...")
-			return false
-		} else {
-			message.PrintMessage("Invalid direction.")
-			validMove = false
-		}
-
-		if validMove {
-			break
-		}
+	x, y, _ := p.SelectDirection()
+	if p.location == (worldmap.Coordinates{x, y}) {
+		return false
 	}
 
 	c := p.world.GetCreature(x, y)
@@ -1270,68 +1167,11 @@ func (p *Player) Use() bool {
 					if itm.HasComponent("key") {
 						// Keys are multiple use
 						p.AddItem(itm)
-						message.PrintMessage("Which direction?")
-						height := p.world.GetHeight()
-						width := p.world.GetWidth()
-						x, y := p.GetCoordinates()
-
-						// Select direction
-						for {
-							validMove := true
-							action := ui.GetInput()
-
-							if action.IsMovementAction() {
-								switch action {
-								case ui.MoveWest:
-									if x != 0 {
-										x--
-									}
-								case ui.MoveEast:
-									if x < width-1 {
-										x++
-									}
-								case ui.MoveNorth:
-									if y != 0 {
-										y--
-									}
-								case ui.MoveSouth:
-									if y < height-1 {
-										y++
-									}
-								case ui.MoveSouthWest:
-									if x != 0 && y < height-1 {
-										x--
-										y++
-									}
-
-								case ui.MoveSouthEast:
-									if x < width-1 && y < height-1 {
-										x++
-										y++
-									}
-								case ui.MoveNorthWest:
-									if x != 0 && y != 0 {
-										x--
-										y--
-									}
-								case ui.MoveNorthEast:
-									if y != 0 && x < width-1 {
-										y--
-										x++
-									}
-								}
-							} else if action == ui.CancelAction {
-								message.PrintMessage("Never mind...")
-								return false
-							} else {
-								message.PrintMessage("Invalid direction.")
-								validMove = false
-							}
-
-							if validMove {
-								break
-							}
+						x, y, _ := p.SelectDirection()
+						if p.location == (worldmap.Coordinates{x, y}) {
+							return false
 						}
+
 						if !p.world.IsDoor(x, y) {
 							message.Enqueue("You see no door here.")
 						} else {
