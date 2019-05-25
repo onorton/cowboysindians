@@ -52,6 +52,9 @@ func newAi(aiType string, world *worldmap.Map, location worldmap.Coordinates, to
 	switch aiType {
 	case "animal":
 		return animalAi{worldmap.NewRandomWaypoint(world, location)}
+	case "aggressive animal":
+		v := ""
+		return aggAnimalAi{worldmap.NewRandomWaypoint(world, location), &v}
 	case "npc":
 		if building != nil {
 			return npcAi{worldmap.NewWithinBuilding(world, *building, location)}
@@ -84,7 +87,7 @@ func (ai animalAi) update(c hasAi, world *worldmap.Map) Action {
 		for j := -1; j <= 1; j++ {
 			nX := location.X + i
 			nY := location.Y + j
-			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] <= current {
+			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] < current {
 				// Add if not occupied
 				if world.IsValid(nX, nY) && !world.IsOccupied(nX, nY) {
 					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
@@ -136,6 +139,119 @@ func (ai *animalAi) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	ai.waypoint = worldmap.UnmarshalWaypointSystem(v.Waypoint)
+	return nil
+}
+
+type aggAnimalAi struct {
+	waypoint      worldmap.WaypointSystem
+	currentTarget *string
+}
+
+func (ai aggAnimalAi) update(c hasAi, world *worldmap.Map) Action {
+	x, y := c.GetCoordinates()
+	location := worldmap.Coordinates{x, y}
+	waypoint := ai.waypoint.NextWaypoint(location)
+
+	creatures := visibleCreatures(c, world)
+	// if current target is not visible, select a new close target
+	targets := []worldmap.Creature{}
+
+	for _, t := range creatures {
+		if t.GetID() == *ai.currentTarget {
+			targets = []worldmap.Creature{t}
+		}
+	}
+
+	if len(targets) == 0 {
+		closeCreatures := make([]worldmap.Creature, 0)
+		for _, t := range creatures {
+			tX, tY := t.GetCoordinates()
+			if worldmap.Distance(x, y, tX, tY) <= float64(c.GetVisionDistance()) {
+				closeCreatures = append(closeCreatures, t)
+			}
+		}
+		if len(closeCreatures) > 0 {
+			target := closeCreatures[rand.Intn(len(closeCreatures))]
+			targets = []worldmap.Creature{target}
+			*ai.currentTarget = target.GetID()
+		} else {
+			*ai.currentTarget = ""
+		}
+	}
+
+	coefficients := []float64{0.0, 1.0}
+	if len(targets) > 0 {
+		coefficients = []float64{1.0, 0.0}
+	}
+	aiMap := addMaps([][][]int{getChaseMap(c, world, targets), getWaypointMap(waypoint, world, location, c.GetVisionDistance())}, coefficients)
+	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
+	possibleLocations := make([]worldmap.Coordinates, 0)
+	// Find adjacent locations closer to the goal
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			nX := location.X + i
+			nY := location.Y + j
+			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] < current {
+				// Add if passable
+				if world.IsValid(nX, nY) && world.IsPassable(nX, nY) {
+					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
+				}
+			}
+		}
+	}
+	if len(possibleLocations) > 0 {
+		l := possibleLocations[rand.Intn(len(possibleLocations))]
+		return MoveAction{c, world, l.X, l.Y}
+	}
+
+	return NoAction{}
+}
+
+func (ai aggAnimalAi) setMap(world *worldmap.Map) {
+	switch w := ai.waypoint.(type) {
+	case *worldmap.RandomWaypoint:
+		w.SetMap(world)
+	case *worldmap.Patrol:
+	case *worldmap.WithinBuilding:
+		w.SetMap(world)
+	}
+}
+
+func (ai aggAnimalAi) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString("\"Type\":\"aggressive animal\",")
+
+	waypointValue, err := json.Marshal(ai.waypoint)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Waypoint\":%s,", waypointValue))
+
+	targetValue, err := json.Marshal(ai.currentTarget)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Target\":%s", targetValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (ai *aggAnimalAi) UnmarshalJSON(data []byte) error {
+	type aggAnimalAiJson struct {
+		Waypoint map[string]interface{}
+		Target   string
+	}
+
+	var v aggAnimalAiJson
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	ai.waypoint = worldmap.UnmarshalWaypointSystem(v.Waypoint)
+	ai.currentTarget = &v.Target
 	return nil
 }
 
@@ -727,7 +843,7 @@ func (ai barPatronAi) update(c hasAi, world *worldmap.Map) Action {
 		for j := -1; j <= 1; j++ {
 			nX := location.X + i
 			nY := location.Y + j
-			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] <= current {
+			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] < current {
 				// Add if not occupied
 				if world.IsValid(nX, nY) && !world.IsOccupied(nX, nY) {
 					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
@@ -800,10 +916,15 @@ func unmarshalAi(ai map[string]interface{}) ai {
 
 	switch ai["Type"] {
 	case "animal":
-		var mAi animalAi
-		err = json.Unmarshal(aiJson, &mAi)
+		var aAi animalAi
+		err = json.Unmarshal(aiJson, &aAi)
 		check(err)
-		return mAi
+		return aAi
+	case "aggressive animal":
+		var aAi aggAnimalAi
+		err = json.Unmarshal(aiJson, &aAi)
+		check(err)
+		return aAi
 	case "npc":
 		var nAi npcAi
 		err = json.Unmarshal(aiJson, &nAi)
@@ -1009,6 +1130,26 @@ func visibleBounties(c hasAi, world *worldmap.Map, bounties *Bounties) []worldma
 		}
 	}
 	return targets
+}
+
+func visibleCreatures(c hasAi, world *worldmap.Map) []worldmap.Creature {
+	d := c.GetVisionDistance()
+	cX, cY := c.GetCoordinates()
+	location := worldmap.Coordinates{cX, cY}
+
+	creatures := make([]worldmap.Creature, 0)
+
+	for i := -d; i < d+1; i++ {
+		for j := -d; j < d+1; j++ {
+			// Translate location into world coordinates
+			wX, wY := location.X+j, location.Y+i
+			if !(wX == cX && wY == cY) && world.IsValid(wX, wY) && world.IsVisible(c, wX, wY) && world.GetCreature(wX, wY) != nil {
+				creatures = append(creatures, world.GetCreature(wX, wY))
+			}
+		}
+	}
+
+	return creatures
 }
 
 func getEnemies(c hasAi, world *worldmap.Map) []worldmap.Creature {

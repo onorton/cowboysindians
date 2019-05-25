@@ -137,6 +137,20 @@
 		"Inventory": [],
 		"Probability": 1.0,
 		"Human": false
+	},
+	"mountain lion": {
+		"Icon": {"Icon": 76, "Colour": 10},
+		"Initiative": 3,
+		"Hp": 20,
+		"Ac": 13,
+		"Str": 14,
+		"Dex": 13,
+		"Encumbrance": 10,
+		"Money": 0,
+		"AiType": "aggressive animal",
+		"Inventory": [],
+		"Probability": 0.5,
+		"Human": false
 	}
 
 

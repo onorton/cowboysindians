@@ -167,7 +167,8 @@ func (p *Player) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 		if p.weapon != nil {
 			c.TakeDamage(p.Weapon().GetDamage() + damageBonus)
 		} else {
-			c.TakeDamage(damageBonus)
+			// Assume d2 for unarmed
+			c.TakeDamage(rand.Intn(2) + damageBonus + 1)
 		}
 	} else {
 		message.Enqueue(fmt.Sprintf("You miss %s.", c.GetName().WithDefinite()))

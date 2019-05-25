@@ -176,7 +176,8 @@ func (e *Enemy) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 		if e.weapon != nil {
 			c.TakeDamage(e.Weapon().GetDamage() + damageBonus)
 		} else {
-			c.TakeDamage(damageBonus)
+			// Assume d2 for unarmed
+			c.TakeDamage(rand.Intn(2) + damageBonus + 1)
 		}
 		// If non-enemy dead, send murder event
 		if c.IsDead() && c.GetAlignment() == worldmap.Neutral {
@@ -441,6 +442,8 @@ func (e *Enemy) SetMap(world *worldmap.Map) {
 
 	switch ai := e.ai.(type) {
 	case animalAi:
+		ai.setMap(world)
+	case aggAnimalAi:
 		ai.setMap(world)
 	case npcAi:
 		ai.setMap(world)

@@ -171,7 +171,8 @@ func (m *Mount) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 
 	hits := c.AttackHits(rand.Intn(20) + hitBonus + 1)
 	if hits {
-		c.TakeDamage(damageBonus)
+		// Assume d2 for unarmed
+		c.TakeDamage(rand.Intn(2) + damageBonus + 1)
 	}
 	if c.GetAlignment() == worldmap.Player {
 		if hits {
@@ -282,6 +283,8 @@ func (m *Mount) SetMap(world *worldmap.Map) {
 
 	switch ai := m.ai.(type) {
 	case animalAi:
+		ai.setMap(world)
+	case aggAnimalAi:
 		ai.setMap(world)
 	case npcAi:
 		ai.setMap(world)
