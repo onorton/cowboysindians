@@ -48,13 +48,22 @@ type ai interface {
 	update(hasAi, *worldmap.Map) Action
 }
 
-func newAi(aiType string, world *worldmap.Map, location worldmap.Coordinates, town *worldmap.Town, building *worldmap.Building, dialogue dialogue) ai {
+func newAi(aiType string, world *worldmap.Map, location worldmap.Coordinates, town *worldmap.Town, building *worldmap.Building, dialogue dialogue, protectee *string) ai {
 	switch aiType {
 	case "animal":
 		return animalAi{worldmap.NewRandomWaypoint(world, location)}
 	case "aggressive animal":
 		v := ""
 		return aggAnimalAi{worldmap.NewRandomWaypoint(world, location), &v}
+	case "protector":
+		if protectee != nil {
+			v := ""
+			return protectorAi{*protectee, []string{}, &v}
+		} else if building != nil {
+			return npcAi{worldmap.NewWithinBuilding(world, *building, location)}
+		} else {
+			return npcAi{worldmap.NewRandomWaypoint(world, location)}
+		}
 	case "npc":
 		if building != nil {
 			return npcAi{worldmap.NewWithinBuilding(world, *building, location)}
@@ -251,6 +260,142 @@ func (ai *aggAnimalAi) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	ai.waypoint = worldmap.UnmarshalWaypointSystem(v.Waypoint)
+	ai.currentTarget = &v.Target
+	return nil
+}
+
+type protectorAi struct {
+	protectee     string
+	targets       []string
+	currentTarget *string
+}
+
+func (ai protectorAi) update(c hasAi, world *worldmap.Map) Action {
+	cX, cY := c.GetCoordinates()
+	location := worldmap.Coordinates{cX, cY}
+	targets := []worldmap.Creature{}
+	updatedTargets := make([]worldmap.Creature, 0)
+
+	for _, tId := range ai.targets {
+		t := world.CreatureById(tId)
+		x, y := t.GetCoordinates()
+		if world.IsVisible(c, x, y) {
+			updatedTargets = append(updatedTargets, t)
+			if tId == *ai.currentTarget {
+				targets = []worldmap.Creature{t}
+			}
+		}
+	}
+
+	if len(targets) == 0 {
+		closeCreatures := make([]worldmap.Creature, 0)
+		for _, t := range updatedTargets {
+			tX, tY := t.GetCoordinates()
+			if worldmap.Distance(cX, cY, tX, tY) <= float64(c.GetVisionDistance()) {
+				closeCreatures = append(closeCreatures, t)
+			}
+		}
+		if len(closeCreatures) > 0 {
+			target := closeCreatures[rand.Intn(len(closeCreatures))]
+			targets = []worldmap.Creature{target}
+			*ai.currentTarget = target.GetID()
+		} else {
+			*ai.currentTarget = ""
+		}
+	}
+
+	coefficients := []float64{0.0, 1.0}
+	if len(targets) > 0 {
+		coefficients = []float64{1.0, 0.0}
+	}
+
+	protectees := []worldmap.Creature{}
+	protectee := world.CreatureById(ai.protectee)
+	if protectee != nil {
+		protectees = []worldmap.Creature{protectee}
+	}
+
+	aiMap := addMaps([][][]int{getChaseMap(c, world, targets), getChaseMap(c, world, protectees)}, coefficients)
+	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
+	possibleLocations := make([]worldmap.Coordinates, 0)
+	// Find adjacent locations closer to the goal
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			nX := location.X + i
+			nY := location.Y + j
+			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] < current {
+				// Add if passable and not protectee
+				if world.IsValid(nX, nY) && world.IsPassable(nX, nY) && (!world.IsOccupied(nX, nY) || world.GetCreature(nX, nY).GetID() != ai.protectee) {
+					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
+				}
+			}
+		}
+	}
+	if len(possibleLocations) > 0 {
+		l := possibleLocations[rand.Intn(len(possibleLocations))]
+		return MoveAction{c, world, l.X, l.Y}
+	}
+
+	// If the npc cannot do anything else e.g. protectee dead, try moving randomly
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			x, y := cX+j, cY+i
+			if world.IsValid(x, y) && world.IsPassable(x, y) && !world.IsOccupied(x, y) {
+				possibleLocations = append(possibleLocations, worldmap.Coordinates{x, y})
+			}
+		}
+	}
+
+	if len(possibleLocations) > 0 {
+		l := possibleLocations[rand.Intn(len(possibleLocations))]
+		return MoveAction{c, world, l.X, l.Y}
+	}
+	return NoAction{}
+}
+
+func (ai protectorAi) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString("\"Type\":\"protector\",")
+
+	protecteeValue, err := json.Marshal(ai.protectee)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Protectee\":%s,", protecteeValue))
+
+	targetsValue, err := json.Marshal(ai.targets)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Targets\":%s,", targetsValue))
+
+	targetValue, err := json.Marshal(ai.currentTarget)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Target\":%s", targetValue))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (ai *protectorAi) UnmarshalJSON(data []byte) error {
+	type protectorAiJson struct {
+		Protectee string
+		Targets   []string
+		Target    string
+	}
+
+	var v protectorAiJson
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	ai.protectee = v.Protectee
+	ai.targets = v.Targets
 	ai.currentTarget = &v.Target
 	return nil
 }
@@ -843,7 +988,7 @@ func (ai barPatronAi) update(c hasAi, world *worldmap.Map) Action {
 		for j := -1; j <= 1; j++ {
 			nX := location.X + i
 			nY := location.Y + j
-			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] < current {
+			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] <= current {
 				// Add if not occupied
 				if world.IsValid(nX, nY) && !world.IsOccupied(nX, nY) {
 					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
@@ -925,6 +1070,11 @@ func unmarshalAi(ai map[string]interface{}) ai {
 		err = json.Unmarshal(aiJson, &aAi)
 		check(err)
 		return aAi
+	case "protector":
+		var pAi protectorAi
+		err := json.Unmarshal(aiJson, &pAi)
+		check(err)
+		return pAi
 	case "npc":
 		var nAi npcAi
 		err = json.Unmarshal(aiJson, &nAi)
@@ -933,6 +1083,7 @@ func unmarshalAi(ai map[string]interface{}) ai {
 	case "sheriff":
 		var sAi sheriffAi
 		err = json.Unmarshal(aiJson, &sAi)
+		event.Subscribe(&sAi)
 		check(err)
 		return sAi
 	case "enemy":

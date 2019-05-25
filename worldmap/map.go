@@ -47,6 +47,9 @@ func NewMap(filename string, width, height int, viewer *Viewer, player Creature,
 	newMap.filename = filename
 	newMap.player = player
 	newMap.creatures = creatures
+	for _, c := range creatures {
+		c.SetMap(newMap)
+	}
 	return newMap
 }
 
@@ -648,6 +651,15 @@ func (m Map) GetPlayer() Creature {
 func (m Map) GetCreature(x, y int) Creature {
 	chunk, cX, cY := m.globalToChunkAndLocal(x, y)
 	return chunk.c[cY][cX]
+}
+
+func (m Map) CreatureById(id string) Creature {
+	for _, c := range m.creatures {
+		if c.GetID() == id {
+			return c
+		}
+	}
+	return nil
 }
 
 func (m *Map) RenderTile(x, y int) ui.Element {

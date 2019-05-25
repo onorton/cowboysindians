@@ -36,6 +36,7 @@ type NpcAttributes struct {
 	DialogueType  *dialogueType
 	AiType        string
 	Mount         map[string]float64
+	Protector     map[string]float64
 	Probability   float64
 	Human         bool
 }
@@ -94,12 +95,12 @@ func RandomNpcType() string {
 	return possibleNpcs[n]
 }
 
-func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
+func NewNpc(npcType string, x, y int, world *worldmap.Map, protectee *string) *Npc {
 	n := npcData[npcType]
 	id := xid.New().String()
 	dialogue := newDialogue(n.DialogueType, world, nil, nil)
 	location := worldmap.Coordinates{x, y}
-	ai := newAi(n.AiType, world, location, nil, nil, dialogue)
+	ai := newAi(n.AiType, world, location, nil, nil, dialogue, protectee)
 
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(n.Hp, n.Hp),
@@ -115,12 +116,45 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map) *Npc {
 	return npc
 }
 
+func AddProtector(npcType string, x, y int, protectee string) *Npc {
+	probabilities := npcData[npcType].Protector
+	if probabilities == nil {
+		return nil
+	}
+
+	protectorType := "None"
+
+	max := 0.0
+	for _, probability := range probabilities {
+		if probability > 0 {
+			inverse := 1.0 / probability
+			if inverse > max {
+				max = inverse
+			}
+		}
+	}
+
+	protectors := make([]string, 0)
+	for name, probability := range probabilities {
+		count := int(probability * max)
+		for i := 0; i < count; i++ {
+			protectors = append(protectors, name)
+		}
+	}
+
+	protectorType = protectors[rand.Intn(len(protectors))]
+	if protectorType != "None" {
+		return NewNpc(protectorType, x, y, nil, &protectee)
+	}
+	return nil
+}
+
 func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Town, b worldmap.Building) *Npc {
 	n := npcData[npcType]
 	id := xid.New().String()
 	dialogue := newDialogue(n.DialogueType, world, &t, &b)
 	location := worldmap.Coordinates{x, y}
-	ai := newAi(n.AiType, world, location, &t, &b, dialogue)
+	ai := newAi(n.AiType, world, location, &t, &b, dialogue, nil)
 
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(n.Hp, n.Hp),
@@ -300,6 +334,8 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 	npc.ai = unmarshalAi(v.Ai)
 	npc.dialogue = unmarshalDialogue(v.Dialogue)
 	npc.human = v.Human
+
+	event.Subscribe(npc)
 
 	return nil
 }
@@ -608,6 +644,7 @@ func (npc *Npc) SetMap(world *worldmap.Map) {
 	}
 
 }
+
 
 func (npc *Npc) Mount() *Mount {
 	return npc.mount

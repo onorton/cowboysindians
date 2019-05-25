@@ -196,9 +196,6 @@ func main() {
 	all := allCreatures(enemies, mounts, npcs, player)
 	worldMap := worldmap.NewMap(worldSaveFilename, width, height, state.Viewer, state.Player, all)
 	worldMap.LoadActiveChunks()
-	for _, c := range all {
-		c.SetMap(worldMap)
-	}
 
 	// Initial action is nothing
 	action := ui.NoAction

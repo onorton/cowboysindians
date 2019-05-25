@@ -12,6 +12,7 @@
 		"AiType": "npc",
 		"Inventory": [[{"Items": {"beer": 1}, "Probability": 1.0}]],
 		"Mount": {"horse": 0.1, "None": 0.9},
+		"Protector": {"dog": 0.1, "None": 0.9},
 		"Probability": 1.0,
 		"Human": true
 	},
@@ -28,6 +29,7 @@
 		"DialogueType": 0,
 		"AiType": "bar patron",
 		"Inventory": [[{"Items": {"beer": 1}, "Probability": 1.0},{"Items": {"beer": 2}, "Probability": 1.0}]],
+		"Protector": {"dog": 0.1, "None": 0.9},
 		"Probability": 0,
 		"Human": true
 	},
@@ -150,6 +152,20 @@
 		"AiType": "aggressive animal",
 		"Inventory": [],
 		"Probability": 0.5,
+		"Human": false
+	},
+	"dog": {
+		"Icon": {"Icon": 100, "Colour": 8},
+		"Initiative": 2,
+		"Hp": 15,
+		"Ac": 13,
+		"Str": 11,
+		"Dex": 13,
+		"Encumbrance": 10,
+		"Money": 0,
+		"AiType": "protector",
+		"Inventory": [],
+		"Probability": 1,
 		"Human": false
 	}
 

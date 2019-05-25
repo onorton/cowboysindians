@@ -41,7 +41,7 @@ func NewMount(name string, x, y int, world *worldmap.Map) *Mount {
 	mount := mountData[name]
 	id := xid.New().String()
 	location := worldmap.Coordinates{x, y}
-	ai := newAi(mount.AiType, world, location, nil, nil, nil)
+	ai := newAi(mount.AiType, world, location, nil, nil, nil, nil)
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(mount.Hp, mount.Hp),
 		"ac":          worldmap.NewAttribute(mount.Ac, mount.Ac),
@@ -65,10 +65,10 @@ func generateMount(mountProbabilities map[string]float64, x, y int) *Mount {
 	return nil
 }
 
-func chooseMount(probabilites map[string]float64) string {
+func chooseMount(probabilities map[string]float64) string {
 	max := 0.0
 
-	for _, probability := range probabilites {
+	for _, probability := range probabilities {
 		if probability > 0 {
 			inverse := 1.0 / probability
 			if inverse > max {
@@ -76,17 +76,17 @@ func chooseMount(probabilites map[string]float64) string {
 			}
 		}
 	}
-	items := make([]string, 0)
+	mounts := make([]string, 0)
 
-	for name, probability := range probabilites {
+	for name, probability := range probabilities {
 		count := int(probability * max)
 		for i := 0; i < count; i++ {
-			items = append(items, name)
+			mounts = append(mounts, name)
 		}
 	}
 
-	n := rand.Intn(len(items))
-	return items[n]
+	n := rand.Intn(len(mounts))
+	return mounts[n]
 }
 
 func (m *Mount) Render() ui.Element {
@@ -291,6 +291,10 @@ func (m *Mount) SetMap(world *worldmap.Map) {
 	case barPatronAi:
 		ai.setMap(world)
 	}
+}
+
+func (m *Mount) Map() *worldmap.Map {
+	return m.world
 }
 
 func (m *Mount) GetIcon() icon.Icon {

@@ -46,7 +46,7 @@ func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 	enemy := enemyData[name]
 	id := xid.New().String()
 	dialogue := newDialogue(enemy.DialogueType, world, nil, nil)
-	ai := newAi(enemy.AiType, world, worldmap.Coordinates{x, y}, nil, nil, dialogue)
+	ai := newAi(enemy.AiType, world, worldmap.Coordinates{x, y}, nil, nil, dialogue, nil)
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(enemy.Hp, enemy.Hp),
 		"ac":          worldmap.NewAttribute(enemy.Ac, enemy.Ac),

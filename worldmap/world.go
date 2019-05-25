@@ -27,6 +27,10 @@ func (world World) PlaceItem(x, y int, itm *item.Item) {
 	chunk.items[cY][cX] = append([]*item.Item{itm}, chunk.items[cY][cX]...)
 }
 
+func (world World) IsValid(x, y int) bool {
+	return x >= 0 && x < world.Width() && y >= 0 && y < world.Height()
+}
+
 func (world World) IsPassable(x, y int) bool {
 	chunk, cX, cY := world.globalToChunkAndLocal(x, y)
 	return chunk.passable[cY][cX]
@@ -37,7 +41,8 @@ func (world World) IsOccupied(x, y int) bool {
 	return chunk.c[cY][cX] != nil
 }
 
-func (world World) Place(c Creature, x, y int) {
+func (world World) Place(c Creature) {
+	x, y := c.GetCoordinates()
 	chunk, cX, cY := world.globalToChunkAndLocal(x, y)
 	chunk.c[cY][cX] = c
 }
