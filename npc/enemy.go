@@ -170,6 +170,7 @@ func (e *Enemy) rangedAttack(c worldmap.Creature, environmentBonus int) {
 }
 
 func (e *Enemy) attack(c worldmap.Creature, hitBonus, damageBonus int) {
+	event.Emit(event.NewAttack(e, c))
 
 	hits := c.AttackHits(rand.Intn(20) + hitBonus + 1)
 	if hits {

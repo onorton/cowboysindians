@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 
+	"github.com/onorton/cowboysindians/event"
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
@@ -168,6 +169,7 @@ func (m *Mount) MeleeAttack(c worldmap.Creature) {
 	m.attack(c, worldmap.GetBonus(m.attributes["str"].Value()), worldmap.GetBonus(m.attributes["str"].Value()))
 }
 func (m *Mount) attack(c worldmap.Creature, hitBonus, damageBonus int) {
+	event.Emit(event.NewAttack(m, c))
 
 	hits := c.AttackHits(rand.Intn(20) + hitBonus + 1)
 	if hits {

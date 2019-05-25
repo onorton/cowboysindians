@@ -47,6 +47,13 @@ type PickpocketEvent struct {
 	location    worldmap.Coordinates
 }
 
+type AttackEvent struct {
+	id          string
+	perpetrator worldmap.Creature
+	victim      worldmap.Creature
+	location    worldmap.Coordinates
+}
+
 func (e MurderEvent) Id() string {
 	return e.id
 }
@@ -137,6 +144,22 @@ func (e PickpocketEvent) Location() worldmap.Coordinates {
 	return e.location
 }
 
+func (e AttackEvent) Id() string {
+	return e.id
+}
+
+func (e AttackEvent) Perpetrator() worldmap.Creature {
+	return e.perpetrator
+}
+
+func (e AttackEvent) Victim() worldmap.Creature {
+	return e.victim
+}
+
+func (e AttackEvent) Location() worldmap.Coordinates {
+	return e.location
+}
+
 func NewMurder(perpetrator worldmap.Creature, victim worldmap.Creature, location worldmap.Coordinates) MurderEvent {
 	return MurderEvent{xid.New().String(), perpetrator, victim, location}
 }
@@ -147,6 +170,11 @@ func NewTheft(perpetrator worldmap.Creature, item *item.Item, location worldmap.
 
 func NewPickpocket(perpetrator worldmap.Creature, item *item.Item, location worldmap.Coordinates) PickpocketEvent {
 	return PickpocketEvent{xid.New().String(), perpetrator, item, location}
+}
+
+func NewAttack(perpetrator worldmap.Creature, victim worldmap.Creature) AttackEvent {
+	vX, vY := victim.GetCoordinates()
+	return AttackEvent{xid.New().String(), perpetrator, victim, worldmap.Coordinates{vX, vY}}
 }
 
 func Emit(e Event) {

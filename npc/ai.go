@@ -58,7 +58,9 @@ func newAi(aiType string, world *worldmap.Map, location worldmap.Coordinates, to
 	case "protector":
 		if protectee != nil {
 			v := ""
-			return protectorAi{*protectee, []string{}, &v}
+			ai := protectorAi{*protectee, &[]string{}, &v}
+			event.Subscribe(&ai)
+			return ai
 		} else if building != nil {
 			return npcAi{worldmap.NewWithinBuilding(world, *building, location)}
 		} else {
@@ -266,8 +268,21 @@ func (ai *aggAnimalAi) UnmarshalJSON(data []byte) error {
 
 type protectorAi struct {
 	protectee     string
-	targets       []string
+	targets       *[]string
 	currentTarget *string
+}
+
+func (ai protectorAi) ProcessEvent(e event.Event) {
+	switch ev := e.(type) {
+	case event.AttackEvent:
+		{
+			if ev.Perpetrator().GetID() == ai.protectee {
+				*ai.targets = append(*ai.targets, ev.Victim().GetID())
+			} else if ev.Victim().GetID() == ai.protectee {
+				*ai.targets = append(*ai.targets, ev.Perpetrator().GetID())
+			}
+		}
+	}
 }
 
 func (ai protectorAi) update(c hasAi, world *worldmap.Map) Action {
@@ -276,7 +291,7 @@ func (ai protectorAi) update(c hasAi, world *worldmap.Map) Action {
 	targets := []worldmap.Creature{}
 	updatedTargets := make([]worldmap.Creature, 0)
 
-	for _, tId := range ai.targets {
+	for _, tId := range *ai.targets {
 		t := world.CreatureById(tId)
 		x, y := t.GetCoordinates()
 		if world.IsVisible(c, x, y) {
@@ -395,8 +410,9 @@ func (ai *protectorAi) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	ai.protectee = v.Protectee
-	ai.targets = v.Targets
+	ai.targets = &v.Targets
 	ai.currentTarget = &v.Target
+	event.Subscribe(ai)
 	return nil
 }
 
@@ -1083,7 +1099,6 @@ func unmarshalAi(ai map[string]interface{}) ai {
 	case "sheriff":
 		var sAi sheriffAi
 		err = json.Unmarshal(aiJson, &sAi)
-		event.Subscribe(&sAi)
 		check(err)
 		return sAi
 	case "enemy":

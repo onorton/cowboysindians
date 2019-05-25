@@ -162,6 +162,8 @@ func (p *Player) Weapon() item.WeaponComponent {
 }
 
 func (p *Player) attack(c worldmap.Creature, hitBonus, damageBonus int) {
+	event.Emit(event.NewAttack(p, c))
+
 	if c.AttackHits(rand.Intn(20) + hitBonus + 1) {
 		message.Enqueue(fmt.Sprintf("You hit %s.", c.GetName().WithDefinite()))
 		if p.weapon != nil {

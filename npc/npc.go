@@ -360,6 +360,7 @@ func (npc *Npc) rangedAttack(c worldmap.Creature, environmentBonus int) {
 }
 
 func (npc *Npc) attack(c worldmap.Creature, hitBonus, damageBonus int) {
+	event.Emit(event.NewAttack(npc, c))
 
 	hits := c.AttackHits(rand.Intn(20) + hitBonus + 1)
 	if hits {
@@ -644,7 +645,6 @@ func (npc *Npc) SetMap(world *worldmap.Map) {
 	}
 
 }
-
 
 func (npc *Npc) Mount() *Mount {
 	return npc.mount
