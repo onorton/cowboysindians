@@ -31,6 +31,7 @@ type NpcAttributes struct {
 	Dex           int
 	Encumbrance   int
 	Money         int
+	Unarmed       item.WeaponComponent
 	Inventory     [][]item.ItemChoice
 	ShopInventory map[string]int
 	DialogueType  *dialogueType
@@ -108,7 +109,7 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map, protectee *string) *N
 		"str":         worldmap.NewAttribute(n.Str, n.Str),
 		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
 		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
-	npc := &Npc{generateName(npcType, n.Human), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue, n.Human}
+	npc := &Npc{generateName(npcType, n.Human), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, n.Unarmed, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue, n.Human}
 	for _, itm := range generateInventory(n.Inventory) {
 		npc.PickupItem(itm)
 	}
@@ -163,7 +164,7 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
 		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
 
-	npc := &Npc{generateName(npcType, n.Human), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue, n.Human}
+	npc := &Npc{generateName(npcType, n.Human), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, n.Unarmed, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue, n.Human}
 	for c, count := range n.ShopInventory {
 
 		for i := 0; i < count; i++ {
@@ -242,7 +243,7 @@ func (npc *Npc) Render() ui.Element {
 func (npc *Npc) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID", "Ai", "Dialogue", "Human"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Crouching", "Money", "Unarmed", "Weapon", "Armour", "Inventory", "MountID", "Ai", "Dialogue", "Human"}
 
 	mountID := ""
 	if npc.mount != nil {
@@ -258,6 +259,7 @@ func (npc *Npc) MarshalJSON() ([]byte, error) {
 		"Attributes": npc.attributes,
 		"Crouching":  npc.crouching,
 		"Money":      npc.money,
+		"Unarmed":    npc.unarmed,
 		"Weapon":     npc.weapon,
 		"Armour":     npc.armour,
 		"Inventory":  npc.inventory,
@@ -307,6 +309,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 		Attributes map[string]*worldmap.Attribute
 		Crouching  bool
 		Money      int
+		Unarmed    item.WeaponComponent
 		Weapon     *item.Item
 		Armour     *item.Item
 		Inventory  []*item.Item
@@ -327,6 +330,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 	npc.attributes = v.Attributes
 	npc.crouching = v.Crouching
 	npc.money = v.Money
+	npc.unarmed = v.Unarmed
 	npc.weapon = v.Weapon
 	npc.armour = v.Armour
 	npc.inventory = v.Inventory
@@ -364,12 +368,7 @@ func (npc *Npc) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 
 	hits := c.AttackHits(rand.Intn(20) + hitBonus + 1)
 	if hits {
-		if npc.weapon != nil {
-			c.TakeDamage(npc.Weapon().Damage, npc.Weapon().Effects, damageBonus)
-		} else {
-			// Assume d2 for unarmed
-			c.TakeDamage(item.NewDamage(2, 1, 0), item.Effects{}, damageBonus)
-		}
+		c.TakeDamage(npc.Weapon().Damage, npc.Weapon().Effects, damageBonus)
 		// If non-enemy dead, send murder event
 		if c.IsDead() && c.GetAlignment() == worldmap.Neutral {
 			event.Emit(event.NewMurder(npc, c, npc.location))
@@ -561,14 +560,14 @@ func (npc *Npc) Inventory() []*item.Item {
 }
 
 func (npc *Npc) ranged() bool {
-	if npc.weapon != nil {
-		return npc.Weapon().Range > 0
-	}
-	return false
+	return npc.Weapon().Range > 0
 }
 
 func (npc *Npc) Weapon() item.WeaponComponent {
-	return npc.weapon.Component("weapon").(item.WeaponComponent)
+	if npc.weapon != nil {
+		return npc.weapon.Component("weapon").(item.WeaponComponent)
+	}
+	return npc.unarmed
 }
 
 // Check whether npc is carrying a fully loaded weapon
@@ -743,6 +742,7 @@ type Npc struct {
 	attributes map[string]*worldmap.Attribute
 	crouching  bool
 	money      int
+	unarmed    item.WeaponComponent
 	weapon     *item.Item
 	armour     *item.Item
 	inventory  []*item.Item

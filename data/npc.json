@@ -11,6 +11,7 @@
 		"DialogueType": 0,
 		"AiType": "npc",
 		"Inventory": [[{"Items": {"beer": 1}, "Probability": 1.0}]],
+		"Unarmed":{"Range":0,"Type":0,"Capacity":null,"Damage":{"Dice":2,"Number":1,"Bonus":0},"Effects":{}},
 		"Mount": {"horse": 0.1, "None": 0.9},
 		"Protector": {"dog": 0.1, "None": 0.9},
 		"Probability": 1.0,
@@ -29,6 +30,7 @@
 		"DialogueType": 0,
 		"AiType": "bar patron",
 		"Inventory": [[{"Items": {"beer": 1}, "Probability": 1.0},{"Items": {"beer": 2}, "Probability": 1.0}]],
+		"Unarmed":{"Range":0,"Type":0,"Capacity":null,"Damage":{"Dice":2,"Number":1,"Bonus":0},"Effects":{}},
 		"Protector": {"dog": 0.1, "None": 0.9},
 		"Probability": 0,
 		"Human": true
@@ -47,6 +49,7 @@
 		"AiType": "npc",
 		"ShopInventory": {"Weapon":5,  "Ammo": 30},
 		"Inventory": [],
+		"Unarmed":{"Range":0,"Type":0,"Capacity":null,"Damage":{"Dice":2,"Number":1,"Bonus":0},"Effects":{}},
 		"Probability": 0,
 		"Human": true
 	},
@@ -63,6 +66,7 @@
 		"AiType": "npc",
 		"ShopInventory": {"Consumable": 30},
 		"Inventory": [],
+		"Unarmed":{"Range":0,"Type":0,"Capacity":null,"Damage":{"Dice":2,"Number":1,"Bonus":0},"Effects":{}},
 		"Probability": 0,
 		"Human": true
 	},
@@ -78,6 +82,7 @@
 		"DialogueType": 2,
 		"AiType": "sheriff",
 		"Inventory": [[{"Items": {"pistol": 1, "pistol bullet": 10}, "Probability": 1.0},{"Items": {"shotgun": 1, "shotgun shell": 10}, "Probability": 1.0}]],
+		"Unarmed":{"Range":0,"Type":0,"Capacity":null,"Damage":{"Dice":2,"Number":1,"Bonus":0},"Effects":{}},
 		"Mount": {"horse": 0.8, "None": 0.2},
 		"Probability": 0,
 		"Human": true
@@ -94,6 +99,7 @@
 		"DialogueType": 0,
 		"AiType": "sheriff",
 		"Inventory": [[{"Items": {"pistol": 1, "pistol bullet": 10}, "Probability": 1.0},{"Items": {"shotgun": 1, "shotgun shell": 10}, "Probability": 1.0}]],
+		"Unarmed":{"Range":0,"Type":0,"Capacity":null,"Damage":{"Dice":2,"Number":1,"Bonus":0},"Effects":{}},
 		"Mount": {"horse": 0.5, "None": 0.5},
 		"Probability": 0,
 		"Human": true
@@ -109,6 +115,7 @@
 		"Money": 0,
 		"AiType": "animal",
 		"Inventory": [],
+		"Unarmed":{"Range":0,"Type":0,"Capacity":null,"Damage":{"Dice":2,"Number":1,"Bonus":0},"Effects":{}},
 		"Probability": 1.0,
 		"Human": false
 	},
@@ -123,6 +130,7 @@
 		"Money": 0,
 		"AiType": "animal",
 		"Inventory": [],
+		"Unarmed":{"Range":0,"Type":0,"Capacity":null,"Damage":{"Dice":2,"Number":1,"Bonus":-1},"Effects":{}},
 		"Probability": 1.0,
 		"Human": false
 	},
@@ -137,6 +145,7 @@
 		"Money": 0,
 		"AiType": "animal",
 		"Inventory": [],
+		"Unarmed":{"Range":0,"Type":0,"Capacity":null,"Damage":{"Dice":2,"Number":1,"Bonus":0},"Effects":{}},
 		"Probability": 1.0,
 		"Human": false
 	},
@@ -151,6 +160,7 @@
 		"Money": 0,
 		"AiType": "aggressive animal",
 		"Inventory": [],
+		"Unarmed":{"Range":0,"Type":0,"Capacity":null,"Damage":{"Dice":4,"Number":1,"Bonus":0},"Effects":{}},
 		"Probability": 0.5,
 		"Human": false
 	},
@@ -165,6 +175,7 @@
 		"Money": 0,
 		"AiType": "protector",
 		"Inventory": [],
+		"Unarmed":{"Range":0,"Type":0,"Capacity":null,"Damage":{"Dice":2,"Number":1,"Bonus":0},"Effects":{}},
 		"Probability": 1,
 		"Human": false
 	}

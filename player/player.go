@@ -35,7 +35,7 @@ func NewPlayer(world *worldmap.Map) *Player {
 	attributes["hunger"].AddEffect(item.NewOngoingEffect(1))
 	attributes["thirst"].AddEffect(item.NewOngoingEffect(1))
 
-	player := &Player{worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, attributes, false, 1000, nil, nil, make(map[rune]([]*item.Item)), "", nil, world}
+	player := &Player{worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, attributes, false, 1000, item.WeaponComponent{0, item.NoAmmo, nil, item.NewDamage(2, 1, 0), item.Effects{}}, nil, nil, make(map[rune]([]*item.Item)), "", nil, world}
 	player.AddItem(item.NewWeapon("shotgun"))
 	player.AddItem(item.NewWeapon("sawn-off shotgun"))
 	player.AddItem(item.NewWeapon("baseball bat"))
@@ -57,7 +57,7 @@ func (p *Player) Render() ui.Element {
 func (p *Player) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Location", "Icon", "Initiative", "Attributes", "Crouching", "Money", "Weapon", "Armour", "Inventory", "MountID"}
+	keys := []string{"Location", "Icon", "Initiative", "Attributes", "Crouching", "Money", "Unarmed", "Weapon", "Armour", "Inventory", "MountID"}
 
 	mountID := ""
 	if p.mount != nil {
@@ -70,6 +70,7 @@ func (p *Player) MarshalJSON() ([]byte, error) {
 		"Initiative": p.initiative,
 		"Attributes": p.attributes,
 		"Money":      p.money,
+		"Unarmed":    p.unarmed,
 		"Weapon":     p.weapon,
 		"Armour":     p.armour,
 		"Crouching":  p.crouching,
@@ -112,6 +113,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 		Attributes map[string]*worldmap.Attribute
 		Crouching  bool
 		Money      int
+		Unarmed    item.WeaponComponent
 		Weapon     *item.Item
 		Armour     *item.Item
 		Inventory  []*item.Item
@@ -129,6 +131,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 	p.attributes = v.Attributes
 	p.crouching = v.Crouching
 	p.money = v.Money
+	p.unarmed = v.Unarmed
 	p.weapon = v.Weapon
 	p.armour = v.Armour
 	p.mountID = v.MountID
@@ -158,7 +161,10 @@ func (p *Player) GetInitiative() int {
 }
 
 func (p *Player) Weapon() item.WeaponComponent {
-	return p.weapon.Component("weapon").(item.WeaponComponent)
+	if p.weapon != nil {
+		return p.weapon.Component("weapon").(item.WeaponComponent)
+	}
+	return p.unarmed
 }
 
 func (p *Player) attack(c worldmap.Creature, hitBonus, damageBonus int) {
@@ -166,12 +172,7 @@ func (p *Player) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 
 	if c.AttackHits(rand.Intn(20) + hitBonus + 1) {
 		message.Enqueue(fmt.Sprintf("You hit %s.", c.GetName().WithDefinite()))
-		if p.weapon != nil {
-			c.TakeDamage(p.Weapon().Damage, p.Weapon().Effects, damageBonus)
-		} else {
-			// Assume d2 for unarmed
-			c.TakeDamage(item.NewDamage(2, 1, 0), item.Effects{}, damageBonus)
-		}
+		c.TakeDamage(p.Weapon().Damage, p.Weapon().Effects, damageBonus)
 	} else {
 		message.Enqueue(fmt.Sprintf("You miss %s.", c.GetName().WithDefinite()))
 	}
@@ -542,10 +543,7 @@ func (p *Player) ConsumeItem() bool {
 
 // Check whether player can carry out a range attack this turn
 func (p *Player) ranged() bool {
-	if p.weapon != nil {
-		return p.Weapon().Range > 0
-	}
-	return false
+	return p.Weapon().Range > 0
 }
 
 // Check whether player is carrying a fully loaded weapon
@@ -1278,6 +1276,7 @@ type Player struct {
 	attributes map[string]*worldmap.Attribute
 	crouching  bool
 	money      int
+	unarmed    item.WeaponComponent
 	weapon     *item.Item
 	armour     *item.Item
 	inventory  map[rune]([]*item.Item)

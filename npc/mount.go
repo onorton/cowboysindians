@@ -23,6 +23,7 @@ type MountAttributes struct {
 	Ac          int
 	Str         int
 	Dex         int
+	Unarmed     item.WeaponComponent
 	Encumbrance int
 	AiType      string
 }
@@ -50,7 +51,7 @@ func NewMount(name string, x, y int, world *worldmap.Map) *Mount {
 		"dex":         worldmap.NewAttribute(mount.Dex, mount.Dex),
 		"encumbrance": worldmap.NewAttribute(mount.Encumbrance, mount.Encumbrance),
 	}
-	m := &Mount{&ui.PlainName{name}, id, location, mount.Icon, mount.Initiative, attributes, nil, world, false, ai}
+	m := &Mount{&ui.PlainName{name}, id, location, mount.Icon, mount.Initiative, attributes, mount.Unarmed, nil, world, false, ai}
 	return m
 }
 
@@ -97,7 +98,7 @@ func (m *Mount) Render() ui.Element {
 func (m *Mount) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Ai"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Unarmed", "Ai"}
 
 	mountValues := map[string]interface{}{
 		"Name":       m.name,
@@ -106,6 +107,7 @@ func (m *Mount) MarshalJSON() ([]byte, error) {
 		"Icon":       m.icon,
 		"Initiative": m.initiative,
 		"Attributes": m.attributes,
+		"Unarmed":    m.unarmed,
 		"Ai":         m.ai,
 	}
 
@@ -137,6 +139,7 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 		Icon       icon.Icon
 		Initiative int
 		Attributes map[string]*worldmap.Attribute
+		Unarmed    item.WeaponComponent
 		Ai         map[string]interface{}
 	}
 	var v mountJson
@@ -149,6 +152,7 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 	m.icon = v.Icon
 	m.initiative = v.Initiative
 	m.attributes = v.Attributes
+	m.unarmed = v.Unarmed
 	m.ai = unmarshalAi(v.Ai)
 	return nil
 }
@@ -173,8 +177,7 @@ func (m *Mount) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 
 	hits := c.AttackHits(rand.Intn(20) + hitBonus + 1)
 	if hits {
-		// Assume d2 for unarmed
-		c.TakeDamage(item.NewDamage(2, 1, 0), item.Effects{}, damageBonus)
+		c.TakeDamage(m.unarmed.Damage, m.unarmed.Effects, damageBonus)
 	}
 	if c.GetAlignment() == worldmap.Player {
 		if hits {
@@ -334,6 +337,7 @@ type Mount struct {
 	icon       icon.Icon
 	initiative int
 	attributes map[string]*worldmap.Attribute
+	unarmed    item.WeaponComponent
 	rider      Rider
 	world      *worldmap.Map
 	moved      bool

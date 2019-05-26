@@ -25,6 +25,7 @@ type EnemyAttributes struct {
 	Dex          int
 	Encumbrance  int
 	Money        int
+	Unarmed      item.WeaponComponent
 	DialogueType *dialogueType
 	AiType       string
 	Inventory    [][]item.ItemChoice
@@ -53,7 +54,7 @@ func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 		"str":         worldmap.NewAttribute(enemy.Str, enemy.Str),
 		"dex":         worldmap.NewAttribute(enemy.Dex, enemy.Dex),
 		"encumbrance": worldmap.NewAttribute(enemy.Encumbrance, enemy.Encumbrance)}
-	e := &Enemy{&ui.PlainName{name}, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, false, enemy.Money, nil, nil, make([]*item.Item, 0), "", generateMount(enemy.Mount, x, y), world, ai}
+	e := &Enemy{&ui.PlainName{name}, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, false, enemy.Money, enemy.Unarmed, nil, nil, make([]*item.Item, 0), "", generateMount(enemy.Mount, x, y), world, ai}
 	for _, itm := range generateInventory(enemy.Inventory) {
 		e.PickupItem(itm)
 	}
@@ -70,7 +71,7 @@ func (e *Enemy) Render() ui.Element {
 func (e *Enemy) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Crouching", "Money", "Weapon", "Armour", "Inventory", "Ai", "MountID"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Crouching", "Money", "Unarmed", "Weapon", "Armour", "Inventory", "Ai", "MountID"}
 
 	mountID := ""
 	if e.mount != nil {
@@ -86,6 +87,7 @@ func (e *Enemy) MarshalJSON() ([]byte, error) {
 		"Attributes": e.attributes,
 		"Crouching":  e.crouching,
 		"Money":      e.money,
+		"Unarmed":    e.unarmed,
 		"Weapon":     e.weapon,
 		"Armour":     e.armour,
 		"Inventory":  e.inventory,
@@ -123,6 +125,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 		Attributes map[string]*worldmap.Attribute
 		Crouching  bool
 		Money      int
+		Unarmed    item.WeaponComponent
 		Weapon     *item.Item
 		Armour     *item.Item
 		Inventory  []*item.Item
@@ -141,6 +144,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 	e.attributes = v.Attributes
 	e.crouching = v.Crouching
 	e.money = v.Money
+	e.unarmed = v.Unarmed
 	e.weapon = v.Weapon
 	e.armour = v.Armour
 	e.inventory = v.Inventory
@@ -174,12 +178,7 @@ func (e *Enemy) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 
 	hits := c.AttackHits(rand.Intn(20) + hitBonus + 1)
 	if hits {
-		if e.weapon != nil {
-			c.TakeDamage(e.Weapon().Damage, e.Weapon().Effects, damageBonus)
-		} else {
-			// Assume d2 for unarmed
-			c.TakeDamage(item.NewDamage(2, 1, 0), item.Effects{}, damageBonus)
-		}
+		c.TakeDamage(e.Weapon().Damage, e.Weapon().Effects, damageBonus)
 		// If non-enemy dead, send murder event
 		if c.IsDead() && c.GetAlignment() == worldmap.Neutral {
 			event.Emit(event.NewMurder(e, c, e.location))
@@ -371,14 +370,14 @@ func (e *Enemy) Inventory() []*item.Item {
 }
 
 func (e *Enemy) Weapon() item.WeaponComponent {
-	return e.weapon.Component("weapon").(item.WeaponComponent)
+	if e.weapon != nil {
+		return e.weapon.Component("weapon").(item.WeaponComponent)
+	}
+	return e.unarmed
 }
 
 func (e *Enemy) ranged() bool {
-	if e.weapon != nil {
-		return e.Weapon().Range > 0
-	}
-	return false
+	return e.Weapon().Range > 0
 }
 
 // Check whether enemy is carrying a fully loaded weapon
@@ -490,6 +489,7 @@ type Enemy struct {
 	attributes map[string]*worldmap.Attribute
 	crouching  bool
 	money      int
+	unarmed    item.WeaponComponent
 	weapon     *item.Item
 	armour     *item.Item
 	inventory  []*item.Item
