@@ -174,7 +174,7 @@ func (m *Mount) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 	hits := c.AttackHits(rand.Intn(20) + hitBonus + 1)
 	if hits {
 		// Assume d2 for unarmed
-		c.TakeDamage(rand.Intn(2) + damageBonus + 1)
+		c.TakeDamage(item.NewDamage(2, 1, 0), item.Effects{}, damageBonus)
 	}
 	if c.GetAlignment() == worldmap.Player {
 		if hits {
@@ -189,11 +189,14 @@ func (m *Mount) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 func (m *Mount) AttackHits(roll int) bool {
 	return roll > m.attributes["ac"].Value()
 }
-func (m *Mount) TakeDamage(damage int) {
-	m.attributes["hp"].AddEffect(item.NewInstantEffect(-damage))
-	// Rider takes falling damage if mount dies
+
+func (m *Mount) TakeDamage(damage item.Damage, effects item.Effects, bonus int) {
+	total_damage := damage.Damage() + bonus
+	m.attributes["hp"].AddEffect(item.NewInstantEffect(-total_damage))
+	m.applyEffects(effects)
+
 	if m.rider != nil && m.IsDead() {
-		m.rider.TakeDamage(rand.Intn(4) + 1)
+		m.rider.TakeDamage(item.NewDamage(4, 1, 0), item.Effects{}, 0)
 		if m.rider.GetAlignment() == worldmap.Player {
 			message.Enqueue(fmt.Sprintf("Your %s died and you fell.", m.name))
 		}
@@ -238,12 +241,16 @@ func (m *Mount) Moved() bool {
 	return m.moved
 }
 
-func (m *Mount) consume(itm *item.Item) {
+func (m *Mount) applyEffects(effects item.Effects) {
 	for attr, attribute := range m.attributes {
-		for _, effect := range itm.Component("consumable").(item.ConsumableComponent).Effects[attr] {
+		for _, effect := range effects[attr] {
 			attribute.AddEffect(&effect)
 		}
 	}
+}
+
+func (m *Mount) consume(itm *item.Item) {
+	m.applyEffects(itm.Component("consumable").(item.ConsumableComponent).Effects)
 }
 
 func (m *Mount) bloodied() bool {
@@ -335,7 +342,7 @@ type Mount struct {
 
 type Rider interface {
 	IsDead() bool
-	TakeDamage(int)
+	TakeDamage(item.Damage, item.Effects, int)
 	GetAlignment() worldmap.Alignment
 	GetCoordinates() (int, int)
 	Mount() *Mount

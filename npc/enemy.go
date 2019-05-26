@@ -175,10 +175,10 @@ func (e *Enemy) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 	hits := c.AttackHits(rand.Intn(20) + hitBonus + 1)
 	if hits {
 		if e.weapon != nil {
-			c.TakeDamage(e.Weapon().GetDamage() + damageBonus)
+			c.TakeDamage(e.Weapon().Damage, e.Weapon().Effects, damageBonus)
 		} else {
 			// Assume d2 for unarmed
-			c.TakeDamage(rand.Intn(2) + damageBonus + 1)
+			c.TakeDamage(item.NewDamage(2, 1, 0), item.Effects{}, damageBonus)
 		}
 		// If non-enemy dead, send murder event
 		if c.IsDead() && c.GetAlignment() == worldmap.Neutral {
@@ -199,8 +199,11 @@ func (e *Enemy) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 func (e *Enemy) AttackHits(roll int) bool {
 	return roll > e.attributes["ac"].Value()
 }
-func (e *Enemy) TakeDamage(damage int) {
-	e.attributes["hp"].AddEffect(item.NewInstantEffect(-damage))
+
+func (e *Enemy) TakeDamage(damage item.Damage, effects item.Effects, bonus int) {
+	total_damage := damage.Damage() + bonus
+	e.attributes["hp"].AddEffect(item.NewInstantEffect(-total_damage))
+	e.applyEffects(effects)
 }
 
 func (e *Enemy) IsDead() bool {
@@ -401,13 +404,16 @@ func (e *Enemy) weaponLoaded() bool {
 
 }
 
-func (e *Enemy) consume(itm *item.Item) {
-
+func (e *Enemy) applyEffects(effects item.Effects) {
 	for attr, attribute := range e.attributes {
-		for _, effect := range itm.Component("consumable").(item.ConsumableComponent).Effects[attr] {
+		for _, effect := range effects[attr] {
 			attribute.AddEffect(&effect)
 		}
 	}
+}
+
+func (e *Enemy) consume(itm *item.Item) {
+	e.applyEffects(itm.Component("consumable").(item.ConsumableComponent).Effects)
 }
 
 func (e *Enemy) bloodied() bool {

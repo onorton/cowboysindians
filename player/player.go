@@ -167,10 +167,10 @@ func (p *Player) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 	if c.AttackHits(rand.Intn(20) + hitBonus + 1) {
 		message.Enqueue(fmt.Sprintf("You hit %s.", c.GetName().WithDefinite()))
 		if p.weapon != nil {
-			c.TakeDamage(p.Weapon().GetDamage() + damageBonus)
+			c.TakeDamage(p.Weapon().Damage, p.Weapon().Effects, damageBonus)
 		} else {
 			// Assume d2 for unarmed
-			c.TakeDamage(rand.Intn(2) + damageBonus + 1)
+			c.TakeDamage(item.NewDamage(2, 1, 0), item.Effects{}, damageBonus)
 		}
 	} else {
 		message.Enqueue(fmt.Sprintf("You miss %s.", c.GetName().WithDefinite()))
@@ -189,8 +189,10 @@ func (p *Player) MeleeAttack(c worldmap.Creature) {
 	p.attack(c, worldmap.GetBonus(p.attributes["str"].Value()), worldmap.GetBonus(p.attributes["str"].Value()))
 }
 
-func (p *Player) TakeDamage(damage int) {
-	p.attributes["hp"].AddEffect(item.NewInstantEffect(-damage))
+func (p *Player) TakeDamage(damage item.Damage, effects item.Effects, bonus int) {
+	total_damage := damage.Damage() + bonus
+	p.attributes["hp"].AddEffect(item.NewInstantEffect(-total_damage))
+	p.applyEffects(effects)
 }
 
 func (p *Player) GetStats() []string {
@@ -569,16 +571,20 @@ func (p *Player) weaponLoaded() bool {
 
 }
 
+func (p *Player) applyEffects(effects item.Effects) {
+	for attr, attribute := range p.attributes {
+		for _, effect := range effects[attr] {
+			attribute.AddEffect(&effect)
+		}
+	}
+}
+
 func (p *Player) consume(itm *item.Item) {
 	originalHp := p.attributes["hp"].Value()
 	originalHunger := p.attributes["hunger"].Value()
 	originalThirst := p.attributes["thirst"].Value()
 
-	for attr, attribute := range p.attributes {
-		for _, effect := range itm.Component("consumable").(item.ConsumableComponent).Effects[attr] {
-			attribute.AddEffect(&effect)
-		}
-	}
+	p.applyEffects(itm.Component("consumable").(item.ConsumableComponent).Effects)
 
 	if p.attributes["hp"].Value() > originalHp {
 		message.Enqueue(fmt.Sprintf("You healed for %d hit points.", p.attributes["hp"].Value()-originalHp))

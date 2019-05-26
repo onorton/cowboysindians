@@ -13,6 +13,7 @@ import (
 type WeaponAttributes struct {
 	Icon        icon.Icon
 	Damage      DamageAttributes
+	Effects     Effects
 	Range       int
 	Type        WeaponType
 	Capacity    int
@@ -59,6 +60,7 @@ type WeaponComponent struct {
 	Type     WeaponType
 	Capacity *WeaponCapacity
 	Damage   Damage
+	Effects  Effects
 }
 
 type Damage struct {
@@ -67,8 +69,22 @@ type Damage struct {
 	bonus  int
 }
 
+func NewDamage(dice, number, bonus int) Damage {
+	return Damage{dice, number, bonus}
+}
+
 func (damage Damage) max() int {
 	return damage.number*damage.dice + damage.bonus
+}
+
+func (damage Damage) Damage() int {
+	result := 0
+	for i := 0; i < damage.number; i++ {
+		result += rand.Intn(damage.dice) + 1
+	}
+
+	result += damage.bonus
+	return result
 }
 
 type WeaponCapacity struct {
@@ -83,7 +99,7 @@ func NewWeapon(name string) *Item {
 	if weapon.Capacity != 0 {
 		weaponCapacity = &WeaponCapacity{weapon.Capacity, 0}
 	}
-	wc := WeaponComponent{weapon.Range, weapon.Type, weaponCapacity, Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}}
+	wc := WeaponComponent{weapon.Range, weapon.Type, weaponCapacity, Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}, weapon.Effects}
 	return &Item{name, "", weapon.Icon, weapon.Weight, weapon.Value, map[string]component{"weapon": wc}}
 }
 
@@ -183,14 +199,7 @@ func (weapon WeaponComponent) MaxDamage() int {
 }
 
 func (weapon WeaponComponent) GetDamage() int {
-
-	result := 0
-	for i := 0; i < weapon.Damage.number; i++ {
-		result += rand.Intn(weapon.Damage.dice) + 1
-	}
-
-	result += weapon.Damage.bonus
-	return result
+	return weapon.Damage.Damage()
 }
 
 func (weapon WeaponComponent) AmmoTypeMatches(ammo *Item) bool {

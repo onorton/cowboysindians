@@ -14,6 +14,8 @@ type Effect struct {
 	compounded bool
 }
 
+type Effects map[string][]Effect
+
 func NewEffect(effect, duration int, onMax bool) *Effect {
 	return &Effect{effect, onMax, duration, false, false}
 }

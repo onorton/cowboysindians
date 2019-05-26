@@ -11,7 +11,7 @@ type ConsumableAttributes struct {
 	Icon        icon.Icon
 	Weight      float64
 	Value       int
-	Effects     map[string][]Effect
+	Effects     Effects
 	Probability float64
 }
 
@@ -33,7 +33,7 @@ func fetchConsumableData() {
 }
 
 type ConsumableComponent struct {
-	Effects map[string][]Effect
+	Effects Effects
 }
 
 func NewConsumable(name string) *Item {

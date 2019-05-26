@@ -110,7 +110,7 @@ type Creature interface {
 	Render() ui.Element
 	GetInitiative() int
 	MeleeAttack(Creature)
-	TakeDamage(int)
+	TakeDamage(item.Damage, item.Effects, int)
 	IsDead() bool
 	IsCrouching() bool
 	AttackHits(int) bool
