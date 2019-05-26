@@ -289,22 +289,27 @@ func (ai protectorAi) update(c hasAi, world *worldmap.Map) Action {
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
 	targets := []worldmap.Creature{}
-	updatedTargets := make([]worldmap.Creature, 0)
+	updatedTargets := make([]string, 0)
 
 	for _, tId := range *ai.targets {
 		t := world.CreatureById(tId)
+		if t == nil {
+			continue
+		}
 		x, y := t.GetCoordinates()
 		if world.IsVisible(c, x, y) {
-			updatedTargets = append(updatedTargets, t)
+			updatedTargets = append(updatedTargets, tId)
 			if tId == *ai.currentTarget {
 				targets = []worldmap.Creature{t}
 			}
 		}
 	}
+	*ai.targets = updatedTargets
 
 	if len(targets) == 0 {
 		closeCreatures := make([]worldmap.Creature, 0)
-		for _, t := range updatedTargets {
+		for _, tId := range *ai.targets {
+			t := world.CreatureById(tId)
 			tX, tY := t.GetCoordinates()
 			if worldmap.Distance(cX, cY, tX, tY) <= float64(c.GetVisionDistance()) {
 				closeCreatures = append(closeCreatures, t)
