@@ -4,8 +4,8 @@
 		"Weight": 0.1,
 		"Value": 40,
 		"Effects": {
-			"hp": [{"Effect": 10, "Duration":1}],
-			"hunger": [{"Effect": -10, "Duration":1}]
+			"hp": [{"Effect": 10, "Duration":1, "Permanent": true}],
+			"hunger": [{"Effect": -10, "Duration":1, "Permanent": true}]
 		},
 		"Probability": 1.0
 	},
@@ -14,8 +14,8 @@
 		"Weight": 0.01,
 		"Value": 20,
 		"Effects": {
-			"hp": [{"Effect": 1, "Duration":1}],
-			"thirst": [{"Effect": -10, "Duration":1}]
+			"hp": [{"Effect": 1, "Duration":1, "Permanent": true}],
+			"thirst": [{"Effect": -10, "Duration":1, "Permanent": true}]
 		},
 		"Probability": 1.0
 	}

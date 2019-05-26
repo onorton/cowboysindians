@@ -596,7 +596,9 @@ func (npc *Npc) weaponLoaded() bool {
 func (npc *Npc) applyEffects(effects item.Effects) {
 	for attr, attribute := range npc.attributes {
 		for _, effect := range effects[attr] {
-			attribute.AddEffect(&effect)
+			eff := new(item.Effect)
+			*eff = effect
+			attribute.AddEffect(eff)
 		}
 	}
 }

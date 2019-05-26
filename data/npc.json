@@ -161,7 +161,7 @@
 		"AiType": "aggressive animal",
 		"Inventory": [],
 		"Unarmed":{"Range":0,"Type":0,"Capacity":null,"Damage":{"Dice":4,"Number":1,"Bonus":0},"Effects":{}},
-		"Probability": 0.5,
+		"Probability": 0.01,
 		"Human": false
 	},
 	"dog": {
@@ -176,9 +176,37 @@
 		"AiType": "protector",
 		"Inventory": [],
 		"Unarmed":{"Range":0,"Type":0,"Capacity":null,"Damage":{"Dice":2,"Number":1,"Bonus":0},"Effects":{}},
-		"Probability": 1,
+		"Probability": 0.1,
+		"Human": false
+	},
+	"rattlesnake": {
+		"Icon": {"Icon": 115, "Colour": 4},
+		"Initiative": 2,
+		"Hp": 5,
+		"Ac": 13,
+		"Str": 8,
+		"Dex": 14,
+		"Encumbrance": 0,
+		"Money": 0,
+		"AiType": "aggressive animal",
+		"Inventory": [],
+		"Unarmed":{"Range":0,"Type":0,"Capacity":null,"Damage":{"Dice":4,"Number":1,"Bonus":0},"Effects":{"hp": [{"Effect": -1, "Duration":5, "Compounded": true, "Permanent": true}], "str": [{"Effect": -3, "Duration":20},{"Effect": -3, "OnMax": true, "Duration":20}]}},
+		"Probability": 0.1,
+		"Human": false
+	},
+	"scorpion": {
+		"Icon": {"Icon": 115, "Colour": 20},
+		"Initiative": 1,
+		"Hp": 2,
+		"Ac": 10,
+		"Str": 4,
+		"Dex": 4,
+		"Encumbrance": 0,
+		"Money": 0,
+		"AiType": "animal",
+		"Inventory": [],
+		"Unarmed":{"Range":0,"Type":0,"Capacity":null,"Damage":{"Dice":2,"Number":1,"Bonus":0},"Effects":{"hp": [{"Effect": -1, "Duration":10, "Compounded": true, "Permanent": true}], "dex": [{"Effect": -3, "Duration":20},{"Effect": -3, "OnMax": true, "Duration":20}]}},
+		"Probability": 0.1,
 		"Human": false
 	}
-
-
 }

@@ -572,7 +572,9 @@ func (p *Player) weaponLoaded() bool {
 func (p *Player) applyEffects(effects item.Effects) {
 	for attr, attribute := range p.attributes {
 		for _, effect := range effects[attr] {
-			attribute.AddEffect(&effect)
+			eff := new(item.Effect)
+			*eff = effect
+			attribute.AddEffect(eff)
 		}
 	}
 }

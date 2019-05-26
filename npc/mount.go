@@ -247,7 +247,9 @@ func (m *Mount) Moved() bool {
 func (m *Mount) applyEffects(effects item.Effects) {
 	for attr, attribute := range m.attributes {
 		for _, effect := range effects[attr] {
-			attribute.AddEffect(&effect)
+			eff := new(item.Effect)
+			*eff = effect
+			attribute.AddEffect(eff)
 		}
 	}
 }

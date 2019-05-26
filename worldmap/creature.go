@@ -34,25 +34,31 @@ func (a *Attribute) Maximum() int {
 
 func (a *Attribute) updateWithEffect(e *item.Effect) {
 	a.value, a.max = e.Update(a.value, a.max)
-	// Make sure value is correct if too high/low
-	a.value = int(math.Max(0.0, math.Min(float64(a.max), float64(a.value))))
 }
 
 func (a *Attribute) AddEffect(e *item.Effect) {
 	a.effects = append(a.effects, e)
 	// When first added, apply the effect
 	a.updateWithEffect(e)
+	// Make sure value is correct if too high/low
+	a.value = int(math.Max(0.0, math.Min(float64(a.max), float64(a.value))))
+}
+
+func (a *Attribute) Effects() []*item.Effect {
+	return a.effects
 }
 
 func (a *Attribute) Update() {
 	for i := 0; i < len(a.effects); i++ {
 		effect := a.effects[i]
-		a.updateWithEffect(effect)
 		if effect.Expired() {
 			a.effects = append(a.effects[:i], a.effects[i+1:]...)
 			i--
 		}
+		a.updateWithEffect(effect)
 	}
+	// Make sure value is correct if too high/low
+	a.value = int(math.Max(0.0, math.Min(float64(a.max), float64(a.value))))
 }
 
 func (a *Attribute) MarshalJSON() ([]byte, error) {

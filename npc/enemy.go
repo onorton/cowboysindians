@@ -406,7 +406,9 @@ func (e *Enemy) weaponLoaded() bool {
 func (e *Enemy) applyEffects(effects item.Effects) {
 	for attr, attribute := range e.attributes {
 		for _, effect := range effects[attr] {
-			attribute.AddEffect(&effect)
+			eff := new(item.Effect)
+			*eff = effect
+			attribute.AddEffect(eff)
 		}
 	}
 }
