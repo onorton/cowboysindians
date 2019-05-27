@@ -13,6 +13,7 @@
 		"Inventory": [[{"Items":{"pistol": 1, "pistol bullet": 10}, "Probability": 1.0},
 			{"Items":{"shotgun": 1, "shotgun shell": 10}, "Probability": 1.0},{"Items":{"sawn-off shotgun": 1, "shotgun shell": 10}, "Probability": 1.0}],[{"Items":{"standard ration": 1}, "Probability": 1.0}]],
 		"Unarmed":{"Range":0,"Type":0,"Capacity":null,"Damage":{"Dice":2,"Number":1,"Bonus":0},"Effects":{}},
-		"Mount": {"horse": 0.2, "None": 0.8}
+		"Mount": {"horse": 0.2, "None": 0.8},
+		"Human": true
 	}
 }

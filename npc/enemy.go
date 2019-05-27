@@ -30,6 +30,7 @@ type EnemyAttributes struct {
 	AiType       string
 	Inventory    [][]item.ItemChoice
 	Mount        map[string]float64
+	Human        bool
 }
 
 var enemyData map[string]EnemyAttributes = fetchEnemyData()
@@ -43,8 +44,8 @@ func fetchEnemyData() map[string]EnemyAttributes {
 	return eD
 }
 
-func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
-	enemy := enemyData[name]
+func NewEnemy(enemyType string, x, y int, world *worldmap.Map) *Enemy {
+	enemy := enemyData[enemyType]
 	id := xid.New().String()
 	dialogue := newDialogue(enemy.DialogueType, world, nil, nil)
 	ai := newAi(enemy.AiType, world, worldmap.Coordinates{x, y}, nil, nil, dialogue, nil)
@@ -54,7 +55,8 @@ func NewEnemy(name string, x, y int, world *worldmap.Map) *Enemy {
 		"str":         worldmap.NewAttribute(enemy.Str, enemy.Str),
 		"dex":         worldmap.NewAttribute(enemy.Dex, enemy.Dex),
 		"encumbrance": worldmap.NewAttribute(enemy.Encumbrance, enemy.Encumbrance)}
-	e := &Enemy{&ui.PlainName{name}, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, false, enemy.Money, enemy.Unarmed, nil, nil, make([]*item.Item, 0), "", generateMount(enemy.Mount, x, y), world, ai}
+	name := generateName(enemyType, enemy.Human)
+	e := &Enemy{name, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, false, enemy.Money, enemy.Unarmed, nil, nil, make([]*item.Item, 0), "", generateMount(enemy.Mount, x, y), world, ai}
 	for _, itm := range generateInventory(enemy.Inventory) {
 		e.PickupItem(itm)
 	}
@@ -117,7 +119,7 @@ func (e *Enemy) MarshalJSON() ([]byte, error) {
 func (e *Enemy) UnmarshalJSON(data []byte) error {
 
 	type enemyJson struct {
-		Name       *ui.PlainName
+		Name       map[string]interface{}
 		Id         string
 		Location   worldmap.Coordinates
 		Icon       icon.Icon
@@ -136,7 +138,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 
 	json.Unmarshal(data, &v)
 
-	e.name = v.Name
+	e.name = unmarshalName(v.Name)
 	e.id = v.Id
 	e.location = v.Location
 	e.icon = v.Icon
@@ -483,7 +485,7 @@ func (e *Enemy) LoadMount(mounts []*Mount) {
 }
 
 type Enemy struct {
-	name       *ui.PlainName
+	name       ui.Name
 	id         string
 	location   worldmap.Coordinates
 	icon       icon.Icon
