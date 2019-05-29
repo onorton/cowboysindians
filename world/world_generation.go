@@ -28,6 +28,7 @@ func GenerateWorld(filename string, width, height int) ([]*npc.Mount, []*npc.Ene
 	for i := 0; i < 2; i++ {
 		generateTown(world, &towns, &buildings)
 	}
+	generateFarm(world, &towns, &buildings)
 	generatePaths(world, towns)
 
 	// Generate building outside town
@@ -282,12 +283,8 @@ func randomBuildingType(buildings *[]worldmap.Building) worldmap.BuildingType {
 	}
 }
 
-func generateBuildingInTown(world worldmap.World, t *worldmap.Town, buildings *[]worldmap.Building) {
-
+func generateBuildingInTown(world worldmap.World, t *worldmap.Town, buildings *[]worldmap.Building, buildingType worldmap.BuildingType) {
 	validBuilding := false
-
-	buildingType := randomBuildingType(buildings)
-
 	// Keeps trying until a usable building position and size found
 	for !validBuilding {
 
@@ -464,17 +461,22 @@ func generateBuildingInTown(world worldmap.World, t *worldmap.Town, buildings *[
 	}
 }
 
-// Generate small town (single street with buildings)
-func generateTown(world worldmap.World, towns *[]worldmap.Town, buildings *[]worldmap.Building) {
+func generateRandomBuildingInTown(world worldmap.World, t *worldmap.Town, buildings *[]worldmap.Building) {
+	generateBuildingInTown(world, t, buildings, randomBuildingType(buildings))
+}
+
+
+func validTown(world worldmap.World, towns*[]worldmap.Town, buildings *[]worldmap.Building, minimum, maximum int) *worldmap.Town {
 	// Generate area of town
+
 	width := world.Width()
 	height := world.Height()
 
-	validTown := false
+	valid := false
 
-	for !validTown {
-		townWidth := 15 + rand.Intn(30)
-		townHeight := 15 + rand.Intn(30)
+	for !valid {
+		townWidth := minimum + rand.Intn(maximum-minimum)
+		townHeight := minimum + rand.Intn(maximum-minimum)
 
 		posWidth := 0
 		negWidth := 0
@@ -516,37 +518,53 @@ func generateTown(world worldmap.World, towns *[]worldmap.Town, buildings *[]wor
 
 		t := &worldmap.Town{generateTownName(), x1, y1, x2, y2, streetX1, streetY1, streetX2, streetY2, horizontalStreet, make([]worldmap.Building, 0)}
 
-		validTown := isValid(x1, y1, width, height) && isValid(x2, y2, width, height) && !townsOverlap(*towns, *t)
-		if validTown {
-
-			//Select random number of buildings, assuming 2 on each side of street
-			minNumBuildings, maxNumBuildings := int(math.Max(1, float64(townWidth/10))), int(math.Max(1, float64(townWidth/5)))
-			numBuildings := minNumBuildings + rand.Intn(maxNumBuildings-minNumBuildings)
-			// Generate a number of buildings
-			for i := 0; i < numBuildings; i++ {
-				generateBuildingInTown(world, t, buildings)
-			}
-			*towns = append(*towns, *t)
-			break
+		valid := isValid(x1, y1, width, height) && isValid(x2, y2, width, height) && !townsOverlap(*towns, *t)
+		if valid {
+			return t
 		}
 	}
+	return nil
 }
+
+// Generate small town (single street with buildings)
+func generateTown(world worldmap.World, towns *[]worldmap.Town, buildings *[]worldmap.Building) {
+		town := validTown(world, towns, buildings, 15, 45)
+		townWidth := 0
+		if town.Horizontal {
+			townWidth = town.TX2-town.TX1
+		} else {
+			townWidth = town.TY2-town.TY1
+		}
+
+		minNumBuildings, maxNumBuildings := int(math.Max(1, float64(townWidth/10))), int(math.Max(1, float64(townWidth/5)))
+		numBuildings := minNumBuildings + rand.Intn(maxNumBuildings-minNumBuildings)
+		// Generate a number of buildings
+		for i := 0; i < numBuildings; i++ {
+			generateRandomBuildingInTown(world, town, buildings)
+		}
+		*towns = append(*towns, *town)
+}
+
+func generateFarm(world worldmap.World, towns *[]worldmap.Town, buildings *[]worldmap.Building) {
+	town := validTown(world, towns, buildings, 30, 60)
+	// Generate farmhouse
+	generateBuildingInTown(world, town, buildings, worldmap.Residential)
+	*towns = append(*towns, *town)
+}
+
 
 func generateTownName() string {
 	noun := npc.Names.Towns["Nouns"][rand.Intn(len(npc.Names.Towns["Nouns"]))]
 	withAdjective := rand.Intn(2) == 0
 	if withAdjective {
 		adjective := npc.Names.Towns["Adjectives"][rand.Intn(len(npc.Names.Towns["Adjectives"]))]
-		name := noun
 
 		joined := rand.Intn(2) == 0
 		if joined {
-			name = adjective + strings.ToLower(noun)
+			return adjective + strings.ToLower(noun)
 		} else {
-			name = adjective + " " + noun
+			return adjective + " " + noun
 		}
-
-		return name
 	}
 	return noun
 }
