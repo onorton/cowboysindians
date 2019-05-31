@@ -70,8 +70,8 @@ func addItemsToBuildings(world worldmap.World, buildings []worldmap.Building) {
 	for _, b := range buildings {
 
 		// Consider inner area (exclude walls)
-		x1, y1 := b.X1+1, b.Y1+1
-		x2, y2 := b.X2-1, b.Y2-1
+		x1, y1 := b.Area.X1()+1, b.Area.Y1()+1
+		x2, y2 := b.Area.X2()-1, b.Area.Y2()-1
 
 		// Create and place a key for the door somewhere in the building
 		keyValue := world.Door(b.DoorLocation.X, b.DoorLocation.Y).Key()
@@ -91,16 +91,16 @@ func addItemsToBuildings(world worldmap.World, buildings []worldmap.Building) {
 		if b.T == worldmap.Saloon {
 
 			// Chairs and tables should not be close to counter or front door
-			if b.DoorLocation.X == b.X1 {
+			if b.DoorLocation.X == b.Area.X1() {
 				x1 += 1
 				x2 -= 3
-			} else if b.DoorLocation.X == b.X2 {
+			} else if b.DoorLocation.X == b.Area.X2() {
 				x1 += 3
 				x2 -= 1
-			} else if b.DoorLocation.Y == b.Y1 {
+			} else if b.DoorLocation.Y == b.Area.Y1() {
 				y1 += 1
 				y2 -= 3
-			} else if b.DoorLocation.Y == b.Y2 {
+			} else if b.DoorLocation.Y == b.Area.Y2() {
 				y1 += 3
 				y2 -= 1
 			}
@@ -178,7 +178,7 @@ func generateBuildingOutsideTown(world worldmap.World, towns *[]worldmap.Town, b
 		x1, y1 := cX-negWidth, cY-negHeight
 		x2, y2 := cX+posWidth, cY+posHeight
 
-		b := worldmap.Building{x1, y1, x2, y2, worldmap.Residential, nil}
+		b := worldmap.NewBuilding(x1, y1, x2, y2, worldmap.Residential)
 		validBuilding = isValid(x1, y1, width, height) && isValid(x2, y2, width, height) && !overlap(*buildings, b) && !inTowns(*towns, b)
 
 		if validBuilding {
@@ -314,33 +314,32 @@ func generateBuildingInTown(world worldmap.World, t *worldmap.Town, buildings *[
 		sideOfStreet := rand.Intn(2) == 0
 
 		if t.Horizontal {
-			centreAlongStreet := t.SX1 + 1 + rand.Intn(t.SX2-t.SX1-2)
+			centreAlongStreet := t.StreetArea.X1() + 1 + rand.Intn(t.StreetArea.X2()-t.StreetArea.X1()-2)
 			x1 = centreAlongStreet - negWidth
 			x2 = centreAlongStreet + posWidth
 
 			if sideOfStreet {
-				y2 = t.SY1 - 1
+				y2 = t.StreetArea.Y1() - 1
 				y1 = y2 - depth
 			} else {
-				y1 = t.SY2 + 1
+				y1 = t.StreetArea.Y2() + 1
 				y2 = y1 + depth
 			}
 		} else {
-			centreAlongStreet := t.SY1 + 1 + rand.Intn(t.SY2-t.SY1-2)
+			centreAlongStreet := t.StreetArea.Y1() + 1 + rand.Intn(t.StreetArea.Y2()-t.StreetArea.Y1()-2)
 			y1 = centreAlongStreet - negWidth
 			y2 = centreAlongStreet + posWidth
 
 			if sideOfStreet {
-				x2 = t.SX1 - 1
+				x2 = t.StreetArea.X1() - 1
 				x1 = x2 - depth
 			} else {
-				x1 = t.SX2 + 1
+				x1 = t.StreetArea.X2() + 1
 				x2 = x1 + depth
 			}
 		}
 
-		b := worldmap.Building{x1, y1, x2, y2, buildingType, nil}
-
+		b := worldmap.NewBuilding(x1, y1, x2, y2, buildingType)
 		validBuilding = inTown(*t, b) && !overlap(*buildings, b)
 
 		if validBuilding {
@@ -521,7 +520,7 @@ func validTown(world worldmap.World, towns *[]worldmap.Town, buildings *[]worldm
 			streetX2, streetY2 = cX+(streetBreadth+1)/2, y2
 		}
 
-		t := &worldmap.Town{generateTownName(), x1, y1, x2, y2, streetX1, streetY1, streetX2, streetY2, horizontalStreet, make([]worldmap.Building, 0)}
+		t := worldmap.NewTown(generateTownName(), x1, y1, x2, y2, streetX1, streetY1, streetX2, streetY2, horizontalStreet, false)
 
 		valid := isValid(x1, y1, width, height) && isValid(x2, y2, width, height) && !townsOverlap(*towns, *t)
 		if valid {
@@ -536,11 +535,10 @@ func generateTown(world worldmap.World, towns *[]worldmap.Town, buildings *[]wor
 	town := validTown(world, towns, buildings, 15, 45)
 	townWidth := 0
 	if town.Horizontal {
-		townWidth = town.TX2 - town.TX1
+		townWidth = town.TownArea.X2() - town.TownArea.X1()
 	} else {
-		townWidth = town.TY2 - town.TY1
+		townWidth = town.TownArea.Y2() - town.TownArea.Y1()
 	}
-
 	minNumBuildings, maxNumBuildings := int(math.Max(1, float64(townWidth/10))), int(math.Max(1, float64(townWidth/5)))
 	numBuildings := minNumBuildings + rand.Intn(maxNumBuildings-minNumBuildings)
 	// Generate a number of buildings
@@ -552,25 +550,26 @@ func generateTown(world worldmap.World, towns *[]worldmap.Town, buildings *[]wor
 
 func generateFarm(world worldmap.World, towns *[]worldmap.Town, buildings *[]worldmap.Building) {
 	town := validTown(world, towns, buildings, 30, 60)
+	town.Farm = true
 
 	// Generate fields
 
 	if town.Horizontal {
 
 		for side := 0; side <= 1; side++ {
-			position := town.TX1
-			for position < town.TX2 {
+			position := town.TownArea.X1()
+			for position < town.TownArea.X2() {
 				// Choose random crop
 				crop := item.RandomItemName([]string{"corn", "potato"})
 				// Random width
-				width := rand.Intn(town.TX2 - position)
+				width := rand.Intn(town.TownArea.X2() - position)
 				for x := position; x < position+width; x++ {
 					if side == 0 {
-						for y := town.TY1; y < town.SY1; y++ {
+						for y := town.TownArea.Y1(); y < town.StreetArea.Y1(); y++ {
 							world.PlaceItem(x, y, item.NewItem(crop))
 						}
 					} else {
-						for y := town.SY2 + 1; y <= town.TY2; y++ {
+						for y := town.StreetArea.Y2() + 1; y <= town.TownArea.Y2(); y++ {
 							world.PlaceItem(x, y, item.NewItem(crop))
 						}
 					}
@@ -581,19 +580,19 @@ func generateFarm(world worldmap.World, towns *[]worldmap.Town, buildings *[]wor
 	} else {
 
 		for side := 0; side <= 1; side++ {
-			position := town.TY1
-			for position < town.TY2 {
+			position := town.TownArea.Y1()
+			for position < town.TownArea.Y2() {
 				// Choose random crop
 				crop := item.RandomItemName([]string{"corn", "potato"})
 				// Random width
-				width := rand.Intn(town.TY2 - position)
+				width := rand.Intn(town.TownArea.Y2() - position)
 				for y := position; y < position+width; y++ {
 					if side == 0 {
-						for x := town.TX1; x < town.SX1; x++ {
+						for x := town.TownArea.X1(); x < town.StreetArea.X1(); x++ {
 							world.PlaceItem(x, y, item.NewItem(crop))
 						}
 					} else {
-						for x := town.SX2 + 1; x <= town.TX2; x++ {
+						for x := town.StreetArea.X2() + 1; x <= town.TownArea.X2(); x++ {
 							world.PlaceItem(x, y, item.NewItem(crop))
 						}
 					}
@@ -633,8 +632,8 @@ type path struct {
 func generatePaths(world worldmap.World, towns []worldmap.Town) {
 	// Create tiles in towns
 	for _, t := range towns {
-		for y := t.SY1; y <= t.SY2; y++ {
-			for x := t.SX1; x <= t.SX2; x++ {
+		for y := t.StreetArea.Y1(); y <= t.StreetArea.Y2(); y++ {
+			for x := t.StreetArea.X1(); x <= t.StreetArea.X2(); x++ {
 				world.NewTile("path", x, y)
 			}
 		}
@@ -696,23 +695,23 @@ func generatePaths(world worldmap.World, towns []worldmap.Town) {
 		t1Width, t2Width := 0, 0
 
 		if t1.Horizontal {
-			t1StreetPoints[0] = worldmap.Coordinates{t1.SX1, (t1.SY1 + t1.SY2) / 2}
-			t1StreetPoints[1] = worldmap.Coordinates{t1.SX2, (t1.SY1 + t1.SY2) / 2}
-			t1Width = t1.SY2 - t1.SY1 + 1
+			t1StreetPoints[0] = worldmap.Coordinates{t1.StreetArea.X1(), (t1.StreetArea.Y1() + t1.StreetArea.Y2()) / 2}
+			t1StreetPoints[1] = worldmap.Coordinates{t1.StreetArea.X2(), (t1.StreetArea.Y1() + t1.StreetArea.Y2()) / 2}
+			t1Width = t1.StreetArea.Y2() - t1.StreetArea.Y1() + 1
 		} else {
-			t1StreetPoints[0] = worldmap.Coordinates{(t1.SX1 + t1.SX2) / 2, t1.SY1}
-			t1StreetPoints[1] = worldmap.Coordinates{(t1.SX1 + t1.SX2) / 2, t1.SY2}
-			t1Width = t1.SX2 - t1.SX1 + 1
+			t1StreetPoints[0] = worldmap.Coordinates{(t1.StreetArea.X1() + t1.StreetArea.X2()) / 2, t1.StreetArea.Y1()}
+			t1StreetPoints[1] = worldmap.Coordinates{(t1.StreetArea.X1() + t1.StreetArea.X2()) / 2, t1.StreetArea.Y2()}
+			t1Width = t1.StreetArea.X2() - t1.StreetArea.X1() + 1
 		}
 
 		if t2.Horizontal {
-			t2StreetPoints[0] = worldmap.Coordinates{t2.SX1, (t2.SY1 + t2.SY2) / 2}
-			t2StreetPoints[1] = worldmap.Coordinates{t2.SX2, (t2.SY1 + t2.SY2) / 2}
-			t2Width = t2.SY2 - t2.SY1 + 1
+			t2StreetPoints[0] = worldmap.Coordinates{t2.StreetArea.X1(), (t2.StreetArea.Y1() + t2.StreetArea.Y2()) / 2}
+			t2StreetPoints[1] = worldmap.Coordinates{t2.StreetArea.X2(), (t2.StreetArea.Y1() + t2.StreetArea.Y2()) / 2}
+			t2Width = t2.StreetArea.Y2() - t2.StreetArea.Y1() + 1
 		} else {
-			t2StreetPoints[0] = worldmap.Coordinates{(t2.SX1 + t2.SX2) / 2, t2.SY1}
-			t2StreetPoints[1] = worldmap.Coordinates{(t2.SX1 + t2.SX2) / 2, t2.SY2}
-			t2Width = t2.SX2 - t2.SX1 + 1
+			t2StreetPoints[0] = worldmap.Coordinates{(t2.StreetArea.X1() + t2.StreetArea.X2()) / 2, t2.StreetArea.Y1()}
+			t2StreetPoints[1] = worldmap.Coordinates{(t2.StreetArea.X1() + t2.StreetArea.X2()) / 2, t2.StreetArea.Y2()}
+			t2Width = t2.StreetArea.X2() - t2.StreetArea.X1() + 1
 		}
 
 		width := (t1Width + t2Width) / 2
@@ -767,7 +766,7 @@ func generatePaths(world worldmap.World, towns []worldmap.Town) {
 			for t := 0.0; t <= 1.0; t += minStep {
 				point := curve(start, end)(t)
 				for _, town := range towns {
-					if point.X > town.TX1 && point.X < town.TX2 && point.Y > town.TY1 && point.Y < town.TY2 {
+					if point.X > town.TownArea.X1() && point.X < town.TownArea.X2() && point.Y > town.TownArea.Y1() && point.Y < town.TownArea.Y2() {
 						intersects = true
 					}
 				}
@@ -815,11 +814,11 @@ func placeSignposts(m worldmap.World, towns []worldmap.Town) {
 		sX, sY := 0, 0
 
 		if t.Horizontal {
-			sY = [2]int{t.SY1 - 2, t.SY2 + 2}[rand.Intn(2)]
-			sX = [2]int{t.SX1, t.SX2}[rand.Intn(2)]
+			sY = [2]int{t.StreetArea.Y1() - 2, t.StreetArea.Y2() + 2}[rand.Intn(2)]
+			sX = [2]int{t.StreetArea.X1(), t.StreetArea.X2()}[rand.Intn(2)]
 		} else {
-			sX = [2]int{t.SX1 - 2, t.SX2 + 2}[rand.Intn(2)]
-			sY = [2]int{t.SY1, t.SY2}[rand.Intn(2)]
+			sX = [2]int{t.StreetArea.X1() - 2, t.StreetArea.X2() + 2}[rand.Intn(2)]
+			sY = [2]int{t.StreetArea.Y1(), t.StreetArea.Y2()}[rand.Intn(2)]
 		}
 
 		signpost := item.NewReadable("signpost", map[string]string{"town": t.Name})
@@ -889,7 +888,7 @@ func generateNpcs(m worldmap.World, towns []worldmap.Town, buildings []worldmap.
 			placeNpcInBuilding(m, &npcs, findTown(towns, b), b, "shopkeeper")
 		case worldmap.Saloon:
 			placeNpcInBuilding(m, &npcs, findTown(towns, b), b, "bartender")
-			buildingArea := (b.X2 - b.X1) * (b.Y2 - b.Y1)
+			buildingArea := (b.Area.X2() - b.Area.X1()) * (b.Area.Y2() - b.Area.Y1())
 			numPatrons := rand.Intn(buildingArea / 5)
 			for j := 0; j < numPatrons; j++ {
 				placeNpcInBuilding(m, &npcs, findTown(towns, b), b, "bar patron")
@@ -902,6 +901,27 @@ func generateNpcs(m worldmap.World, towns []worldmap.Town, buildings []worldmap.
 			}
 		}
 		usedBuildings = append(usedBuildings, b)
+	}
+
+	// Place farmers and animals in farms
+	for _, town := range towns {
+		if town.Farm {
+			placeNpcInBuilding(m, &npcs, town, town.Buildings[0], "farmer")
+			townArea := (town.TownArea.X2() - town.TownArea.X1()) * (town.TownArea.Y2() - town.TownArea.Y1())
+			numberAnimals := townArea / 100
+			for j := 0; j < numberAnimals; j++ {
+				x, y := town.TownArea.X1()+rand.Intn(town.TownArea.X2()-town.TownArea.X1()), town.TownArea.Y1()+rand.Intn(town.TownArea.Y2()-town.TownArea.Y1())
+				if !m.IsPassable(x, y) || m.IsOccupied(x, y) {
+					j--
+					continue
+				}
+				animalType := npc.RandomNpcTypeFromSelection([]string{"cow", "pig", "chicken"})
+				c := npc.NewNpc(animalType, x, y, nil, nil)
+				m.Place(c)
+				npcs = append(npcs, c)
+			}
+			i++
+		}
 	}
 
 	for ; i < n; i++ {
@@ -959,8 +979,8 @@ func generateProtector(m worldmap.World, npcType string, c worldmap.Creature) *n
 func placeNpcInBuilding(m worldmap.World, npcs *[]*npc.Npc, t worldmap.Town, b worldmap.Building, npcType string) {
 	var n *npc.Npc
 	for n == nil {
-		x := b.X1 + 1 + rand.Intn(b.X2-b.X1-1)
-		y := b.Y1 + 1 + rand.Intn(b.Y2-b.Y1-1)
+		x := b.Area.X1() + 1 + rand.Intn(b.Area.X2()-b.Area.X1()-1)
+		y := b.Area.Y1() + 1 + rand.Intn(b.Area.Y2()-b.Area.Y1()-1)
 
 		if !m.IsPassable(x, y) || m.IsOccupied(x, y) {
 			continue
@@ -1007,7 +1027,7 @@ func outside(buildings []worldmap.Building, x, y int) bool {
 }
 
 func inTown(t worldmap.Town, b worldmap.Building) bool {
-	return b.X1 >= t.TX1 && b.X1 <= t.TX2 && b.X2 >= t.TX1 && b.X2 <= t.TX2 && b.Y1 >= t.TY1 && b.Y1 <= t.TY2 && b.Y2 >= t.TY1 && b.Y2 <= t.TY2
+	return b.Area.X1() >= t.TownArea.X1() && b.Area.X1() <= t.TownArea.X2() && b.Area.X2() >= t.TownArea.X1() && b.Area.X2() <= t.TownArea.X2() && b.Area.Y1() >= t.TownArea.Y1() && b.Area.Y1() <= t.TownArea.Y2() && b.Area.Y2() >= t.TownArea.Y1() && b.Area.Y2() <= t.TownArea.Y2()
 }
 
 func inTowns(towns []worldmap.Town, b worldmap.Building) bool {
@@ -1021,7 +1041,7 @@ func inTowns(towns []worldmap.Town, b worldmap.Building) bool {
 
 func overlap(buildings []worldmap.Building, b worldmap.Building) bool {
 	for _, otherBuilding := range buildings {
-		if !(b.X2 < otherBuilding.X1-1 || otherBuilding.X2 < b.X1-1 || b.Y2 < otherBuilding.Y1-1 || otherBuilding.Y2 < b.Y1-1) {
+		if !(b.Area.X2() < otherBuilding.Area.X1()-1 || otherBuilding.Area.X2() < b.Area.X1()-1 || b.Area.Y2() < otherBuilding.Area.Y1()-1 || otherBuilding.Area.Y2() < b.Area.Y1()-1) {
 			return true
 		}
 	}
@@ -1031,12 +1051,12 @@ func overlap(buildings []worldmap.Building, b worldmap.Building) bool {
 
 func townsOverlap(towns []worldmap.Town, t worldmap.Town) bool {
 	for _, otherTown := range towns {
-		if !(t.TX2 < otherTown.TX1 || otherTown.TX2 < t.TX1 || t.TY2 < otherTown.TY1 || otherTown.TY2 < t.TY1) {
+		if !(t.TownArea.X2() < otherTown.TownArea.X1() || otherTown.TownArea.X2() < t.TownArea.X1() || t.TownArea.Y2() < otherTown.TownArea.Y1() || otherTown.TownArea.Y2() < t.TownArea.Y1()) {
 			return true
 		}
 
-		t1cX, t1cY := (t.TX1+t.TX2)/2, (t.TY1+t.TY2)/2
-		t2cX, t2cY := (otherTown.TX1+otherTown.TX2)/2, (otherTown.TY1+otherTown.TY2)/2
+		t1cX, t1cY := (t.TownArea.X1()+t.TownArea.X2())/2, (t.TownArea.Y1()+t.TownArea.Y2())/2
+		t2cX, t2cY := (otherTown.TownArea.X1()+otherTown.TownArea.X2())/2, (otherTown.TownArea.Y1()+otherTown.TownArea.Y2())/2
 		distance := math.Sqrt(math.Pow(float64(t1cX-t2cX), 2) + math.Pow(float64(t1cY-t2cY), 2))
 
 		if distance < 40 {

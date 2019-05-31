@@ -62,18 +62,20 @@ func newAi(aiType string, world *worldmap.Map, location worldmap.Coordinates, to
 			event.Subscribe(&ai)
 			return ai
 		} else if building != nil {
-			return npcAi{worldmap.NewWithinBuilding(world, *building, location)}
+			return npcAi{worldmap.NewWithinArea(world, building.Area, location)}
 		} else {
 			return npcAi{worldmap.NewRandomWaypoint(world, location)}
 		}
 	case "npc":
 		if building != nil {
-			return npcAi{worldmap.NewWithinBuilding(world, *building, location)}
+			return npcAi{worldmap.NewWithinArea(world, building.Area, location)}
 		} else {
 			return npcAi{worldmap.NewRandomWaypoint(world, location)}
 		}
+	case "farmer":
+		return npcAi{worldmap.NewWithinArea(world, town.TownArea, location)}
 	case "bar patron":
-		return barPatronAi{worldmap.NewWithinBuilding(world, *building, location), new(int)}
+		return barPatronAi{worldmap.NewWithinArea(world, building.Area, location), new(int)}
 	case "sheriff":
 		return newSheriffAi(location, *town)
 	case "enemy":
@@ -119,7 +121,7 @@ func (ai animalAi) setMap(world *worldmap.Map) {
 	case *worldmap.RandomWaypoint:
 		w.SetMap(world)
 	case *worldmap.Patrol:
-	case *worldmap.WithinBuilding:
+	case *worldmap.WithinArea:
 		w.SetMap(world)
 	}
 }
@@ -223,7 +225,7 @@ func (ai aggAnimalAi) setMap(world *worldmap.Map) {
 	case *worldmap.RandomWaypoint:
 		w.SetMap(world)
 	case *worldmap.Patrol:
-	case *worldmap.WithinBuilding:
+	case *worldmap.WithinArea:
 		w.SetMap(world)
 	}
 }
@@ -541,7 +543,7 @@ func (ai npcAi) setMap(world *worldmap.Map) {
 	case *worldmap.RandomWaypoint:
 		w.SetMap(world)
 	case *worldmap.Patrol:
-	case *worldmap.WithinBuilding:
+	case *worldmap.WithinArea:
 		w.SetMap(world)
 	}
 }
@@ -586,11 +588,11 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town) *sheriffAi {
 	points := make([]worldmap.Coordinates, 3)
 	points[0] = l
 	if t.Horizontal {
-		points[1] = worldmap.Coordinates{t.TX1, (t.SY1 + t.SY2) / 2}
-		points[2] = worldmap.Coordinates{t.TX2, (t.SY1 + t.SY2) / 2}
+		points[1] = worldmap.Coordinates{t.TownArea.X1(), (t.StreetArea.Y1() + t.StreetArea.Y2()) / 2}
+		points[2] = worldmap.Coordinates{t.TownArea.X2(), (t.StreetArea.Y1() + t.StreetArea.Y2()) / 2}
 	} else {
-		points[1] = worldmap.Coordinates{(t.SX1 + t.SX2) / 2, t.SY1}
-		points[2] = worldmap.Coordinates{(t.SX1 + t.SX2) / 2, t.SY1}
+		points[1] = worldmap.Coordinates{(t.StreetArea.X1() + t.StreetArea.X2()) / 2, t.StreetArea.Y1()}
+		points[2] = worldmap.Coordinates{(t.StreetArea.X1() + t.StreetArea.X2()) / 2, t.StreetArea.Y1()}
 	}
 	ai := &sheriffAi{worldmap.NewPatrol(points), t, &Bounties{}}
 	event.Subscribe(ai)
@@ -603,7 +605,7 @@ func (ai sheriffAi) ProcessEvent(e event.Event) {
 		{
 			crime := ev.Crime
 			location := crime.Location()
-			if location.X >= ai.t.TX1 && location.X <= ai.t.TX2 && location.Y >= ai.t.TY1 && location.Y <= ai.t.TY2 {
+			if location.X >= ai.t.TownArea.X1() && location.X <= ai.t.TownArea.X2() && location.Y >= ai.t.TownArea.Y1() && location.Y <= ai.t.TownArea.Y2() {
 				ai.bounties.addBounty(crime)
 			}
 		}
@@ -987,7 +989,7 @@ func (ai *enemyAi) UnmarshalJSON(data []byte) error {
 }
 
 type barPatronAi struct {
-	waypoint *worldmap.WithinBuilding
+	waypoint *worldmap.WithinArea
 	timeLeft *int
 }
 
@@ -1063,7 +1065,7 @@ func (ai barPatronAi) MarshalJSON() ([]byte, error) {
 
 func (ai *barPatronAi) UnmarshalJSON(data []byte) error {
 	type barPatronAiJson struct {
-		Waypoint *worldmap.WithinBuilding
+		Waypoint *worldmap.WithinArea
 		TimeLeft *int
 	}
 

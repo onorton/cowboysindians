@@ -73,6 +73,20 @@ func RandomNpcType() string {
 	for npcType, npcInfo := range npcData {
 		probabilities[npcType] = npcInfo.Probability
 	}
+
+	return chooseNpcType(probabilities)
+}
+
+func RandomNpcTypeFromSelection(npcTypes []string) string {
+	probabilities := map[string]float64{}
+	for _, npcType := range npcTypes {
+		probabilities[npcType] = npcData[npcType].Probability
+	}
+
+	return chooseNpcType(probabilities)
+}
+
+func chooseNpcType(probabilities map[string]float64) string {
 	max := 0.0
 
 	for _, probability := range probabilities {

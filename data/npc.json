@@ -18,6 +18,24 @@
 		"Human": true
 	},
 
+	"farmer": {
+		"Icon": {"Icon": 102, "Colour": 6},
+		"Initiative": 1,
+		"Hp": 5,
+		"Ac": 10,
+		"Str": 10,
+		"Dex": 12,
+		"Encumbrance": 100,
+		"Money": 1000,
+		"DialogueType": 0,
+		"AiType": "farmer",
+		"Inventory": [[{"Items": {"shotgun": 1, "shotgun shell": 10}, "Probability": 1.0}]],
+		"Unarmed":{"Range":0,"Type":0,"Capacity":null,"Damage":{"Dice":2,"Number":1,"Bonus":0},"Effects":{}},
+		"Protector": {"dog": 0.5, "None": 0.5},
+		"Probability": 0.0,
+		"Human": true
+	},
+
 	"bar patron": {
 		"Icon": {"Icon": 116, "Colour": 6},
 		"Initiative": 1,

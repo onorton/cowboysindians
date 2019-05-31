@@ -113,26 +113,26 @@ func (p *Patrol) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// WithinBuilding means that creatures move randomly within a given building
-type WithinBuilding struct {
+// WithinArea means that creatures move randomly within a given area
+type WithinArea struct {
 	world           *Map
-	building        Building
+	area            Area
 	currentWaypoint Coordinates
 }
 
-func NewWithinBuilding(world *Map, building Building, location Coordinates) *WithinBuilding {
-	return &WithinBuilding{world, building, location}
+func NewWithinArea(world *Map, area Area, location Coordinates) *WithinArea {
+	return &WithinArea{world, area, location}
 }
 
-func (wb *WithinBuilding) SetMap(world *Map) {
+func (wb *WithinArea) SetMap(world *Map) {
 	wb.world = world
 }
 
-func (wb *WithinBuilding) NextWaypoint(location Coordinates) Coordinates {
+func (wb *WithinArea) NextWaypoint(location Coordinates) Coordinates {
 	if wb.currentWaypoint == location {
 		for {
-			newX := wb.building.X1 + rand.Intn(wb.building.X2-wb.building.X1-1) + 1
-			newY := wb.building.Y1 + rand.Intn(wb.building.Y2-wb.building.Y1-1) + 1
+			newX := wb.area.X1() + rand.Intn(wb.area.X2()-wb.area.X1()-1) + 1
+			newY := wb.area.Y1() + rand.Intn(wb.area.Y2()-wb.area.Y1()-1) + 1
 			if wb.world.IsPassable(newX, newY) {
 				wb.currentWaypoint = Coordinates{newX, newY}
 				break
@@ -142,15 +142,15 @@ func (wb *WithinBuilding) NextWaypoint(location Coordinates) Coordinates {
 	return wb.currentWaypoint
 }
 
-func (wb *WithinBuilding) MarshalJSON() ([]byte, error) {
+func (wb *WithinArea) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	buildingValue, err := json.Marshal(wb.building)
+	areaValue, err := json.Marshal(wb.area)
 	if err != nil {
 		return nil, err
 	}
 
-	buffer.WriteString(fmt.Sprintf("\"Building\":%s,", buildingValue))
+	buffer.WriteString(fmt.Sprintf("\"Area\":%s,", areaValue))
 
 	currentWaypointValue, err := json.Marshal(wb.currentWaypoint)
 	if err != nil {
@@ -163,10 +163,10 @@ func (wb *WithinBuilding) MarshalJSON() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func (wb *WithinBuilding) UnmarshalJSON(data []byte) error {
+func (wb *WithinArea) UnmarshalJSON(data []byte) error {
 
 	type wbJson struct {
-		Building        Building
+		Area            Area
 		CurrentWaypoint Coordinates
 	}
 
@@ -176,7 +176,7 @@ func (wb *WithinBuilding) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	wb.building = v.Building
+	wb.area = v.Area
 	wb.currentWaypoint = v.CurrentWaypoint
 
 	return nil
@@ -186,8 +186,8 @@ func UnmarshalWaypointSystem(waypoint map[string]interface{}) WaypointSystem {
 	waypointJson, err := json.Marshal(waypoint)
 	check(err)
 
-	if _, ok := waypoint["Building"]; ok {
-		var wb WithinBuilding
+	if _, ok := waypoint["Area"]; ok {
+		var wb WithinArea
 		err = json.Unmarshal(waypointJson, &wb)
 		check(err)
 		return &wb
