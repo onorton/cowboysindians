@@ -355,6 +355,12 @@ func generateBuildingInTown(world worldmap.World, t *worldmap.Town, buildings *[
 				world.NewTile("wall", x2, y)
 			}
 
+			for y := y1 + 1; y <= y2-1; y++ {
+				for x := x1 + 1; x <= x2-1; x++ {
+					world.NewTile("ground", x, y)
+				}
+			}
+
 			doorX, doorY := 0, 0
 			// Door is on side facing street
 			if t.Horizontal {
@@ -465,8 +471,7 @@ func generateRandomBuildingInTown(world worldmap.World, t *worldmap.Town, buildi
 	generateBuildingInTown(world, t, buildings, randomBuildingType(buildings))
 }
 
-
-func validTown(world worldmap.World, towns*[]worldmap.Town, buildings *[]worldmap.Building, minimum, maximum int) *worldmap.Town {
+func validTown(world worldmap.World, towns *[]worldmap.Town, buildings *[]worldmap.Building, minimum, maximum int) *worldmap.Town {
 	// Generate area of town
 
 	width := world.Width()
@@ -528,30 +533,81 @@ func validTown(world worldmap.World, towns*[]worldmap.Town, buildings *[]worldma
 
 // Generate small town (single street with buildings)
 func generateTown(world worldmap.World, towns *[]worldmap.Town, buildings *[]worldmap.Building) {
-		town := validTown(world, towns, buildings, 15, 45)
-		townWidth := 0
-		if town.Horizontal {
-			townWidth = town.TX2-town.TX1
-		} else {
-			townWidth = town.TY2-town.TY1
-		}
+	town := validTown(world, towns, buildings, 15, 45)
+	townWidth := 0
+	if town.Horizontal {
+		townWidth = town.TX2 - town.TX1
+	} else {
+		townWidth = town.TY2 - town.TY1
+	}
 
-		minNumBuildings, maxNumBuildings := int(math.Max(1, float64(townWidth/10))), int(math.Max(1, float64(townWidth/5)))
-		numBuildings := minNumBuildings + rand.Intn(maxNumBuildings-minNumBuildings)
-		// Generate a number of buildings
-		for i := 0; i < numBuildings; i++ {
-			generateRandomBuildingInTown(world, town, buildings)
-		}
-		*towns = append(*towns, *town)
+	minNumBuildings, maxNumBuildings := int(math.Max(1, float64(townWidth/10))), int(math.Max(1, float64(townWidth/5)))
+	numBuildings := minNumBuildings + rand.Intn(maxNumBuildings-minNumBuildings)
+	// Generate a number of buildings
+	for i := 0; i < numBuildings; i++ {
+		generateRandomBuildingInTown(world, town, buildings)
+	}
+	*towns = append(*towns, *town)
 }
 
 func generateFarm(world worldmap.World, towns *[]worldmap.Town, buildings *[]worldmap.Building) {
 	town := validTown(world, towns, buildings, 30, 60)
+
+	// Generate fields
+
+	if town.Horizontal {
+
+		for side := 0; side <= 1; side++ {
+			position := town.TX1
+			for position < town.TX2 {
+				// Choose random crop
+				crop := item.RandomItemName([]string{"corn", "potato"})
+				// Random width
+				width := rand.Intn(town.TX2 - position)
+				for x := position; x < position+width; x++ {
+					if side == 0 {
+						for y := town.TY1; y < town.SY1; y++ {
+							world.PlaceItem(x, y, item.NewItem(crop))
+						}
+					} else {
+						for y := town.SY2 + 1; y <= town.TY2; y++ {
+							world.PlaceItem(x, y, item.NewItem(crop))
+						}
+					}
+				}
+				position += width + 1
+			}
+		}
+	} else {
+
+		for side := 0; side <= 1; side++ {
+			position := town.TY1
+			for position < town.TY2 {
+				// Choose random crop
+				crop := item.RandomItemName([]string{"corn", "potato"})
+				// Random width
+				width := rand.Intn(town.TY2 - position)
+				for y := position; y < position+width; y++ {
+					if side == 0 {
+						for x := town.TX1; x < town.SX1; x++ {
+							world.PlaceItem(x, y, item.NewItem(crop))
+						}
+					} else {
+						for x := town.SX2 + 1; x <= town.TX2; x++ {
+							world.PlaceItem(x, y, item.NewItem(crop))
+						}
+					}
+				}
+				position += width + 1
+			}
+		}
+	}
+
 	// Generate farmhouse
 	generateBuildingInTown(world, town, buildings, worldmap.Residential)
 	*towns = append(*towns, *town)
-}
 
+}
 
 func generateTownName() string {
 	noun := npc.Names.Towns["Nouns"][rand.Intn(len(npc.Names.Towns["Nouns"]))]

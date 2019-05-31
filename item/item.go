@@ -86,6 +86,28 @@ func NewItem(itemType string) *Item {
 	return nil
 }
 
+func RandomItemName(names []string) string {
+	probabilities := map[string]float64{}
+	for _, name := range names {
+		probability := 0.0
+		if _, ok := ammoData[name]; ok {
+			probability = ammoData[name].Probability
+		} else if _, ok := armourData[name]; ok {
+			probability = armourData[name].Probability
+		} else if _, ok := consumableData[name]; ok {
+			probability = consumableData[name].Probability
+		} else if _, ok := normalItemData[name]; ok {
+			probability = normalItemData[name].Probability
+		} else if _, ok := readableData[name]; ok {
+			probability = readableData[name].Probability
+		} else if _, ok := weaponData[name]; ok {
+			probability = weaponData[name].Probability
+		}
+		probabilities[name] = probability
+	}
+	return Choose(probabilities)
+}
+
 func Choose(probabilities map[string]float64) string {
 	max := 0.0
 
