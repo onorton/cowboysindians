@@ -12,20 +12,10 @@ import (
 
 type WeaponAttributes struct {
 	Icon        icon.Icon
-	Damage      DamageAttributes
-	Effects     Effects
-	Range       int
-	Type        WeaponType
-	Capacity    int
+	Components  map[string]interface{}
 	Weight      float64
 	Value       int
 	Probability float64
-}
-
-type DamageAttributes struct {
-	Dice   int
-	Number int
-	Bonus  int
 }
 
 type WeaponType int
@@ -95,12 +85,7 @@ type WeaponCapacity struct {
 func NewWeapon(name string) *Item {
 	weapon := weaponData[name]
 
-	var weaponCapacity *WeaponCapacity
-	if weapon.Capacity != 0 {
-		weaponCapacity = &WeaponCapacity{weapon.Capacity, 0}
-	}
-	wc := WeaponComponent{weapon.Range, weapon.Type, weaponCapacity, Damage{weapon.Damage.Dice, weapon.Damage.Number, weapon.Damage.Bonus}, weapon.Effects}
-	return &Item{name, "", weapon.Icon, weapon.Weight, weapon.Value, map[string]component{"weapon": wc}}
+	return &Item{name, "", weapon.Icon, weapon.Weight, weapon.Value, UnmarshalComponents(weapon.Components)}
 }
 
 func GenerateWeapon() *Item {

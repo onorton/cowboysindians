@@ -9,7 +9,7 @@ import (
 
 type ArmourAttributes struct {
 	Icon        icon.Icon
-	Bonus       int
+	Components  map[string]interface{}
 	Weight      float64
 	Value       int
 	Probability float64
@@ -38,7 +38,7 @@ type ArmourComponent struct {
 
 func NewArmour(name string) *Item {
 	armour := armourData[name]
-	return &Item{name, "", armour.Icon, armour.Weight, armour.Value, map[string]component{"armour": ArmourComponent{armour.Bonus}}}
+	return &Item{name, "", armour.Icon, armour.Weight, armour.Value, UnmarshalComponents(armour.Components)}
 }
 
 func GenerateArmour() *Item {

@@ -2,11 +2,11 @@
   "head":{
 		"Weight": 10.5,
 		"Value": 1000,
-    "Cover": false
+    "Components": {"corpse": {}}
 	},
 	"body":{
 		"Weight": 140,
 		"Value": 500,
-    "Cover": true
+    "Components": {"corpse": {}, "cover": {}}
 	}
 }

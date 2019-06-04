@@ -10,9 +10,9 @@ import (
 
 type readableAttributes struct {
 	Icon        icon.Icon
+	Components  map[string]interface{}
 	Weight      float64
 	Value       int
-	Description string
 	Probability float64
 }
 
@@ -35,11 +35,14 @@ func fetchReadableData() {
 
 func NewReadable(name string, values map[string]string) *Item {
 	item := readableData[name]
-	description := item.Description
+
+	itm := &Item{name, "", item.Icon, item.Weight, item.Value, UnmarshalComponents(item.Components)}
+	description := itm.components["readable"].(ReadableComponent).Description
 	for key, value := range values {
 		description = strings.Replace(description, "["+key+"]", value, -1)
 	}
-	return &Item{name, "", item.Icon, item.Weight, item.Value, map[string]component{"readable": ReadableComponent{description}}}
+	itm.components["readable"] = ReadableComponent{description}
+	return itm
 }
 
 func GenerateReadable() *Item {

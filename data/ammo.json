@@ -1,28 +1,28 @@
 {
 	"shotgun shell":{
 		"Icon": {"Icon": 44, "Colour": 4},
-		"Type": 2,
+		"Components": {"ammo": {"AmmoType": 2}},
 		"Weight": 0.02,
 		"Value": 20,
 		"Probability": 1.0
 	},
 	"pistol bullet":{
 		"Icon": {"Icon" : 44, "Colour" : 1},
-		"Type": 1,
+		"Components": {"ammo": {"AmmoType": 1}},
 		"Weight": 0.01,
 		"Value": 10,
 		"Probability": 1.0
 	},
 	"rifle bullet":{
 		"Icon": {"Icon" : 44, "Colour" : 2},
-		"Type": 3,
+		"Components": {"ammo": {"AmmoType": 3}},
 		"Weight": 0.01,
 		"Value": 10,
 		"Probability": 1.0
 	},
 	"arrow":{
 		"Icon": {"Icon" : 94, "Colour" : 8},
-		"Type": 4,
+		"Components": {"ammo": {"AmmoType": 4}},
 		"Weight": 0.01,
 		"Value": 30,
 		"Probability": 0.5

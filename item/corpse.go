@@ -10,9 +10,9 @@ import (
 
 type corpseAttributes struct {
 	Icon        icon.Icon
+	Components  map[string]interface{}
 	Weight      float64
 	Value       int
-	Cover       bool
 	Probability float64
 }
 
@@ -30,9 +30,5 @@ func fetchCorpseData() {
 func NewCorpse(corpseType string, owner string, ownerName string, ownerIcon icon.Icon) *Item {
 	corpse := corpseData[corpseType]
 	name := fmt.Sprintf("%s's %s", ownerName, corpseType)
-	components := map[string]component{"corpse": tag{}}
-	if corpse.Cover {
-		components["cover"] = tag{}
-	}
-	return &Item{name, owner, icon.NewCorpseIcon(ownerIcon), corpse.Weight, corpse.Value, components}
+	return &Item{name, owner, icon.NewCorpseIcon(ownerIcon), corpse.Weight, corpse.Value, UnmarshalComponents(corpse.Components)}
 }

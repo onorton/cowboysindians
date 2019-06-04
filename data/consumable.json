@@ -1,40 +1,38 @@
 {
 	"standard ration":{
 		"Icon": {"Icon": 42, "Colour": 4},
+		"Components": {"consumable": {"Effects": {
+			"hp": [{"Effect": 10, "Duration":1, "Permanent": true}],
+			"hunger": [{"Effect": -10, "Duration":1, "Permanent": true}]}}},
 		"Weight": 0.1,
 		"Value": 40,
-		"Effects": {
-			"hp": [{"Effect": 10, "Duration":1, "Permanent": true}],
-			"hunger": [{"Effect": -10, "Duration":1, "Permanent": true}]
-		},
 		"Probability": 1.0
 	},
 	"beer": {
 		"Icon": {"Icon": 98,"Colour": 2},
+		"Components": {"consumable": {"Effects": {
+			"hp": [{"Effect": 1, "Duration":1, "Permanent": true}],
+			"thirst": [{"Effect": -10, "Duration":1, "Permanent": true}]}}},
 		"Weight": 0.01,
 		"Value": 20,
-		"Effects": {
-			"hp": [{"Effect": 1, "Duration":1, "Permanent": true}],
-			"thirst": [{"Effect": -10, "Duration":1, "Permanent": true}]
-		},
 		"Probability": 1.0
 	},
 	"corn": {
 		"Icon": {"Icon": 34,"Colour": 12},
+		"Components": {"consumable": {"Effects": {
+				"hp": [{"Effect": 1, "Duration":1, "Permanent": true}]}}},
 		"Weight": 0.1,
 		"Value": 1,
 		"Effects": {
-			"hp": [{"Effect": 1, "Duration":1, "Permanent": true}]
 		},
 		"Probability": 1.0
 	},
 	"potato": {
 		"Icon": {"Icon": 44,"Colour": 95},
+		"Components": {"consumable": {"Effects": {
+				"hp": [{"Effect": 2, "Duration":1, "Permanent": true}]}}},
 		"Weight": 0.2,
 		"Value": 1,
-		"Effects": {
-			"hp": [{"Effect": 2, "Duration":1, "Permanent": true}]
-		},
 		"Probability": 1.0
 	}
 }

@@ -1,48 +1,44 @@
 {
 	"gem":{
 		"Icon": {"Icon": 42, "Colour": 4},
+		"Components": {},
 		"Weight": 0.03,
 		"Value": 2000,
-		"Cover": false,
 		"Probability": 0.1
 	},
 	"barrel":{
 		"Icon": {"Icon": 111, "Colour": 8},
+		"Components": {"cover": {}},
 		"Weight": 30,
 		"Value": 200,
-		"Cover": true,
 		"Probability": 1.0
 	},
 	"table":{
 		"Icon": {"Icon": 9572, "Colour": 6},
+		"Components": {"cover": {}},
 		"Weight": 25,
 		"Value": 500,
-		"Cover": true,
 		"Probability": 1.0
 	},
 	"chair":{
 		"Icon": {"Icon": 9573, "Colour": 6},
+		"Components": {"cover": {}},
 		"Weight": 20,
 		"Value": 400,
-		"Cover": true,
 		"Probability": 1.0
 	},
 	"key":{
 		"Icon": {"Icon": 40, "Colour": 15},
+		"Components": {"usable": {}, "key": {"key": 0}},
 		"Weight": 0.1,
 		"Value": 200,
-		"Cover": false,
-		"Usable": true,
-		"Key": {"key": 0},
 		"Probability": 1.0
 	},
 	"skeleton key":{
 		"Icon": {"Icon": 40, "Colour": 15},
+		"Components": {"usable": {}, "key": {"key": -1}},
 		"Weight": 0.2,
 		"Value": 5000,
-		"Cover": false,
-		"Usable": true,
-		"Key": {"key": -1},
 		"Probability": 0.2
 	}
 }

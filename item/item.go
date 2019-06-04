@@ -20,11 +20,9 @@ func check(err error) {
 
 type itemAttributes struct {
 	Icon        icon.Icon
+	Components  map[string]interface{}
 	Weight      float64
 	Value       int
-	Cover       bool
-	Usable      bool
-	Key         *KeyComponent
 	Probability float64
 }
 
@@ -196,19 +194,8 @@ func (item *Item) GetValue() int {
 
 func NewNormalItem(name string) *Item {
 	item := normalItemData[name]
-	components := map[string]component{}
-	if item.Cover {
-		components["cover"] = tag{}
-	}
-	if item.Usable {
-		components["usable"] = tag{}
-	}
 
-	if item.Key != nil {
-		components["key"] = *(item.Key)
-	}
-
-	return &Item{name, "", item.Icon, item.Weight, item.Value, components}
+	return &Item{name, "", item.Icon, item.Weight, item.Value, UnmarshalComponents(item.Components)}
 }
 
 type KeyComponent struct {
@@ -218,7 +205,6 @@ type KeyComponent struct {
 func NewKey(keyValue int32) *Item {
 	key := NewNormalItem("key")
 	key.components["key"] = KeyComponent{keyValue}
-	key.components["usable"] = tag{}
 	return key
 }
 

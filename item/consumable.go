@@ -9,9 +9,9 @@ import (
 
 type ConsumableAttributes struct {
 	Icon        icon.Icon
+	Components  map[string]interface{}
 	Weight      float64
 	Value       int
-	Effects     Effects
 	Probability float64
 }
 
@@ -38,7 +38,7 @@ type ConsumableComponent struct {
 
 func NewConsumable(name string) *Item {
 	consumable := consumableData[name]
-	return &Item{name, "", consumable.Icon, consumable.Weight, consumable.Value, map[string]component{"consumable": ConsumableComponent{consumable.Effects}}}
+	return &Item{name, "", consumable.Icon, consumable.Weight, consumable.Value, UnmarshalComponents(consumable.Components)}
 }
 
 func GenerateConsumable() *Item {

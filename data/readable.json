@@ -1,16 +1,16 @@
 {
 	"signpost":{
 		"Icon": {"Icon": 80, "Colour": 4},
+		"Components": {"readable": {"Description": "\"Welcome to [town]!\""}},
 		"Weight": 20,
 		"Value": 1000,
-		"Probability": 0.0,
-		"Description": "\"Welcome to [town]!\""
+		"Probability": 0.0
 	},
 	"book":{
 		"Icon": {"Icon": 98, "Colour": 6},
+		"Components": {"readable": {"Description": "This book has words in it."}},
 		"Weight": 1,
 		"Value": 1000,
-		"Probability": 0.1,
-		"Description": "This book has words in it."
+		"Probability": 0.1
 	}
 }

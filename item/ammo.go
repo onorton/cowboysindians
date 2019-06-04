@@ -9,7 +9,7 @@ import (
 
 type AmmoAttributes struct {
 	Icon        icon.Icon
-	Type        WeaponType
+	Components  map[string]interface{}
 	Weight      float64
 	Value       int
 	Probability float64
@@ -34,7 +34,7 @@ func fetchAmmoData() {
 
 func NewAmmo(name string) *Item {
 	ammo := ammoData[name]
-	return &Item{name, "", ammo.Icon, ammo.Weight, ammo.Value, map[string]component{"ammo": AmmoComponent{ammo.Type}}}
+	return &Item{name, "", ammo.Icon, ammo.Weight, ammo.Value, UnmarshalComponents(ammo.Components)}
 }
 
 func GenerateAmmo() *Item {

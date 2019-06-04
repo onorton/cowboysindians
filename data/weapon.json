@@ -1,123 +1,65 @@
 {
 	"shotgun" : {
 		"Icon": {"Icon": 115, "Colour": 3},
-		"Range": 4,
-		"Type": 2,
-		"Capacity": 2,
+		"Components": {"weapon": {"Range": 4, "Type": 2, "Capacity": {"Capacity": 6}, "Damage": {"Dice": 4,"Number": 1,"Bonus": 0}}},
 		"Weight": 20,
 		"Value": 5000,
-		"Damage": {
-			"Dice": 4,
-			"Number": 1,
-			"Bonus": 0
-
-		},
 		"Probability": 1.0
 	},
 
 	"pistol" : {
 		"Icon": {"Icon": 112, "Colour": 1},
-		"Range": 10,
-		"Type": 1,
-		"Capacity": 6,
+		"Components": {"weapon": {"Range": 10, "Type": 1, "Capacity": {"Capacity": 6}, "Damage": {"Dice": 4,"Number": 1,"Bonus": -1}}},
 		"Weight": 10,
 		"Value": 6000,
-		"Damage": {
-			"Dice": 4,
-			"Number": 1,
-			"Bonus": -1
-		},
 		"Probability": 1.0
-
 	},
 
 	"sawn-off shotgun" : {
 		"Icon": {"Icon": 115, "Colour": 4},
-		"Range": 3,
-		"Type": 2,
-		"Capacity": 2,
+		"Components": {"weapon": {"Range": 3, "Type": 2, "Capacity": {"Capacity": 2}, "Damage": {"Dice": 6,"Number": 1,"Bonus": 3}}},
 		"Weight": 15,
 		"Value": 4000,
-		"Damage": {
-			"Dice": 6,
-			"Number": 1,
-			"Bonus": 3
-		},
 		"Probability": 0.7
 	},
 
 	"rifle" : {
 		"Icon": {"Icon": 114, "Colour": 2},
-		"Range": 20,
-		"Type": 3,
-		"Capacity": 15,
+		"Components": {"weapon": {"Range": 20, "Type": 3, "Capacity": {"Capacity": 15}, "Damage": {"Dice": 4,"Number": 1,"Bonus": 0}}},
 		"Weight": 12,
 		"Value": 8000,
-		"Damage": {
-			"Dice": 4,
-			"Number": 1,
-			"Bonus": 0
-		},
 		"Probability": 1.0
 	},
 
 	"hunting bow" : {
 		"Icon": {"Icon": 41, "Colour": 8},
-		"Range": 18,
-		"Type": 4,
-		"Capacity": 1,
+		"Components": {"weapon": {"Range": 18, "Type": 4, "Capacity": {"Capacity": 1}, "Damage": {"Dice": 6,"Number": 1,"Bonus": 2}}},
 		"Weight": 10,
 		"Value": 3000,
-		"Damage": {
-			"Dice": 6,
-			"Number": 1,
-			"Bonus": 2
-		},
 		"Probability": 1.0
 	},
 
 	"baseball bat" : {
 		"Icon": {"Icon": 98, "Colour": 8},
-		"Range": 0,
-		"Type": 0,
-		"Capacity": 0,
+		"Components": {"weapon": {"Range": 0, "Type": 0, "Damage": {"Dice": 6,"Number": 1,"Bonus": 0}}},
 		"Weight": 10,
 		"Value": 200,
-		"Damage": {
-			"Dice": 6,
-			"Number": 1,
-			"Bonus": 0
-		},
 		"Probability": 1.0
 	},
 
 	"bowie knife" : {
 		"Icon": {"Icon": 107, "Colour": 8},
-		"Range": 0,
-		"Type": 0,
-		"Capacity": 0,
+		"Components": {"weapon": {"Range": 0, "Type": 0, "Damage": {"Dice": 6,"Number": 1,"Bonus": 2}}},
 		"Weight": 2,
 		"Value": 1000,
-		"Damage": {
-			"Dice": 6,
-			"Number": 1,
-			"Bonus": 2
-		},
 		"Probability": 1.0
 	},
 
 	"spear" : {
 		"Icon": {"Icon": 124, "Colour": 8},
-		"Range": 0,
-		"Type": 0,
-		"Capacity": 0,
+		"Components": {"weapon": {"Range": 0, "Type": 0, "Damage": {"Dice": 4,"Number": 1,"Bonus": 2}}},
 		"Weight": 5,
 		"Value": 200,
-		"Damage": {
-			"Dice": 4,
-			"Number": 1,
-			"Bonus": 2
-		},
 		"Probability": 1.0
 	}
 }
