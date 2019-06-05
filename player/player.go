@@ -1193,17 +1193,28 @@ func (p *Player) Use() bool {
 							}
 
 							if anyFit {
-								door.ToggleLocked()
-								if door.Locked() {
-									message.Enqueue("You lock the door.")
+								if itm.Component("key").(item.KeyComponent).Works() {
+									door.ToggleLocked()
+									if door.Locked() {
+										message.Enqueue("You lock the door.")
+									} else {
+										message.Enqueue("You unlock the door.")
+									}
 								} else {
-									message.Enqueue("You unlock the door.")
+									message.Enqueue(fmt.Sprintf("The %s didn't work.", itm.GetName()))
 								}
 							} else {
 								message.Enqueue("This does not work for this door.")
 							}
 						}
+						itm = p.GetItem(c)
 					}
+					name := itm.GetName()
+					if itm.TryBreaking() {
+						message.Enqueue(fmt.Sprintf("The %s broke.", name))
+					}
+					p.AddItem(itm)
+
 					return true
 				} else {
 					message.PrintMessage("You can't use that.")

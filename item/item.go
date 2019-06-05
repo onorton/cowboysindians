@@ -198,13 +198,26 @@ func NewNormalItem(name string) *Item {
 	return &Item{name, "", item.Icon, item.Weight, item.Value, UnmarshalComponents(item.Components)}
 }
 
+type BreakableComponent struct {
+	Chance float64
+}
+
+func (bc BreakableComponent) Broken() bool {
+	return rand.Float64() < bc.Chance
+}
+
 type KeyComponent struct {
-	Key int32
+	Key    int32
+	Chance float64
+}
+
+func (kc KeyComponent) Works() bool {
+	return rand.Float64() < kc.Chance
 }
 
 func NewKey(keyValue int32) *Item {
 	key := NewNormalItem("key")
-	key.components["key"] = KeyComponent{keyValue}
+	key.components["key"] = KeyComponent{keyValue, 1}
 	return key
 }
 
@@ -327,9 +340,13 @@ func UnmarshalComponents(cs map[string]interface{}) map[string]component {
 			component = key
 		case "usable":
 			component = tag{}
+		case "breakable":
+			var breakable BreakableComponent
+			err := json.Unmarshal(componentJson, &breakable)
+			check(err)
+			component = breakable
 		}
 		components[key] = component
-
 	}
 	return components
 }
@@ -354,6 +371,19 @@ func (item *Item) TransferOwner(newOwner string) {
 	if item.owner == "" {
 		item.owner = newOwner
 	}
+}
+
+func (item *Item) TryBreaking() bool {
+	if item.HasComponent("breakable") {
+		if item.Component("breakable").(BreakableComponent).Broken() {
+			item.name = fmt.Sprintf("broken %s", item.name)
+			delete(item.components, "usable")
+			delete(item.components, "breakable")
+			item.v = item.v / 100
+			return true
+		}
+	}
+	return false
 }
 
 func (item *Item) HasComponent(key string) bool {

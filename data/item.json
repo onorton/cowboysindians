@@ -29,16 +29,23 @@
 	},
 	"key":{
 		"Icon": {"Icon": 40, "Colour": 15},
-		"Components": {"usable": {}, "key": {"key": 0}},
+		"Components": {"usable": {}, "key": {"Key": 0, "Chance": 1}},
 		"Weight": 0.1,
 		"Value": 200,
 		"Probability": 1.0
 	},
 	"skeleton key":{
 		"Icon": {"Icon": 40, "Colour": 15},
-		"Components": {"usable": {}, "key": {"key": -1}},
+		"Components": {"usable": {}, "key": {"Key": -1, "Chance": 0.95}},
 		"Weight": 0.2,
 		"Value": 5000,
+		"Probability": 0.2
+	},
+	"lockpick": {
+		"Icon": {"Icon": 40, "Colour": 31},
+		"Components": {"usable": {}, "key": {"Key": -1, "Chance": 0.1}, "breakable": {"Chance": 0.5}},
+		"Weight": 0.05,
+		"Value": 10,
 		"Probability": 0.2
 	}
 }

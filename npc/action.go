@@ -138,9 +138,10 @@ type LockAction struct {
 }
 
 func (a LockAction) execute() {
-	if a.world.Door(a.x, a.y).KeyFits(a.key) {
+	if a.world.Door(a.x, a.y).KeyFits(a.key) && a.key.Component("key").(item.KeyComponent).Works() {
 		a.world.Door(a.x, a.y).ToggleLocked()
 	}
+	a.key.TryBreaking()
 }
 
 type NoAction struct{}
