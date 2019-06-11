@@ -74,7 +74,7 @@ func RandomNpcType() string {
 		probabilities[npcType] = npcInfo.Probability
 	}
 
-	return chooseNpcType(probabilities)
+	return chooseType(probabilities)
 }
 
 func RandomNpcTypeFromSelection(npcTypes []string) string {
@@ -83,10 +83,10 @@ func RandomNpcTypeFromSelection(npcTypes []string) string {
 		probabilities[npcType] = npcData[npcType].Probability
 	}
 
-	return chooseNpcType(probabilities)
+	return chooseType(probabilities)
 }
 
-func chooseNpcType(probabilities map[string]float64) string {
+func chooseType(probabilities map[string]float64) string {
 	max := 0.0
 
 	for _, probability := range probabilities {
@@ -97,17 +97,17 @@ func chooseNpcType(probabilities map[string]float64) string {
 			}
 		}
 	}
-	possibleNpcs := make([]string, 0)
+	possibleTypes := make([]string, 0)
 
 	for name, probability := range probabilities {
 		count := int(probability * max)
 		for i := 0; i < count; i++ {
-			possibleNpcs = append(possibleNpcs, name)
+			possibleTypes = append(possibleTypes, name)
 		}
 	}
 
-	n := rand.Intn(len(possibleNpcs))
-	return possibleNpcs[n]
+	n := rand.Intn(len(possibleTypes))
+	return possibleTypes[n]
 }
 
 func NewNpc(npcType string, x, y int, world *worldmap.Map, protectee *string) *Npc {

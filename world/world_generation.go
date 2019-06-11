@@ -858,7 +858,7 @@ func generateEnemies(m worldmap.World, n int) []*npc.Enemy {
 			i--
 			continue
 		}
-		enemies[i] = npc.NewEnemy("bandit", x, y, nil)
+		enemies[i] = npc.NewEnemy(npc.RandomEnemyType(), x, y, nil)
 		m.Place(enemies[i])
 
 	}

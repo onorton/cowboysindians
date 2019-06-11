@@ -30,6 +30,7 @@ type EnemyAttributes struct {
 	AiType       string
 	Inventory    [][]item.ItemChoice
 	Mount        map[string]float64
+	Probability  float64
 	Human        bool
 }
 
@@ -42,6 +43,15 @@ func fetchEnemyData() map[string]EnemyAttributes {
 	err = json.Unmarshal(data, &eD)
 	check(err)
 	return eD
+}
+
+func RandomEnemyType() string {
+	probabilities := map[string]float64{}
+	for enemyType, enemyInfo := range enemyData {
+		probabilities[enemyType] = enemyInfo.Probability
+	}
+
+	return chooseType(probabilities)
 }
 
 func NewEnemy(enemyType string, x, y int, world *worldmap.Map) *Enemy {
