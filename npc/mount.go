@@ -60,35 +60,11 @@ func generateMount(mountProbabilities map[string]float64, x, y int) *Mount {
 		return nil
 	}
 
-	mountType := chooseMount(mountProbabilities)
+	mountType := chooseType(mountProbabilities)
 	if mountType != "None" {
 		return NewMount(mountType, x, y, nil)
 	}
 	return nil
-}
-
-func chooseMount(probabilities map[string]float64) string {
-	max := 0.0
-
-	for _, probability := range probabilities {
-		if probability > 0 {
-			inverse := 1.0 / probability
-			if inverse > max {
-				max = inverse
-			}
-		}
-	}
-	mounts := make([]string, 0)
-
-	for name, probability := range probabilities {
-		count := int(probability * max)
-		for i := 0; i < count; i++ {
-			mounts = append(mounts, name)
-		}
-	}
-
-	n := rand.Intn(len(mounts))
-	return mounts[n]
 }
 
 func (m *Mount) Render() ui.Element {

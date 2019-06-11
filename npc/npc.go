@@ -204,10 +204,10 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 	return npc
 }
 
-func chooseItems(probabilites []float64) int {
+func chooseItems(probabilities []float64) int {
 	max := 0.0
 
-	for _, probability := range probabilites {
+	for _, probability := range probabilities {
 		if probability > 0 {
 			inverse := 1.0 / probability
 			if inverse > max {
@@ -217,7 +217,7 @@ func chooseItems(probabilites []float64) int {
 	}
 	choices := make([]int, 0)
 
-	for index, probability := range probabilites {
+	for index, probability := range probabilities {
 		count := int(probability * max)
 		for i := 0; i < count; i++ {
 			choices = append(choices, index)
