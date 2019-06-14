@@ -811,9 +811,20 @@ func (p *Player) PickupItem() bool {
 	}
 
 	for k := range items {
+		tooHeavy := items[k][0].GetWeight() > 10*float64(p.attributes["str"].Value())
 		for _, item := range items[k] {
-			p.AddItem(item)
+			if tooHeavy {
+				message.Enqueue(fmt.Sprintf("You try to lift the %s but it is too heavy.", item.GetName()))
+				p.world.PlaceItem(x, y, item)
+			} else {
+				p.AddItem(item)
+			}
 		}
+
+		if tooHeavy {
+			continue
+		}
+
 		if len(items[k]) == 1 {
 			message.Enqueue(fmt.Sprintf("You pick up 1 %s.", items[k][0].GetName()))
 		} else {

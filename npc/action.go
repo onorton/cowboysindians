@@ -17,8 +17,13 @@ type PickupAction struct {
 
 func (a PickupAction) execute() {
 	items := a.world.GetItems(a.x, a.y)
-	for _, item := range items {
-		a.h.PickupItem(item)
+	for i := len(items) - 1; i >= 0; i-- {
+		// Place item back if too heavy
+		if items[i].GetWeight() > a.h.maximumLift() {
+			a.world.PlaceItem(a.x, a.y, items[i])
+		} else {
+			a.h.PickupItem(items[i])
+		}
 	}
 }
 

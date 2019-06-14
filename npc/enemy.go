@@ -270,6 +270,11 @@ func (e *Enemy) overEncumbered() bool {
 	}
 	return weight > float64(e.attributes["encumbrance"].Value())
 }
+
+func (e *Enemy) maximumLift() float64 {
+	return 10 * float64(e.attributes["str"].Value())
+}
+
 func (e *Enemy) dropItem(item *item.Item) {
 	e.RemoveItem(item)
 	e.world.PlaceItem(e.location.X, e.location.Y, item)

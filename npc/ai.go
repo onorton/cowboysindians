@@ -24,6 +24,7 @@ type holdsItems interface {
 	PickupItem(*item.Item)
 	Inventory() []*item.Item
 	overEncumbered() bool
+	maximumLift() float64
 	RemoveItem(*item.Item)
 }
 

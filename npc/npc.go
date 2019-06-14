@@ -462,6 +462,11 @@ func (npc *Npc) overEncumbered() bool {
 	}
 	return weight > float64(npc.attributes["encumbrance"].Value())
 }
+
+func (npc *Npc) maximumLift() float64 {
+	return 10 * float64(npc.attributes["str"].Value())
+}
+
 func (npc *Npc) dropItem(item *item.Item) {
 	npc.RemoveItem(item)
 	npc.world.PlaceItem(npc.location.X, npc.location.Y, item)

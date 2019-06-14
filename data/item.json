@@ -47,5 +47,12 @@
 		"Weight": 0.05,
 		"Value": 10,
 		"Probability": 0.2
+	},
+	"stagecoach": {
+		"Icon": {"Icon": 67, "Colour": 4},
+		"Components": {"cover": {}},
+		"Weight": 2000,
+		"Value": 160000,
+		"Probability": 0.01
 	}
 }
