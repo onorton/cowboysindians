@@ -123,7 +123,7 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map, protectee *string) *N
 		"str":         worldmap.NewAttribute(n.Str, n.Str),
 		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
 		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
-	npc := &Npc{generateName(npcType, n.Human), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, n.Unarmed, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue, n.Human}
+	npc := &Npc{generateName(npcType, n.Human), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, worldmap.Neutral, false, n.Money, n.Unarmed, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue, n.Human}
 	for _, itm := range generateInventory(n.Inventory) {
 		npc.PickupItem(itm)
 	}
@@ -178,7 +178,7 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
 		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
 
-	npc := &Npc{generateName(npcType, n.Human), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, false, n.Money, n.Unarmed, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue, n.Human}
+	npc := &Npc{generateName(npcType, n.Human), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, worldmap.Neutral, false, n.Money, n.Unarmed, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue, n.Human}
 	for c, count := range n.ShopInventory {
 
 		for i := 0; i < count; i++ {
@@ -257,7 +257,7 @@ func (npc *Npc) Render() ui.Element {
 func (npc *Npc) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Crouching", "Money", "Unarmed", "Weapon", "Armour", "Inventory", "MountID", "Ai", "Dialogue", "Human"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Alignment", "Crouching", "Money", "Unarmed", "Weapon", "Armour", "Inventory", "MountID", "Ai", "Dialogue", "Human"}
 
 	mountID := ""
 	if npc.mount != nil {
@@ -271,6 +271,7 @@ func (npc *Npc) MarshalJSON() ([]byte, error) {
 		"Icon":       npc.icon,
 		"Initiative": npc.initiative,
 		"Attributes": npc.attributes,
+		"Alignment":  npc.alignment,
 		"Crouching":  npc.crouching,
 		"Money":      npc.money,
 		"Unarmed":    npc.unarmed,
@@ -322,6 +323,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 		Initiative int
 		Attributes map[string]*worldmap.Attribute
 		Crouching  bool
+		Alignment  worldmap.Alignment
 		Money      int
 		Unarmed    item.WeaponComponent
 		Weapon     *item.Item
@@ -342,6 +344,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 	npc.icon = v.Icon
 	npc.initiative = v.Initiative
 	npc.attributes = v.Attributes
+	npc.alignment = v.Alignment
 	npc.crouching = v.Crouching
 	npc.money = v.Money
 	npc.unarmed = v.Unarmed
@@ -635,7 +638,7 @@ func (npc *Npc) GetName() ui.Name {
 }
 
 func (npc *Npc) GetAlignment() worldmap.Alignment {
-	return worldmap.Neutral
+	return npc.alignment
 }
 
 func (npc *Npc) IsCrouching() bool {
@@ -761,6 +764,7 @@ type Npc struct {
 	icon       icon.Icon
 	initiative int
 	attributes map[string]*worldmap.Attribute
+	alignment  worldmap.Alignment
 	crouching  bool
 	money      int
 	unarmed    item.WeaponComponent

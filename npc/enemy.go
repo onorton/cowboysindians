@@ -66,7 +66,7 @@ func NewEnemy(enemyType string, x, y int, world *worldmap.Map) *Enemy {
 		"dex":         worldmap.NewAttribute(enemy.Dex, enemy.Dex),
 		"encumbrance": worldmap.NewAttribute(enemy.Encumbrance, enemy.Encumbrance)}
 	name := generateName(enemyType, enemy.Human)
-	e := &Enemy{name, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, false, enemy.Money, enemy.Unarmed, nil, nil, make([]*item.Item, 0), "", generateMount(enemy.Mount, x, y), world, ai}
+	e := &Enemy{name, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, worldmap.Enemy, false, enemy.Money, enemy.Unarmed, nil, nil, make([]*item.Item, 0), "", generateMount(enemy.Mount, x, y), world, ai}
 	for _, itm := range generateInventory(enemy.Inventory) {
 		e.PickupItem(itm)
 	}
@@ -83,7 +83,7 @@ func (e *Enemy) Render() ui.Element {
 func (e *Enemy) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Crouching", "Money", "Unarmed", "Weapon", "Armour", "Inventory", "Ai", "MountID"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Alignment", "Crouching", "Money", "Unarmed", "Weapon", "Armour", "Inventory", "Ai", "MountID"}
 
 	mountID := ""
 	if e.mount != nil {
@@ -97,6 +97,7 @@ func (e *Enemy) MarshalJSON() ([]byte, error) {
 		"Icon":       e.icon,
 		"Initiative": e.initiative,
 		"Attributes": e.attributes,
+		"Alignment":  e.alignment,
 		"Crouching":  e.crouching,
 		"Money":      e.money,
 		"Unarmed":    e.unarmed,
@@ -135,6 +136,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 		Icon       icon.Icon
 		Initiative int
 		Attributes map[string]*worldmap.Attribute
+		Alignment  worldmap.Alignment
 		Crouching  bool
 		Money      int
 		Unarmed    item.WeaponComponent
@@ -154,6 +156,7 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 	e.icon = v.Icon
 	e.initiative = v.Initiative
 	e.attributes = v.Attributes
+	e.alignment = v.Alignment
 	e.crouching = v.Crouching
 	e.money = v.Money
 	e.unarmed = v.Unarmed
@@ -447,7 +450,7 @@ func (e *Enemy) GetID() string {
 }
 
 func (e *Enemy) GetAlignment() worldmap.Alignment {
-	return worldmap.Enemy
+	return e.alignment
 }
 
 func (e *Enemy) IsCrouching() bool {
@@ -506,6 +509,7 @@ type Enemy struct {
 	icon       icon.Icon
 	initiative int
 	attributes map[string]*worldmap.Attribute
+	alignment  worldmap.Alignment
 	crouching  bool
 	money      int
 	unarmed    item.WeaponComponent
