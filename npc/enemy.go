@@ -66,7 +66,7 @@ func NewEnemy(enemyType string, x, y int, world *worldmap.Map) *Enemy {
 		"dex":         worldmap.NewAttribute(enemy.Dex, enemy.Dex),
 		"encumbrance": worldmap.NewAttribute(enemy.Encumbrance, enemy.Encumbrance)}
 	name := generateName(enemyType, enemy.Human)
-	e := &Enemy{name, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, worldmap.Enemy, false, enemy.Money, enemy.Unarmed, nil, nil, make([]*item.Item, 0), "", generateMount(enemy.Mount, x, y), world, ai}
+	e := &Enemy{name, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, worldmap.Enemy, false, enemy.Money, enemy.Unarmed, nil, nil, make([]*item.Item, 0), "", generateMount(enemy.Mount, x, y), world, ai, dialogue, enemy.Human}
 	for _, itm := range generateInventory(enemy.Inventory) {
 		e.PickupItem(itm)
 	}
@@ -83,7 +83,7 @@ func (e *Enemy) Render() ui.Element {
 func (e *Enemy) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Alignment", "Crouching", "Money", "Unarmed", "Weapon", "Armour", "Inventory", "Ai", "MountID"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Alignment", "Crouching", "Money", "Unarmed", "Weapon", "Armour", "Inventory", "Ai", "MountID", "Dialogue", "Human"}
 
 	mountID := ""
 	if e.mount != nil {
@@ -106,6 +106,8 @@ func (e *Enemy) MarshalJSON() ([]byte, error) {
 		"Inventory":  e.inventory,
 		"Ai":         e.ai,
 		"MountID":    mountID,
+		"Dialogue":   e.dialogue,
+		"Human":      e.human,
 	}
 
 	length := len(enemyValues)
@@ -145,6 +147,8 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 		Inventory  []*item.Item
 		MountID    string
 		Ai         map[string]interface{}
+		Dialogue   map[string]interface{}
+		Human      bool
 	}
 	var v enemyJson
 
@@ -165,6 +169,8 @@ func (e *Enemy) UnmarshalJSON(data []byte) error {
 	e.inventory = v.Inventory
 	e.mountID = v.MountID
 	e.ai = unmarshalAi(v.Ai)
+	e.dialogue = unmarshalDialogue(v.Dialogue)
+	e.human = v.Human
 
 	return nil
 }
@@ -445,6 +451,10 @@ func (e *Enemy) GetName() ui.Name {
 	return e.name
 }
 
+func (e *Enemy) Human() bool {
+	return e.human
+}
+
 func (e *Enemy) GetID() string {
 	return e.id
 }
@@ -520,4 +530,6 @@ type Enemy struct {
 	mount      *Mount
 	world      *worldmap.Map
 	ai         ai
+	dialogue   dialogue
+	human      bool
 }
