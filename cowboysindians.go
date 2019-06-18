@@ -37,7 +37,7 @@ type GameState struct {
 	Time        int
 	Viewer      *worldmap.Viewer
 	Mounts      []*npc.Mount
-	Enemies     []*npc.Enemy
+	Enemies     []*npc.Npc
 	Npcs        []*npc.Npc
 	Player      *player.Player
 	Target      string
@@ -105,7 +105,7 @@ func load() GameState {
 }
 
 // Combine enemies and player into same slice
-func allCreatures(enemies []*npc.Enemy, mounts []*npc.Mount, npcs []*npc.Npc, p *player.Player) []worldmap.Creature {
+func allCreatures(enemies []*npc.Npc, mounts []*npc.Mount, npcs []*npc.Npc, p *player.Player) []worldmap.Creature {
 	all := make([]worldmap.Creature, len(enemies)+len(mounts)+len(npcs)+1)
 	i := 0
 	for _, e := range enemies {
@@ -322,11 +322,6 @@ func main() {
 
 		// Remove dead enemies, npcs and mounts
 		for i, c := range all {
-			if e, ok := c.(*npc.Enemy); ok && e.IsDead() {
-				e.EmptyInventory()
-				worldMap.DeleteCreature(e)
-				all = append(all[:i], all[i+1:]...)
-			}
 			if m, ok := c.(*npc.Mount); ok && m.IsDead() {
 				m.DropCorpse()
 				worldMap.DeleteCreature(m)

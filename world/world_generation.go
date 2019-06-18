@@ -19,7 +19,7 @@ func check(err error) {
 	}
 }
 
-func GenerateWorld(filename string, width, height int) ([]*npc.Mount, []*npc.Enemy, []*npc.Npc) {
+func GenerateWorld(filename string, width, height int) ([]*npc.Mount, []*npc.Npc, []*npc.Npc) {
 	world := worldmap.NewWorld(width, height)
 
 	towns := make([]worldmap.Town, 0)
@@ -847,10 +847,10 @@ func generateMounts(m worldmap.World, buildings []worldmap.Building, n int) []*n
 	return mounts
 }
 
-func generateEnemies(m worldmap.World, n int) []*npc.Enemy {
+func generateEnemies(m worldmap.World, n int) []*npc.Npc {
 	width := m.Width()
 	height := m.Height()
-	enemies := make([]*npc.Enemy, n)
+	enemies := make([]*npc.Npc, n)
 	for i := 0; i < n; i++ {
 		x := rand.Intn(width)
 		y := rand.Intn(height)

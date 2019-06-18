@@ -1068,9 +1068,6 @@ func (p *Player) Talk() {
 				case *npc.Mount:
 					message.PrintMessage(fmt.Sprintf("You try to talk to %s. It doesn't seem to respond.", c.GetName().WithDefinite()))
 					return
-				case *npc.Enemy:
-					message.PrintMessage(fmt.Sprintf("You try to talk to %s. They don't seem amused.", c.GetName().WithDefinite()))
-					return
 				}
 			}
 		}

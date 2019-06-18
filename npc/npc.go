@@ -494,12 +494,14 @@ func (npc *Npc) Update() {
 		return
 	}
 
-	p := npc.world.GetPlayer()
-	pX, pY := p.GetCoordinates()
-	if npc.world.InConversationRange(npc, p) && npc.dialogue != nil {
-		npc.dialogue.initialGreeting()
-	} else if npc.world.IsVisible(npc, pX, pY) && npc.dialogue != nil {
-		npc.dialogue.resetSeen()
+	if npc.alignment != worldmap.Enemy {
+		p := npc.world.GetPlayer()
+		pX, pY := p.GetCoordinates()
+		if npc.world.InConversationRange(npc, p) && npc.dialogue != nil {
+			npc.dialogue.initialGreeting()
+		} else if npc.world.IsVisible(npc, pX, pY) && npc.dialogue != nil {
+			npc.dialogue.resetSeen()
+		}
 	}
 	action := npc.ai.update(npc, npc.world)
 	action.execute()
@@ -574,7 +576,19 @@ func (npc *Npc) PickupItem(item *item.Item) {
 	if !item.Owned(npc.id) {
 		event.Emit(event.NewTheft(npc, item, npc.location))
 	}
-	item.TransferOwner(npc.id)
+
+	if npc.alignment != worldmap.Enemy {
+		item.TransferOwner(npc.id)
+	}
+}
+
+func (npc *Npc) RemoveItem(itm *item.Item) {
+	for i, item := range npc.inventory {
+		if itm.GetName() == item.GetName() {
+			npc.inventory = append(npc.inventory[:i], npc.inventory[i+1:]...)
+			return
+		}
+	}
 }
 
 func (npc *Npc) Inventory() []*item.Item {
@@ -707,15 +721,6 @@ func (npc *Npc) GetItems(addMoney bool) map[rune]([]*item.Item) {
 	return items
 }
 
-func (npc *Npc) RemoveItem(itm *item.Item) {
-	for i, item := range npc.inventory {
-		if itm.GetName() == item.GetName() {
-			npc.inventory = append(npc.inventory[:i], npc.inventory[i+1:]...)
-			return
-		}
-	}
-}
-
 func (npc *Npc) LoadMount(mounts []*Mount) {
 	for _, m := range mounts {
 		if npc.mountID == m.GetID() {
@@ -752,7 +757,7 @@ func (npc *Npc) GetBounties() *Bounties {
 }
 
 func (npc *Npc) ProcessEvent(e event.Event) {
-	if ev, ok := e.(event.CrimeEvent); ok && npc.Human() {
+	if ev, ok := e.(event.CrimeEvent); ok && npc.alignment != worldmap.Enemy && npc.Human() {
 		ev.Witness(npc.world, npc)
 	}
 }
