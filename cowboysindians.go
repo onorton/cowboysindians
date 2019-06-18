@@ -37,7 +37,6 @@ type GameState struct {
 	Time        int
 	Viewer      *worldmap.Viewer
 	Mounts      []*npc.Mount
-	Enemies     []*npc.Npc
 	Npcs        []*npc.Npc
 	Player      *player.Player
 	Target      string
@@ -54,10 +53,6 @@ func save(state GameState, m *worldmap.Map) {
 	viewerValue, err := json.Marshal(state.Viewer)
 	check(err)
 	buffer.WriteString(fmt.Sprintf("\"Viewer\":%s,\n", viewerValue))
-
-	enemiesValue, err := json.Marshal(state.Enemies)
-	check(err)
-	buffer.WriteString(fmt.Sprintf("\"Enemies\":%s,\n", enemiesValue))
 
 	mountsValue, err := json.Marshal(state.Mounts)
 	check(err)
@@ -92,10 +87,6 @@ func load() GameState {
 
 	state.Player.LoadMount(state.Mounts)
 
-	for _, enemy := range state.Enemies {
-		enemy.LoadMount(state.Mounts)
-	}
-
 	for _, npc := range state.Npcs {
 		npc.LoadMount(state.Mounts)
 	}
@@ -105,13 +96,9 @@ func load() GameState {
 }
 
 // Combine enemies and player into same slice
-func allCreatures(enemies []*npc.Npc, mounts []*npc.Mount, npcs []*npc.Npc, p *player.Player) []worldmap.Creature {
-	all := make([]worldmap.Creature, len(enemies)+len(mounts)+len(npcs)+1)
+func allCreatures(mounts []*npc.Mount, npcs []*npc.Npc, p *player.Player) []worldmap.Creature {
+	all := make([]worldmap.Creature, len(mounts)+len(npcs)+1)
 	i := 0
-	for _, e := range enemies {
-		all[i] = e
-		i++
-	}
 
 	for _, m := range mounts {
 		all[i] = m
@@ -167,12 +154,11 @@ func main() {
 	}
 
 	if !loaded {
-		mounts, enemies, npcs := world.GenerateWorld(worldSaveFilename, width, height)
+		mounts, npcs := world.GenerateWorld(worldSaveFilename, width, height)
 		state.Player = player.NewPlayer(nil)
 		x, y := state.Player.GetCoordinates()
 		state.Viewer = worldmap.NewViewer(x, y, windowWidth, windowHeight)
 		state.Mounts = mounts
-		state.Enemies = enemies
 		state.Npcs = npcs
 		state.Time = 1
 		state.PlayerIndex = 0
@@ -190,10 +176,9 @@ func main() {
 
 	player := state.Player
 	mounts := state.Mounts
-	enemies := state.Enemies
 	npcs := state.Npcs
 
-	all := allCreatures(enemies, mounts, npcs, player)
+	all := allCreatures(mounts, npcs, player)
 	worldMap := worldmap.NewMap(worldSaveFilename, width, height, state.Viewer, state.Player, all)
 	worldMap.LoadActiveChunks()
 
