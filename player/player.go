@@ -311,6 +311,11 @@ func (p *Player) RangedAttack() bool {
 		}
 
 		p.attack(target, worldmap.GetBonus(p.attributes["dex"].Value())+proficiencyBonus-coverPenalty, proficiencyBonus)
+		// Attack again if player has double shot, weapon loaded and target not dead
+		if p.hasSkill(worldmap.DoubleShot) && p.weaponLoaded() && !target.IsDead() {
+			p.Weapon().Fire()
+			p.attack(target, worldmap.GetBonus(p.attributes["dex"].Value())+proficiencyBonus-coverPenalty, proficiencyBonus)
+		}
 	} else {
 		message.Enqueue("Your target was too far away.")
 	}

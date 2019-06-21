@@ -119,6 +119,7 @@ const (
 	Shotguns
 	Rifles
 	Pistols
+	DoubleShot
 )
 
 // Interface shared by Player, Npc and Enemy
