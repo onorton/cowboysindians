@@ -191,7 +191,7 @@ func (p *Player) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 
 func (p *Player) MeleeAttack(c worldmap.Creature) {
 	proficiencyBonus := 0
-	if p.weapon == nil && p.hasSkill(worldmap.Unarmed) {
+	if p.hasWeaponProficiency() && !p.ranged() {
 		proficiencyBonus = 2
 	}
 
@@ -304,7 +304,13 @@ func (p *Player) RangedAttack() bool {
 		if p.world.TargetBehindCover(p, target) {
 			coverPenalty = 5
 		}
-		p.attack(target, worldmap.GetBonus(p.attributes["ac"].Value())-coverPenalty, 0)
+
+		proficiencyBonus := 0
+		if p.hasWeaponProficiency() && p.ranged() {
+			proficiencyBonus = 2
+		}
+
+		p.attack(target, worldmap.GetBonus(p.attributes["dex"].Value())+proficiencyBonus-coverPenalty, proficiencyBonus)
 	} else {
 		message.Enqueue("Your target was too far away.")
 	}
@@ -1255,6 +1261,27 @@ func (p *Player) hasSkill(skill worldmap.Skill) bool {
 		}
 	}
 	return false
+}
+
+func (p *Player) hasWeaponProficiency() bool {
+	if p.weapon == nil {
+		return p.hasSkill(worldmap.Unarmed)
+	}
+
+	var skill worldmap.Skill
+	switch p.Weapon().Type {
+	case item.NoAmmo:
+		skill = worldmap.Melee
+	case item.Bow:
+		skill = worldmap.Archery
+	case item.Shotgun:
+		skill = worldmap.Shotguns
+	case item.Rifle:
+		skill = worldmap.Rifles
+	case item.Pistol:
+		skill = worldmap.Pistols
+	}
+	return p.hasSkill(skill)
 }
 
 func (p *Player) ProcessEvent(e event.Event) {

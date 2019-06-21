@@ -114,6 +114,11 @@ type Skill int
 
 const (
 	Unarmed Skill = iota
+	Melee
+	Archery
+	Shotguns
+	Rifles
+	Pistols
 )
 
 // Interface shared by Player, Npc and Enemy
