@@ -35,7 +35,7 @@ func NewPlayer(world *worldmap.Map) *Player {
 	attributes["hunger"].AddEffect(item.NewOngoingEffect(1))
 	attributes["thirst"].AddEffect(item.NewOngoingEffect(1))
 
-	player := &Player{worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, attributes, false, 1000, item.WeaponComponent{0, item.NoAmmo, nil, item.NewDamage(2, 1, 0), item.Effects{}}, nil, nil, make(map[rune]([]*item.Item)), "", nil, world}
+	player := &Player{worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, attributes, []worldmap.Skill{}, false, 1000, item.WeaponComponent{0, item.NoAmmo, nil, item.NewDamage(2, 1, 0), item.Effects{}}, nil, nil, make(map[rune]([]*item.Item)), "", nil, world}
 	player.AddItem(item.NewWeapon("shotgun"))
 	player.AddItem(item.NewWeapon("sawn-off shotgun"))
 	player.AddItem(item.NewWeapon("baseball bat"))
@@ -57,7 +57,7 @@ func (p *Player) Render() ui.Element {
 func (p *Player) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Location", "Icon", "Initiative", "Attributes", "Crouching", "Money", "Unarmed", "Weapon", "Armour", "Inventory", "MountID"}
+	keys := []string{"Location", "Icon", "Initiative", "Attributes", "Skills", "Crouching", "Money", "Unarmed", "Weapon", "Armour", "Inventory", "MountID"}
 
 	mountID := ""
 	if p.mount != nil {
@@ -69,6 +69,7 @@ func (p *Player) MarshalJSON() ([]byte, error) {
 		"Icon":       p.icon,
 		"Initiative": p.initiative,
 		"Attributes": p.attributes,
+		"Skills":     p.skills,
 		"Money":      p.money,
 		"Unarmed":    p.unarmed,
 		"Weapon":     p.weapon,
@@ -111,6 +112,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 		Icon       icon.Icon
 		Initiative int
 		Attributes map[string]*worldmap.Attribute
+		Skills     []worldmap.Skill
 		Crouching  bool
 		Money      int
 		Unarmed    item.WeaponComponent
@@ -129,6 +131,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 	p.icon = v.Icon
 	p.initiative = v.Initiative
 	p.attributes = v.Attributes
+	p.skills = v.Skills
 	p.crouching = v.Crouching
 	p.money = v.Money
 	p.unarmed = v.Unarmed
@@ -187,7 +190,15 @@ func (p *Player) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 }
 
 func (p *Player) MeleeAttack(c worldmap.Creature) {
-	p.attack(c, worldmap.GetBonus(p.attributes["str"].Value()), worldmap.GetBonus(p.attributes["str"].Value()))
+	proficiencyBonus := 0
+	if p.weapon == nil && p.hasSkill(worldmap.Unarmed) {
+		proficiencyBonus = 2
+	}
+
+	hitBonus := worldmap.GetBonus(p.attributes["str"].Value()) + proficiencyBonus
+	damageBonus := worldmap.GetBonus(p.attributes["str"].Value()) + proficiencyBonus
+
+	p.attack(c, hitBonus, damageBonus)
 }
 
 func (p *Player) TakeDamage(damage item.Damage, effects item.Effects, bonus int) {
@@ -1237,6 +1248,15 @@ func (p *Player) Use() bool {
 	}
 }
 
+func (p *Player) hasSkill(skill worldmap.Skill) bool {
+	for _, s := range p.skills {
+		if s == skill {
+			return true
+		}
+	}
+	return false
+}
+
 func (p *Player) ProcessEvent(e event.Event) {
 	switch ev := e.(type) {
 	case event.CrimeEvent:
@@ -1295,6 +1315,7 @@ type Player struct {
 	icon       icon.Icon
 	initiative int
 	attributes map[string]*worldmap.Attribute
+	skills     []worldmap.Skill
 	crouching  bool
 	money      int
 	unarmed    item.WeaponComponent

@@ -110,6 +110,12 @@ func (a *Attribute) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type Skill int
+
+const (
+	Unarmed Skill = iota
+)
+
 // Interface shared by Player, Npc and Enemy
 type Creature interface {
 	CanSee
