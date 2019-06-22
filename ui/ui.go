@@ -46,6 +46,8 @@ const (
 	Use
 	Pickpocket
 	Place
+	Primary
+	Secondary
 	Confirm
 	CancelAction
 	NoAction
@@ -201,6 +203,19 @@ func GetItemSelection() (ItemSelection, rune) {
 	} else {
 		return SpecificItem, e.Ch
 	}
+}
+
+func EquippedSelection() PlayerAction {
+	e := termbox.PollEvent()
+
+	if e.Key == termbox.KeyEnter {
+		return CancelAction
+	} else if e.Ch == 'p' {
+		return Primary
+	} else if e.Ch == 's' {
+		return Secondary
+	}
+	return NoAction
 }
 
 // Rendering

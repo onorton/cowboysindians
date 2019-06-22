@@ -35,7 +35,7 @@ func NewPlayer(world *worldmap.Map) *Player {
 	attributes["hunger"].AddEffect(item.NewOngoingEffect(1))
 	attributes["thirst"].AddEffect(item.NewOngoingEffect(1))
 
-	player := &Player{worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, attributes, []worldmap.Skill{}, false, 1000, item.WeaponComponent{0, item.NoAmmo, nil, item.NewDamage(2, 1, 0), item.Effects{}}, nil, nil, make(map[rune]([]*item.Item)), "", nil, world}
+	player := &Player{worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, attributes, []worldmap.Skill{}, false, 1000, item.WeaponComponent{0, item.NoAmmo, nil, item.NewDamage(2, 1, 0), item.Effects{}}, nil, nil, nil, make(map[rune]([]*item.Item)), "", nil, world}
 	player.AddItem(item.NewWeapon("shotgun"))
 	player.AddItem(item.NewWeapon("sawn-off shotgun"))
 	player.AddItem(item.NewWeapon("baseball bat"))
@@ -57,7 +57,7 @@ func (p *Player) Render() ui.Element {
 func (p *Player) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Location", "Icon", "Initiative", "Attributes", "Skills", "Crouching", "Money", "Unarmed", "Weapon", "Armour", "Inventory", "MountID"}
+	keys := []string{"Location", "Icon", "Initiative", "Attributes", "Skills", "Crouching", "Money", "Unarmed", "Primary", "Secondary", "Armour", "Inventory", "MountID"}
 
 	mountID := ""
 	if p.mount != nil {
@@ -72,7 +72,8 @@ func (p *Player) MarshalJSON() ([]byte, error) {
 		"Skills":     p.skills,
 		"Money":      p.money,
 		"Unarmed":    p.unarmed,
-		"Weapon":     p.weapon,
+		"Primary":    p.primary,
+		"Secondary":  p.secondary,
 		"Armour":     p.armour,
 		"Crouching":  p.crouching,
 		"MountID":    mountID,
@@ -116,7 +117,8 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 		Crouching  bool
 		Money      int
 		Unarmed    item.WeaponComponent
-		Weapon     *item.Item
+		Primary    *item.Item
+		Secondary  *item.Item
 		Armour     *item.Item
 		Inventory  []*item.Item
 		MountID    string
@@ -135,7 +137,8 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 	p.crouching = v.Crouching
 	p.money = v.Money
 	p.unarmed = v.Unarmed
-	p.weapon = v.Weapon
+	p.primary = v.Primary
+	p.secondary = v.Secondary
 	p.armour = v.Armour
 	p.mountID = v.MountID
 	p.inventory = make(map[rune][]*item.Item)
@@ -164,9 +167,14 @@ func (p *Player) GetInitiative() int {
 }
 
 func (p *Player) Weapon() item.WeaponComponent {
-	if p.weapon != nil {
-		return p.weapon.Component("weapon").(item.WeaponComponent)
+	if p.primary != nil {
+		return p.primary.Component("weapon").(item.WeaponComponent)
 	}
+
+	if p.secondary != nil {
+		return p.secondary.Component("weapon").(item.WeaponComponent)
+	}
+
 	return p.unarmed
 }
 
@@ -231,11 +239,18 @@ func (p *Player) PrintInventory() {
 	ui.WriteText(0, 0, "Wearing: ")
 
 	position := 2
-	if p.weapon != nil {
-		equippedWeaponText := fmt.Sprintf("%s - %s", string(p.weapon.GetKey()), p.weapon.GetName())
+	if p.primary != nil {
+		equippedWeaponText := fmt.Sprintf("%s - %s", string(p.primary.GetKey()), p.primary.GetName())
 		ui.WriteText(0, position, equippedWeaponText)
 		position++
 	}
+
+	if p.secondary != nil {
+		equippedWeaponText := fmt.Sprintf("%s - %s", string(p.secondary.GetKey()), p.secondary.GetName())
+		ui.WriteText(0, position, equippedWeaponText)
+		position++
+	}
+
 	if p.armour != nil {
 		equippedArmourText := fmt.Sprintf("%s - %s", string(p.armour.GetKey()), p.armour.GetName())
 		ui.WriteText(0, 2, equippedArmourText)
@@ -435,11 +450,37 @@ func (p *Player) WieldItem() bool {
 				ui.GetInput()
 			} else {
 				if itm.HasComponent("weapon") {
-					other := p.weapon
-					p.weapon = itm
+					var other *item.Item
+					if p.primary != nil && p.secondary != nil {
+						message.PrintMessage(fmt.Sprintf("Which weapon would you like to unwield? %s[p] or %s[s]", p.primary.GetName(), p.secondary.GetName()))
+						selection := ui.NoAction
+						for selection == ui.NoAction {
+							selection = ui.EquippedSelection()
+						}
+						switch selection {
+						case ui.Primary:
+							other = p.primary
+							p.primary = itm
+						case ui.Secondary:
+							other = p.secondary
+							p.secondary = itm
+						case ui.CancelAction:
+							message.PrintMessage("Never mind.")
+							return false
+						}
+
+					} else if p.primary != nil {
+						other = p.secondary
+						p.secondary = itm
+					} else {
+						other = p.primary
+						p.primary = itm
+					}
+
 					if other != nil {
 						p.AddItem(other)
 					}
+
 					message.Enqueue(fmt.Sprintf("You are now wielding a %s.", itm.GetName()))
 					return true
 				} else {
@@ -584,7 +625,7 @@ func (p *Player) hasAmmo() bool {
 }
 
 func (p *Player) weaponLoaded() bool {
-	if p.weapon != nil && p.Weapon().NeedsAmmo() {
+	if p.Weapon().NeedsAmmo() {
 		return !p.Weapon().IsUnloaded()
 	}
 	return true
@@ -698,9 +739,14 @@ func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
 
 func (p *Player) OverEncumbered() bool {
 	total := 0.0
-	if p.weapon != nil {
-		total += p.weapon.GetWeight()
+	if p.primary != nil {
+		total += p.primary.GetWeight()
 	}
+
+	if p.secondary != nil {
+		total += p.secondary.GetWeight()
+	}
+
 	if p.armour != nil {
 		total += p.armour.GetWeight()
 	}
@@ -1274,7 +1320,7 @@ func (p *Player) hasSkill(skill worldmap.Skill) bool {
 }
 
 func (p *Player) hasWeaponProficiency() bool {
-	if p.weapon == nil {
+	if p.primary == nil && p.secondary == nil {
 		return p.hasSkill(worldmap.Unarmed)
 	}
 
@@ -1356,7 +1402,8 @@ type Player struct {
 	crouching  bool
 	money      int
 	unarmed    item.WeaponComponent
-	weapon     *item.Item
+	primary    *item.Item
+	secondary  *item.Item
 	armour     *item.Item
 	inventory  map[rune]([]*item.Item)
 	mountID    string
