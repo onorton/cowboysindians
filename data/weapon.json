@@ -1,7 +1,7 @@
 {
 	"shotgun" : {
 		"Icon": {"Icon": 115, "Colour": 3},
-		"Components": {"weapon": {"Range": 4, "Type": 2, "Capacity": {"Capacity": 6}, "Damage": {"Dice": 4,"Number": 1,"Bonus": 0}}},
+		"Components": {"weapon": {"Range": 4, "Type": 2, "Capacity": {"Capacity": 2}, "Damage": {"Dice": 4,"Number": 1,"Bonus": 0}}},
 		"Weight": 20,
 		"Value": 5000,
 		"Probability": 1.0

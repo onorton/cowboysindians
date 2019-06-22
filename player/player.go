@@ -178,12 +178,12 @@ func (p *Player) Weapon() item.WeaponComponent {
 	return p.unarmed
 }
 
-func (p *Player) attack(c worldmap.Creature, hitBonus, damageBonus int) {
+func (p *Player) attack(c worldmap.Creature, weapon item.WeaponComponent, hitBonus, damageBonus int) {
 	event.Emit(event.NewAttack(p, c))
 
 	if c.AttackHits(rand.Intn(20) + hitBonus + 1) {
 		message.Enqueue(fmt.Sprintf("You hit %s.", c.GetName().WithDefinite()))
-		c.TakeDamage(p.Weapon().Damage, p.Weapon().Effects, damageBonus)
+		c.TakeDamage(weapon.Damage, weapon.Effects, damageBonus)
 	} else {
 		message.Enqueue(fmt.Sprintf("You miss %s.", c.GetName().WithDefinite()))
 	}
@@ -198,15 +198,147 @@ func (p *Player) attack(c worldmap.Creature, hitBonus, damageBonus int) {
 }
 
 func (p *Player) MeleeAttack(c worldmap.Creature) {
+	var weapon item.WeaponComponent
+	unarmed := false
+	if p.primary != nil && p.secondary != nil {
+		primary := p.primary.Component("weapon").(item.WeaponComponent)
+		secondary := p.secondary.Component("weapon").(item.WeaponComponent)
+		if !primary.Ranged() {
+			if !secondary.Ranged() {
+				message.PrintMessage(fmt.Sprintf("Which weapon would you like to use? %s[p] or %s[s]", p.primary.GetName(), p.secondary.GetName()))
+				selection := ui.NoAction
+				for selection == ui.NoAction || selection == ui.CancelAction {
+					selection = ui.EquippedSelection()
+				}
+				switch selection {
+				case ui.Primary:
+					weapon = primary
+				case ui.Secondary:
+					weapon = secondary
+				}
+			} else {
+				weapon = primary
+			}
+		} else {
+			// Use unarmed if both weapons are ranged
+			unarmed = true
+		}
+	} else if p.primary != nil && !p.primary.Component("weapon").(item.WeaponComponent).Ranged() {
+		weapon = p.primary.Component("weapon").(item.WeaponComponent)
+	} else if p.secondary != nil && !p.secondary.Component("weapon").(item.WeaponComponent).Ranged() {
+		weapon = p.secondary.Component("weapon").(item.WeaponComponent)
+	} else {
+		unarmed = true
+	}
+
+	if unarmed {
+		weapon = p.unarmed
+	}
+
 	proficiencyBonus := 0
-	if p.hasWeaponProficiency() && !p.ranged() {
+	if unarmed {
+		if p.hasSkill(worldmap.Unarmed) {
+			proficiencyBonus = 2
+		}
+	} else if p.hasWeaponProficiency(weapon) {
 		proficiencyBonus = 2
 	}
 
 	hitBonus := worldmap.GetBonus(p.attributes["str"].Value()) + proficiencyBonus
 	damageBonus := worldmap.GetBonus(p.attributes["str"].Value()) + proficiencyBonus
 
-	p.attack(c, hitBonus, damageBonus)
+	p.attack(c, weapon, hitBonus, damageBonus)
+}
+
+func (p *Player) RangedAttack() bool {
+
+	weapons := make([]item.WeaponComponent, 0)
+
+	if p.primary != nil {
+		weapons = append(weapons, p.primary.Component("weapon").(item.WeaponComponent))
+	}
+
+	if p.secondary != nil {
+		weapons = append(weapons, p.secondary.Component("weapon").(item.WeaponComponent))
+	}
+
+	weaponsRemaining := make([]item.WeaponComponent, 0)
+	for _, w := range weapons {
+		if w.Ranged() {
+			weaponsRemaining = append(weaponsRemaining, w)
+		}
+	}
+	weapons = weaponsRemaining
+
+	if len(weapons) == 0 {
+		message.PrintMessage("You are not wielding a ranged weapon.")
+		return false
+	}
+
+	weaponsRemaining = make([]item.WeaponComponent, 0)
+	for _, w := range weapons {
+		if !w.IsUnloaded() {
+			weaponsRemaining = append(weaponsRemaining, w)
+		}
+	}
+	weapons = weaponsRemaining
+
+	if len(weapons) == 0 {
+		message.PrintMessage("You are not wielding a loaded weapon.")
+		return false
+	}
+
+	choice := 0
+	if len(weapons) == 2 {
+		message.PrintMessage(fmt.Sprintf("Which weapon would you like to use? %s[p] or %s[s]", p.primary.GetName(), p.secondary.GetName()))
+
+		selection := ui.NoAction
+		for selection == ui.NoAction {
+			selection = ui.EquippedSelection()
+		}
+		switch selection {
+		case ui.Primary:
+			choice = 0
+		case ui.Secondary:
+			choice = 1
+		case ui.CancelAction:
+			message.PrintMessage("Never mind.")
+			return false
+		}
+	}
+
+	target := p.findTarget()
+
+	weapons[choice].Fire()
+	if target == nil {
+		message.Enqueue("You fire your weapon at the ground.")
+		return true
+	}
+
+	tX, tY := target.GetCoordinates()
+	distance := worldmap.Distance(p.location.X, p.location.Y, tX, tY)
+	if distance < float64(p.Weapon().Range) {
+		coverPenalty := 0
+		if p.world.TargetBehindCover(p, target) {
+			coverPenalty = 5
+		}
+
+		proficiencyBonus := 0
+		if p.hasWeaponProficiency(weapons[choice]) {
+			proficiencyBonus = 2
+		}
+
+		p.attack(target, weapons[choice], worldmap.GetBonus(p.attributes["dex"].Value())+proficiencyBonus-coverPenalty, proficiencyBonus)
+		// Attack again if player has double shot, weapon loaded and target not dead
+		if p.hasSkill(worldmap.DoubleShot) && !weapons[choice].IsUnloaded() && !target.IsDead() {
+			weapons[choice].Fire()
+			p.attack(target, weapons[choice], worldmap.GetBonus(p.attributes["dex"].Value())+proficiencyBonus-coverPenalty, proficiencyBonus)
+		}
+	} else {
+		message.Enqueue("Your target was too far away.")
+	}
+
+	return true
 }
 
 func (p *Player) TakeDamage(damage item.Damage, effects item.Effects, bonus int) {
@@ -293,55 +425,9 @@ func (p *Player) AttackHits(roll int) bool {
 	return roll > p.attributes["ac"].Value()
 }
 
-func (p *Player) RangedAttack() bool {
-	if !p.ranged() {
-		message.PrintMessage("You are not wielding a ranged weapon.")
-		return false
-	}
-
-	if !p.weaponLoaded() {
-		message.PrintMessage("The weapon you are carrying is not loaded.")
-		return false
-	}
-
-	target := p.findTarget()
-
-	p.Weapon().Fire()
-	if target == nil {
-		message.Enqueue("You fire your weapon at the ground.")
-		return true
-	}
-
-	tX, tY := target.GetCoordinates()
-	distance := worldmap.Distance(p.location.X, p.location.Y, tX, tY)
-	if distance < float64(p.Weapon().Range) {
-		coverPenalty := 0
-		if p.world.TargetBehindCover(p, target) {
-			coverPenalty = 5
-		}
-
-		proficiencyBonus := 0
-		if p.hasWeaponProficiency() && p.ranged() {
-			proficiencyBonus = 2
-		}
-
-		p.attack(target, worldmap.GetBonus(p.attributes["dex"].Value())+proficiencyBonus-coverPenalty, proficiencyBonus)
-		// Attack again if player has double shot, weapon loaded and target not dead
-		if p.hasSkill(worldmap.DoubleShot) && p.weaponLoaded() && !target.IsDead() {
-			p.Weapon().Fire()
-			p.attack(target, worldmap.GetBonus(p.attributes["dex"].Value())+proficiencyBonus-coverPenalty, proficiencyBonus)
-		}
-	} else {
-		message.Enqueue("Your target was too far away.")
-	}
-
-	return true
-
-}
-
-func (p *Player) getAmmo() *item.Item {
+func (p *Player) getAmmo(weapon item.WeaponComponent) *item.Item {
 	for k, items := range p.inventory {
-		if items[0].HasComponent("ammo") && p.Weapon().AmmoTypeMatches(items[0]) {
+		if items[0].HasComponent("ammo") && weapon.AmmoTypeMatches(items[0]) {
 			return p.GetItem(k)
 		}
 	}
@@ -538,27 +624,80 @@ func (p *Player) WearArmour() bool {
 }
 
 func (p *Player) LoadWeapon() bool {
-	if !p.ranged() {
+	weapons := make([]item.WeaponComponent, 0)
+
+	if p.primary != nil {
+		weapons = append(weapons, p.primary.Component("weapon").(item.WeaponComponent))
+	}
+
+	if p.secondary != nil {
+		weapons = append(weapons, p.secondary.Component("weapon").(item.WeaponComponent))
+	}
+
+	weaponsRemaining := make([]item.WeaponComponent, 0)
+	for _, w := range weapons {
+		if w.Ranged() {
+			weaponsRemaining = append(weaponsRemaining, w)
+		}
+	}
+	weapons = weaponsRemaining
+
+	if len(weapons) == 0 {
 		message.PrintMessage("You are not wielding a ranged weapon.")
 		return false
 	}
 
-	if p.weaponFullyLoaded() {
-		message.PrintMessage("The weapon you are wielding is already fully loaded.")
+	weaponsRemaining = make([]item.WeaponComponent, 0)
+	for _, w := range weapons {
+		if !w.IsFullyLoaded() {
+			weaponsRemaining = append(weaponsRemaining, w)
+		}
+	}
+	weapons = weaponsRemaining
+
+	if len(weapons) == 0 {
+		message.PrintMessage("The weapons that you are wielding are already fully loaded.")
 		return false
 	}
 
-	if !p.hasAmmo() {
-		message.PrintMessage("You don't have ammo for the weapon you are wielding.")
+	weaponsRemaining = make([]item.WeaponComponent, 0)
+	for _, w := range weapons {
+		if p.hasAmmo(w) {
+			weaponsRemaining = append(weaponsRemaining, w)
+		}
+	}
+	weapons = weaponsRemaining
+
+	if len(weapons) == 0 {
+		message.PrintMessage("You don't have ammo for the weapons you are wielding.")
 		return false
 	}
 
-	for !p.weaponFullyLoaded() && p.hasAmmo() {
-		p.getAmmo()
-		p.Weapon().Load()
+	choice := 0
+	if len(weapons) == 2 {
+		message.PrintMessage(fmt.Sprintf("Which weapon would you like to load? %s[p] or %s[s]", p.primary.GetName(), p.secondary.GetName()))
+
+		selection := ui.NoAction
+		for selection == ui.NoAction {
+			selection = ui.EquippedSelection()
+		}
+		switch selection {
+		case ui.Primary:
+			choice = 0
+		case ui.Secondary:
+			choice = 1
+		case ui.CancelAction:
+			message.PrintMessage("Never mind.")
+			return false
+		}
 	}
 
-	if p.weaponFullyLoaded() {
+	for !weapons[choice].IsFullyLoaded() && p.hasAmmo(weapons[choice]) {
+		p.getAmmo(weapons[choice])
+		weapons[choice].Load()
+	}
+
+	if weapons[choice].IsFullyLoaded() {
 		message.Enqueue("You have fully loaded your weapon.")
 	} else {
 		message.Enqueue("You have loaded your weapon.")
@@ -604,32 +743,14 @@ func (p *Player) ConsumeItem() bool {
 	}
 }
 
-// Check whether player can carry out a range attack this turn
-func (p *Player) ranged() bool {
-	return p.Weapon().Range > 0
-}
-
-// Check whether player is carrying a fully loaded weapon
-func (p *Player) weaponFullyLoaded() bool {
-	return p.Weapon().IsFullyLoaded()
-}
-
-// Check whether player has ammo for particular wielded weapon
-func (p *Player) hasAmmo() bool {
+// Check whether player has ammo for particular weapon
+func (p *Player) hasAmmo(weapon item.WeaponComponent) bool {
 	for _, items := range p.inventory {
-		if items[0].HasComponent("ammo") && p.Weapon().AmmoTypeMatches(items[0]) {
+		if items[0].HasComponent("ammo") && weapon.AmmoTypeMatches(items[0]) {
 			return true
 		}
 	}
 	return false
-}
-
-func (p *Player) weaponLoaded() bool {
-	if p.Weapon().NeedsAmmo() {
-		return !p.Weapon().IsUnloaded()
-	}
-	return true
-
 }
 
 func (p *Player) applyEffects(effects item.Effects) {
@@ -1319,10 +1440,7 @@ func (p *Player) hasSkill(skill worldmap.Skill) bool {
 	return false
 }
 
-func (p *Player) hasWeaponProficiency() bool {
-	if p.primary == nil && p.secondary == nil {
-		return p.hasSkill(worldmap.Unarmed)
-	}
+func (p *Player) hasWeaponProficiency(weapon item.WeaponComponent) bool {
 
 	var skill worldmap.Skill
 	switch p.Weapon().Type {

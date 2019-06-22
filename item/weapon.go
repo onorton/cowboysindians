@@ -179,6 +179,10 @@ func (damage *Damage) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (weapon WeaponComponent) Ranged() bool {
+	return weapon.Range > 0
+}
+
 func (weapon WeaponComponent) MaxDamage() int {
 	return weapon.Damage.max()
 }
