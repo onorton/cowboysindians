@@ -166,18 +166,6 @@ func (p *Player) GetInitiative() int {
 	return p.initiative
 }
 
-func (p *Player) Weapon() item.WeaponComponent {
-	if p.primary != nil {
-		return p.primary.Component("weapon").(item.WeaponComponent)
-	}
-
-	if p.secondary != nil {
-		return p.secondary.Component("weapon").(item.WeaponComponent)
-	}
-
-	return p.unarmed
-}
-
 func (p *Player) attack(c worldmap.Creature, weapon item.WeaponComponent, hitBonus, damageBonus int) {
 	event.Emit(event.NewAttack(p, c))
 
@@ -307,40 +295,43 @@ func (p *Player) RangedAttack() bool {
 		}
 	}
 
+	p.useRangedWeapon(weapons[choice])
+
+	return true
+}
+
+func (p *Player) useRangedWeapon(weapon item.WeaponComponent) {
 	target := p.findTarget()
 
-	weapons[choice].Fire()
+	weapon.Fire()
 	if target == nil {
 		message.Enqueue("You fire your weapon at the ground.")
-		return true
+		return
 	}
 
 	tX, tY := target.GetCoordinates()
 	distance := worldmap.Distance(p.location.X, p.location.Y, tX, tY)
-	if distance < float64(p.Weapon().Range) {
+	if distance < float64(weapon.Range) {
 		coverPenalty := 0
 		if p.world.TargetBehindCover(p, target) {
 			coverPenalty = 5
 		}
 
 		proficiencyBonus := 0
-		if p.hasWeaponProficiency(weapons[choice]) {
+		if p.hasWeaponProficiency(weapon) {
 			proficiencyBonus = 2
 		}
 
-		p.attack(target, weapons[choice], worldmap.GetBonus(p.attributes["dex"].Value())+proficiencyBonus-coverPenalty, proficiencyBonus)
+		p.attack(target, weapon, worldmap.GetBonus(p.attributes["dex"].Value())+proficiencyBonus-coverPenalty, proficiencyBonus)
 		// Attack again if player has double shot, weapon loaded and target not dead
-		if p.hasSkill(worldmap.DoubleShot) && !weapons[choice].IsUnloaded() && !target.IsDead() {
-			weapons[choice].Fire()
-			p.attack(target, weapons[choice], worldmap.GetBonus(p.attributes["dex"].Value())+proficiencyBonus-coverPenalty, proficiencyBonus)
+		if p.hasSkill(worldmap.DoubleShot) && !weapon.IsUnloaded() && !target.IsDead() {
+			weapon.Fire()
+			p.attack(target, weapon, worldmap.GetBonus(p.attributes["dex"].Value())+proficiencyBonus-coverPenalty, proficiencyBonus)
 		}
 	} else {
 		message.Enqueue("Your target was too far away.")
 	}
-
-	return true
 }
-
 func (p *Player) TakeDamage(damage item.Damage, effects item.Effects, bonus int) {
 	total_damage := damage.Damage() + bonus
 	p.attributes["hp"].AddEffect(item.NewInstantEffect(-total_damage))
@@ -1464,7 +1455,7 @@ func (p *Player) hasSkill(skill worldmap.Skill) bool {
 func (p *Player) hasWeaponProficiency(weapon item.WeaponComponent) bool {
 
 	var skill worldmap.Skill
-	switch p.Weapon().Type {
+	switch weapon.Type {
 	case item.NoAmmo:
 		skill = worldmap.Melee
 	case item.Bow:
