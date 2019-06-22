@@ -120,6 +120,7 @@ const (
 	Rifles
 	Pistols
 	DoubleShot
+	Haggling
 )
 
 // Interface shared by Player, Npc and Enemy

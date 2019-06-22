@@ -6,6 +6,7 @@ import (
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/npc"
 	"github.com/onorton/cowboysindians/ui"
+	"github.com/onorton/cowboysindians/worldmap"
 )
 
 func trade(p *Player, npc *npc.Npc) {
@@ -23,11 +24,16 @@ func trade(p *Player, npc *npc.Npc) {
 				item := npcItems[selection]
 				if item != nil {
 					validSelection = true
-					if item[0].GetValue() > p.money {
+					value := item[0].GetValue()
+					if p.hasSkill(worldmap.Haggling) {
+						value -= value / 5
+					}
+
+					if value > p.money {
 						message.Enqueue("You don't have enough money for that!")
 					} else {
-						p.money -= item[0].GetValue()
-						npc.AddMoney(item[0].GetValue())
+						p.money -= value
+						npc.AddMoney(value)
 						p.AddItem(item[0])
 						message.Enqueue(fmt.Sprintf("You bought a %s.", item[0].GetName()))
 						npc.RemoveItem(item[0])
@@ -41,13 +47,18 @@ func trade(p *Player, npc *npc.Npc) {
 				_, selection := ui.GetItemSelection()
 				item := p.GetItem(selection)
 				if item != nil {
+					value := item.GetValue()
+					if p.hasSkill(worldmap.Haggling) {
+						value += value / 5
+					}
+
 					validSelection = true
-					if !npc.CanBuy(item) {
+					if !npc.CanAfford(value) {
 						p.AddItem(item)
 						message.Enqueue(fmt.Sprintf("%s cannot afford that!", npc.GetName()))
 					} else {
-						p.money += item.GetValue()
-						npc.RemoveMoney(item.GetValue())
+						p.money += value
+						npc.RemoveMoney(value)
 						message.Enqueue(fmt.Sprintf("You sold a %s.", item.GetName()))
 						npc.PickupItem(item)
 					}
@@ -71,13 +82,21 @@ func printTradeScreen(p *Player, npc *npc.Npc) {
 
 	i := 0
 	for c, items := range p.inventory {
-		ui.WriteText(0, padding+i, fmt.Sprintf("%s %dx %s $%.2f", string(c), len(items), items[0].GetName(), float64(items[0].GetValue())/100))
+		value := items[0].GetValue()
+		if p.hasSkill(worldmap.Haggling) {
+			value += value / 5
+		}
+		ui.WriteText(0, padding+i, fmt.Sprintf("%s %dx %s $%.2f", string(c), len(items), items[0].GetName(), float64(value)/100))
 		i++
 	}
 
 	i = 0
 	for c, items := range npc.GetItems(false) {
-		ui.WriteText(npcX, padding+i, fmt.Sprintf("%s %dx %s $%.2f", string(c), len(items), items[0].GetName(), float64(items[0].GetValue())/100))
+		value := items[0].GetValue()
+		if p.hasSkill(worldmap.Haggling) {
+			value -= value / 5
+		}
+		ui.WriteText(npcX, padding+i, fmt.Sprintf("%s %dx %s $%.2f", string(c), len(items), items[0].GetName(), float64(value)/100))
 		i++
 	}
 

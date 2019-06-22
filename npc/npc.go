@@ -730,8 +730,8 @@ func (npc *Npc) LoadMount(mounts []*Mount) {
 	}
 }
 
-func (npc Npc) CanBuy(itm *item.Item) bool {
-	return itm.GetValue() <= npc.money
+func (npc Npc) CanAfford(value int) bool {
+	return value <= npc.money
 }
 
 func (npc *Npc) AddMoney(amount int) {
