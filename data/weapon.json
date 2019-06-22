@@ -1,7 +1,7 @@
 {
 	"shotgun" : {
 		"Icon": {"Icon": 115, "Colour": 3},
-		"Components": {"weapon": {"Range": 4, "Type": 2, "Capacity": {"Capacity": 2}, "Damage": {"Dice": 4,"Number": 1,"Bonus": 0}}},
+		"Components": {"weapon": {"Range": 4, "Type": 2, "Capacity": {"Capacity": 2}, "Damage": {"Dice": 4,"Number": 1,"Bonus": 0}}, "twoHanded": {}},
 		"Weight": 20,
 		"Value": 5000,
 		"Probability": 1.0
@@ -17,7 +17,7 @@
 
 	"sawn-off shotgun" : {
 		"Icon": {"Icon": 115, "Colour": 4},
-		"Components": {"weapon": {"Range": 3, "Type": 2, "Capacity": {"Capacity": 2}, "Damage": {"Dice": 6,"Number": 1,"Bonus": 3}}},
+		"Components": {"weapon": {"Range": 3, "Type": 2, "Capacity": {"Capacity": 2}, "Damage": {"Dice": 6,"Number": 1,"Bonus": 3}}, "twoHanded": {}},
 		"Weight": 15,
 		"Value": 4000,
 		"Probability": 0.7
@@ -25,7 +25,7 @@
 
 	"rifle" : {
 		"Icon": {"Icon": 114, "Colour": 2},
-		"Components": {"weapon": {"Range": 20, "Type": 3, "Capacity": {"Capacity": 15}, "Damage": {"Dice": 4,"Number": 1,"Bonus": 0}}},
+		"Components": {"weapon": {"Range": 20, "Type": 3, "Capacity": {"Capacity": 15}, "Damage": {"Dice": 4,"Number": 1,"Bonus": 0}}, "twoHanded": {}},
 		"Weight": 12,
 		"Value": 8000,
 		"Probability": 1.0
@@ -33,7 +33,7 @@
 
 	"hunting bow" : {
 		"Icon": {"Icon": 41, "Colour": 8},
-		"Components": {"weapon": {"Range": 18, "Type": 4, "Capacity": {"Capacity": 1}, "Damage": {"Dice": 6,"Number": 1,"Bonus": 2}}},
+		"Components": {"weapon": {"Range": 18, "Type": 4, "Capacity": {"Capacity": 1}, "Damage": {"Dice": 6,"Number": 1,"Bonus": 2}}, "twoHanded": {}},
 		"Weight": 10,
 		"Value": 3000,
 		"Probability": 1.0
@@ -41,7 +41,7 @@
 
 	"baseball bat" : {
 		"Icon": {"Icon": 98, "Colour": 8},
-		"Components": {"weapon": {"Range": 0, "Type": 0, "Damage": {"Dice": 6,"Number": 1,"Bonus": 0}}},
+		"Components": {"weapon": {"Range": 0, "Type": 0, "Damage": {"Dice": 6,"Number": 1,"Bonus": 0}}, "twoHanded": {}},
 		"Weight": 10,
 		"Value": 200,
 		"Probability": 1.0
@@ -57,7 +57,7 @@
 
 	"spear" : {
 		"Icon": {"Icon": 124, "Colour": 8},
-		"Components": {"weapon": {"Range": 0, "Type": 0, "Damage": {"Dice": 4,"Number": 1,"Bonus": 2}}},
+		"Components": {"weapon": {"Range": 0, "Type": 0, "Damage": {"Dice": 4,"Number": 1,"Bonus": 2}}, "twoHanded": {}},
 		"Weight": 5,
 		"Value": 200,
 		"Probability": 1.0

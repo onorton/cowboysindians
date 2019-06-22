@@ -536,6 +536,22 @@ func (p *Player) WieldItem() bool {
 				ui.GetInput()
 			} else {
 				if itm.HasComponent("weapon") {
+					if itm.HasComponent("twoHanded") {
+						if p.primary != nil {
+							p.AddItem(p.primary)
+							p.primary = nil
+						}
+
+						if p.secondary != nil {
+							p.AddItem(p.secondary)
+							p.secondary = nil
+						}
+						p.primary = itm
+
+						message.Enqueue(fmt.Sprintf("You are now wielding a %s.", itm.GetName()))
+						return true
+					}
+
 					var other *item.Item
 					if p.primary != nil && p.secondary != nil {
 						message.PrintMessage(fmt.Sprintf("Which weapon would you like to unwield? %s[p] or %s[s]", p.primary.GetName(), p.secondary.GetName()))
@@ -556,8 +572,13 @@ func (p *Player) WieldItem() bool {
 						}
 
 					} else if p.primary != nil {
-						other = p.secondary
-						p.secondary = itm
+						if p.primary.HasComponent("twoHanded") {
+							other = p.primary
+							p.primary = itm
+						} else {
+							other = p.secondary
+							p.secondary = itm
+						}
 					} else {
 						other = p.primary
 						p.primary = itm
