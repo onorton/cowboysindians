@@ -121,6 +121,8 @@ const (
 	Pistols
 	DoubleShot
 	Haggling
+	Lockpicking
+	Pickpocketing
 )
 
 // Interface shared by Player, Npc and Enemy

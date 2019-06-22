@@ -9,11 +9,16 @@ import (
 	"github.com/onorton/cowboysindians/message"
 	"github.com/onorton/cowboysindians/npc"
 	"github.com/onorton/cowboysindians/ui"
+	"github.com/onorton/cowboysindians/worldmap"
 )
 
 func pickpocket(p *Player, npc *npc.Npc) {
 	pickpocketComplete := false
-	chanceCaught := 0.1
+	chanceCaught := 0.25
+	if p.hasSkill(worldmap.Pickpocketing) {
+		chanceCaught -= 0.2
+	}
+
 	for !pickpocketComplete {
 		printPickpocketScreen(p, npc)
 		message.PrintMessages()

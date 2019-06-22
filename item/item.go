@@ -211,8 +211,8 @@ type KeyComponent struct {
 	Chance float64
 }
 
-func (kc KeyComponent) Works() bool {
-	return rand.Float64() < kc.Chance
+func (kc KeyComponent) Works(bonus float64) bool {
+	return rand.Float64() < kc.Chance+bonus
 }
 
 func NewKey(keyValue int32) *Item {

@@ -1204,6 +1204,11 @@ func (p *Player) Use() bool {
 			} else {
 				if itm.HasComponent("usable") {
 					if itm.HasComponent("key") {
+						lockpickingBonus := 0.0
+						if p.hasSkill(worldmap.Lockpicking) {
+							lockpickingBonus = 0.2
+						}
+
 						// Keys are multiple use
 						p.AddItem(itm)
 						x, y, _ := p.SelectDirection()
@@ -1223,7 +1228,7 @@ func (p *Player) Use() bool {
 							}
 
 							if anyFit {
-								if itm.Component("key").(item.KeyComponent).Works() {
+								if itm.Component("key").(item.KeyComponent).Works(lockpickingBonus) {
 									door.ToggleLocked()
 									if door.Locked() {
 										message.Enqueue("You lock the door.")
