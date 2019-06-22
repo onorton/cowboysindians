@@ -296,6 +296,15 @@ func (p *Player) RangedAttack() bool {
 	}
 
 	p.useRangedWeapon(weapons[choice])
+	other := 1 - choice
+	// If the other weapon is loaded and player has DualWielding skill, allow them to use it
+	if len(weapons) == 2 && p.hasSkill(worldmap.DualWielding) && !weapons[other].IsUnloaded() {
+		message.PrintMessage("Would you like to use your other weapon? [yn]")
+		confirmation := ui.GetInput()
+		if confirmation == ui.Confirm {
+			p.useRangedWeapon(weapons[other])
+		}
+	}
 
 	return true
 }

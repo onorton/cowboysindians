@@ -123,6 +123,7 @@ const (
 	Haggling
 	Lockpicking
 	Pickpocketing
+	DualWielding
 )
 
 // Interface shared by Player, Npc and Enemy
