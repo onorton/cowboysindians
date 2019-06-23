@@ -74,6 +74,17 @@ const (
 	Done
 )
 
+type CreationAction int
+
+const (
+	Invalid CreationAction = iota
+	Up
+	Down
+	Left
+	Right
+	CreationDone
+)
+
 // Init initialises the termbox instance
 func Init(width int) {
 	centre = width / 2
@@ -244,6 +255,24 @@ func TextInput() (TextInputAction, rune) {
 	}
 }
 
+func CreationInput() CreationAction {
+	e := termbox.PollEvent()
+	switch e.Key {
+	case termbox.KeyArrowUp:
+		return Up
+	case termbox.KeyArrowDown:
+		return Down
+	case termbox.KeyArrowLeft:
+		return Left
+	case termbox.KeyArrowRight:
+		return Right
+	case termbox.KeyEnter:
+		return CreationDone
+	default:
+		return Invalid
+	}
+}
+
 // Rendering
 type Cell struct {
 	x int
@@ -291,6 +320,14 @@ func DrawElement(x, y int, elem Element) {
 func WriteText(x, y int, msg string) {
 	for _, c := range msg {
 		termbox.SetCell(x, y, c, termbox.ColorWhite, termbox.ColorDefault)
+		x++
+	}
+	termbox.Flush()
+}
+
+func WriteHightlightedText(x, y int, msg string) {
+	for _, c := range msg {
+		termbox.SetCell(x, y, c, termbox.ColorBlack, termbox.ColorWhite)
 		x++
 	}
 	termbox.Flush()

@@ -10,6 +10,8 @@ import (
 	"github.com/onorton/cowboysindians/ui"
 )
 
+var Attributes []string = []string{"str", "dex"}
+
 type Attribute struct {
 	value   int
 	max     int

@@ -22,15 +22,17 @@ func check(err error) {
 	}
 }
 
-func newPlayer(name string) *Player {
+func newPlayer(name string, attrs map[string]int) *Player {
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(10, 10),
 		"hunger":      worldmap.NewAttribute(0, 100),
 		"thirst":      worldmap.NewAttribute(0, 100),
 		"ac":          worldmap.NewAttribute(15, 15),
-		"str":         worldmap.NewAttribute(12, 12),
-		"dex":         worldmap.NewAttribute(10, 10),
 		"encumbrance": worldmap.NewAttribute(100, 100)}
+
+	for attr, v := range attrs {
+		attributes[attr] = worldmap.NewAttribute(v, v)
+	}
 
 	attributes["hunger"].AddEffect(item.NewOngoingEffect(1))
 	attributes["thirst"].AddEffect(item.NewOngoingEffect(1))
