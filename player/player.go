@@ -22,7 +22,7 @@ func check(err error) {
 	}
 }
 
-func newPlayer(name string, attrs map[string]int) *Player {
+func newPlayer(name string, attrs map[string]int, skills []worldmap.Skill) *Player {
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(10, 10),
 		"hunger":      worldmap.NewAttribute(0, 100),
@@ -37,7 +37,7 @@ func newPlayer(name string, attrs map[string]int) *Player {
 	attributes["hunger"].AddEffect(item.NewOngoingEffect(1))
 	attributes["thirst"].AddEffect(item.NewOngoingEffect(1))
 
-	player := &Player{name, worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, attributes, []worldmap.Skill{}, false, 1000, item.WeaponComponent{0, item.NoAmmo, nil, item.NewDamage(2, 1, 0), item.Effects{}}, nil, nil, nil, make(map[rune]([]*item.Item)), "", nil, nil}
+	player := &Player{name, worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, attributes, skills, false, 1000, item.WeaponComponent{0, item.NoAmmo, nil, item.NewDamage(2, 1, 0), item.Effects{}}, nil, nil, nil, make(map[rune]([]*item.Item)), "", nil, nil}
 	player.AddItem(item.NewWeapon("shotgun"))
 	player.AddItem(item.NewWeapon("sawn-off shotgun"))
 	player.AddItem(item.NewWeapon("baseball bat"))

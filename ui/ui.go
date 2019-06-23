@@ -82,7 +82,7 @@ const (
 	Down
 	Left
 	Right
-	CreationDone
+	Select
 )
 
 // Init initialises the termbox instance
@@ -267,7 +267,7 @@ func CreationInput() CreationAction {
 	case termbox.KeyArrowRight:
 		return Right
 	case termbox.KeyEnter:
-		return CreationDone
+		return Select
 	default:
 		return Invalid
 	}
@@ -325,7 +325,7 @@ func WriteText(x, y int, msg string) {
 	termbox.Flush()
 }
 
-func WriteHightlightedText(x, y int, msg string) {
+func WriteHighlightedText(x, y int, msg string) {
 	for _, c := range msg {
 		termbox.SetCell(x, y, c, termbox.ColorBlack, termbox.ColorWhite)
 		x++

@@ -19,3 +19,11 @@ func (s *Set) Exists(item interface{}) bool {
 	_, ok := s.items[item]
 	return ok
 }
+
+func (s *Set) Items() []interface{} {
+	keys := make([]interface{}, 0)
+	for k := range s.items {
+		keys = append(keys, k)
+	}
+	return keys
+}
