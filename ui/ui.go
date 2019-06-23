@@ -65,6 +65,15 @@ const (
 	SpecificItem
 )
 
+type TextInputAction int
+
+const (
+	Erase TextInputAction = iota
+	Character
+	OtherInput
+	Done
+)
+
 // Init initialises the termbox instance
 func Init(width int) {
 	centre = width / 2
@@ -216,6 +225,23 @@ func EquippedSelection() PlayerAction {
 		return Secondary
 	}
 	return NoAction
+}
+
+func TextInput() (TextInputAction, rune) {
+	e := termbox.PollEvent()
+	switch e.Key {
+	case termbox.KeyEnter:
+		return Done, 0
+	case termbox.KeySpace:
+		return Character, ' '
+	case termbox.KeyBackspace | termbox.KeyBackspace2:
+		return Erase, 0
+	default:
+		if e.Ch != 0 {
+			return Character, e.Ch
+		}
+		return OtherInput, 0
+	}
 }
 
 // Rendering

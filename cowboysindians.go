@@ -155,7 +155,7 @@ func main() {
 
 	if !loaded {
 		mounts, npcs := world.GenerateWorld(worldSaveFilename, width, height)
-		state.Player = player.NewPlayer(nil)
+		state.Player = player.CreatePlayer()
 		x, y := state.Player.GetCoordinates()
 		state.Viewer = worldmap.NewViewer(x, y, windowWidth, windowHeight)
 		state.Mounts = mounts

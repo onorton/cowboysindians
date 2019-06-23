@@ -1,6 +1,7 @@
 package message
 
 import (
+	"fmt"
 	"unicode"
 
 	"github.com/onorton/cowboysindians/structs"
@@ -43,6 +44,30 @@ func PrintMessage(m string) {
 
 	clearMessageBar()
 	ui.WriteText(0, Mq.windowHeight, capitalise(m))
+}
+
+func RequestInput(m string) string {
+	clearMessageBar()
+	input := ""
+	PrintMessage(m)
+	for {
+		action, c := ui.TextInput()
+		switch action {
+		case ui.Erase:
+			if len(input) > 0 {
+				input = input[:len(input)-1]
+			}
+		case ui.Character:
+			input = input + string(c)
+		}
+
+		if action == ui.Done {
+			break
+		}
+		PrintMessage(fmt.Sprintf("%s %s", m, input))
+	}
+	clearMessageBar()
+	return input
 }
 
 func SetWindowSize(windowWidth, windowHeight int) {

@@ -22,7 +22,7 @@ func check(err error) {
 	}
 }
 
-func NewPlayer(world *worldmap.Map) *Player {
+func newPlayer(name string) *Player {
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(10, 10),
 		"hunger":      worldmap.NewAttribute(0, 100),
@@ -35,7 +35,7 @@ func NewPlayer(world *worldmap.Map) *Player {
 	attributes["hunger"].AddEffect(item.NewOngoingEffect(1))
 	attributes["thirst"].AddEffect(item.NewOngoingEffect(1))
 
-	player := &Player{worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, attributes, []worldmap.Skill{}, false, 1000, item.WeaponComponent{0, item.NoAmmo, nil, item.NewDamage(2, 1, 0), item.Effects{}}, nil, nil, nil, make(map[rune]([]*item.Item)), "", nil, world}
+	player := &Player{name, worldmap.Coordinates{0, 0}, icon.CreatePlayerIcon(), 1, attributes, []worldmap.Skill{}, false, 1000, item.WeaponComponent{0, item.NoAmmo, nil, item.NewDamage(2, 1, 0), item.Effects{}}, nil, nil, nil, make(map[rune]([]*item.Item)), "", nil, nil}
 	player.AddItem(item.NewWeapon("shotgun"))
 	player.AddItem(item.NewWeapon("sawn-off shotgun"))
 	player.AddItem(item.NewWeapon("baseball bat"))
@@ -57,7 +57,7 @@ func (p *Player) Render() ui.Element {
 func (p *Player) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Location", "Icon", "Initiative", "Attributes", "Skills", "Crouching", "Money", "Unarmed", "Primary", "Secondary", "Armour", "Inventory", "MountID"}
+	keys := []string{"Name", "Location", "Icon", "Initiative", "Attributes", "Skills", "Crouching", "Money", "Unarmed", "Primary", "Secondary", "Armour", "Inventory", "MountID"}
 
 	mountID := ""
 	if p.mount != nil {
@@ -65,6 +65,7 @@ func (p *Player) MarshalJSON() ([]byte, error) {
 	}
 
 	playerValues := map[string]interface{}{
+		"Name":       p.name,
 		"Location":   p.location,
 		"Icon":       p.icon,
 		"Initiative": p.initiative,
@@ -109,6 +110,7 @@ func (p *Player) MarshalJSON() ([]byte, error) {
 func (p *Player) UnmarshalJSON(data []byte) error {
 
 	type playerJson struct {
+		Name       string
 		Location   worldmap.Coordinates
 		Icon       icon.Icon
 		Initiative int
@@ -129,6 +131,7 @@ func (p *Player) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	p.name = v.Name
 	p.location = v.Location
 	p.icon = v.Icon
 	p.initiative = v.Initiative
@@ -1213,7 +1216,7 @@ func (p *Player) ToggleMount() bool {
 }
 
 func (p *Player) GetName() ui.Name {
-	return &ui.PlainName{"You"}
+	return &ui.PlainName{p.name}
 }
 
 func (p *Player) GetID() string {
@@ -1533,6 +1536,7 @@ func (p *Player) LoadMount(mounts []*npc.Mount) {
 }
 
 type Player struct {
+	name       string
 	location   worldmap.Coordinates
 	icon       icon.Icon
 	initiative int
