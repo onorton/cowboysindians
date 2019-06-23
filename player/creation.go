@@ -61,22 +61,23 @@ func (s *selection) next(action ui.CreationAction) {
 }
 
 type skillInformation struct {
-	skillName string
-	skill     worldmap.Skill
+	skillName   string
+	skill       worldmap.Skill
+	description string
 }
 
 var skillsInfo []skillInformation = []skillInformation{
-	skillInformation{"Unarmed", worldmap.Unarmed},
-	skillInformation{"Melee", worldmap.Melee},
-	skillInformation{"Archery", worldmap.Archery},
-	skillInformation{"Shotguns", worldmap.Shotguns},
-	skillInformation{"Rifles", worldmap.Rifles},
-	skillInformation{"Pistols", worldmap.Pistols},
-	skillInformation{"Double Shot", worldmap.DoubleShot},
-	skillInformation{"Dual Wielding", worldmap.DualWielding},
-	skillInformation{"Haggling", worldmap.Haggling},
-	skillInformation{"Lockpicking", worldmap.Lockpicking},
-	skillInformation{"Pickpocketing", worldmap.Pickpocketing}}
+	skillInformation{"Unarmed", worldmap.Unarmed, "Proficiency with your fists."},
+	skillInformation{"Melee", worldmap.Melee, "Proficiency with melee weapons."},
+	skillInformation{"Archery", worldmap.Archery, "Proficiency with bows."},
+	skillInformation{"Shotguns", worldmap.Shotguns, "Proficiency with shotguns."},
+	skillInformation{"Rifles", worldmap.Rifles, "Proficiency with rifles."},
+	skillInformation{"Pistols", worldmap.Pistols, "Proficiency with pistols."},
+	skillInformation{"Double Shot", worldmap.DoubleShot, "Fire twice with the same weapon per turn."},
+	skillInformation{"Dual Wielding", worldmap.DualWielding, "Can use two ranged weapons per turn."},
+	skillInformation{"Haggling", worldmap.Haggling, "Get better deals with merchants."},
+	skillInformation{"Lockpicking", worldmap.Lockpicking, "Increased chance of lockpicks working."},
+	skillInformation{"Pickpocketing", worldmap.Pickpocketing, "Reduced chance of being detected while pickpocketing."}}
 
 func CreatePlayer() *Player {
 	creationComplete := false
@@ -94,7 +95,7 @@ func CreatePlayer() *Player {
 		action := ui.CreationInput()
 		currentSelection.next(action)
 
-		if currentSelection.selection == attribute {
+		if currentSelection.selection == attribute && currentSelection.index >= 0 {
 			switch action {
 			case ui.Left:
 				cost := pointsCost(attributes[worldmap.Attributes[currentSelection.index]], false)
@@ -109,7 +110,7 @@ func CreatePlayer() *Player {
 					pointsAvailable -= cost
 				}
 			}
-		} else if currentSelection.selection == skill {
+		} else if currentSelection.selection == skill && currentSelection.index >= 0 {
 			if action == ui.Select && currentSelection.index >= 0 {
 				if selectedSkills.Exists(skillsInfo[currentSelection.index].skill) {
 					selectedSkills.Delete(skillsInfo[currentSelection.index].skill)
@@ -152,8 +153,13 @@ func pointsCost(currentValue int, increase bool) int {
 
 func printCreationScreen(attributes map[string]int, selectedSkills structs.Set, pointsAvailable int, skillsAvailable int, s selection) {
 	ui.ClearScreen()
-	skillsOffset := 50
 
+	// Print skill description if skill selected
+	if s.selection == skill && s.index >= 0 {
+		message.PrintMessage(skillsInfo[s.index].description)
+	}
+
+	skillsOffset := 50
 	padding := 2
 
 	if s.selection == attribute && s.index == -1 {
