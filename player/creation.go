@@ -30,7 +30,7 @@ func (s *selection) next(action ui.CreationAction) {
 				s.selection = skill
 			}
 		case ui.Down:
-			if s.index < len(worldmap.Attributes) {
+			if s.index < len(worldmap.Attributes)-1 {
 				s.index++
 			} else {
 				s.selection = completion
@@ -47,7 +47,7 @@ func (s *selection) next(action ui.CreationAction) {
 				s.selection = attribute
 			}
 		case ui.Down:
-			if s.index < len(skillsInfo) {
+			if s.index < len(skillsInfo)-1 {
 				s.index++
 			} else {
 				s.selection = completion
@@ -82,6 +82,7 @@ func CreatePlayer() *Player {
 	creationComplete := false
 	attributes := make(map[string]int)
 	currentSelection := &selection{attribute, -1}
+	skillsAvailable := 3
 	selectedSkills := structs.Initialise()
 	pointsAvailable := 8
 	for _, attr := range worldmap.Attributes {
@@ -89,7 +90,7 @@ func CreatePlayer() *Player {
 	}
 	name := message.RequestInput("Who are you?")
 	for !creationComplete {
-		printCreationScreen(attributes, *selectedSkills, pointsAvailable, *currentSelection)
+		printCreationScreen(attributes, *selectedSkills, pointsAvailable, skillsAvailable, *currentSelection)
 		action := ui.CreationInput()
 		currentSelection.next(action)
 
@@ -112,8 +113,10 @@ func CreatePlayer() *Player {
 			if action == ui.Select && currentSelection.index >= 0 {
 				if selectedSkills.Exists(skillsInfo[currentSelection.index].skill) {
 					selectedSkills.Delete(skillsInfo[currentSelection.index].skill)
-				} else {
+					skillsAvailable++
+				} else if skillsAvailable > 0 {
 					selectedSkills.Add(skillsInfo[currentSelection.index].skill)
+					skillsAvailable--
 				}
 			}
 		} else {
@@ -147,7 +150,7 @@ func pointsCost(currentValue int, increase bool) int {
 	}
 }
 
-func printCreationScreen(attributes map[string]int, selectedSkills structs.Set, pointsAvailable int, s selection) {
+func printCreationScreen(attributes map[string]int, selectedSkills structs.Set, pointsAvailable int, skillsAvailable int, s selection) {
 	ui.ClearScreen()
 	skillsOffset := 50
 
@@ -158,6 +161,8 @@ func printCreationScreen(attributes map[string]int, selectedSkills structs.Set, 
 	} else {
 		ui.WriteText(0, padding, "Attributes:")
 	}
+	padding += 2
+	ui.WriteText(0, padding, fmt.Sprintf("Points Available: %d", pointsAvailable))
 	padding += 2
 
 	i := 0
@@ -170,14 +175,14 @@ func printCreationScreen(attributes map[string]int, selectedSkills structs.Set, 
 		i++
 	}
 
-	ui.WriteText(0, padding+len(worldmap.Attributes)+2, fmt.Sprintf("Points Available: %d", pointsAvailable))
-
 	padding = 2
 	if s.selection == skill && s.index == -1 {
 		ui.WriteHighlightedText(skillsOffset, padding, "Skills:")
 	} else {
 		ui.WriteText(skillsOffset, padding, "Skills:")
 	}
+	padding += 2
+	ui.WriteText(skillsOffset, padding, fmt.Sprintf("Skills Available: %d", skillsAvailable))
 	padding += 2
 
 	i = 0
@@ -196,7 +201,7 @@ func printCreationScreen(attributes map[string]int, selectedSkills structs.Set, 
 	}
 
 	if s.selection == completion {
-		ui.WriteHighlightedText(skillsOffset, padding+len(skillsInfo)+2, "Complete")
+		ui.WriteHighlightedText(0, padding+len(skillsInfo)+2, "Complete")
 	} else {
 		ui.WriteText(0, padding+len(skillsInfo)+2, "Complete")
 	}
