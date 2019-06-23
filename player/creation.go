@@ -12,12 +12,13 @@ func CreatePlayer() *Player {
 	creationComplete := false
 	attributes := make(map[string]int)
 	currentSelection := 0
+	pointsAvailable := 8
 	for _, attr := range worldmap.Attributes {
 		attributes[attr] = 8
 	}
 	name := message.RequestInput("Who are you?")
 	for !creationComplete {
-		printCreationScreen(attributes, worldmap.Attributes[currentSelection])
+		printCreationScreen(attributes, pointsAvailable, worldmap.Attributes[currentSelection])
 		action := ui.CreationInput()
 
 		switch action {
@@ -30,11 +31,17 @@ func CreatePlayer() *Player {
 				currentSelection++
 			}
 		case ui.Left:
-			if attributes[worldmap.Attributes[currentSelection]] > 0 {
+			cost := pointsCost(attributes[worldmap.Attributes[currentSelection]], false)
+			if attributes[worldmap.Attributes[currentSelection]] > 3 {
 				attributes[worldmap.Attributes[currentSelection]]--
+				pointsAvailable += cost
 			}
 		case ui.Right:
-			attributes[worldmap.Attributes[currentSelection]]++
+			cost := pointsCost(attributes[worldmap.Attributes[currentSelection]], true)
+			if pointsAvailable >= cost && attributes[worldmap.Attributes[currentSelection]] < 18 {
+				attributes[worldmap.Attributes[currentSelection]]++
+				pointsAvailable -= cost
+			}
 		case ui.CreationDone:
 			creationComplete = true
 		}
@@ -44,7 +51,21 @@ func CreatePlayer() *Player {
 	return newPlayer(name, attributes)
 }
 
-func printCreationScreen(attributes map[string]int, selection string) {
+func pointsCost(currentValue int, increase bool) int {
+	if !increase {
+		currentValue -= 1
+	}
+
+	if currentValue < 18 && currentValue >= 16 || currentValue >= 3 && currentValue < 5 {
+		return 3
+	} else if currentValue < 16 && currentValue >= 13 || currentValue >= 5 && currentValue < 8 {
+		return 2
+	} else {
+		return 1
+	}
+}
+
+func printCreationScreen(attributes map[string]int, pointsAvailable int, selection string) {
 	ui.ClearScreen()
 
 	padding := 2
@@ -60,4 +81,7 @@ func printCreationScreen(attributes map[string]int, selection string) {
 		}
 		i++
 	}
+
+	ui.WriteText(0, padding+len(worldmap.Attributes)+2, fmt.Sprintf("Points Available: %d", pointsAvailable))
+
 }
