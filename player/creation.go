@@ -120,7 +120,7 @@ func CreatePlayer() *Player {
 					skillsAvailable--
 				}
 			}
-		} else {
+		} else if currentSelection.selection == completion {
 			if action == ui.Select {
 				creationComplete = true
 			}
