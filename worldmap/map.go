@@ -108,8 +108,6 @@ func (m *Map) SaveChunks() {
 	check(err)
 	outputFile, err := os.Create("tmp_" + m.filename)
 	check(err)
-	defer file.Close()
-	defer outputFile.Close()
 
 	reader := bufio.NewReader(file)
 	writer := bufio.NewWriter(outputFile)
@@ -145,6 +143,10 @@ func (m *Map) SaveChunks() {
 		}
 	}
 	err = writer.Flush()
+	check(err)
+	err = outputFile.Close()
+	check(err)
+	err = file.Close()
 	check(err)
 	err = os.Rename("tmp_"+m.filename, m.filename)
 	check(err)
