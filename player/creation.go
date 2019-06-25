@@ -79,7 +79,7 @@ var skillsInfo []skillInformation = []skillInformation{
 	skillInformation{"Lockpicking", worldmap.Lockpicking, "Increased chance of lockpicks working."},
 	skillInformation{"Pickpocketing", worldmap.Pickpocketing, "Reduced chance of being detected while pickpocketing."}}
 
-func CreatePlayer() *Player {
+func CreatePlayer(location worldmap.Coordinates) *Player {
 	creationComplete := false
 	attributes := make(map[string]int)
 	currentSelection := &selection{attribute, -1}
@@ -134,7 +134,7 @@ func CreatePlayer() *Player {
 		skills = append(skills, s.(worldmap.Skill))
 	}
 
-	return newPlayer(name, attributes, skills)
+	return newPlayer(location, name, attributes, skills)
 }
 
 func pointsCost(currentValue int, increase bool) int {

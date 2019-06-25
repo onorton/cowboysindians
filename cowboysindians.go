@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"time"
 
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
@@ -21,8 +22,8 @@ import (
 
 const windowWidth = 100
 const windowHeight = 25
-const width = 256
-const height = 256
+const width = 1024
+const height = 1024
 const saveFilename = "game.json"
 const worldSaveFilename = "game_world.json"
 
@@ -140,7 +141,7 @@ func main() {
 	item.LoadAllData()
 	message.SetWindowSize(windowWidth, windowHeight)
 	state := GameState{}
-	rand.Seed(1555873582740657570)
+	rand.Seed(time.Now().UTC().UnixNano())
 
 	loaded := false
 	if _, err := os.Stat(saveFilename); !os.IsNotExist(err) {
@@ -154,8 +155,8 @@ func main() {
 	}
 
 	if !loaded {
-		mounts, npcs := world.GenerateWorld(worldSaveFilename, width, height)
-		state.Player = player.CreatePlayer()
+		p, mounts, npcs := world.GenerateWorld(worldSaveFilename, width, height)
+		state.Player = p
 		x, y := state.Player.GetCoordinates()
 		state.Viewer = worldmap.NewViewer(x, y, windowWidth, windowHeight)
 		state.Mounts = mounts
