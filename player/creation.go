@@ -57,6 +57,12 @@ func (s *selection) next(action ui.CreationAction) {
 				s.index--
 			}
 		}
+	} else {
+		switch action {
+		case ui.Up:
+			s.selection = attribute
+			s.index = -1
+		}
 	}
 }
 
