@@ -328,6 +328,11 @@ func main() {
 		// End game if player is dead
 		if player.IsDead() {
 			message.PrintMessage("You died.")
+
+			// Delete game files
+			os.Remove(saveFilename)
+			os.Remove(worldSaveFilename)
+
 			ui.GetInput()
 			break
 		}
