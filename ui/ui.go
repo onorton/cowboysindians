@@ -182,6 +182,8 @@ func GetInput() (action PlayerAction) {
 				action = Place
 			case 'y':
 				action = Confirm
+			case 'n':
+				action = CancelAction
 			default:
 				action = NoAction
 			}

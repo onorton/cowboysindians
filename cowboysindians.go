@@ -147,9 +147,13 @@ func main() {
 	if _, err := os.Stat(saveFilename); !os.IsNotExist(err) {
 		message.PrintMessage("Do you wish to load the last save? [yn]")
 		// Load from save file if player wants to
-		if l := ui.GetInput(); l == ui.Confirm {
-			state = load()
-			loaded = true
+		var l ui.PlayerAction
+		for l != ui.Confirm && l != ui.CancelAction {
+			l = ui.GetInput()
+			if l == ui.Confirm {
+				state = load()
+				loaded = true
+			}
 		}
 		ui.ClearScreen()
 	}
