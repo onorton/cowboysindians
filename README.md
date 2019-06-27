@@ -14,7 +14,10 @@ You can:
 - Find and kill the person who left you for dead
 
 ## Running the game ##
-If you have go version 1.10.3 or above, it should run by running `go run cowboysindians.go`.
+
+Just download the latest release, [here](https://github.com/onorton/cowboysindians/releases/latest) and run the executable. 
+
+Alternatively, you can build from source if you have go version 1.10.3 or above by running `go build cowboysindians.go`.
 
 ## Controls ##
 - <kbd>&uparrow;</kbd><kbd>&downarrow;</kbd><kbd>&leftarrow;</kbd><kbd>&rightarrow;</kbd> - Navigation in 4 cardinal directions. Also used if an action requires a direction e.g. opening a door
