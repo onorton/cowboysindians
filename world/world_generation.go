@@ -26,18 +26,20 @@ func GenerateWorld(filename string) (*player.Player, []*npc.Mount, []*npc.Npc) {
 	towns := make([]worldmap.Town, 0)
 	buildings := make([]worldmap.Building, 0)
 
-	for i := 0; i < 4; i++ {
+	for i := 0; i < worldmap.WorldConf.Towns; i++ {
 		generateTown(world, &towns, &buildings)
 	}
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < worldmap.WorldConf.Farms; i++ {
 		generateFarm(world, &towns, &buildings)
 	}
 
 	generatePaths(world, towns)
 
-	// Generate building outside town
-	generateBuildingOutsideTown(world, &towns, &buildings)
+	// Generate buildings outside towns
+	for i := 0; i < worldmap.WorldConf.OutBuildings; i++ {
+		generateBuildingOutsideTown(world, &towns, &buildings)
+	}
 
 	placeSignposts(world, towns)
 	addItemsToBuildings(world, buildings)

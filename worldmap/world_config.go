@@ -6,8 +6,11 @@ import (
 )
 
 type worldConfig struct {
-	Width  int
-	Height int
+	Width        int
+	Height       int
+	Towns        int
+	Farms        int
+	OutBuildings int
 }
 
 var WorldConf = fetchWorldConfig()
