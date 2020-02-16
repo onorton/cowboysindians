@@ -11,6 +11,9 @@ type worldConfig struct {
 	Towns        int
 	Farms        int
 	OutBuildings int
+	Mounts       int
+	Enemies      int
+	Npcs         int
 }
 
 var WorldConf = fetchWorldConfig()

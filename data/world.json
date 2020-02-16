@@ -3,5 +3,9 @@
     "height": 1024,
     "towns": 4,
     "farms": 2,
-    "outBuildings": 1
+    "outBuildings": 1,
+    "mounts": 10,
+    "enemies": 20,
+    "npcs": 50
+
 }
