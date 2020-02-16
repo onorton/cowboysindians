@@ -22,8 +22,6 @@ import (
 
 const windowWidth = 100
 const windowHeight = 25
-const width = 1024
-const height = 1024
 const saveFilename = "game.json"
 const worldSaveFilename = "game_world.json"
 
@@ -159,7 +157,7 @@ func main() {
 	}
 
 	if !loaded {
-		p, mounts, npcs := world.GenerateWorld(worldSaveFilename, width, height)
+		p, mounts, npcs := world.GenerateWorld(worldSaveFilename)
 		state.Player = p
 		x, y := state.Player.GetCoordinates()
 		state.Viewer = worldmap.NewViewer(x, y, windowWidth, windowHeight)
@@ -184,7 +182,7 @@ func main() {
 	npcs := state.Npcs
 
 	all := allCreatures(mounts, npcs, player)
-	worldMap := worldmap.NewMap(worldSaveFilename, width, height, state.Viewer, state.Player, all)
+	worldMap := worldmap.NewMap(worldSaveFilename, state.Viewer, state.Player, all)
 	worldMap.LoadActiveChunks()
 
 	// Initial action is nothing

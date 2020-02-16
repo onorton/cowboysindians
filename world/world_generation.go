@@ -20,8 +20,8 @@ func check(err error) {
 	}
 }
 
-func GenerateWorld(filename string, width, height int) (*player.Player, []*npc.Mount, []*npc.Npc) {
-	world := worldmap.NewWorld(width, height)
+func GenerateWorld(filename string) (*player.Player, []*npc.Mount, []*npc.Npc) {
+	world := worldmap.NewWorld()
 
 	towns := make([]worldmap.Town, 0)
 	buildings := make([]worldmap.Building, 0)

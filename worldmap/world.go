@@ -9,9 +9,9 @@ import (
 
 type World [][]*Grid
 
-func NewWorld(width, height int) World {
-	numBlocksX := width / chunkSize
-	numBlocksY := height / chunkSize
+func NewWorld() World {
+	numBlocksX := WorldConf.Width / chunkSize
+	numBlocksY := WorldConf.Height / chunkSize
 	world := make(World, numBlocksY)
 	for row := range world {
 		world[row] = make([]*Grid, numBlocksX)

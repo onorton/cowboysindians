@@ -39,11 +39,11 @@ type ChunkCoordinates struct {
 	Local  Coordinates
 }
 
-func NewMap(filename string, width, height int, viewer *Viewer, player Creature, creatures []Creature) *Map {
+func NewMap(filename string, viewer *Viewer, player Creature, creatures []Creature) *Map {
 	newMap := new(Map)
 	newMap.v = viewer
-	newMap.width = width
-	newMap.height = height
+	newMap.width = WorldConf.Width
+	newMap.height = WorldConf.Height
 	newMap.filename = filename
 	newMap.player = player
 	newMap.creatures = creatures
