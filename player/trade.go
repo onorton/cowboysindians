@@ -20,7 +20,12 @@ func trade(p *Player, npc *npc.Npc) {
 			validSelection := false
 			for !validSelection {
 				message.PrintMessage("Buy: ")
-				_, selection := ui.GetItemSelection()
+				command, selection := ui.GetItemSelection()
+
+				if command == ui.Cancel {
+					break
+				}
+
 				item := npcItems[selection]
 				if item != nil {
 					validSelection = true
@@ -44,8 +49,13 @@ func trade(p *Player, npc *npc.Npc) {
 			validSelection := false
 			for !validSelection {
 				message.PrintMessage("Sell: ")
-				_, selection := ui.GetItemSelection()
+				command, selection := ui.GetItemSelection()
 				item := p.GetItem(selection)
+
+				if command == ui.Cancel {
+					break
+				}
+
 				if item != nil {
 					value := item.GetValue()
 					if p.hasSkill(worldmap.Haggling) {

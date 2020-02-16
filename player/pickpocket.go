@@ -28,8 +28,13 @@ func pickpocket(p *Player, npc *npc.Npc) {
 			validSelection := false
 			for !validSelection {
 				message.PrintMessage("Take: ")
-				_, selection := ui.GetItemSelection()
+				command, selection := ui.GetItemSelection()
 				item := npcItems[selection]
+
+				if command == ui.Cancel {
+					break
+				}
+
 				if item != nil {
 					validSelection = true
 					if item[0].GetName() == "money" {
@@ -53,7 +58,12 @@ func pickpocket(p *Player, npc *npc.Npc) {
 			validSelection := false
 			for !validSelection {
 				message.PrintMessage("Place: ")
-				_, selection := ui.GetItemSelection()
+				command, selection := ui.GetItemSelection()
+
+				if command == ui.Cancel {
+					break
+				}
+
 				item := p.GetItem(selection)
 				if item != nil {
 					validSelection = true
