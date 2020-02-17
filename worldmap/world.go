@@ -3,15 +3,16 @@ package worldmap
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 
 	"github.com/onorton/cowboysindians/item"
 )
 
 type World [][]*Grid
 
-func NewWorld() World {
-	numBlocksX := WorldConf.Width / chunkSize
-	numBlocksY := WorldConf.Height / chunkSize
+func NewWorld(width, height int) World {
+	numBlocksX := width / chunkSize
+	numBlocksY := height / chunkSize
 	world := make(World, numBlocksY)
 	for row := range world {
 		world[row] = make([]*Grid, numBlocksX)
@@ -71,7 +72,8 @@ func (world World) globalToChunkAndLocal(x, y int) (*Grid, int, int) {
 }
 
 func (world World) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("[\n")
+	buffer := bytes.NewBufferString(fmt.Sprintf("\"Width\": %d, \"Height\": %d, ", world.Width(), world.Height()))
+	buffer.WriteString("\"World\": [\n")
 
 	for _, row := range world {
 		for _, chunk := range row {

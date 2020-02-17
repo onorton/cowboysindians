@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"os"
 	"strings"
@@ -39,12 +40,25 @@ type ChunkCoordinates struct {
 	Local  Coordinates
 }
 
+type worldState struct {
+	Height int
+	Width  int
+}
+
 func NewMap(filename string, viewer *Viewer, player Creature, creatures []Creature) *Map {
 	newMap := new(Map)
 	newMap.v = viewer
-	newMap.width = WorldConf.Width
-	newMap.height = WorldConf.Height
 	newMap.filename = filename
+
+	data, err := ioutil.ReadFile(filename)
+	check(err)
+	state := worldState{}
+	err = json.Unmarshal(data, &state)
+	check(err)
+
+	newMap.width = state.Width
+	newMap.height = state.Height
+
 	newMap.player = player
 	newMap.creatures = creatures
 	for _, c := range creatures {
@@ -132,7 +146,7 @@ func (m *Map) SaveChunks() {
 			chunkData, err := m.activeChunks[coordinates.Y][coordinates.X].MarshalJSON()
 			check(err)
 			writer.Write(chunkData)
-			writer.WriteString("\n")
+			writer.WriteString(",\n")
 		} else {
 			writer.WriteString(line)
 		}

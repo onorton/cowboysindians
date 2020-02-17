@@ -1,4 +1,4 @@
-package worldmap
+package world
 
 import (
 	"encoding/json"
@@ -16,7 +16,7 @@ type worldConfig struct {
 	Npcs         int
 }
 
-var WorldConf = fetchWorldConfig()
+var worldConf = fetchWorldConfig()
 
 func fetchWorldConfig() worldConfig {
 	data, err := ioutil.ReadFile("data/world.json")
