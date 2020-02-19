@@ -1244,21 +1244,16 @@ func getCoverMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]
 	d := c.GetVisionDistance()
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
-
-	player := world.GetPlayer()
-	pX, pY := player.GetCoordinates()
-
 	coverLocations := make([]worldmap.Coordinates, 0)
 
 	for i := -d; i < d+1; i++ {
 		for j := -d; j < d+1; j++ {
-
 			// Translate location into world coordinates
 			wX, wY := location.X+j, location.Y+i
-			// Enemy must be able to see player in order to know it would be behind cover
-			if world.IsValid(wX, wY) && world.IsVisible(c, wX, wY) && world.IsVisible(c, pX, pY) && world.BehindCover(wX, wY, player) {
+			if world.IsValid(wX, wY) && world.IsVisible(c, wX, wY) {
 				for _, t := range targets {
 					tX, tY := t.GetCoordinates()
+					// Creature must be able to see target in order to know it would be behind cover
 					if world.IsVisible(c, tX, tY) && world.BehindCover(wX, wY, t) {
 						coverLocations = append(coverLocations, worldmap.Coordinates{wX, wY})
 						break
