@@ -93,7 +93,7 @@ func (ai animalAi) update(c hasAi, world *worldmap.Map) Action {
 	x, y := c.GetCoordinates()
 	location := worldmap.Coordinates{x, y}
 	waypoint := ai.waypoint.NextWaypoint(location)
-	aiMap := getWaypointMap(waypoint, world, location, c.GetVisionDistance())
+	aiMap := getWaypointMap(c, waypoint, world)
 	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
 	possibleLocations := make([]worldmap.Coordinates, 0)
 	// Find adjacent locations closer to the goal
@@ -197,7 +197,7 @@ func (ai aggAnimalAi) update(c hasAi, world *worldmap.Map) Action {
 	if len(targets) > 0 {
 		coefficients = []float64{1.0, 0.0}
 	}
-	aiMap := addMaps([][][]int{getChaseMap(c, world, targets), getWaypointMap(waypoint, world, location, c.GetVisionDistance())}, coefficients)
+	aiMap := addMaps([][][]int{getChaseMap(c, world, targets), getWaypointMap(c, waypoint, world)}, coefficients)
 	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
 	possibleLocations := make([]worldmap.Coordinates, 0)
 	// Find adjacent locations closer to the goal
@@ -433,7 +433,7 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) Action {
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
 	waypoint := ai.waypoint.NextWaypoint(location)
-	aiMap := getWaypointMap(waypoint, world, location, c.GetVisionDistance())
+	aiMap := getWaypointMap(c, waypoint, world)
 	mountMap := getMountMap(c, world)
 
 	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
@@ -630,7 +630,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	}
 	coverMap := getCoverMap(c, world, targets)
 	mountMap := getMountMap(c, world)
-	aiMap := addMaps([][][]int{getChaseMap(c, world, targets), getWaypointMap(waypoint, world, location, c.GetVisionDistance()), coverMap, mountMap}, coefficients)
+	aiMap := addMaps([][][]int{getChaseMap(c, world, targets), getWaypointMap(c, waypoint, world), coverMap, mountMap}, coefficients)
 
 	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
 	possibleLocations := make([]worldmap.Coordinates, 0)
@@ -1004,7 +1004,7 @@ func (ai barPatronAi) update(c hasAi, world *worldmap.Map) Action {
 	location := worldmap.Coordinates{x, y}
 
 	waypoint := ai.waypoint.NextWaypoint(location)
-	aiMap := getWaypointMap(waypoint, world, location, c.GetVisionDistance())
+	aiMap := getWaypointMap(c, waypoint, world)
 	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
 	possibleLocations := make([]worldmap.Coordinates, 0)
 	// Find adjacent locations closer to the goal
@@ -1123,7 +1123,11 @@ func unmarshalAi(ai map[string]interface{}) ai {
 	return nil
 }
 
-func generateMap(world *worldmap.Map, goals []worldmap.Coordinates, location worldmap.Coordinates, d int) [][]int {
+func generateMap(c hasAi, world *worldmap.Map, goals []worldmap.Coordinates) [][]int {
+	d := c.GetVisionDistance()
+	cX, cY := c.GetCoordinates()
+	location := worldmap.Coordinates{cX, cY}
+
 	visitedNodes := make(map[worldmap.Coordinates]int)
 
 	type nodeValue struct {
@@ -1178,8 +1182,8 @@ func generateMap(world *worldmap.Map, goals []worldmap.Coordinates, location wor
 	return aiMap
 }
 
-func getWaypointMap(waypoint worldmap.Coordinates, world *worldmap.Map, location worldmap.Coordinates, d int) [][]int {
-	return generateMap(world, []worldmap.Coordinates{waypoint}, location, d)
+func getWaypointMap(c hasAi, waypoint worldmap.Coordinates, world *worldmap.Map) [][]int {
+	return generateMap(c, world, []worldmap.Coordinates{waypoint})
 }
 
 func getMountMap(c hasAi, world *worldmap.Map) [][]int {
@@ -1195,10 +1199,6 @@ func getMountMap(c hasAi, world *worldmap.Map) [][]int {
 }
 
 func getChaseMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]int {
-	d := c.GetVisionDistance()
-	cX, cY := c.GetCoordinates()
-	location := worldmap.Coordinates{cX, cY}
-
 	targetLocations := make([]worldmap.Coordinates, 0)
 
 	for _, t := range targets {
@@ -1208,7 +1208,7 @@ func getChaseMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]
 		}
 	}
 
-	return generateMap(world, targetLocations, location, d)
+	return generateMap(c, world, targetLocations)
 }
 
 func getItemMap(c hasAi, world *worldmap.Map) [][]int {
@@ -1250,7 +1250,7 @@ func getMap(c hasAi, world *worldmap.Map, tileValid func(int, int) bool) [][]int
 		}
 	}
 
-	return generateMap(world, locations, location, d)
+	return generateMap(c, world, locations)
 }
 
 func addMaps(maps [][][]int, weights []float64) [][]float64 {
