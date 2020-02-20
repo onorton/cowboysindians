@@ -1183,25 +1183,15 @@ func getWaypointMap(waypoint worldmap.Coordinates, world *worldmap.Map, location
 }
 
 func getMountMap(c hasAi, world *worldmap.Map) [][]int {
-	d := c.GetVisionDistance()
-	cX, cY := c.GetCoordinates()
-	location := worldmap.Coordinates{cX, cY}
-
-	mountLocations := make([]worldmap.Coordinates, 0)
-
-	for i := 0; i < d+1; i++ {
-		for j := -d; j < d+1; j++ {
-			// Translate location into world coordinates
-			wX, wY := location.X+j, location.Y+i
-			// Looks for mount on its own
-			if world.IsValid(wX, wY) && world.IsVisible(c, wX, wY) {
-				if m, ok := world.GetCreature(wX, wY).(*Mount); ok && m != nil {
-					mountLocations = append(mountLocations, worldmap.Coordinates{wX, wY})
-				}
-			}
+	tileHasMount := func(x, y int) bool {
+		if world.IsValid(x, y) && world.IsVisible(c, x, y) {
+			m, ok := world.GetCreature(x, y).(*Mount)
+			return ok && m != nil
 		}
+		return false
 	}
-	return generateMap(world, mountLocations, location, d)
+
+	return getMap(c, world, tileHasMount)
 }
 
 func getChaseMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]int {
@@ -1222,47 +1212,45 @@ func getChaseMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]
 }
 
 func getItemMap(c hasAi, world *worldmap.Map) [][]int {
-	d := c.GetVisionDistance()
-	cX, cY := c.GetCoordinates()
-	location := worldmap.Coordinates{cX, cY}
-
-	itemLocations := make([]worldmap.Coordinates, 0)
-
-	for i := -d; i < d+1; i++ {
-		for j := -d; j < d+1; j++ {
-			// Translate location into world coordinates
-			wX, wY := location.X+j, location.Y+i
-			if world.IsValid(wX, wY) && world.IsVisible(c, wX, wY) && world.HasItems(wX, wY) {
-				itemLocations = append(itemLocations, worldmap.Coordinates{wX, wY})
-			}
-		}
+	tileHasItems := func(x, y int) bool {
+		return world.IsValid(x, y) && world.IsVisible(c, x, y) && world.HasItems(x, y)
 	}
-	return generateMap(world, itemLocations, location, d)
+
+	return getMap(c, world, tileHasItems)
 }
 
 func getCoverMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]int {
+	tileWouldGiveCover := func(x, y int) bool {
+		if world.IsValid(x, y) && world.IsVisible(c, x, y) {
+			for _, t := range targets {
+				tX, tY := t.GetCoordinates()
+				// Creature must be able to see target in order to know it would be behind cover
+				return world.IsVisible(c, tX, tY) && world.BehindCover(x, y, t)
+			}
+		}
+		return false
+	}
+
+	return getMap(c, world, tileWouldGiveCover)
+}
+
+func getMap(c hasAi, world *worldmap.Map, tileValid func(int, int) bool) [][]int {
 	d := c.GetVisionDistance()
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
-	coverLocations := make([]worldmap.Coordinates, 0)
+	locations := make([]worldmap.Coordinates, 0)
 
 	for i := -d; i < d+1; i++ {
 		for j := -d; j < d+1; j++ {
 			// Translate location into world coordinates
 			wX, wY := location.X+j, location.Y+i
-			if world.IsValid(wX, wY) && world.IsVisible(c, wX, wY) {
-				for _, t := range targets {
-					tX, tY := t.GetCoordinates()
-					// Creature must be able to see target in order to know it would be behind cover
-					if world.IsVisible(c, tX, tY) && world.BehindCover(wX, wY, t) {
-						coverLocations = append(coverLocations, worldmap.Coordinates{wX, wY})
-						break
-					}
-				}
+			if tileValid(wX, wY) {
+				locations = append(locations, worldmap.Coordinates{wX, wY})
 			}
 		}
 	}
-	return generateMap(world, coverLocations, location, d)
+
+	return generateMap(world, locations, location, d)
 }
 
 func addMaps(maps [][][]int, weights []float64) [][]float64 {
@@ -1279,6 +1267,7 @@ func addMaps(maps [][][]int, weights []float64) [][]float64 {
 			}
 		}
 	}
+
 	return result
 }
 
@@ -1298,6 +1287,7 @@ func visibleBounties(c hasAi, world *worldmap.Map, bounties *Bounties) []worldma
 			}
 		}
 	}
+
 	return targets
 }
 
