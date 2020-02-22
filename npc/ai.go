@@ -409,18 +409,8 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) Action {
 	}
 	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupied)
 
-	// If can ride things and mounted, can move first before executing another action
-	if r, ok := c.(Rider); ok && r.Mount() != nil && r.Mount().Moved() {
-		if len(possibleLocations) > 0 {
-			if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
-				for _, itm := range itemHolder.Inventory() {
-					return DropAction{itemHolder, itm}
-				}
-			} else {
-				l := possibleLocations[rand.Intn(len(possibleLocations))]
-				return MountedMoveAction{r, world, l.X, l.Y}
-			}
-		}
+	if action := moveIfMounted(c, world, possibleLocations); action != nil {
+		return action
 	}
 
 	if action := healIfWeak(c); action != nil {
@@ -566,18 +556,8 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	}
 	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupied)
 
-	// If can ride things and mounted, can move first before executing another action
-	if r, ok := c.(Rider); ok && r.Mount() != nil && r.Mount().Moved() {
-		if len(possibleLocations) > 0 {
-			if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
-				for _, itm := range itemHolder.Inventory() {
-					return DropAction{itemHolder, itm}
-				}
-			} else {
-				l := possibleLocations[rand.Intn(len(possibleLocations))]
-				return MountedMoveAction{r, world, l.X, l.Y}
-			}
-		}
+	if action := moveIfMounted(c, world, possibleLocations); action != nil {
+		return action
 	}
 
 	if action := healIfWeak(c); action != nil {
@@ -727,21 +707,13 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 	}
 	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupiedOrHasPlayer)
 
-	// If mounted, can move first before executing another action
-	if r, ok := c.(Rider); ok && r.Mount() != nil && !r.Mount().Moved() {
-		if len(possibleLocations) > 0 {
-			if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
-				for _, itm := range itemHolder.Inventory() {
-					return DropAction{itemHolder, itm}
-				}
-			} else {
-				l := possibleLocations[rand.Intn(len(possibleLocations))]
-				if l == (worldmap.Coordinates{tX, tY}) {
-					ai.dialogue.potentiallyThreaten()
-				}
-				return MountedMoveAction{r, world, l.X, l.Y}
+	if action := moveIfMounted(c, world, possibleLocations); action != nil {
+		if a, ok := action.(MountedMoveAction); ok {
+			if a.x == tX && a.y == tY {
+				ai.dialogue.potentiallyThreaten()
 			}
 		}
+		return action
 	}
 
 	if action := healIfWeak(c); action != nil {
@@ -1036,6 +1008,23 @@ func mount(c hasAi, world *worldmap.Map, mountMap [][]float64) Action {
 				if world.IsValid(x, y) && mountMap[c.GetVisionDistance()+i][c.GetVisionDistance()+j] == 0 {
 					return MountAction{r, world, x, y}
 				}
+			}
+		}
+	}
+	return nil
+}
+
+func moveIfMounted(c hasAi, world *worldmap.Map, locations []worldmap.Coordinates) Action {
+	// If mounted, can move first before executing another action
+	if r, ok := c.(Rider); ok && r.Mount() != nil && !r.Mount().Moved() {
+		if len(locations) > 0 {
+			if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
+				for _, itm := range itemHolder.Inventory() {
+					return DropAction{itemHolder, itm}
+				}
+			} else {
+				l := locations[rand.Intn(len(locations))]
+				return MountedMoveAction{r, world, l.X, l.Y}
 			}
 		}
 	}
