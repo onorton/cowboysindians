@@ -94,21 +94,12 @@ func (ai animalAi) update(c hasAi, world *worldmap.Map) Action {
 	location := worldmap.Coordinates{x, y}
 	waypoint := ai.waypoint.NextWaypoint(location)
 	aiMap := getWaypointMap(c, waypoint, world)
-	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
-	possibleLocations := make([]worldmap.Coordinates, 0)
-	// Find adjacent locations closer to the goal
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			nX := location.X + i
-			nY := location.Y + j
-			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] < current {
-				// Add if not occupied
-				if world.IsValid(nX, nY) && !world.IsOccupied(nX, nY) {
-					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
-				}
-			}
-		}
+
+	tileUnoccupied := func(x, y int) bool {
+		return !world.IsOccupied(x, y)
 	}
+	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupied)
+
 	if len(possibleLocations) > 0 {
 		l := possibleLocations[rand.Intn(len(possibleLocations))]
 		return MoveAction{c, world, l.X, l.Y}
@@ -197,22 +188,9 @@ func (ai aggAnimalAi) update(c hasAi, world *worldmap.Map) Action {
 	if len(targets) > 0 {
 		coefficients = []float64{1.0, 0.0}
 	}
-	aiMap := addMaps([][][]int{getChaseMap(c, world, targets), getWaypointMap(c, waypoint, world)}, coefficients)
-	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
-	possibleLocations := make([]worldmap.Coordinates, 0)
-	// Find adjacent locations closer to the goal
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			nX := location.X + i
-			nY := location.Y + j
-			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] < current {
-				// Add if passable
-				if world.IsValid(nX, nY) && world.IsPassable(nX, nY) {
-					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
-				}
-			}
-		}
-	}
+	aiMap := addMaps([][][]float64{getChaseMap(c, world, targets), getWaypointMap(c, waypoint, world)}, coefficients)
+	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, func(int, int) bool { return true })
+
 	if len(possibleLocations) > 0 {
 		l := possibleLocations[rand.Intn(len(possibleLocations))]
 		return MoveAction{c, world, l.X, l.Y}
@@ -290,7 +268,6 @@ func (ai protectorAi) ProcessEvent(e event.Event) {
 
 func (ai protectorAi) update(c hasAi, world *worldmap.Map) Action {
 	cX, cY := c.GetCoordinates()
-	location := worldmap.Coordinates{cX, cY}
 	targets := []worldmap.Creature{}
 	updatedTargets := make([]string, 0)
 
@@ -338,22 +315,13 @@ func (ai protectorAi) update(c hasAi, world *worldmap.Map) Action {
 		protectees = []worldmap.Creature{protectee}
 	}
 
-	aiMap := addMaps([][][]int{getChaseMap(c, world, targets), getChaseMap(c, world, protectees)}, coefficients)
-	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
-	possibleLocations := make([]worldmap.Coordinates, 0)
-	// Find adjacent locations closer to the goal
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			nX := location.X + i
-			nY := location.Y + j
-			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] < current {
-				// Add if passable and not protectee
-				if world.IsValid(nX, nY) && world.IsPassable(nX, nY) && (!world.IsOccupied(nX, nY) || world.GetCreature(nX, nY).GetID() != ai.protectee) {
-					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
-				}
-			}
-		}
+	aiMap := addMaps([][][]float64{getChaseMap(c, world, targets), getChaseMap(c, world, protectees)}, coefficients)
+
+	protecteeNotThere := func(x int, y int) bool {
+		return !world.IsOccupied(x, y) || world.GetCreature(x, y).GetID() != ai.protectee
 	}
+	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, protecteeNotThere)
+
 	if len(possibleLocations) > 0 {
 		l := possibleLocations[rand.Intn(len(possibleLocations))]
 		return MoveAction{c, world, l.X, l.Y}
@@ -436,22 +404,10 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) Action {
 	aiMap := getWaypointMap(c, waypoint, world)
 	mountMap := getMountMap(c, world)
 
-	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
-	possibleLocations := make([]worldmap.Coordinates, 0)
-
-	// Find adjacent locations closer to the goal
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			nX := location.X + i
-			nY := location.Y + j
-			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] < current {
-				// Add if not occupied
-				if world.IsValid(nX, nY) && !world.IsOccupied(nX, nY) {
-					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
-				}
-			}
-		}
+	tileUnoccupied := func(x, y int) bool {
+		return !world.IsOccupied(x, y)
 	}
+	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupied)
 
 	// If can ride things and mounted, can move first before executing another action
 	if r, ok := c.(Rider); ok && r.Mount() != nil && r.Mount().Moved() {
@@ -630,24 +586,12 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	}
 	coverMap := getCoverMap(c, world, targets)
 	mountMap := getMountMap(c, world)
-	aiMap := addMaps([][][]int{getChaseMap(c, world, targets), getWaypointMap(c, waypoint, world), coverMap, mountMap}, coefficients)
+	aiMap := addMaps([][][]float64{getChaseMap(c, world, targets), getWaypointMap(c, waypoint, world), coverMap, mountMap}, coefficients)
 
-	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
-	possibleLocations := make([]worldmap.Coordinates, 0)
-
-	// Find adjacent locations closer to the goal
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			nX := location.X + i
-			nY := location.Y + j
-			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] < current {
-				// Add if not occupied
-				if world.IsValid(nX, nY) && !world.IsOccupied(nX, nY) {
-					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
-				}
-			}
-		}
+	tileUnoccupied := func(x, y int) bool {
+		return !world.IsOccupied(x, y)
 	}
+	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupied)
 
 	// If can ride things and mounted, can move first before executing another action
 	if r, ok := c.(Rider); ok && r.Mount() != nil && r.Mount().Moved() {
@@ -835,23 +779,13 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 	}
 	coverMap := getCoverMap(c, world, []worldmap.Creature{world.GetPlayer()})
 	mountMap := getMountMap(c, world)
-	aiMap := addMaps([][][]int{getChaseMap(c, world, []worldmap.Creature{world.GetPlayer()}), getItemMap(c, world), coverMap, mountMap}, coefficients)
+	aiMap := addMaps([][][]float64{getChaseMap(c, world, []worldmap.Creature{world.GetPlayer()}), getItemMap(c, world), coverMap, mountMap}, coefficients)
 
-	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
-	possibleLocations := make([]worldmap.Coordinates, 0)
-	// Find adjacent locations closer to the goal
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			nX := location.X + i
-			nY := location.Y + j
-			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] < current {
-				// Add if not occupied by another enemy
-				if world.IsValid(nX, nY) && (world.HasPlayer(nX, nY) || !world.IsOccupied(nX, nY)) {
-					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
-				}
-			}
-		}
+	tileUnoccupiedOrHasPlayer := func(x, y int) bool {
+		return world.HasPlayer(x, y) || !world.IsOccupied(x, y)
 	}
+	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupiedOrHasPlayer)
+
 	// If mounted, can move first before executing another action
 	if r, ok := c.(Rider); ok && r.Mount() != nil && !r.Mount().Moved() {
 		if len(possibleLocations) > 0 {
@@ -1005,24 +939,15 @@ func (ai barPatronAi) update(c hasAi, world *worldmap.Map) Action {
 
 	waypoint := ai.waypoint.NextWaypoint(location)
 	aiMap := getWaypointMap(c, waypoint, world)
-	current := aiMap[c.GetVisionDistance()][c.GetVisionDistance()]
-	possibleLocations := make([]worldmap.Coordinates, 0)
-	// Find adjacent locations closer to the goal
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			nX := location.X + i
-			nY := location.Y + j
-			if aiMap[nY-location.Y+c.GetVisionDistance()][nX-location.X+c.GetVisionDistance()] <= current {
-				// Add if not occupied
-				if world.IsValid(nX, nY) && !world.IsOccupied(nX, nY) {
-					possibleLocations = append(possibleLocations, worldmap.Coordinates{nX, nY})
-				}
-			}
-		}
+
+	tileUnoccupied := func(x, y int) bool {
+		return !world.IsOccupied(x, y)
 	}
+	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupied)
+
 	if len(possibleLocations) > 0 {
 		l := possibleLocations[rand.Intn(len(possibleLocations))]
-		// if square character is moving to has chair, wait for a bit
+		// if tile character is moving to has chair, wait for a bit
 		items := world.GetItems(l.X, l.Y)
 		for i := len(items) - 1; i >= 0; i-- {
 			// Wait around
@@ -1123,16 +1048,38 @@ func unmarshalAi(ai map[string]interface{}) ai {
 	return nil
 }
 
-func generateMap(c hasAi, world *worldmap.Map, goals []worldmap.Coordinates) [][]int {
+func possibleLocationsFromAiMap(c hasAi, world *worldmap.Map, aiMap [][]float64, tileValid func(int, int) bool) []worldmap.Coordinates {
+	d := c.GetVisionDistance()
+	cX, cY := c.GetCoordinates()
+	possibleLocations := make([]worldmap.Coordinates, 0)
+	current := aiMap[d][d]
+
+	// Find adjacent locations closer to the goal
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			if aiMap[j+d][i+d] < current {
+				x := cX + i
+				y := cY + j
+				if world.IsValid(x, y) && (tileValid(x, y)) {
+					possibleLocations = append(possibleLocations, worldmap.Coordinates{x, y})
+				}
+			}
+		}
+	}
+
+	return possibleLocations
+}
+
+func generateMap(c hasAi, world *worldmap.Map, goals []worldmap.Coordinates) [][]float64 {
 	d := c.GetVisionDistance()
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
 
-	visitedNodes := make(map[worldmap.Coordinates]int)
+	visitedNodes := make(map[worldmap.Coordinates]float64)
 
 	type nodeValue struct {
 		location worldmap.Coordinates
-		value    int
+		value    float64
 	}
 
 	nodes := structs.Queue{}
@@ -1166,27 +1113,27 @@ func generateMap(c hasAi, world *worldmap.Map, goals []worldmap.Coordinates) [][
 		}
 	}
 
-	aiMap := make([][]int, width)
+	aiMap := make([][]float64, width)
 
 	for y := 0; y < width; y++ {
-		aiMap[y] = make([]int, width)
+		aiMap[y] = make([]float64, width)
 		for x := 0; x < width; x++ {
 
 			if v, ok := visitedNodes[worldmap.Coordinates{x - d + location.X, y - d + location.Y}]; ok {
 				aiMap[y][x] = v
 			} else {
-				aiMap[y][x] = width * width
+				aiMap[y][x] = float64(width * width)
 			}
 		}
 	}
 	return aiMap
 }
 
-func getWaypointMap(c hasAi, waypoint worldmap.Coordinates, world *worldmap.Map) [][]int {
+func getWaypointMap(c hasAi, waypoint worldmap.Coordinates, world *worldmap.Map) [][]float64 {
 	return generateMap(c, world, []worldmap.Coordinates{waypoint})
 }
 
-func getMountMap(c hasAi, world *worldmap.Map) [][]int {
+func getMountMap(c hasAi, world *worldmap.Map) [][]float64 {
 	tileHasMount := func(x, y int) bool {
 		if world.IsValid(x, y) && world.IsVisible(c, x, y) {
 			m, ok := world.GetCreature(x, y).(*Mount)
@@ -1198,7 +1145,7 @@ func getMountMap(c hasAi, world *worldmap.Map) [][]int {
 	return getMap(c, world, tileHasMount)
 }
 
-func getChaseMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]int {
+func getChaseMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]float64 {
 	targetLocations := make([]worldmap.Coordinates, 0)
 
 	for _, t := range targets {
@@ -1211,7 +1158,7 @@ func getChaseMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]
 	return generateMap(c, world, targetLocations)
 }
 
-func getItemMap(c hasAi, world *worldmap.Map) [][]int {
+func getItemMap(c hasAi, world *worldmap.Map) [][]float64 {
 	tileHasItems := func(x, y int) bool {
 		return world.IsValid(x, y) && world.IsVisible(c, x, y) && world.HasItems(x, y)
 	}
@@ -1219,7 +1166,7 @@ func getItemMap(c hasAi, world *worldmap.Map) [][]int {
 	return getMap(c, world, tileHasItems)
 }
 
-func getCoverMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]int {
+func getCoverMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]float64 {
 	tileWouldGiveCover := func(x, y int) bool {
 		if world.IsValid(x, y) && world.IsVisible(c, x, y) {
 			for _, t := range targets {
@@ -1234,7 +1181,7 @@ func getCoverMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]
 	return getMap(c, world, tileWouldGiveCover)
 }
 
-func getMap(c hasAi, world *worldmap.Map, tileValid func(int, int) bool) [][]int {
+func getMap(c hasAi, world *worldmap.Map, tileValid func(int, int) bool) [][]float64 {
 	d := c.GetVisionDistance()
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
@@ -1253,7 +1200,7 @@ func getMap(c hasAi, world *worldmap.Map, tileValid func(int, int) bool) [][]int
 	return generateMap(c, world, locations)
 }
 
-func addMaps(maps [][][]int, weights []float64) [][]float64 {
+func addMaps(maps [][][]float64, weights []float64) [][]float64 {
 	result := make([][]float64, len(maps[0]))
 
 	for y, row := range maps[0] {
