@@ -423,13 +423,9 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) Action {
 		}
 	}
 
-	// If at half health heal up
-	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
-		for _, itm := range itemHolder.Inventory() {
-			if consumable, ok := itm.Component("consumable").(item.ConsumableComponent); ok && len(consumable.Effects["hp"]) > 0 {
-				return ConsumeAction{c, itm}
-			}
-		}
+	action := healIfWeak(c)
+	if action != nil {
+		return action
 	}
 
 	// If adjacent to mount, attempt to mount it
@@ -607,13 +603,9 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 		}
 	}
 
-	// If at half health heal up
-	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
-		for _, itm := range itemHolder.Inventory() {
-			if consumable, ok := itm.Component("consumable").(item.ConsumableComponent); ok && len(consumable.Effects["hp"]) > 0 {
-				return ConsumeAction{c, itm}
-			}
-		}
+	action := healIfWeak(c)
+	if action != nil {
+		return action
 	}
 
 	// If moving into or out of cover and not mounted toggle crouch
@@ -803,13 +795,9 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 		}
 	}
 
-	// If at half health heal up
-	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
-		for _, itm := range itemHolder.Inventory() {
-			if consumable, ok := itm.Component("consumable").(item.ConsumableComponent); ok && len(consumable.Effects["hp"]) > 0 {
-				return ConsumeAction{c, itm}
-			}
-		}
+	action := healIfWeak(c)
+	if action != nil {
+		return action
 	}
 
 	// If moving into or out of cover and not mounted toggle crouch
@@ -1068,6 +1056,18 @@ func possibleLocationsFromAiMap(c hasAi, world *worldmap.Map, aiMap [][]float64,
 	}
 
 	return possibleLocations
+}
+
+func healIfWeak(c hasAi) Action {
+	// If at half health heal up
+	if itemHolder, ok := c.(holdsItems); ok && c.bloodied() {
+		for _, itm := range itemHolder.Inventory() {
+			if consumable, ok := itm.Component("consumable").(item.ConsumableComponent); ok && len(consumable.Effects["hp"]) > 0 {
+				return ConsumeAction{c, itm}
+			}
+		}
+	}
+	return nil
 }
 
 func generateMap(c hasAi, world *worldmap.Map, goals []worldmap.Coordinates) [][]float64 {
