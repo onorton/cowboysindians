@@ -427,16 +427,8 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) Action {
 		return action
 	}
 
-	// If adjacent to mount, attempt to mount it
-	if r, ok := c.(Rider); ok && r.Mount() == nil {
-		for i := -1; i <= 1; i++ {
-			for j := -1; j <= 1; j++ {
-				x, y := location.X+j, location.Y+i
-				if world.IsValid(x, y) && mountMap[c.GetVisionDistance()+i][c.GetVisionDistance()+j] == 0 {
-					return MountAction{r, world, x, y}
-				}
-			}
-		}
+	if action := mount(c, world, mountMap); action != nil {
+		return action
 	}
 
 	if action := tryOpeningDoor(c, world); action != nil {
@@ -632,16 +624,8 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 		}
 	}
 
-	// If adjacent to mount, attempt to mount it
-	if r, ok := c.(Rider); ok && r.Mount() == nil {
-		for i := -1; i <= 1; i++ {
-			for j := -1; j <= 1; j++ {
-				x, y := location.X+j, location.Y+i
-				if world.IsValid(x, y) && mountMap[c.GetVisionDistance()+i][c.GetVisionDistance()+j] == 0 {
-					return MountAction{r, world, x, y}
-				}
-			}
-		}
+	if action := mount(c, world, mountMap); action != nil {
+		return action
 	}
 
 	if action := tryOpeningDoor(c, world); action != nil {
@@ -791,16 +775,8 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 
 	}
 
-	// If adjacent to mount, attempt to mount it
-	if r, ok := c.(Rider); ok && r.Mount() == nil {
-		for i := -1; i <= 1; i++ {
-			for j := -1; j <= 1; j++ {
-				x, y := location.X+j, location.Y+i
-				if world.IsValid(x, y) && mountMap[c.GetVisionDistance()+i][c.GetVisionDistance()+j] == 0 {
-					return MountAction{r, world, x, y}
-				}
-			}
-		}
+	if action := mount(c, world, mountMap); action != nil {
+		return action
 	}
 
 	if action := tryOpeningDoor(c, world); action != nil {
@@ -1029,8 +1005,8 @@ func moveThroughCover(c hasAi, coverMap [][]float64) Action {
 }
 
 func tryOpeningDoor(c hasAi, world *worldmap.Map) Action {
-	cX, cY := c.GetCoordinates()
 	// If adjacent to closed door attempt to open it
+	cX, cY := c.GetCoordinates()
 	for i := -1; i <= 1; i++ {
 		for j := -1; j <= 1; j++ {
 			x, y := cX+j, cY+i
@@ -1044,6 +1020,22 @@ func tryOpeningDoor(c hasAi, world *worldmap.Map) Action {
 					}
 				}
 				return OpenAction{world, x, y}
+			}
+		}
+	}
+	return nil
+}
+
+func mount(c hasAi, world *worldmap.Map, mountMap [][]float64) Action {
+	// If adjacent to mount, attempt to mount it
+	cX, cY := c.GetCoordinates()
+	if r, ok := c.(Rider); ok && r.Mount() == nil {
+		for i := -1; i <= 1; i++ {
+			for j := -1; j <= 1; j++ {
+				x, y := cX+j, cY+i
+				if world.IsValid(x, y) && mountMap[c.GetVisionDistance()+i][c.GetVisionDistance()+j] == 0 {
+					return MountAction{r, world, x, y}
+				}
 			}
 		}
 	}
