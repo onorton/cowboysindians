@@ -439,22 +439,8 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) Action {
 		}
 	}
 
-	// If adjacent to closed door attempt to open it
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			x, y := location.X+j, location.Y+i
-			if world.IsValid(x, y) && world.IsDoor(x, y) && !world.Door(x, y).Open() {
-				if itemHolder, ok := c.(holdsItems); ok && world.Door(x, y).Locked() {
-					// If there is a key that fits, unlock door
-					for _, itm := range itemHolder.Inventory() {
-						if itm.HasComponent("key") && world.Door(x, y).KeyFits(itm) {
-							return LockAction{itm, world, x, y}
-						}
-					}
-				}
-				return OpenAction{world, x, y}
-			}
-		}
+	if action := tryOpeningDoor(c, world); action != nil {
+		return action
 	}
 
 	if len(possibleLocations) > 0 {
@@ -658,22 +644,8 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 		}
 	}
 
-	// If adjacent to closed door attempt to open it
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			x, y := location.X+j, location.Y+i
-			if world.IsValid(x, y) && world.IsDoor(x, y) && !world.Door(x, y).Open() {
-				if itemHolder, ok := c.(holdsItems); ok && world.Door(x, y).Locked() {
-					// If there is a key that fits, unlock door
-					for _, itm := range itemHolder.Inventory() {
-						if itm.HasComponent("key") && world.Door(x, y).KeyFits(itm) {
-							return LockAction{itm, world, x, y}
-						}
-					}
-				}
-				return OpenAction{world, x, y}
-			}
-		}
+	if action := tryOpeningDoor(c, world); action != nil {
+		return action
 	}
 
 	if len(possibleLocations) > 0 {
@@ -831,22 +803,8 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 		}
 	}
 
-	// If adjacent to closed door attempt to open it
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			x, y := location.X+j, location.Y+i
-			if world.IsValid(x, y) && world.IsDoor(x, y) && !world.Door(x, y).Open() {
-				if itemHolder, ok := c.(holdsItems); ok && world.Door(x, y).Locked() {
-					// If there is a key that fits, unlock door
-					for _, itm := range itemHolder.Inventory() {
-						if itm.HasComponent("key") && world.Door(x, y).KeyFits(itm) {
-							return LockAction{itm, world, x, y}
-						}
-					}
-				}
-				return OpenAction{world, x, y}
-			}
-		}
+	if action := tryOpeningDoor(c, world); action != nil {
+		return action
 	}
 
 	if len(possibleLocations) > 0 {
@@ -1065,6 +1023,28 @@ func moveThroughCover(c hasAi, coverMap [][]float64) Action {
 			return CrouchAction{c}
 		} else if coverMap[d][d] > 0 && c.IsCrouching() {
 			return StandupAction{c}
+		}
+	}
+	return nil
+}
+
+func tryOpeningDoor(c hasAi, world *worldmap.Map) Action {
+	cX, cY := c.GetCoordinates()
+	// If adjacent to closed door attempt to open it
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			x, y := cX+j, cY+i
+			if world.IsValid(x, y) && world.IsDoor(x, y) && !world.Door(x, y).Open() {
+				if itemHolder, ok := c.(holdsItems); ok && world.Door(x, y).Locked() {
+					// If there is a key that fits, unlock door
+					for _, itm := range itemHolder.Inventory() {
+						if itm.HasComponent("key") && world.Door(x, y).KeyFits(itm) {
+							return LockAction{itm, world, x, y}
+						}
+					}
+				}
+				return OpenAction{world, x, y}
+			}
 		}
 	}
 	return nil
