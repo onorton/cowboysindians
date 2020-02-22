@@ -397,7 +397,6 @@ type npcAi struct {
 }
 
 func (ai npcAi) update(c hasAi, world *worldmap.Map) Action {
-
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
 	waypoint := ai.waypoint.NextWaypoint(location)
@@ -577,31 +576,8 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 		return NoAction{}
 	}
 
-	if len(targets) > 0 {
-		closestTarget := targets[0]
-		tX, tY := targets[0].GetCoordinates()
-		min := worldmap.Distance(location.X, location.Y, tX, tY)
-
-		for _, e := range targets {
-			tX, tY = e.GetCoordinates()
-			d := worldmap.Distance(location.X, location.Y, tX, tY)
-			if d < min {
-				min = d
-				closestTarget = e
-			}
-		}
-
-		if itemUser, ok := c.(usesItems); ok {
-			if itemUser.ranged() && min < float64(itemUser.Weapon().Range) {
-
-				// if weapon loaded, shoot at target else if enemy has ammo, load weapon
-				if itemUser.weaponLoaded() {
-					return RangedAttackAction{c, world, closestTarget}
-				} else if itemUser.hasAmmo() {
-					return LoadAction{itemUser}
-				}
-			}
-		}
+	if action := rangedAttack(c, world, targets); action != nil {
+		return action
 	}
 
 	if action := mount(c, world, mountMap); action != nil {
@@ -682,10 +658,9 @@ type enemyAi struct {
 }
 
 func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
-	target := world.GetPlayer()
-	tX, tY := target.GetCoordinates()
+	targets := []worldmap.Creature{world.GetPlayer()}
 
-	if world.InConversationRange(c.(worldmap.Creature), target) {
+	if world.InConversationRange(c.(worldmap.Creature), world.GetPlayer()) {
 		ai.dialogue.initialGreeting()
 	}
 
@@ -698,7 +673,7 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 	if r, ok := c.(Rider); ok && r.Mount() == nil {
 		coefficients = []float64{0.3, 0.2, 0.1, 0.4}
 	}
-	coverMap := getCoverMap(c, world, []worldmap.Creature{world.GetPlayer()})
+	coverMap := getCoverMap(c, world, targets)
 	mountMap := getMountMap(c, world)
 	aiMap := addMaps([][][]float64{getChaseMap(c, world, []worldmap.Creature{world.GetPlayer()}), getItemMap(c, world), coverMap, mountMap}, coefficients)
 
@@ -709,7 +684,7 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 
 	if action := moveIfMounted(c, world, possibleLocations); action != nil {
 		if a, ok := action.(MountedMoveAction); ok {
-			if a.x == tX && a.y == tY {
+			if t := world.GetCreature(a.x, a.y); t != nil && t.GetAlignment() == worldmap.Player {
 				ai.dialogue.potentiallyThreaten()
 			}
 		}
@@ -733,18 +708,11 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 		return NoAction{}
 	}
 
-	if itemUser, ok := c.(usesItems); ok {
-		if distance := worldmap.Distance(location.X, location.Y, tX, tY); itemUser.ranged() && distance < float64(itemUser.Weapon().Range) && world.IsVisible(c, tX, tY) {
-
+	if action := rangedAttack(c, world, targets); action != nil {
+		if a, ok := action.(RangedAttackAction); ok && a.t.GetAlignment() == worldmap.Player {
 			ai.dialogue.potentiallyThreaten()
-			// if weapon loaded, shoot at target else if enemy has ammo, load weapon
-			if itemUser.weaponLoaded() {
-				return RangedAttackAction{c, world, target}
-			} else if itemUser.hasAmmo() {
-				return LoadAction{itemUser}
-			}
 		}
-
+		return action
 	}
 
 	if action := mount(c, world, mountMap); action != nil {
@@ -762,7 +730,7 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 			}
 		} else if r, ok := c.(Rider); ok && (r.Mount() == nil || !r.Mount().Moved()) {
 			l := possibleLocations[rand.Intn(len(possibleLocations))]
-			if l == (worldmap.Coordinates{tX, tY}) {
+			if t := world.GetCreature(l.X, l.Y); t != nil && t.GetAlignment() == worldmap.Player {
 				ai.dialogue.potentiallyThreaten()
 			}
 			return MoveAction{c, world, l.X, l.Y}
@@ -1025,6 +993,38 @@ func moveIfMounted(c hasAi, world *worldmap.Map, locations []worldmap.Coordinate
 			} else {
 				l := locations[rand.Intn(len(locations))]
 				return MountedMoveAction{r, world, l.X, l.Y}
+			}
+		}
+	}
+	return nil
+}
+
+func rangedAttack(c hasAi, world *worldmap.Map, targets []worldmap.Creature) Action {
+	if itemUser, ok := c.(usesItems); ok {
+		if len(targets) > 0 {
+			cX, cY := c.GetCoordinates()
+			closestTarget := targets[0]
+			tX, tY := targets[0].GetCoordinates()
+			min := worldmap.Distance(cX, cY, tX, tY)
+
+			for _, e := range targets {
+				tX, tY = e.GetCoordinates()
+				d := worldmap.Distance(cX, cY, tX, tY)
+				if d < min {
+					min = d
+					closestTarget = e
+				}
+			}
+
+			tX, tY = closestTarget.GetCoordinates()
+
+			if itemUser.ranged() && min < float64(itemUser.Weapon().Range) && world.IsVisible(c, tX, tY) {
+				// if weapon loaded, shoot at target else if enemy has ammo, load weapon
+				if itemUser.weaponLoaded() {
+					return RangedAttackAction{c, world, closestTarget}
+				} else if itemUser.hasAmmo() {
+					return LoadAction{itemUser}
+				}
 			}
 		}
 	}
