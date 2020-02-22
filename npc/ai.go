@@ -423,8 +423,7 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) Action {
 		}
 	}
 
-	action := healIfWeak(c)
-	if action != nil {
+	if action := healIfWeak(c); action != nil {
 		return action
 	}
 
@@ -603,18 +602,12 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 		}
 	}
 
-	action := healIfWeak(c)
-	if action != nil {
+	if action := healIfWeak(c); action != nil {
 		return action
 	}
 
-	// If moving into or out of cover and not mounted toggle crouch
-	if r, ok := c.(Rider); ok && r.Mount() == nil {
-		if coverMap[c.GetVisionDistance()][c.GetVisionDistance()] == 0 && !c.IsCrouching() {
-			return CrouchAction{c}
-		} else if coverMap[c.GetVisionDistance()][c.GetVisionDistance()] > 0 && c.IsCrouching() {
-			return StandupAction{c}
-		}
+	if action := moveThroughCover(c, coverMap); action != nil {
+		return action
 	}
 
 	// Try and wield best weapon
@@ -795,18 +788,12 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 		}
 	}
 
-	action := healIfWeak(c)
-	if action != nil {
+	if action := healIfWeak(c); action != nil {
 		return action
 	}
 
-	// If moving into or out of cover and not mounted toggle crouch
-	if r, ok := c.(Rider); ok && r.Mount() == nil {
-		if coverMap[c.GetVisionDistance()][c.GetVisionDistance()] == 0 && !c.IsCrouching() {
-			return CrouchAction{c}
-		} else if coverMap[c.GetVisionDistance()][c.GetVisionDistance()] > 0 && c.IsCrouching() {
-			return StandupAction{c}
-		}
+	if action := moveThroughCover(c, coverMap); action != nil {
+		return action
 	}
 
 	// Try and wield best weapon
@@ -1065,6 +1052,19 @@ func healIfWeak(c hasAi) Action {
 			if consumable, ok := itm.Component("consumable").(item.ConsumableComponent); ok && len(consumable.Effects["hp"]) > 0 {
 				return ConsumeAction{c, itm}
 			}
+		}
+	}
+	return nil
+}
+
+func moveThroughCover(c hasAi, coverMap [][]float64) Action {
+	// If moving into or out of cover and not mounted toggle crouch
+	if r, ok := c.(Rider); !ok || r.Mount() == nil {
+		d := c.GetVisionDistance()
+		if coverMap[d][d] == 0 && !c.IsCrouching() {
+			return CrouchAction{c}
+		} else if coverMap[d][d] > 0 && c.IsCrouching() {
+			return StandupAction{c}
 		}
 	}
 	return nil
