@@ -467,8 +467,7 @@ func (ai *npcAi) UnmarshalJSON(data []byte) error {
 
 type sheriffAi struct {
 	waypoint *worldmap.Patrol
-	t        worldmap.Town
-	bounties *Bounties
+	b        bountiesComponent
 }
 
 func newSheriffAi(l worldmap.Coordinates, t worldmap.Town) *sheriffAi {
@@ -482,23 +481,10 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town) *sheriffAi {
 		points[1] = worldmap.Coordinates{(t.StreetArea.X1() + t.StreetArea.X2()) / 2, t.StreetArea.Y1()}
 		points[2] = worldmap.Coordinates{(t.StreetArea.X1() + t.StreetArea.X2()) / 2, t.StreetArea.Y1()}
 	}
-	ai := &sheriffAi{worldmap.NewPatrol(points), t, &Bounties{}}
-	event.Subscribe(ai)
+	b := bountiesComponent{t, &Bounties{}}
+	event.Subscribe(b)
+	ai := &sheriffAi{worldmap.NewPatrol(points), b}
 	return ai
-}
-
-func (ai sheriffAi) ProcessEvent(e event.Event) {
-	switch ev := e.(type) {
-	case event.WitnessedCrimeEvent:
-		{
-			crime := ev.Crime
-			location := crime.Location()
-			if location.X >= ai.t.TownArea.X1() && location.X <= ai.t.TownArea.X2() && location.Y >= ai.t.TownArea.Y1() && location.Y <= ai.t.TownArea.Y2() {
-				ai.bounties.addBounty(crime)
-			}
-		}
-	}
-
 }
 
 func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
@@ -507,7 +493,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	location := worldmap.Coordinates{cX, cY}
 	waypoint := ai.waypoint.NextWaypoint(location)
 
-	targets := append(getEnemies(c, world), visibleBounties(c, world, ai.bounties)...)
+	targets := append(getEnemies(c, world), ai.b.targets(c, world)...)
 
 	coefficients := []float64{0.2, 0.5, 0.3, 0.0}
 
@@ -580,17 +566,12 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 
 	buffer.WriteString(fmt.Sprintf("\"Waypoint\":%s,", waypointValue))
 
-	townValue, err := json.Marshal(ai.t)
+	bValue, err := json.Marshal(ai.b)
 	if err != nil {
 		return nil, err
 	}
-	buffer.WriteString(fmt.Sprintf("\"Town\":%s,", townValue))
+	buffer.WriteString(fmt.Sprintf("\"Bounties\":%s,", bValue))
 
-	bountiesValue, err := json.Marshal(ai.bounties)
-	if err != nil {
-		return nil, err
-	}
-	buffer.WriteString(fmt.Sprintf("\"Bounties\":%s", bountiesValue))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -599,8 +580,7 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	type sheriffAiJson struct {
 		Waypoint *worldmap.Patrol
-		Town     worldmap.Town
-		Bounties *Bounties
+		Bounties bountiesComponent
 	}
 
 	var v sheriffAiJson
@@ -608,10 +588,9 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	ai.waypoint = v.Waypoint
-	ai.t = v.Town
-	ai.bounties = v.Bounties
+	ai.b = v.Bounties
 
-	event.Subscribe(ai)
+	event.Subscribe(ai.b)
 	return nil
 }
 
@@ -1172,26 +1151,6 @@ func addMaps(maps [][][]float64, weights []float64) [][]float64 {
 	}
 
 	return result
-}
-
-func visibleBounties(c hasAi, world *worldmap.Map, bounties *Bounties) []worldmap.Creature {
-	d := c.GetVisionDistance()
-	cX, cY := c.GetCoordinates()
-	location := worldmap.Coordinates{cX, cY}
-
-	targets := make([]worldmap.Creature, 0)
-
-	for i := -d; i < d+1; i++ {
-		for j := -d; j < d+1; j++ {
-			// Translate location into world coordinates
-			wX, wY := location.X+j, location.Y+i
-			if world.IsValid(wX, wY) && world.IsVisible(c, wX, wY) && world.GetCreature(wX, wY) != nil && bounties.hasBounty(world.GetCreature(wX, wY).GetID()) {
-				targets = append(targets, world.GetCreature(wX, wY))
-			}
-		}
-	}
-
-	return targets
 }
 
 func visibleCreatures(c hasAi, world *worldmap.Map) []worldmap.Creature {

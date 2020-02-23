@@ -751,7 +751,7 @@ func (npc *Npc) GetID() string {
 
 func (npc *Npc) GetBounties() *Bounties {
 	if ai, ok := npc.ai.(*sheriffAi); ok {
-		return ai.bounties
+		return ai.b.bounties
 	}
 	return &Bounties{}
 }
