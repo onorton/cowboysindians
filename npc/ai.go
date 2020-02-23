@@ -415,10 +415,8 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) Action {
 		return action
 	}
 
-	if itemHolder, ok := c.(holdsItems); ok {
-		if world.HasItems(location.X, location.Y) {
-			return PickupAction{itemHolder, world, location.X, location.Y}
-		}
+	if action := pickupItems(c, world); action != nil {
+		return action
 	}
 
 	if action := moveRandomly(c, world); action != nil {
@@ -563,10 +561,8 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 		return action
 	}
 
-	if itemHolder, ok := c.(holdsItems); ok {
-		if world.HasItems(location.X, location.Y) {
-			return PickupAction{itemHolder, world, location.X, location.Y}
-		}
+	if action := pickupItems(c, world); action != nil {
+		return action
 	}
 
 	return NoAction{}
@@ -629,9 +625,6 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 	if world.InConversationRange(c.(worldmap.Creature), world.GetPlayer()) {
 		ai.dialogue.initialGreeting()
 	}
-
-	cX, cY := c.GetCoordinates()
-	location := worldmap.Coordinates{cX, cY}
 
 	coefficients := []float64{0.5, 0.2, 0.3, 0.0}
 
@@ -698,11 +691,10 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 		return action
 	}
 
-	if itemHolder, ok := c.(holdsItems); ok {
-		if world.HasItems(location.X, location.Y) {
-			return PickupAction{itemHolder, world, location.X, location.Y}
-		}
+	if action := pickupItems(c, world); action != nil {
+		return action
 	}
+
 	return NoAction{}
 }
 
@@ -1022,6 +1014,16 @@ func moveRandomly(c hasAi, world *worldmap.Map) Action {
 	}
 
 	return move(c, world, possibleLocations)
+}
+
+func pickupItems(c hasAi, world *worldmap.Map) Action {
+	cX, cY := c.GetCoordinates()
+	if itemHolder, ok := c.(holdsItems); ok {
+		if world.HasItems(cX, cY) {
+			return PickupAction{itemHolder, world, cX, cY}
+		}
+	}
+	return nil
 }
 
 func generateMap(c hasAi, world *worldmap.Map, goals []worldmap.Coordinates) [][]float64 {
