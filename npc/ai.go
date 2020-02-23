@@ -100,9 +100,8 @@ func (ai animalAi) update(c hasAi, world *worldmap.Map) Action {
 	}
 	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupied)
 
-	if len(possibleLocations) > 0 {
-		l := possibleLocations[rand.Intn(len(possibleLocations))]
-		return MoveAction{c, world, l.X, l.Y}
+	if action := move(c, world, possibleLocations); action != nil {
+		return action
 	}
 
 	return NoAction{}
@@ -191,9 +190,8 @@ func (ai aggAnimalAi) update(c hasAi, world *worldmap.Map) Action {
 	aiMap := addMaps([][][]float64{getChaseMap(c, world, targets), getWaypointMap(c, waypoint, world)}, coefficients)
 	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, func(int, int) bool { return true })
 
-	if len(possibleLocations) > 0 {
-		l := possibleLocations[rand.Intn(len(possibleLocations))]
-		return MoveAction{c, world, l.X, l.Y}
+	if action := move(c, world, possibleLocations); action != nil {
+		return action
 	}
 
 	return NoAction{}
@@ -322,25 +320,14 @@ func (ai protectorAi) update(c hasAi, world *worldmap.Map) Action {
 	}
 	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, protecteeNotThere)
 
-	if len(possibleLocations) > 0 {
-		l := possibleLocations[rand.Intn(len(possibleLocations))]
-		return MoveAction{c, world, l.X, l.Y}
+	if action := move(c, world, possibleLocations); action != nil {
+		return action
 	}
 
-	// If the npc cannot do anything else e.g. protectee dead, try moving randomly
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			x, y := cX+j, cY+i
-			if world.IsValid(x, y) && world.IsPassable(x, y) && !world.IsOccupied(x, y) {
-				possibleLocations = append(possibleLocations, worldmap.Coordinates{x, y})
-			}
-		}
+	if action := moveRandomly(c, world); action != nil {
+		return action
 	}
 
-	if len(possibleLocations) > 0 {
-		l := possibleLocations[rand.Intn(len(possibleLocations))]
-		return MoveAction{c, world, l.X, l.Y}
-	}
 	return NoAction{}
 }
 
@@ -424,34 +411,18 @@ func (ai npcAi) update(c hasAi, world *worldmap.Map) Action {
 		return action
 	}
 
-	if len(possibleLocations) > 0 {
-		if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
-			for _, itm := range itemHolder.Inventory() {
-				return DropAction{itemHolder, itm}
-			}
-		} else if r, ok := c.(Rider); ok && (r.Mount() == nil || !r.Mount().Moved()) {
-			l := possibleLocations[rand.Intn(len(possibleLocations))]
-			return MoveAction{c, world, l.X, l.Y}
-		}
-	} else if itemHolder, ok := c.(holdsItems); ok {
+	if action := move(c, world, possibleLocations); action != nil {
+		return action
+	}
+
+	if itemHolder, ok := c.(holdsItems); ok {
 		if world.HasItems(location.X, location.Y) {
 			return PickupAction{itemHolder, world, location.X, location.Y}
 		}
 	}
 
-	// If the npc can do nothing else, try moving randomly
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			x, y := cX+j, cY+i
-			if world.IsValid(x, y) && world.IsPassable(x, y) && !world.IsOccupied(x, y) {
-				possibleLocations = append(possibleLocations, worldmap.Coordinates{x, y})
-			}
-		}
-	}
-
-	if len(possibleLocations) > 0 {
-		l := possibleLocations[rand.Intn(len(possibleLocations))]
-		return MoveAction{c, world, l.X, l.Y}
+	if action := moveRandomly(c, world); action != nil {
+		return action
 	}
 
 	return NoAction{}
@@ -588,16 +559,11 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 		return action
 	}
 
-	if len(possibleLocations) > 0 {
-		if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
-			for _, itm := range itemHolder.Inventory() {
-				return DropAction{itemHolder, itm}
-			}
-		} else if r, ok := c.(Rider); ok && (r.Mount() == nil || !r.Mount().Moved()) {
-			l := possibleLocations[rand.Intn(len(possibleLocations))]
-			return MoveAction{c, world, l.X, l.Y}
-		}
-	} else if itemHolder, ok := c.(holdsItems); ok {
+	if action := move(c, world, possibleLocations); action != nil {
+		return action
+	}
+
+	if itemHolder, ok := c.(holdsItems); ok {
 		if world.HasItems(location.X, location.Y) {
 			return PickupAction{itemHolder, world, location.X, location.Y}
 		}
@@ -723,19 +689,16 @@ func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
 		return action
 	}
 
-	if len(possibleLocations) > 0 {
-		if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
-			for _, itm := range itemHolder.Inventory() {
-				return DropAction{itemHolder, itm}
-			}
-		} else if r, ok := c.(Rider); ok && (r.Mount() == nil || !r.Mount().Moved()) {
-			l := possibleLocations[rand.Intn(len(possibleLocations))]
-			if t := world.GetCreature(l.X, l.Y); t != nil && t.GetAlignment() == worldmap.Player {
+	if action := move(c, world, possibleLocations); action != nil {
+		if a, ok := action.(MoveAction); ok {
+			if t := world.GetCreature(a.x, a.y); t != nil && t.GetAlignment() == worldmap.Player {
 				ai.dialogue.potentiallyThreaten()
 			}
-			return MoveAction{c, world, l.X, l.Y}
 		}
-	} else if itemHolder, ok := c.(holdsItems); ok {
+		return action
+	}
+
+	if itemHolder, ok := c.(holdsItems); ok {
 		if world.HasItems(location.X, location.Y) {
 			return PickupAction{itemHolder, world, location.X, location.Y}
 		}
@@ -794,18 +757,19 @@ func (ai barPatronAi) update(c hasAi, world *worldmap.Map) Action {
 	}
 	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupied)
 
-	if len(possibleLocations) > 0 {
-		l := possibleLocations[rand.Intn(len(possibleLocations))]
-		// if tile character is moving to has chair, wait for a bit
-		items := world.GetItems(l.X, l.Y)
-		for i := len(items) - 1; i >= 0; i-- {
-			// Wait around
-			if items[i].GetName() == "chair" {
-				*(ai.timeLeft) = rand.Intn(10)
+	if action := move(c, world, possibleLocations); action != nil {
+		if a, ok := action.(MoveAction); ok {
+			// if tile character is moving to has chair, wait for a bit
+			items := world.GetItems(a.x, a.y)
+			for i := len(items) - 1; i >= 0; i-- {
+				// Wait around
+				if items[i].GetName() == "chair" {
+					*(ai.timeLeft) = rand.Intn(10)
+				}
+				world.PlaceItem(a.x, a.y, items[i])
 			}
-			world.PlaceItem(l.X, l.Y, items[i])
 		}
-		return MoveAction{c, world, l.X, l.Y}
+		return action
 	}
 
 	return NoAction{}
@@ -1029,6 +993,35 @@ func rangedAttack(c hasAi, world *worldmap.Map, targets []worldmap.Creature) Act
 		}
 	}
 	return nil
+}
+
+func move(c hasAi, world *worldmap.Map, locations []worldmap.Coordinates) Action {
+	if len(locations) > 0 {
+		if itemHolder, ok := c.(holdsItems); ok && itemHolder.overEncumbered() {
+			for _, itm := range itemHolder.Inventory() {
+				return DropAction{itemHolder, itm}
+			}
+		} else if r, ok := c.(Rider); !ok || (r.Mount() == nil || !r.Mount().Moved()) {
+			l := locations[rand.Intn(len(locations))]
+			return MoveAction{c, world, l.X, l.Y}
+		}
+	}
+	return nil
+}
+
+func moveRandomly(c hasAi, world *worldmap.Map) Action {
+	possibleLocations := make([]worldmap.Coordinates, 0)
+	cX, cY := c.GetCoordinates()
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			x, y := cX+j, cY+i
+			if world.IsValid(x, y) && world.IsPassable(x, y) && !world.IsOccupied(x, y) {
+				possibleLocations = append(possibleLocations, worldmap.Coordinates{x, y})
+			}
+		}
+	}
+
+	return move(c, world, possibleLocations)
 }
 
 func generateMap(c hasAi, world *worldmap.Map, goals []worldmap.Coordinates) [][]float64 {
