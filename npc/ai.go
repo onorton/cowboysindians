@@ -468,6 +468,7 @@ func (ai *npcAi) UnmarshalJSON(data []byte) error {
 type sheriffAi struct {
 	waypoint *worldmap.Patrol
 	b        bountiesComponent
+	state    string
 }
 
 func newSheriffAi(l worldmap.Coordinates, t worldmap.Town) *sheriffAi {
@@ -483,74 +484,140 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town) *sheriffAi {
 	}
 	b := bountiesComponent{t, &Bounties{}}
 	event.Subscribe(b)
-	ai := &sheriffAi{worldmap.NewPatrol(points), b}
+	ai := &sheriffAi{worldmap.NewPatrol(points), b, "normal"}
 	return ai
 }
 
 func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
-
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
-	waypoint := ai.waypoint.NextWaypoint(location)
 
 	targets := append(getEnemies(c, world), ai.b.targets(c, world)...)
 
-	coefficients := []float64{0.2, 0.5, 0.3, 0.0}
+	// Decide on state
+	if c.bloodied() {
+		ai.state = "fleeing"
+	} else {
+		switch ai.state {
+		case "normal":
+			{
+				if len(targets) > 0 {
+					ai.state = "fighting"
+					break
+				}
 
-	// Focus on getting a mount if possible
-	if r, ok := c.(Rider); ok && r.Mount() == nil {
-		coefficients = []float64{0.1, 0.3, 0.2, 0.4}
+				if r, ok := c.(Rider); ok && r.Mount() == nil {
+					ai.state = "finding mount"
+				}
+
+			}
+		case "fighting":
+			{
+				if len(targets) == 0 {
+					ai.state = "normal"
+				}
+			}
+		case "fleeing":
+			{
+				// TODO: Implement logic for transitioning from fleeing
+				if !c.bloodied() {
+					ai.state = "normal"
+				}
+			}
+		case "finding mount":
+			{
+				if r, ok := c.(Rider); ok && r.Mount() != nil {
+					ai.state = "normal"
+				}
+
+			}
+		}
 	}
-	coverMap := getCoverMap(c, world, targets)
-	mountMap := getMountMap(c, world)
-	aiMap := addMaps([][][]float64{getChaseMap(c, world, targets), getWaypointMap(c, waypoint, world), coverMap, mountMap}, coefficients)
 
 	tileUnoccupied := func(x, y int) bool {
 		return !world.IsOccupied(x, y)
 	}
-	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupied)
 
-	if action := moveIfMounted(c, world, possibleLocations); action != nil {
-		return action
-	}
+	switch ai.state {
+	case "normal":
+		{
+			waypoint := ai.waypoint.NextWaypoint(location)
+			waypointMap := getWaypointMap(c, waypoint, world)
 
-	if action := healIfWeak(c); action != nil {
-		return action
-	}
+			if action := tryOpeningDoor(c, world); action != nil {
+				return action
+			}
 
-	if action := moveThroughCover(c, coverMap); action != nil {
-		return action
-	}
+			// Try and wield best weapon
+			if itemUser, ok := c.(usesItems); ok && itemUser.wieldItem() {
+				return NoAction{}
+			}
+			// Try and wear best armour
+			if itemUser, ok := c.(usesItems); ok && itemUser.wearArmour() {
+				return NoAction{}
+			}
 
-	// Try and wield best weapon
-	if itemUser, ok := c.(usesItems); ok && itemUser.wieldItem() {
-		return NoAction{}
-	}
-	// Try and wear best armour
-	if itemUser, ok := c.(usesItems); ok && itemUser.wearArmour() {
-		return NoAction{}
-	}
+			locations := possibleLocationsFromAiMap(c, world, waypointMap, tileUnoccupied)
+			if action := moveIfMounted(c, world, locations); action != nil {
+				return action
+			}
 
-	if action := rangedAttack(c, world, targets); action != nil {
-		return action
-	}
+			if action := move(c, world, locations); action != nil {
+				return action
+			}
 
-	if action := mount(c, world, mountMap); action != nil {
-		return action
-	}
+			if action := pickupItems(c, world); action != nil {
+				return action
+			}
+		}
+	case "fighting":
+		{
+			coverMap := getCoverMap(c, world, targets)
 
-	if action := tryOpeningDoor(c, world); action != nil {
-		return action
-	}
+			// Move into/out of cover before shooting
+			if action := moveThroughCover(c, coverMap); action != nil {
+				return action
+			}
 
-	if action := move(c, world, possibleLocations); action != nil {
-		return action
-	}
+			if action := rangedAttack(c, world, targets); action != nil {
+				return action
+			}
 
-	if action := pickupItems(c, world); action != nil {
-		return action
-	}
+			// prioritise approaching target over cover
+			coefficients := []float64{0.3, 0.7}
+			chaseMap := getChaseMap(c, world, targets)
+			aiMap := addMaps([][][]float64{coverMap, chaseMap}, coefficients)
 
+			locations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupied)
+
+			if action := moveIfMounted(c, world, locations); action != nil {
+				return action
+			}
+
+			if action := move(c, world, locations); action != nil {
+				return action
+			}
+		}
+	case "fleeing":
+		{
+			if action := healIfWeak(c); action != nil {
+				return action
+			}
+			// TODO: Add retreating from threats behaviour
+		}
+	case "finding mount":
+		{
+			mountMap := getMountMap(c, world)
+			if action := mount(c, world, mountMap); action != nil {
+				return action
+			}
+
+			locations := possibleLocationsFromAiMap(c, world, mountMap, tileUnoccupied)
+			if action := move(c, world, locations); action != nil {
+				return action
+			}
+		}
+	}
 	return NoAction{}
 }
 
@@ -572,6 +639,12 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 	}
 	buffer.WriteString(fmt.Sprintf("\"Bounties\":%s,", bValue))
 
+	stateValue, err := json.Marshal(ai.state)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"State\":%s", stateValue))
+
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -581,6 +654,7 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	type sheriffAiJson struct {
 		Waypoint *worldmap.Patrol
 		Bounties bountiesComponent
+		State    string
 	}
 
 	var v sheriffAiJson
@@ -589,6 +663,7 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	}
 	ai.waypoint = v.Waypoint
 	ai.b = v.Bounties
+	ai.state = v.State
 
 	event.Subscribe(ai.b)
 	return nil
