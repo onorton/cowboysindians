@@ -116,6 +116,9 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map, protectee *string) *N
 	dialogue := newDialogue(n.DialogueType, world, nil, nil)
 	location := worldmap.Coordinates{x, y}
 	ai := newAi(n.AiType, world, location, nil, nil, dialogue, protectee)
+	if n.AiType == "sheriff" {
+		ai.(*sheriffAi).t.creatureID = id
+	}
 
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(n.Hp, n.Hp),

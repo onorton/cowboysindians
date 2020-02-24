@@ -78,7 +78,7 @@ func newAi(aiType string, world *worldmap.Map, location worldmap.Coordinates, to
 	case "bar patron":
 		return barPatronAi{worldmap.NewWithinArea(world, building.Area, location), new(int)}
 	case "sheriff":
-		return newSheriffAi(location, *town)
+		return newSheriffAi(location, *town, world)
 	case "enemy":
 		return enemyAi{dialogue.(*enemyDialogue)}
 	}
@@ -468,10 +468,11 @@ func (ai *npcAi) UnmarshalJSON(data []byte) error {
 type sheriffAi struct {
 	waypoint *worldmap.Patrol
 	b        bountiesComponent
+	t        threatsComponent
 	state    string
 }
 
-func newSheriffAi(l worldmap.Coordinates, t worldmap.Town) *sheriffAi {
+func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) *sheriffAi {
 	// Patrol between ends of the town and sheriff's office
 	points := make([]worldmap.Coordinates, 3)
 	points[0] = l
@@ -484,7 +485,10 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town) *sheriffAi {
 	}
 	b := bountiesComponent{t, &Bounties{}}
 	event.Subscribe(b)
-	ai := &sheriffAi{worldmap.NewPatrol(points), b, "normal"}
+
+	// creatureId given later
+	threats := threatsComponent{structs.Initialise(), ""}
+	ai := &sheriffAi{worldmap.NewPatrol(points), b, threats, "normal"}
 	return ai
 }
 
@@ -492,7 +496,9 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	cX, cY := c.GetCoordinates()
 	location := worldmap.Coordinates{cX, cY}
 
+	threats := ai.t.threats(c, world)
 	targets := append(getEnemies(c, world), ai.b.targets(c, world)...)
+	targets = append(targets, threats...)
 
 	// Decide on state
 	if c.bloodied() {
@@ -519,9 +525,14 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 			}
 		case "fleeing":
 			{
-				// TODO: Implement logic for transitioning from fleeing
 				if !c.bloodied() {
 					ai.state = "normal"
+					break
+				}
+
+				if len(threats) == 0 {
+					ai.state = "normal"
+					break
 				}
 			}
 		case "finding mount":
@@ -603,7 +614,21 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 			if action := healIfWeak(c); action != nil {
 				return action
 			}
-			// TODO: Add retreating from threats behaviour
+
+			if action := rangedAttack(c, world, threats); action != nil {
+				return action
+			}
+
+			fleeMap := getFleeMap(c, world, threats)
+			locations := possibleLocationsFromAiMap(c, world, fleeMap, tileUnoccupied)
+
+			if action := moveIfMounted(c, world, locations); action != nil {
+				return action
+			}
+
+			if action := move(c, world, locations); action != nil {
+				return action
+			}
 		}
 	case "finding mount":
 		{
@@ -639,6 +664,12 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 	}
 	buffer.WriteString(fmt.Sprintf("\"Bounties\":%s,", bValue))
 
+	tValue, err := json.Marshal(ai.t)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Threats\":%s,", tValue))
+
 	stateValue, err := json.Marshal(ai.state)
 	if err != nil {
 		return nil, err
@@ -654,6 +685,7 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	type sheriffAiJson struct {
 		Waypoint *worldmap.Patrol
 		Bounties bountiesComponent
+		Threats  threatsComponent
 		State    string
 	}
 
@@ -663,9 +695,11 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	}
 	ai.waypoint = v.Waypoint
 	ai.b = v.Bounties
+	ai.t = v.Threats
 	ai.state = v.State
 
 	event.Subscribe(ai.b)
+	event.Subscribe(ai.t)
 	return nil
 }
 
@@ -1166,6 +1200,19 @@ func getChaseMap(c hasAi, world *worldmap.Map, targets []worldmap.Creature) [][]
 	}
 
 	return generateMap(c, world, targetLocations)
+}
+
+func getFleeMap(c hasAi, world *worldmap.Map, threats []worldmap.Creature) [][]float64 {
+	// Fleep map is just the chase map inverted
+	fleeMap := getChaseMap(c, world, threats)
+
+	for y := 0; y < len(fleeMap); y++ {
+		for x := 0; x < len(fleeMap[0]); x++ {
+			fleeMap[y][x] = -fleeMap[y][x]
+		}
+	}
+	return fleeMap
+
 }
 
 func getItemMap(c hasAi, world *worldmap.Map) [][]float64 {
