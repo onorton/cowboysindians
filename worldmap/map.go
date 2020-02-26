@@ -231,7 +231,7 @@ func (v *Viewer) UnmarshalJSON(data []byte) error {
 }
 
 func NewViewer(x, y, viewerWidth, viewerHeight int) *Viewer {
-	return &Viewer{x, y, viewerWidth, viewerHeight}
+	return &Viewer{x - viewerWidth/2, y - viewerHeight/2, viewerWidth, viewerHeight}
 }
 
 func (m Map) GetViewerX() int {

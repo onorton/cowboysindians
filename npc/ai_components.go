@@ -103,7 +103,6 @@ func (c threatsComponent) ProcessEvent(e event.Event) {
 }
 
 func (c threatsComponent) threats(ai hasAi, world *worldmap.Map) []worldmap.Creature {
-
 	d := ai.GetVisionDistance()
 	aiX, aiY := ai.GetCoordinates()
 

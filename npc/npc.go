@@ -116,9 +116,6 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map, protectee *string) *N
 	dialogue := newDialogue(n.DialogueType, world, nil, nil)
 	location := worldmap.Coordinates{x, y}
 	ai := newAi(n.AiType, world, location, nil, nil, dialogue, protectee)
-	if n.AiType == "sheriff" {
-		ai.(*sheriffAi).t.creatureID = id
-	}
 
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(n.Hp, n.Hp),
@@ -173,6 +170,10 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 	dialogue := newDialogue(n.DialogueType, world, &t, &b)
 	location := worldmap.Coordinates{x, y}
 	ai := newAi(n.AiType, world, location, &t, &b, dialogue, nil)
+	if n.AiType == "sheriff" {
+		ai.(*sheriffAi).t.creatureID = id
+		event.Subscribe(ai.(*sheriffAi).t)
+	}
 
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(n.Hp, n.Hp),

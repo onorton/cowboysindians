@@ -469,7 +469,7 @@ type sheriffAi struct {
 	waypoint *worldmap.Patrol
 	b        bountiesComponent
 	t        threatsComponent
-	state    string
+	state    *string
 }
 
 func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) *sheriffAi {
@@ -488,7 +488,8 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) 
 
 	// creatureId given later
 	threats := threatsComponent{structs.Initialise(), ""}
-	ai := &sheriffAi{worldmap.NewPatrol(points), b, threats, "normal"}
+	state := "normal"
+	ai := &sheriffAi{worldmap.NewPatrol(points), b, threats, &state}
 	return ai
 }
 
@@ -502,43 +503,43 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 
 	// Decide on state
 	if c.bloodied() {
-		ai.state = "fleeing"
+		*ai.state = "fleeing"
 	} else {
-		switch ai.state {
+		switch *ai.state {
 		case "normal":
 			{
 				if len(targets) > 0 {
-					ai.state = "fighting"
+					*ai.state = "fighting"
 					break
 				}
 
 				if r, ok := c.(Rider); ok && r.Mount() == nil {
-					ai.state = "finding mount"
+					*ai.state = "finding mount"
 				}
 
 			}
 		case "fighting":
 			{
 				if len(targets) == 0 {
-					ai.state = "normal"
+					*ai.state = "normal"
 				}
 			}
 		case "fleeing":
 			{
 				if !c.bloodied() {
-					ai.state = "normal"
+					*ai.state = "normal"
 					break
 				}
 
 				if len(threats) == 0 {
-					ai.state = "normal"
+					*ai.state = "normal"
 					break
 				}
 			}
 		case "finding mount":
 			{
 				if r, ok := c.(Rider); ok && r.Mount() != nil {
-					ai.state = "normal"
+					*ai.state = "normal"
 				}
 
 			}
@@ -549,7 +550,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 		return !world.IsOccupied(x, y)
 	}
 
-	switch ai.state {
+	switch *ai.state {
 	case "normal":
 		{
 			waypoint := ai.waypoint.NextWaypoint(location)
@@ -686,7 +687,7 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 		Waypoint *worldmap.Patrol
 		Bounties bountiesComponent
 		Threats  threatsComponent
-		State    string
+		State    *string
 	}
 
 	var v sheriffAiJson
