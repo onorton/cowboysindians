@@ -469,6 +469,7 @@ type sheriffAi struct {
 	waypoint *worldmap.Patrol
 	b        bountiesComponent
 	t        threatsComponent
+	mc       findMountComponent
 	state    *string
 }
 
@@ -488,8 +489,9 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) 
 
 	// creatureId given later
 	threats := threatsComponent{structs.Initialise(), ""}
+	mc := findMountComponent{}
 	state := "normal"
-	ai := &sheriffAi{worldmap.NewPatrol(points), b, threats, &state}
+	ai := &sheriffAi{worldmap.NewPatrol(points), b, threats, mc, &state}
 	return ai
 }
 
@@ -633,17 +635,12 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 		}
 	case "finding mount":
 		{
-			mountMap := getMountMap(c, world)
-			if action := mount(c, world, mountMap); action != nil {
-				return action
-			}
-
-			locations := possibleLocationsFromAiMap(c, world, mountMap, tileUnoccupied)
-			if action := move(c, world, locations); action != nil {
+			if action := ai.mc.findMount(c, world); action != nil {
 				return action
 			}
 		}
 	}
+	// Default action
 	return NoAction{}
 }
 
@@ -671,6 +668,12 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 	}
 	buffer.WriteString(fmt.Sprintf("\"Threats\":%s,", tValue))
 
+	mcValue, err := json.Marshal(ai.mc)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"FindMount\":%s,", mcValue))
+
 	stateValue, err := json.Marshal(ai.state)
 	if err != nil {
 		return nil, err
@@ -684,10 +687,11 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 
 func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	type sheriffAiJson struct {
-		Waypoint *worldmap.Patrol
-		Bounties bountiesComponent
-		Threats  threatsComponent
-		State    *string
+		Waypoint  *worldmap.Patrol
+		Bounties  bountiesComponent
+		Threats   threatsComponent
+		FindMount findMountComponent
+		State     *string
 	}
 
 	var v sheriffAiJson
@@ -697,6 +701,7 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	ai.waypoint = v.Waypoint
 	ai.b = v.Bounties
 	ai.t = v.Threats
+	ai.mc = v.FindMount
 	ai.state = v.State
 
 	event.Subscribe(ai.b)
