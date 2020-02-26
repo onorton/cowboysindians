@@ -42,6 +42,7 @@ type usesItems interface {
 
 type damageable interface {
 	bloodied() bool
+	hp() *worldmap.Attribute
 	AttackHits(int) bool
 }
 
@@ -470,6 +471,7 @@ type sheriffAi struct {
 	b        bountiesComponent
 	t        threatsComponent
 	mc       findMountComponent
+	iw       isWeakComponent
 	state    *string
 }
 
@@ -490,8 +492,9 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) 
 	// creatureId given later
 	threats := threatsComponent{structs.Initialise(), ""}
 	mc := findMountComponent{}
+	isWeak := isWeakComponent{0.5}
 	state := "normal"
-	ai := &sheriffAi{worldmap.NewPatrol(points), b, threats, mc, &state}
+	ai := &sheriffAi{worldmap.NewPatrol(points), b, threats, mc, isWeak, &state}
 	return ai
 }
 
@@ -504,7 +507,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	targets = append(targets, threats...)
 
 	// Decide on state
-	if c.bloodied() {
+	if ai.iw.weak(c) {
 		*ai.state = "fleeing"
 	} else {
 		switch *ai.state {
@@ -528,7 +531,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 			}
 		case "fleeing":
 			{
-				if !c.bloodied() {
+				if !ai.iw.weak(c) {
 					*ai.state = "normal"
 					break
 				}
@@ -673,6 +676,12 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 	buffer.WriteString(fmt.Sprintf("\"FindMount\":%s,", mcValue))
+
+	iwValue, err := json.Marshal(ai.iw)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"IsWeak\":%s,", iwValue))
 
 	stateValue, err := json.Marshal(ai.state)
 	if err != nil {

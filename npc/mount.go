@@ -238,6 +238,10 @@ func (m *Mount) bloodied() bool {
 	return m.attributes["hp"].Value() <= m.attributes["hp"].Maximum()/2
 }
 
+func (m *Mount) hp() *worldmap.Attribute {
+	return m.attributes["hp"]
+}
+
 func (m *Mount) GetName() ui.Name {
 	return m.name
 }

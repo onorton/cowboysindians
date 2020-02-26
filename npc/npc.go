@@ -651,6 +651,10 @@ func (npc *Npc) bloodied() bool {
 	return npc.attributes["hp"].Value() <= npc.attributes["hp"].Maximum()/2
 }
 
+func (npc *Npc) hp() *worldmap.Attribute {
+	return npc.attributes["hp"]
+}
+
 func (npc *Npc) GetName() ui.Name {
 	return npc.name
 }

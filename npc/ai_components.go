@@ -167,6 +167,44 @@ func (c *threatsComponent) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type isWeakComponent struct {
+	threshold float64
+}
+
+func (c isWeakComponent) weak(ai damageable) bool {
+	curr := float64(ai.hp().Value())
+	max := float64(ai.hp().Maximum())
+	return curr/max <= c.threshold
+}
+
+func (c isWeakComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	thresholdValue, err := json.Marshal(c.threshold)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Threshold\":%s", thresholdValue))
+
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (c *isWeakComponent) UnmarshalJSON(data []byte) error {
+	type isWeakJSON struct {
+		Threshold float64
+	}
+
+	var v isWeakJSON
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	c.threshold = v.Threshold
+	return nil
+}
+
 type findMountComponent struct{}
 
 func (c findMountComponent) findMount(ai hasAi, world *worldmap.Map) Action {
