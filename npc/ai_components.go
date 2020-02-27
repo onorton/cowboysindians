@@ -232,3 +232,31 @@ func (c findMountComponent) MarshalJSON() ([]byte, error) {
 func (c *findMountComponent) UnmarshalJSON(data []byte) error {
 	return nil
 }
+
+type fleeComponent struct{}
+
+func (c fleeComponent) flee(ai hasAi, world *worldmap.Map, threats []worldmap.Creature) Action {
+	fleeMap := getFleeMap(ai, world, threats)
+	tileUnoccupied := func(x, y int) bool {
+		return !world.IsOccupied(x, y) && world.IsPassable(x, y)
+	}
+	locations := possibleLocationsFromAiMap(ai, world, fleeMap, tileUnoccupied)
+
+	if action := moveIfMounted(ai, world, locations); action != nil {
+		return action
+	}
+
+	if action := move(ai, world, locations); action != nil {
+		return action
+	}
+	return nil
+}
+
+func (c fleeComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{}")
+	return buffer.Bytes(), nil
+}
+
+func (c *fleeComponent) UnmarshalJSON(data []byte) error {
+	return nil
+}

@@ -472,6 +472,7 @@ type sheriffAi struct {
 	t        threatsComponent
 	mc       findMountComponent
 	iw       isWeakComponent
+	fc       fleeComponent
 	state    *string
 }
 
@@ -492,9 +493,10 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) 
 	// creatureId given later
 	threats := threatsComponent{structs.Initialise(), ""}
 	mc := findMountComponent{}
+	fc := fleeComponent{}
 	isWeak := isWeakComponent{0.5}
 	state := "normal"
-	ai := &sheriffAi{worldmap.NewPatrol(points), b, threats, mc, isWeak, &state}
+	ai := &sheriffAi{worldmap.NewPatrol(points), b, threats, mc, isWeak, fc, &state}
 	return ai
 }
 
@@ -625,14 +627,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 				return action
 			}
 
-			fleeMap := getFleeMap(c, world, threats)
-			locations := possibleLocationsFromAiMap(c, world, fleeMap, tileUnoccupied)
-
-			if action := moveIfMounted(c, world, locations); action != nil {
-				return action
-			}
-
-			if action := move(c, world, locations); action != nil {
+			if action := ai.fc.flee(c, world, targets); action != nil {
 				return action
 			}
 		}
@@ -683,6 +678,12 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 	}
 	buffer.WriteString(fmt.Sprintf("\"IsWeak\":%s,", iwValue))
 
+	fcValue, err := json.Marshal(ai.fc)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Flee\":%s,", fcValue))
+
 	stateValue, err := json.Marshal(ai.state)
 	if err != nil {
 		return nil, err
@@ -700,6 +701,7 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 		Bounties  bountiesComponent
 		Threats   threatsComponent
 		FindMount findMountComponent
+		Flee      fleeComponent
 		State     *string
 	}
 
@@ -707,10 +709,12 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &v); err != nil {
 		return err
 	}
+
 	ai.waypoint = v.Waypoint
 	ai.b = v.Bounties
 	ai.t = v.Threats
 	ai.mc = v.FindMount
+	ai.fc = v.Flee
 	ai.state = v.State
 
 	event.Subscribe(ai.b)
