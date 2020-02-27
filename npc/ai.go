@@ -473,6 +473,7 @@ type sheriffAi struct {
 	mc       findMountComponent
 	iw       isWeakComponent
 	fc       fleeComponent
+	hc       consumeComponent
 	state    *string
 }
 
@@ -495,8 +496,9 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) 
 	mc := findMountComponent{}
 	fc := fleeComponent{}
 	isWeak := isWeakComponent{0.5}
+	hc := consumeComponent{"hp"}
 	state := "normal"
-	ai := &sheriffAi{worldmap.NewPatrol(points), b, threats, mc, isWeak, fc, &state}
+	ai := &sheriffAi{worldmap.NewPatrol(points), b, threats, mc, isWeak, fc, hc, &state}
 	return ai
 }
 
@@ -619,7 +621,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 		}
 	case "fleeing":
 		{
-			if action := healIfWeak(c); action != nil {
+			if action := ai.hc.consume(c); action != nil {
 				return action
 			}
 
@@ -683,6 +685,12 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 	buffer.WriteString(fmt.Sprintf("\"Flee\":%s,", fcValue))
+
+	hcValue, err := json.Marshal(ai.hc)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Heal\":%s,", hcValue))
 
 	stateValue, err := json.Marshal(ai.state)
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/onorton/cowboysindians/event"
+	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/structs"
 	"github.com/onorton/cowboysindians/worldmap"
 )
@@ -258,5 +259,48 @@ func (c fleeComponent) MarshalJSON() ([]byte, error) {
 }
 
 func (c *fleeComponent) UnmarshalJSON(data []byte) error {
+	return nil
+}
+
+type consumeComponent struct {
+	attribute string
+}
+
+func (c consumeComponent) consume(ai hasAi) Action {
+	if itemHolder, ok := ai.(holdsItems); ok {
+		for _, itm := range itemHolder.Inventory() {
+			if consumable, ok := itm.Component("consumable").(item.ConsumableComponent); ok && len(consumable.Effects[c.attribute]) > 0 {
+				return ConsumeAction{ai, itm}
+			}
+		}
+	}
+	return nil
+}
+
+func (c consumeComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	attributeValue, err := json.Marshal(c.attribute)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Attribute\":%s", attributeValue))
+
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (c *consumeComponent) UnmarshalJSON(data []byte) error {
+	type consumeJSON struct {
+		Attribute string
+	}
+
+	var v consumeJSON
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	c.attribute = v.Attribute
 	return nil
 }
