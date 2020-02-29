@@ -467,15 +467,12 @@ func (ai *npcAi) UnmarshalJSON(data []byte) error {
 }
 
 type sheriffAi struct {
-	wc    waypointComponent
-	b     bountiesComponent
-	t     threatsComponent
-	hm    hasMountComponent
-	mc    findMountComponent
-	iw    isWeakComponent
-	fc    fleeComponent
-	hc    consumeComponent
-	state *string
+	sensory []senses
+	wc      waypointComponent
+	mc      findMountComponent
+	fc      fleeComponent
+	hc      consumeComponent
+	state   *string
 }
 
 func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) *sheriffAi {
@@ -483,78 +480,44 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) 
 	points := make([]worldmap.Coordinates, 3)
 	points[0] = l
 	if t.Horizontal {
-		points[1] = worldmap.Coordinates{t.TownArea.X1(), (t.StreetArea.Y1() + t.StreetArea.Y2()) / 2}
-		points[2] = worldmap.Coordinates{t.TownArea.X2(), (t.StreetArea.Y1() + t.StreetArea.Y2()) / 2}
+		points[1] = worldmap.Coordinates{t.StreetArea.X1(), (t.StreetArea.Y1() + t.StreetArea.Y2()) / 2}
+		points[2] = worldmap.Coordinates{t.StreetArea.X2(), (t.StreetArea.Y1() + t.StreetArea.Y2()) / 2}
 	} else {
 		points[1] = worldmap.Coordinates{(t.StreetArea.X1() + t.StreetArea.X2()) / 2, t.StreetArea.Y1()}
-		points[2] = worldmap.Coordinates{(t.StreetArea.X1() + t.StreetArea.X2()) / 2, t.StreetArea.Y1()}
+		points[2] = worldmap.Coordinates{(t.StreetArea.X1() + t.StreetArea.X2()) / 2, t.StreetArea.Y2()}
 	}
 	b := bountiesComponent{t, &Bounties{}}
 	event.Subscribe(b)
 
 	waypoint := worldmap.NewPatrol(points)
 	wc := waypointComponent{waypoint}
-	// creatureId given later
-	threats := threatsComponent{structs.Initialise(), ""}
 	hm := hasMountComponent{}
 	mc := findMountComponent{}
 	fc := fleeComponent{}
 	isWeak := isWeakComponent{0.5}
 	hc := consumeComponent{"hp"}
 	state := "normal"
-	ai := &sheriffAi{wc, b, threats, hm, mc, isWeak, fc, hc, &state}
+	sensory := []senses{hm, isWeak, b}
+	ai := &sheriffAi{sensory, wc, mc, fc, hc, &state}
 	return ai
 }
 
 func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
-	threats := ai.t.threats(c, world)
-	targets := append(getEnemies(c, world), ai.b.targets(c, world)...)
-	targets = append(targets, threats...)
-
-	// Decide on state
-	if ai.iw.weak(c) {
-		*ai.state = "fleeing"
-	} else {
-		switch *ai.state {
-		case "normal":
-			{
-				if len(targets) > 0 {
-					*ai.state = "fighting"
-					break
-				}
-
-				if !ai.hm.hasMount(c) {
-					*ai.state = "finding mount"
-				}
-
-			}
-		case "fighting":
-			{
-				if len(targets) == 0 {
-					*ai.state = "normal"
-				}
-			}
-		case "fleeing":
-			{
-				if !ai.iw.weak(c) {
-					*ai.state = "normal"
-					break
-				}
-
-				if len(threats) == 0 {
-					*ai.state = "normal"
-					break
-				}
-			}
-		case "finding mount":
-			{
-				if ai.hm.hasMount(c) {
-					*ai.state = "normal"
-				}
-
-			}
+	threats := make([]worldmap.Creature, 0)
+	for _, s := range ai.sensory {
+		if sThreats, ok := s.(sensesThreats); ok {
+			threats = append(threats, sThreats.threats(c, world)...)
 		}
 	}
+
+	targets := getEnemies(c, world)
+	for _, s := range ai.sensory {
+		if sTargets, ok := s.(sensesTargets); ok {
+			targets = append(targets, sTargets.targets(c, world)...)
+		}
+	}
+
+	ai.nextState(c, world)
 
 	switch *ai.state {
 	case "normal":
@@ -622,7 +585,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 				return action
 			}
 
-			if action := ai.fc.flee(c, world, targets); action != nil {
+			if action := ai.fc.flee(c, world, threats); action != nil {
 				return action
 			}
 		}
@@ -637,47 +600,53 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	return NoAction{}
 }
 
+func (ai sheriffAi) nextState(c hasAi, world *worldmap.Map) {
+	stateCounts := make(map[string]int)
+
+	for _, sensory := range ai.sensory {
+		state := sensory.nextState(*ai.state, c, world)
+		stateCounts[state]++
+	}
+
+	max := 0
+	for _, count := range stateCounts {
+		if count > max {
+			max = count
+		}
+	}
+
+	states := make([]string, 0)
+	for state, count := range stateCounts {
+		if count == max {
+			states = append(states, state)
+		}
+	}
+	// Pick random state if there is a tie
+	*ai.state = states[rand.Intn(len(states))]
+}
+
 func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
 	buffer.WriteString("\"Type\":\"sheriff\",")
 
+	sensoryValue, err := json.Marshal(ai.sensory)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Senses\":%s,", sensoryValue))
+
 	waypointValue, err := json.Marshal(ai.wc)
 	if err != nil {
 		return nil, err
 	}
-
 	buffer.WriteString(fmt.Sprintf("\"Waypoint\":%s,", waypointValue))
-
-	bValue, err := json.Marshal(ai.b)
-	if err != nil {
-		return nil, err
-	}
-	buffer.WriteString(fmt.Sprintf("\"Bounties\":%s,", bValue))
-
-	tValue, err := json.Marshal(ai.t)
-	if err != nil {
-		return nil, err
-	}
-	buffer.WriteString(fmt.Sprintf("\"Threats\":%s,", tValue))
-
-	hmValue, err := json.Marshal(ai.hm)
-	if err != nil {
-		return nil, err
-	}
-	buffer.WriteString(fmt.Sprintf("\"HasMount\":%s,", hmValue))
 
 	mcValue, err := json.Marshal(ai.mc)
 	if err != nil {
 		return nil, err
 	}
 	buffer.WriteString(fmt.Sprintf("\"FindMount\":%s,", mcValue))
-
-	iwValue, err := json.Marshal(ai.iw)
-	if err != nil {
-		return nil, err
-	}
-	buffer.WriteString(fmt.Sprintf("\"IsWeak\":%s,", iwValue))
 
 	fcValue, err := json.Marshal(ai.fc)
 	if err != nil {
@@ -704,12 +673,9 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 
 func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	type sheriffAiJson struct {
+		Senses    []map[string]interface{}
 		Waypoint  waypointComponent
-		Bounties  bountiesComponent
-		Threats   threatsComponent
-		HasMount  hasMountComponent
 		FindMount findMountComponent
-		IsWeak    isWeakComponent
 		Flee      fleeComponent
 		Heal      consumeComponent
 		State     *string
@@ -721,17 +687,12 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	}
 
 	ai.wc = v.Waypoint
-	ai.b = v.Bounties
-	ai.t = v.Threats
-	ai.hm = v.HasMount
 	ai.mc = v.FindMount
-	ai.iw = v.IsWeak
 	ai.fc = v.Flee
 	ai.hc = v.Heal
+	ai.sensory = unmarshalComponents(v.Senses)
 	ai.state = v.State
 
-	event.Subscribe(ai.b)
-	event.Subscribe(ai.t)
 	return nil
 }
 

@@ -11,6 +11,7 @@ import (
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
+	"github.com/onorton/cowboysindians/structs"
 	"github.com/onorton/cowboysindians/ui"
 	"github.com/onorton/cowboysindians/worldmap"
 	"github.com/rs/xid"
@@ -171,8 +172,10 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 	location := worldmap.Coordinates{x, y}
 	ai := newAi(n.AiType, world, location, &t, &b, dialogue, nil)
 	if n.AiType == "sheriff" {
-		ai.(*sheriffAi).t.creatureID = id
-		event.Subscribe(ai.(*sheriffAi).t)
+		sensory := ai.(*sheriffAi).sensory
+		t := threatsComponent{structs.Initialise(), id}
+		event.Subscribe(t)
+		ai.(*sheriffAi).sensory = append(sensory, t)
 	}
 
 	attributes := map[string]*worldmap.Attribute{
@@ -759,7 +762,11 @@ func (npc *Npc) GetID() string {
 
 func (npc *Npc) GetBounties() *Bounties {
 	if ai, ok := npc.ai.(*sheriffAi); ok {
-		return ai.b.bounties
+		for _, s := range ai.sensory {
+			if b, ok := s.(bountiesComponent); ok {
+				return b.bounties
+			}
+		}
 	}
 	return &Bounties{}
 }

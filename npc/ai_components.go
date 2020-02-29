@@ -11,6 +11,18 @@ import (
 	"github.com/onorton/cowboysindians/worldmap"
 )
 
+type senses interface {
+	nextState(string, hasAi, *worldmap.Map) string
+}
+
+type sensesTargets interface {
+	targets(hasAi, *worldmap.Map) []worldmap.Creature
+}
+
+type sensesThreats interface {
+	threats(hasAi, *worldmap.Map) []worldmap.Creature
+}
+
 type bountiesComponent struct {
 	t        worldmap.Town
 	bounties *Bounties
@@ -49,8 +61,22 @@ func (c bountiesComponent) targets(ai hasAi, world *worldmap.Map) []worldmap.Cre
 	return targets
 }
 
+func (c bountiesComponent) nextState(currState string, ai hasAi, world *worldmap.Map) string {
+	if currState == "normal" && len(c.targets(ai, world)) > 0 {
+		return "fighting"
+	}
+
+	if currState == "fighting" && len(c.targets(ai, world)) > 0 {
+		return "normal"
+	}
+
+	return currState
+}
+
 func (c bountiesComponent) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString("\"Type\": \"bounties\",")
 
 	townValue, err := json.Marshal(c.t)
 	if err != nil {
@@ -128,8 +154,26 @@ func (c threatsComponent) threats(ai hasAi, world *worldmap.Map) []worldmap.Crea
 	return visibleThreats
 }
 
+func (c threatsComponent) targets(ai hasAi, world *worldmap.Map) []worldmap.Creature {
+	return c.threats(ai, world)
+}
+
+func (c threatsComponent) nextState(currState string, ai hasAi, world *worldmap.Map) string {
+	if (currState == "fleeing" || currState == "fighting") && len(c.threats(ai, world)) == 0 {
+		return "normal"
+	}
+
+	if (currState == "normal" || currState == "fighting") && len(c.threats(ai, world)) > 0 {
+		return "fighting"
+	}
+
+	return currState
+}
+
 func (c threatsComponent) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString("\"Type\": \"threats\",")
 
 	possibleThreatsValue, err := json.Marshal(c.possibleThreats.Items())
 	if err != nil {
@@ -178,8 +222,21 @@ func (c isWeakComponent) weak(ai damageable) bool {
 	return curr/max <= c.threshold
 }
 
+func (c isWeakComponent) nextState(currState string, ai hasAi, world *worldmap.Map) string {
+	if c.weak(ai) {
+		return "fleeing"
+	}
+
+	if currState == "fleeing" && !c.weak(ai) {
+		return "normal"
+	}
+	return currState
+}
+
 func (c isWeakComponent) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString("\"Type\": \"isWeak\",")
 
 	thresholdValue, err := json.Marshal(c.threshold)
 	if err != nil {
@@ -213,8 +270,19 @@ func (c hasMountComponent) hasMount(ai hasAi) bool {
 	return ok && r.Mount() != nil
 }
 
+func (c hasMountComponent) nextState(currState string, ai hasAi, world *worldmap.Map) string {
+	if currState == "normal" && !c.hasMount(ai) {
+		return "finding mount"
+	}
+
+	if currState == "finding mount" && c.hasMount(ai) {
+		return "normal"
+	}
+	return currState
+}
+
 func (c hasMountComponent) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{}")
+	buffer := bytes.NewBufferString("{\"Type\": \"hasMount\"}")
 	return buffer.Bytes(), nil
 }
 
@@ -372,4 +440,39 @@ func (c *waypointComponent) UnmarshalJSON(data []byte) error {
 	}
 	c.waypoint = worldmap.UnmarshalWaypointSystem(v.Waypoint)
 	return nil
+}
+
+func unmarshalComponents(cs []map[string]interface{}) []senses {
+	components := make([]senses, 0)
+	for _, c := range cs {
+		componentJSON, err := json.Marshal(c)
+		check(err)
+		var component senses
+		switch c["Type"] {
+		case "bounties":
+			var bounties bountiesComponent
+			err := json.Unmarshal(componentJSON, &bounties)
+			check(err)
+			component = bounties
+			event.Subscribe(bounties)
+		case "threats":
+			var threats threatsComponent
+			err := json.Unmarshal(componentJSON, &threats)
+			check(err)
+			component = threats
+			event.Subscribe(threats)
+		case "isWeak":
+			var isWeak isWeakComponent
+			err := json.Unmarshal(componentJSON, &isWeak)
+			check(err)
+			component = isWeak
+		case "hasMount":
+			var hasMount hasMountComponent
+			err := json.Unmarshal(componentJSON, &hasMount)
+			check(err)
+			component = hasMount
+		}
+		components = append(components, component)
+	}
+	return components
 }
