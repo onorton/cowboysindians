@@ -320,3 +320,56 @@ func (c *consumeComponent) UnmarshalJSON(data []byte) error {
 	c.attribute = v.Attribute
 	return nil
 }
+
+type waypointComponent struct {
+	waypoint worldmap.WaypointSystem
+}
+
+func (c waypointComponent) move(ai hasAi, world *worldmap.Map) Action {
+	aiX, aiY := ai.GetCoordinates()
+	location := worldmap.Coordinates{aiX, aiY}
+	waypoint := c.waypoint.NextWaypoint(location)
+	waypointMap := getWaypointMap(ai, waypoint, world)
+
+	tileUnoccupied := func(x, y int) bool {
+		return !world.IsOccupied(x, y)
+	}
+
+	locations := possibleLocationsFromAiMap(ai, world, waypointMap, tileUnoccupied)
+	if action := moveIfMounted(ai, world, locations); action != nil {
+		return action
+	}
+
+	if action := move(ai, world, locations); action != nil {
+		return action
+	}
+	return nil
+}
+
+func (c waypointComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	waypointValue, err := json.Marshal(c.waypoint)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"Waypoint\":%s", waypointValue))
+
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (c *waypointComponent) UnmarshalJSON(data []byte) error {
+	type waypointJSON struct {
+		Waypoint map[string]interface{}
+	}
+
+	var v waypointJSON
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	c.waypoint = worldmap.UnmarshalWaypointSystem(v.Waypoint)
+	return nil
+}

@@ -467,15 +467,15 @@ func (ai *npcAi) UnmarshalJSON(data []byte) error {
 }
 
 type sheriffAi struct {
-	waypoint *worldmap.Patrol
-	b        bountiesComponent
-	t        threatsComponent
-	hm       hasMountComponent
-	mc       findMountComponent
-	iw       isWeakComponent
-	fc       fleeComponent
-	hc       consumeComponent
-	state    *string
+	wc    waypointComponent
+	b     bountiesComponent
+	t     threatsComponent
+	hm    hasMountComponent
+	mc    findMountComponent
+	iw    isWeakComponent
+	fc    fleeComponent
+	hc    consumeComponent
+	state *string
 }
 
 func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) *sheriffAi {
@@ -492,6 +492,8 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) 
 	b := bountiesComponent{t, &Bounties{}}
 	event.Subscribe(b)
 
+	waypoint := worldmap.NewPatrol(points)
+	wc := waypointComponent{waypoint}
 	// creatureId given later
 	threats := threatsComponent{structs.Initialise(), ""}
 	hm := hasMountComponent{}
@@ -500,14 +502,11 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) 
 	isWeak := isWeakComponent{0.5}
 	hc := consumeComponent{"hp"}
 	state := "normal"
-	ai := &sheriffAi{worldmap.NewPatrol(points), b, threats, hm, mc, isWeak, fc, hc, &state}
+	ai := &sheriffAi{wc, b, threats, hm, mc, isWeak, fc, hc, &state}
 	return ai
 }
 
 func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
-	cX, cY := c.GetCoordinates()
-	location := worldmap.Coordinates{cX, cY}
-
 	threats := ai.t.threats(c, world)
 	targets := append(getEnemies(c, world), ai.b.targets(c, world)...)
 	targets = append(targets, threats...)
@@ -557,18 +556,9 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 		}
 	}
 
-	tileUnoccupied := func(x, y int) bool {
-		return !world.IsOccupied(x, y)
-	}
-
-	fmt.Println(*ai.state)
-
 	switch *ai.state {
 	case "normal":
 		{
-			waypoint := ai.waypoint.NextWaypoint(location)
-			waypointMap := getWaypointMap(c, waypoint, world)
-
 			if action := tryOpeningDoor(c, world); action != nil {
 				return action
 			}
@@ -582,12 +572,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 				return NoAction{}
 			}
 
-			locations := possibleLocationsFromAiMap(c, world, waypointMap, tileUnoccupied)
-			if action := moveIfMounted(c, world, locations); action != nil {
-				return action
-			}
-
-			if action := move(c, world, locations); action != nil {
+			if action := ai.wc.move(c, world); action != nil {
 				return action
 			}
 
@@ -612,6 +597,10 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 			coefficients := []float64{0.3, 0.7}
 			chaseMap := getChaseMap(c, world, targets)
 			aiMap := addMaps([][][]float64{coverMap, chaseMap}, coefficients)
+
+			tileUnoccupied := func(x, y int) bool {
+				return !world.IsOccupied(x, y)
+			}
 
 			locations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupied)
 
@@ -653,7 +642,7 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 
 	buffer.WriteString("\"Type\":\"sheriff\",")
 
-	waypointValue, err := json.Marshal(ai.waypoint)
+	waypointValue, err := json.Marshal(ai.wc)
 	if err != nil {
 		return nil, err
 	}
@@ -715,7 +704,7 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 
 func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	type sheriffAiJson struct {
-		Waypoint  *worldmap.Patrol
+		Waypoint  waypointComponent
 		Bounties  bountiesComponent
 		Threats   threatsComponent
 		HasMount  hasMountComponent
@@ -731,7 +720,7 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	ai.waypoint = v.Waypoint
+	ai.wc = v.Waypoint
 	ai.b = v.Bounties
 	ai.t = v.Threats
 	ai.hm = v.HasMount
