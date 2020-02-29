@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/rand"
 
 	"github.com/onorton/cowboysindians/event"
@@ -1167,6 +1168,17 @@ func generateMap(c hasAi, world *worldmap.Map, goals []worldmap.Coordinates) [][
 }
 
 func getWaypointMap(c hasAi, waypoint worldmap.Coordinates, world *worldmap.Map) [][]float64 {
+	d := float64(c.GetVisionDistance())
+	cX, cY := c.GetCoordinates()
+	dX := float64(waypoint.X - cX)
+	dY := float64(waypoint.Y - cY)
+	if math.Abs(dX) > d || math.Abs(dY) > d {
+		distance := float64(worldmap.Distance(cX, cY, waypoint.X, waypoint.Y))
+		// If not within vision distance, pick point within vision distance in that direction
+		newX, newY := int(float64(cX)+dX*(d/distance)), int(float64(cY)+dY*(d/distance))
+		waypoint = worldmap.Coordinates{newX, newY}
+	}
+
 	return generateMap(c, world, []worldmap.Coordinates{waypoint})
 }
 
