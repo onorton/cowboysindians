@@ -206,6 +206,22 @@ func (c *isWeakComponent) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type hasMountComponent struct{}
+
+func (c hasMountComponent) hasMount(ai hasAi) bool {
+	r, ok := ai.(Rider)
+	return ok && r.Mount() != nil
+}
+
+func (c hasMountComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{}")
+	return buffer.Bytes(), nil
+}
+
+func (c *hasMountComponent) UnmarshalJSON(data []byte) error {
+	return nil
+}
+
 type findMountComponent struct{}
 
 func (c findMountComponent) findMount(ai hasAi, world *worldmap.Map) Action {

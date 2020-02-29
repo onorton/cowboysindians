@@ -470,6 +470,7 @@ type sheriffAi struct {
 	waypoint *worldmap.Patrol
 	b        bountiesComponent
 	t        threatsComponent
+	hm       hasMountComponent
 	mc       findMountComponent
 	iw       isWeakComponent
 	fc       fleeComponent
@@ -493,12 +494,13 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) 
 
 	// creatureId given later
 	threats := threatsComponent{structs.Initialise(), ""}
+	hm := hasMountComponent{}
 	mc := findMountComponent{}
 	fc := fleeComponent{}
 	isWeak := isWeakComponent{0.5}
 	hc := consumeComponent{"hp"}
 	state := "normal"
-	ai := &sheriffAi{worldmap.NewPatrol(points), b, threats, mc, isWeak, fc, hc, &state}
+	ai := &sheriffAi{worldmap.NewPatrol(points), b, threats, hm, mc, isWeak, fc, hc, &state}
 	return ai
 }
 
@@ -522,7 +524,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 					break
 				}
 
-				if r, ok := c.(Rider); ok && r.Mount() == nil {
+				if !ai.hm.hasMount(c) {
 					*ai.state = "finding mount"
 				}
 
@@ -547,7 +549,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 			}
 		case "finding mount":
 			{
-				if r, ok := c.(Rider); ok && r.Mount() != nil {
+				if ai.hm.hasMount(c) {
 					*ai.state = "normal"
 				}
 
@@ -558,6 +560,8 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	tileUnoccupied := func(x, y int) bool {
 		return !world.IsOccupied(x, y)
 	}
+
+	fmt.Println(*ai.state)
 
 	switch *ai.state {
 	case "normal":
@@ -668,6 +672,12 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 	}
 	buffer.WriteString(fmt.Sprintf("\"Threats\":%s,", tValue))
 
+	hmValue, err := json.Marshal(ai.hm)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"HasMount\":%s,", hmValue))
+
 	mcValue, err := json.Marshal(ai.mc)
 	if err != nil {
 		return nil, err
@@ -708,8 +718,11 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 		Waypoint  *worldmap.Patrol
 		Bounties  bountiesComponent
 		Threats   threatsComponent
+		HasMount  hasMountComponent
 		FindMount findMountComponent
+		IsWeak    isWeakComponent
 		Flee      fleeComponent
+		Heal      consumeComponent
 		State     *string
 	}
 
@@ -721,8 +734,11 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	ai.waypoint = v.Waypoint
 	ai.b = v.Bounties
 	ai.t = v.Threats
+	ai.hm = v.HasMount
 	ai.mc = v.FindMount
+	ai.iw = v.IsWeak
 	ai.fc = v.Flee
+	ai.hc = v.Heal
 	ai.state = v.State
 
 	event.Subscribe(ai.b)
