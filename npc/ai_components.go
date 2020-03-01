@@ -25,6 +25,7 @@ type sensesThreats interface {
 
 type hasAction interface {
 	action(hasAi, *worldmap.Map) Action
+	shouldHappen(state string) float64
 }
 
 type hasTargets interface {
@@ -320,8 +321,15 @@ func (c findMountComponent) action(ai hasAi, world *worldmap.Map) Action {
 	return nil
 }
 
+func (c findMountComponent) shouldHappen(state string) float64 {
+	if state == "finding mount" {
+		return 1
+	}
+	return 0
+}
+
 func (c findMountComponent) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{}")
+	buffer := bytes.NewBufferString("{\"Type\": \"findMount\"}")
 	return buffer.Bytes(), nil
 }
 
@@ -350,12 +358,21 @@ func (c fleeComponent) action(ai hasAi, world *worldmap.Map) Action {
 	return nil
 }
 
+func (c fleeComponent) shouldHappen(state string) float64 {
+	// More likely to flee as more threats
+	if state == "fleeing" {
+		threshold := 3.0
+		return (1.0 / threshold) * float64(len(c.threats))
+	}
+	return 0
+}
+
 func (c *fleeComponent) addThreats(threats []worldmap.Creature) {
 	c.threats = threats
 }
 
 func (c fleeComponent) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{}")
+	buffer := bytes.NewBufferString("{\"Type\": \"flee\"}")
 	return buffer.Bytes(), nil
 }
 
@@ -378,9 +395,17 @@ func (c consumeComponent) action(ai hasAi, world *worldmap.Map) Action {
 	return nil
 }
 
+func (c consumeComponent) shouldHappen(state string) float64 {
+	if state == "fleeing" {
+		return 1
+	}
+	return 0
+}
+
 func (c consumeComponent) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
+	buffer.WriteString("\"Type\": \"consume\",")
 	attributeValue, err := json.Marshal(c.attribute)
 	if err != nil {
 		return nil, err
@@ -431,8 +456,17 @@ func (c waypointComponent) action(ai hasAi, world *worldmap.Map) Action {
 	return nil
 }
 
+func (c waypointComponent) shouldHappen(state string) float64 {
+	if state == "normal" {
+		return 0.5
+	}
+	return 0
+}
+
 func (c waypointComponent) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString("\"Type\": \"waypoint\",")
 
 	waypointValue, err := json.Marshal(c.waypoint)
 	if err != nil {
@@ -487,12 +521,21 @@ func (c chaseComponent) action(ai hasAi, world *worldmap.Map) Action {
 	return nil
 }
 
+func (c chaseComponent) shouldHappen(state string) float64 {
+	if state == "fighting" {
+		return 0.5
+	}
+	return 0
+}
+
 func (c *chaseComponent) addTargets(targets []worldmap.Creature) {
 	c.targets = targets
 }
 
 func (c chaseComponent) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString("\"Type\": \"chase\",")
 
 	coverValue, err := json.Marshal(c.cover)
 	if err != nil {
@@ -537,12 +580,19 @@ func (c coverComponent) action(ai hasAi, world *worldmap.Map) Action {
 	return moveThroughCover(ai, coverMap)
 }
 
+func (c coverComponent) shouldHappen(state string) float64 {
+	if state == "fighting" {
+		return 1
+	}
+	return 0
+}
+
 func (c *coverComponent) addTargets(targets []worldmap.Creature) {
 	c.targets = targets
 }
 
 func (c coverComponent) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{}")
+	buffer := bytes.NewBufferString("{\"Type\": \"cover\"}")
 	return buffer.Bytes(), nil
 }
 
@@ -556,8 +606,15 @@ func (c itemsComponent) action(ai hasAi, world *worldmap.Map) Action {
 	return pickupItems(ai, world)
 }
 
+func (c itemsComponent) shouldHappen(state string) float64 {
+	if state == "normal" {
+		return 0.25
+	}
+	return 0
+}
+
 func (c itemsComponent) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{}")
+	buffer := bytes.NewBufferString("{\"Type\": \"items\"}")
 	return buffer.Bytes(), nil
 }
 
@@ -571,8 +628,12 @@ func (c doorComponent) action(ai hasAi, world *worldmap.Map) Action {
 	return tryOpeningDoor(ai, world)
 }
 
+func (c doorComponent) shouldHappen(state string) float64 {
+	return 1
+}
+
 func (c doorComponent) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{}")
+	buffer := bytes.NewBufferString("{\"Type\": \"door\"}")
 	return buffer.Bytes(), nil
 }
 
@@ -588,12 +649,19 @@ func (c rangedComponent) action(ai hasAi, world *worldmap.Map) Action {
 	return rangedAttack(ai, world, c.targets)
 }
 
+func (c rangedComponent) shouldHappen(state string) float64 {
+	if state == "fighting" || state == "fleeing" {
+		return 0.75
+	}
+	return 0
+}
+
 func (c *rangedComponent) addTargets(targets []worldmap.Creature) {
 	c.targets = targets
 }
 
 func (c rangedComponent) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{}")
+	buffer := bytes.NewBufferString("{\"Type\": \"ranged\"}")
 	return buffer.Bytes(), nil
 }
 
@@ -610,8 +678,15 @@ func (c wieldComponent) action(ai hasAi, world *worldmap.Map) Action {
 	return nil
 }
 
+func (c wieldComponent) shouldHappen(state string) float64 {
+	if state == "normal" {
+		return 0.75
+	}
+	return 0
+}
+
 func (c wieldComponent) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{}")
+	buffer := bytes.NewBufferString("{\"Type\": \"wield\"}")
 	return buffer.Bytes(), nil
 }
 
@@ -628,8 +703,15 @@ func (c wearComponent) action(ai hasAi, world *worldmap.Map) Action {
 	return nil
 }
 
+func (c wearComponent) shouldHappen(state string) float64 {
+	if state == "normal" {
+		return 0.75
+	}
+	return 0
+}
+
 func (c wearComponent) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{}")
+	buffer := bytes.NewBufferString("{\"Type\": \"wear\"}")
 	return buffer.Bytes(), nil
 }
 
@@ -637,7 +719,7 @@ func (c *wearComponent) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func unmarshalComponents(cs []map[string]interface{}) []senses {
+func unmarshalSenses(cs []map[string]interface{}) []senses {
 	components := make([]senses, 0)
 	for _, c := range cs {
 		componentJSON, err := json.Marshal(c)
@@ -666,6 +748,74 @@ func unmarshalComponents(cs []map[string]interface{}) []senses {
 			err := json.Unmarshal(componentJSON, &hasMount)
 			check(err)
 			component = hasMount
+		}
+		components = append(components, component)
+	}
+	return components
+}
+
+func unmarshalActions(cs []map[string]interface{}) []hasAction {
+	components := make([]hasAction, 0)
+	for _, c := range cs {
+		componentJSON, err := json.Marshal(c)
+		check(err)
+		var component hasAction
+		switch c["Type"] {
+		case "findMount":
+			var findMount findMountComponent
+			err := json.Unmarshal(componentJSON, &findMount)
+			check(err)
+			component = findMount
+		case "flee":
+			var flee fleeComponent
+			err := json.Unmarshal(componentJSON, &flee)
+			check(err)
+			component = flee
+		case "consume":
+			var consume consumeComponent
+			err := json.Unmarshal(componentJSON, &consume)
+			check(err)
+			component = consume
+		case "waypoint":
+			var waypoint waypointComponent
+			err := json.Unmarshal(componentJSON, &waypoint)
+			check(err)
+			component = waypoint
+		case "chase":
+			var chase chaseComponent
+			err := json.Unmarshal(componentJSON, &chase)
+			check(err)
+			component = chase
+		case "cover":
+			var cover coverComponent
+			err := json.Unmarshal(componentJSON, &cover)
+			check(err)
+			component = cover
+		case "items":
+			var items itemsComponent
+			err := json.Unmarshal(componentJSON, &items)
+			check(err)
+			component = items
+		case "door":
+			var door doorComponent
+			err := json.Unmarshal(componentJSON, &door)
+			check(err)
+			component = door
+		case "ranged":
+			var ranged rangedComponent
+			err := json.Unmarshal(componentJSON, &ranged)
+			check(err)
+			component = ranged
+		case "wield":
+			var wield wieldComponent
+			err := json.Unmarshal(componentJSON, &wield)
+			check(err)
+			component = wield
+		case "wear":
+			var wear wearComponent
+			err := json.Unmarshal(componentJSON, &wear)
+			check(err)
+			component = wear
 		}
 		components = append(components, component)
 	}

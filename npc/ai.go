@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"sort"
 
 	"github.com/onorton/cowboysindians/event"
 	"github.com/onorton/cowboysindians/item"
@@ -469,17 +470,7 @@ func (ai *npcAi) UnmarshalJSON(data []byte) error {
 
 type sheriffAi struct {
 	sensory []senses
-	wc      waypointComponent
-	mc      findMountComponent
-	fc      fleeComponent
-	hc      consumeComponent
-	cc      chaseComponent
-	cover   coverComponent
-	items   itemsComponent
-	door    doorComponent
-	rc      rangedComponent
-	wield   wieldComponent
-	wear    wearComponent
+	actions []hasAction
 	state   *string
 }
 
@@ -513,7 +504,8 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) 
 	wear := wearComponent{}
 	state := "normal"
 	sensory := []senses{hm, isWeak, b}
-	ai := &sheriffAi{sensory, wc, mc, fc, hc, cc, cover, items, door, rc, wield, wear, &state}
+	actions := []hasAction{wc, mc, fc, hc, cc, cover, items, door, rc, wield, wear}
+	ai := &sheriffAi{sensory, actions, &state}
 	return ai
 }
 
@@ -534,72 +526,17 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 
 	ai.nextState(c, world)
 
-	switch *ai.state {
-	case "normal":
-		{
-			if action := ai.door.action(c, world); action != nil {
-				return action
-			}
-
-			if action := ai.wield.action(c, world); action != nil {
-				return action
-			}
-
-			if action := ai.wear.action(c, world); action != nil {
-				return action
-			}
-
-			if action := ai.wc.action(c, world); action != nil {
-				return action
-			}
-
-			if action := ai.items.action(c, world); action != nil {
-				return action
-			}
+	for _, a := range ai.actions {
+		if aTargets, ok := a.(hasTargets); ok {
+			aTargets.addTargets(targets)
 		}
-	case "fighting":
-		{
-			// Move into/out of cover before shooting
-			ai.cover.addTargets(targets)
-			if action := ai.cover.action(c, world); action != nil {
-				return action
-			}
 
-			ai.rc.addTargets(targets)
-			if action := ai.rc.action(c, world); action != nil {
-				return action
-			}
-
-			ai.cc.addTargets(targets)
-			if action := ai.cc.action(c, world); action != nil {
-				return action
-			}
-		}
-	case "fleeing":
-		{
-			if action := ai.hc.action(c, world); action != nil {
-				return action
-			}
-
-			ai.rc.addTargets(targets)
-			if action := ai.rc.action(c, world); action != nil {
-				return action
-			}
-
-			ai.fc.addThreats(threats)
-			if action := ai.fc.action(c, world); action != nil {
-				return action
-			}
-		}
-	case "finding mount":
-		{
-			if action := ai.mc.action(c, world); action != nil {
-				return action
-			}
+		if aThreats, ok := a.(hasThreats); ok {
+			aThreats.addThreats(threats)
 		}
 	}
-	// Default action
-	return NoAction{}
+
+	return ai.nextAction(c, world)
 }
 
 func (ai sheriffAi) nextState(c hasAi, world *worldmap.Map) {
@@ -627,6 +564,25 @@ func (ai sheriffAi) nextState(c hasAi, world *worldmap.Map) {
 	*ai.state = states[rand.Intn(len(states))]
 }
 
+func (ai sheriffAi) nextAction(c hasAi, world *worldmap.Map) Action {
+	actions := ai.actions
+
+	sort.Slice(actions, func(i, j int) bool {
+		return actions[i].shouldHappen(*ai.state) > actions[j].shouldHappen(*ai.state)
+	})
+
+	for _, a := range actions {
+		if a.shouldHappen(*ai.state) == 0 {
+			break
+		}
+
+		if action := a.action(c, world); action != nil {
+			return action
+		}
+	}
+	return NoAction{}
+}
+
 func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
@@ -638,71 +594,11 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 	}
 	buffer.WriteString(fmt.Sprintf("\"Senses\":%s,", sensoryValue))
 
-	waypointValue, err := json.Marshal(ai.wc)
+	actionsValue, err := json.Marshal(ai.actions)
 	if err != nil {
 		return nil, err
 	}
-	buffer.WriteString(fmt.Sprintf("\"Waypoint\":%s,", waypointValue))
-
-	mcValue, err := json.Marshal(ai.mc)
-	if err != nil {
-		return nil, err
-	}
-	buffer.WriteString(fmt.Sprintf("\"FindMount\":%s,", mcValue))
-
-	fcValue, err := json.Marshal(ai.fc)
-	if err != nil {
-		return nil, err
-	}
-	buffer.WriteString(fmt.Sprintf("\"Flee\":%s,", fcValue))
-
-	hcValue, err := json.Marshal(ai.hc)
-	if err != nil {
-		return nil, err
-	}
-	buffer.WriteString(fmt.Sprintf("\"Heal\":%s,", hcValue))
-
-	ccValue, err := json.Marshal(ai.cc)
-	if err != nil {
-		return nil, err
-	}
-	buffer.WriteString(fmt.Sprintf("\"Chase\":%s,", ccValue))
-
-	coverValue, err := json.Marshal(ai.cover)
-	if err != nil {
-		return nil, err
-	}
-	buffer.WriteString(fmt.Sprintf("\"Cover\":%s,", coverValue))
-
-	itemsValue, err := json.Marshal(ai.items)
-	if err != nil {
-		return nil, err
-	}
-	buffer.WriteString(fmt.Sprintf("\"Items\":%s,", itemsValue))
-
-	doorValue, err := json.Marshal(ai.door)
-	if err != nil {
-		return nil, err
-	}
-	buffer.WriteString(fmt.Sprintf("\"Door\":%s,", doorValue))
-
-	rcValue, err := json.Marshal(ai.rc)
-	if err != nil {
-		return nil, err
-	}
-	buffer.WriteString(fmt.Sprintf("\"Ranged\":%s,", rcValue))
-
-	wieldValue, err := json.Marshal(ai.wield)
-	if err != nil {
-		return nil, err
-	}
-	buffer.WriteString(fmt.Sprintf("\"Wield\":%s,", wieldValue))
-
-	wearValue, err := json.Marshal(ai.wear)
-	if err != nil {
-		return nil, err
-	}
-	buffer.WriteString(fmt.Sprintf("\"Wear\":%s,", wearValue))
+	buffer.WriteString(fmt.Sprintf("\"Actions\":%s,", actionsValue))
 
 	stateValue, err := json.Marshal(ai.state)
 	if err != nil {
@@ -717,19 +613,9 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 
 func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	type sheriffAiJson struct {
-		Senses    []map[string]interface{}
-		Waypoint  waypointComponent
-		FindMount findMountComponent
-		Flee      fleeComponent
-		Heal      consumeComponent
-		Chase     chaseComponent
-		Cover     coverComponent
-		Items     itemsComponent
-		Door      doorComponent
-		Ranged    rangedComponent
-		Wield     wieldComponent
-		Wear      wearComponent
-		State     *string
+		Senses  []map[string]interface{}
+		Actions []map[string]interface{}
+		State   *string
 	}
 
 	var v sheriffAiJson
@@ -737,18 +623,8 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	ai.wc = v.Waypoint
-	ai.mc = v.FindMount
-	ai.fc = v.Flee
-	ai.hc = v.Heal
-	ai.cc = v.Chase
-	ai.cover = v.Cover
-	ai.items = v.Items
-	ai.door = v.Door
-	ai.rc = v.Ranged
-	ai.wield = v.Wield
-	ai.wear = v.Wear
-	ai.sensory = unmarshalComponents(v.Senses)
+	ai.sensory = unmarshalSenses(v.Senses)
+	ai.actions = unmarshalActions(v.Actions)
 	ai.state = v.State
 
 	return nil
