@@ -601,6 +601,42 @@ func (c *rangedComponent) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type wieldComponent struct{}
+
+func (c wieldComponent) action(ai hasAi, world *worldmap.Map) Action {
+	if itemUser, ok := ai.(usesItems); ok && itemUser.wieldItem() {
+		return NoAction{}
+	}
+	return nil
+}
+
+func (c wieldComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{}")
+	return buffer.Bytes(), nil
+}
+
+func (c *wieldComponent) UnmarshalJSON(data []byte) error {
+	return nil
+}
+
+type wearComponent struct{}
+
+func (c wearComponent) action(ai hasAi, world *worldmap.Map) Action {
+	if itemUser, ok := ai.(usesItems); ok && itemUser.wearArmour() {
+		return NoAction{}
+	}
+	return nil
+}
+
+func (c wearComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{}")
+	return buffer.Bytes(), nil
+}
+
+func (c *wearComponent) UnmarshalJSON(data []byte) error {
+	return nil
+}
+
 func unmarshalComponents(cs []map[string]interface{}) []senses {
 	components := make([]senses, 0)
 	for _, c := range cs {

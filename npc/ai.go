@@ -478,6 +478,8 @@ type sheriffAi struct {
 	items   itemsComponent
 	door    doorComponent
 	rc      rangedComponent
+	wield   wieldComponent
+	wear    wearComponent
 	state   *string
 }
 
@@ -507,9 +509,11 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) 
 	items := itemsComponent{}
 	door := doorComponent{}
 	rc := rangedComponent{[]worldmap.Creature{}}
+	wield := wieldComponent{}
+	wear := wearComponent{}
 	state := "normal"
 	sensory := []senses{hm, isWeak, b}
-	ai := &sheriffAi{sensory, wc, mc, fc, hc, cc, cover, items, door, rc, &state}
+	ai := &sheriffAi{sensory, wc, mc, fc, hc, cc, cover, items, door, rc, wield, wear, &state}
 	return ai
 }
 
@@ -537,13 +541,12 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 				return action
 			}
 
-			// Try and wield best weapon
-			if itemUser, ok := c.(usesItems); ok && itemUser.wieldItem() {
-				return NoAction{}
+			if action := ai.wield.action(c, world); action != nil {
+				return action
 			}
-			// Try and wear best armour
-			if itemUser, ok := c.(usesItems); ok && itemUser.wearArmour() {
-				return NoAction{}
+
+			if action := ai.wear.action(c, world); action != nil {
+				return action
 			}
 
 			if action := ai.wc.action(c, world); action != nil {
@@ -689,6 +692,18 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 	}
 	buffer.WriteString(fmt.Sprintf("\"Ranged\":%s,", rcValue))
 
+	wieldValue, err := json.Marshal(ai.wield)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Wield\":%s,", wieldValue))
+
+	wearValue, err := json.Marshal(ai.wear)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Wear\":%s,", wearValue))
+
 	stateValue, err := json.Marshal(ai.state)
 	if err != nil {
 		return nil, err
@@ -712,6 +727,8 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 		Items     itemsComponent
 		Door      doorComponent
 		Ranged    rangedComponent
+		Wield     wieldComponent
+		Wear      wearComponent
 		State     *string
 	}
 
@@ -729,6 +746,8 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	ai.items = v.Items
 	ai.door = v.Door
 	ai.rc = v.Ranged
+	ai.wield = v.Wield
+	ai.wear = v.Wear
 	ai.sensory = unmarshalComponents(v.Senses)
 	ai.state = v.State
 
