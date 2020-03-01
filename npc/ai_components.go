@@ -442,6 +442,70 @@ func (c *waypointComponent) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type chaseComponent struct {
+	cover float64
+	chase float64
+}
+
+func (c chaseComponent) chaseTargets(ai hasAi, world *worldmap.Map, targets []worldmap.Creature) Action {
+	coefficients := []float64{c.cover, c.chase}
+	coverMap := getCoverMap(ai, world, targets)
+	chaseMap := getChaseMap(ai, world, targets)
+	aiMap := addMaps([][][]float64{coverMap, chaseMap}, coefficients)
+
+	tileUnoccupied := func(x, y int) bool {
+		return !world.IsOccupied(x, y)
+	}
+
+	locations := possibleLocationsFromAiMap(ai, world, aiMap, tileUnoccupied)
+
+	if action := moveIfMounted(ai, world, locations); action != nil {
+		return action
+	}
+
+	if action := move(ai, world, locations); action != nil {
+		return action
+	}
+	return nil
+}
+
+func (c chaseComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	coverValue, err := json.Marshal(c.cover)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Cover\":%s,", coverValue))
+
+	chaseValue, err := json.Marshal(c.chase)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Chase\":%s", chaseValue))
+
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (c *chaseComponent) UnmarshalJSON(data []byte) error {
+	type chaseJSON struct {
+		Cover float64
+		Chase float64
+	}
+
+	var v chaseJSON
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	c.cover = v.Cover
+	c.chase = v.Chase
+
+	return nil
+}
+
 func unmarshalComponents(cs []map[string]interface{}) []senses {
 	components := make([]senses, 0)
 	for _, c := range cs {

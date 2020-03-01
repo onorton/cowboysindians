@@ -473,6 +473,7 @@ type sheriffAi struct {
 	mc      findMountComponent
 	fc      fleeComponent
 	hc      consumeComponent
+	cc      chaseComponent
 	state   *string
 }
 
@@ -497,9 +498,10 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) 
 	fc := fleeComponent{}
 	isWeak := isWeakComponent{0.5}
 	hc := consumeComponent{"hp"}
+	cc := chaseComponent{0.3, 0.7}
 	state := "normal"
 	sensory := []senses{hm, isWeak, b}
-	ai := &sheriffAi{sensory, wc, mc, fc, hc, &state}
+	ai := &sheriffAi{sensory, wc, mc, fc, hc, cc, &state}
 	return ai
 }
 
@@ -557,22 +559,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 				return action
 			}
 
-			// prioritise approaching target over cover
-			coefficients := []float64{0.3, 0.7}
-			chaseMap := getChaseMap(c, world, targets)
-			aiMap := addMaps([][][]float64{coverMap, chaseMap}, coefficients)
-
-			tileUnoccupied := func(x, y int) bool {
-				return !world.IsOccupied(x, y)
-			}
-
-			locations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupied)
-
-			if action := moveIfMounted(c, world, locations); action != nil {
-				return action
-			}
-
-			if action := move(c, world, locations); action != nil {
+			if action := ai.cc.chaseTargets(c, world, targets); action != nil {
 				return action
 			}
 		}
@@ -661,6 +648,12 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 	}
 	buffer.WriteString(fmt.Sprintf("\"Heal\":%s,", hcValue))
 
+	ccValue, err := json.Marshal(ai.cc)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Chase\":%s,", ccValue))
+
 	stateValue, err := json.Marshal(ai.state)
 	if err != nil {
 		return nil, err
@@ -679,6 +672,7 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 		FindMount findMountComponent
 		Flee      fleeComponent
 		Heal      consumeComponent
+		Chase     chaseComponent
 		State     *string
 	}
 
@@ -691,6 +685,7 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	ai.mc = v.FindMount
 	ai.fc = v.Flee
 	ai.hc = v.Heal
+	ai.cc = v.Chase
 	ai.sensory = unmarshalComponents(v.Senses)
 	ai.state = v.State
 
