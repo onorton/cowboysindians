@@ -537,6 +537,21 @@ func (c *itemsComponent) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type doorComponent struct{}
+
+func (c doorComponent) open(ai hasAi, world *worldmap.Map) Action {
+	return tryOpeningDoor(ai, world)
+}
+
+func (c doorComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{}")
+	return buffer.Bytes(), nil
+}
+
+func (c *doorComponent) UnmarshalJSON(data []byte) error {
+	return nil
+}
+
 func unmarshalComponents(cs []map[string]interface{}) []senses {
 	components := make([]senses, 0)
 	for _, c := range cs {

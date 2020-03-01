@@ -476,6 +476,7 @@ type sheriffAi struct {
 	cc      chaseComponent
 	cover   coverComponent
 	items   itemsComponent
+	door    doorComponent
 	state   *string
 }
 
@@ -503,9 +504,10 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) 
 	cc := chaseComponent{0.3, 0.7}
 	cover := coverComponent{}
 	items := itemsComponent{}
+	door := doorComponent{}
 	state := "normal"
 	sensory := []senses{hm, isWeak, b}
-	ai := &sheriffAi{sensory, wc, mc, fc, hc, cc, cover, items, &state}
+	ai := &sheriffAi{sensory, wc, mc, fc, hc, cc, cover, items, door, &state}
 	return ai
 }
 
@@ -529,7 +531,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	switch *ai.state {
 	case "normal":
 		{
-			if action := tryOpeningDoor(c, world); action != nil {
+			if action := ai.door.open(c, world); action != nil {
 				return action
 			}
 
@@ -668,6 +670,12 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 	}
 	buffer.WriteString(fmt.Sprintf("\"Items\":%s,", itemsValue))
 
+	doorValue, err := json.Marshal(ai.door)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Door\":%s,", doorValue))
+
 	stateValue, err := json.Marshal(ai.state)
 	if err != nil {
 		return nil, err
@@ -689,6 +697,7 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 		Chase     chaseComponent
 		Cover     coverComponent
 		Items     itemsComponent
+		Door      doorComponent
 		State     *string
 	}
 
@@ -704,6 +713,7 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	ai.cc = v.Chase
 	ai.cover = v.Cover
 	ai.items = v.Items
+	ai.door = v.Door
 	ai.sensory = unmarshalComponents(v.Senses)
 	ai.state = v.State
 
