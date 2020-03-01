@@ -499,14 +499,14 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) 
 	wc := waypointComponent{waypoint}
 	hm := hasMountComponent{}
 	mc := findMountComponent{}
-	fc := fleeComponent{}
+	fc := fleeComponent{[]worldmap.Creature{}}
 	isWeak := isWeakComponent{0.5}
 	hc := consumeComponent{"hp"}
-	cc := chaseComponent{0.3, 0.7}
-	cover := coverComponent{}
+	cc := chaseComponent{0.3, 0.7, []worldmap.Creature{}}
+	cover := coverComponent{[]worldmap.Creature{}}
 	items := itemsComponent{}
 	door := doorComponent{}
-	rc := rangedComponent{}
+	rc := rangedComponent{[]worldmap.Creature{}}
 	state := "normal"
 	sensory := []senses{hm, isWeak, b}
 	ai := &sheriffAi{sensory, wc, mc, fc, hc, cc, cover, items, door, rc, &state}
@@ -533,7 +533,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	switch *ai.state {
 	case "normal":
 		{
-			if action := ai.door.open(c, world); action != nil {
+			if action := ai.door.action(c, world); action != nil {
 				return action
 			}
 
@@ -546,46 +546,51 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 				return NoAction{}
 			}
 
-			if action := ai.wc.move(c, world); action != nil {
+			if action := ai.wc.action(c, world); action != nil {
 				return action
 			}
 
-			if action := ai.items.pickupItems(c, world); action != nil {
-
+			if action := ai.items.action(c, world); action != nil {
+				return action
 			}
 		}
 	case "fighting":
 		{
 			// Move into/out of cover before shooting
-			if action := ai.cover.cover(c, world, targets); action != nil {
+			ai.cover.addTargets(targets)
+			if action := ai.cover.action(c, world); action != nil {
 				return action
 			}
 
-			if action := ai.rc.rangedAttack(c, world, targets); action != nil {
+			ai.rc.addTargets(targets)
+			if action := ai.rc.action(c, world); action != nil {
 				return action
 			}
 
-			if action := ai.cc.chaseTargets(c, world, targets); action != nil {
+			ai.cc.addTargets(targets)
+			if action := ai.cc.action(c, world); action != nil {
 				return action
 			}
 		}
 	case "fleeing":
 		{
-			if action := ai.hc.consume(c); action != nil {
+			if action := ai.hc.action(c, world); action != nil {
 				return action
 			}
 
-			if action := ai.rc.rangedAttack(c, world, threats); action != nil {
+			ai.rc.addTargets(targets)
+			if action := ai.rc.action(c, world); action != nil {
 				return action
 			}
 
-			if action := ai.fc.flee(c, world, threats); action != nil {
+			ai.fc.addThreats(threats)
+			if action := ai.fc.action(c, world); action != nil {
 				return action
 			}
 		}
 	case "finding mount":
 		{
-			if action := ai.mc.findMount(c, world); action != nil {
+			if action := ai.mc.action(c, world); action != nil {
 				return action
 			}
 		}

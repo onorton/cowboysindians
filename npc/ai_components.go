@@ -23,6 +23,17 @@ type sensesThreats interface {
 	threats(hasAi, *worldmap.Map) []worldmap.Creature
 }
 
+type hasAction interface {
+	action(hasAi, *worldmap.Map) Action
+}
+
+type hasTargets interface {
+	addTargets([]worldmap.Creature)
+}
+
+type hasThreats interface {
+	addThreats([]worldmap.Creature)
+}
 type bountiesComponent struct {
 	t        worldmap.Town
 	bounties *Bounties
@@ -292,7 +303,7 @@ func (c *hasMountComponent) UnmarshalJSON(data []byte) error {
 
 type findMountComponent struct{}
 
-func (c findMountComponent) findMount(ai hasAi, world *worldmap.Map) Action {
+func (c findMountComponent) action(ai hasAi, world *worldmap.Map) Action {
 	mountMap := getMountMap(ai, world)
 	if action := mount(ai, world, mountMap); action != nil {
 		return action
@@ -318,10 +329,12 @@ func (c *findMountComponent) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type fleeComponent struct{}
+type fleeComponent struct {
+	threats []worldmap.Creature
+}
 
-func (c fleeComponent) flee(ai hasAi, world *worldmap.Map, threats []worldmap.Creature) Action {
-	fleeMap := getFleeMap(ai, world, threats)
+func (c fleeComponent) action(ai hasAi, world *worldmap.Map) Action {
+	fleeMap := getFleeMap(ai, world, c.threats)
 	tileUnoccupied := func(x, y int) bool {
 		return !world.IsOccupied(x, y) && world.IsPassable(x, y)
 	}
@@ -337,6 +350,10 @@ func (c fleeComponent) flee(ai hasAi, world *worldmap.Map, threats []worldmap.Cr
 	return nil
 }
 
+func (c *fleeComponent) addThreats(threats []worldmap.Creature) {
+	c.threats = threats
+}
+
 func (c fleeComponent) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{}")
 	return buffer.Bytes(), nil
@@ -350,7 +367,7 @@ type consumeComponent struct {
 	attribute string
 }
 
-func (c consumeComponent) consume(ai hasAi) Action {
+func (c consumeComponent) action(ai hasAi, world *worldmap.Map) Action {
 	if itemHolder, ok := ai.(holdsItems); ok {
 		for _, itm := range itemHolder.Inventory() {
 			if consumable, ok := itm.Component("consumable").(item.ConsumableComponent); ok && len(consumable.Effects[c.attribute]) > 0 {
@@ -393,7 +410,7 @@ type waypointComponent struct {
 	waypoint worldmap.WaypointSystem
 }
 
-func (c waypointComponent) move(ai hasAi, world *worldmap.Map) Action {
+func (c waypointComponent) action(ai hasAi, world *worldmap.Map) Action {
 	aiX, aiY := ai.GetCoordinates()
 	location := worldmap.Coordinates{aiX, aiY}
 	waypoint := c.waypoint.NextWaypoint(location)
@@ -443,14 +460,15 @@ func (c *waypointComponent) UnmarshalJSON(data []byte) error {
 }
 
 type chaseComponent struct {
-	cover float64
-	chase float64
+	cover   float64
+	chase   float64
+	targets []worldmap.Creature
 }
 
-func (c chaseComponent) chaseTargets(ai hasAi, world *worldmap.Map, targets []worldmap.Creature) Action {
+func (c chaseComponent) action(ai hasAi, world *worldmap.Map) Action {
 	coefficients := []float64{c.cover, c.chase}
-	coverMap := getCoverMap(ai, world, targets)
-	chaseMap := getChaseMap(ai, world, targets)
+	coverMap := getCoverMap(ai, world, c.targets)
+	chaseMap := getChaseMap(ai, world, c.targets)
 	aiMap := addMaps([][][]float64{coverMap, chaseMap}, coefficients)
 
 	tileUnoccupied := func(x, y int) bool {
@@ -467,6 +485,10 @@ func (c chaseComponent) chaseTargets(ai hasAi, world *worldmap.Map, targets []wo
 		return action
 	}
 	return nil
+}
+
+func (c *chaseComponent) addTargets(targets []worldmap.Creature) {
+	c.targets = targets
 }
 
 func (c chaseComponent) MarshalJSON() ([]byte, error) {
@@ -506,11 +528,17 @@ func (c *chaseComponent) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type coverComponent struct{}
+type coverComponent struct {
+	targets []worldmap.Creature
+}
 
-func (c coverComponent) cover(ai hasAi, world *worldmap.Map, targets []worldmap.Creature) Action {
-	coverMap := getCoverMap(ai, world, targets)
+func (c coverComponent) action(ai hasAi, world *worldmap.Map) Action {
+	coverMap := getCoverMap(ai, world, c.targets)
 	return moveThroughCover(ai, coverMap)
+}
+
+func (c *coverComponent) addTargets(targets []worldmap.Creature) {
+	c.targets = targets
 }
 
 func (c coverComponent) MarshalJSON() ([]byte, error) {
@@ -524,7 +552,7 @@ func (c *coverComponent) UnmarshalJSON(data []byte) error {
 
 type itemsComponent struct{}
 
-func (c itemsComponent) pickupItems(ai hasAi, world *worldmap.Map) Action {
+func (c itemsComponent) action(ai hasAi, world *worldmap.Map) Action {
 	return pickupItems(ai, world)
 }
 
@@ -539,7 +567,7 @@ func (c *itemsComponent) UnmarshalJSON(data []byte) error {
 
 type doorComponent struct{}
 
-func (c doorComponent) open(ai hasAi, world *worldmap.Map) Action {
+func (c doorComponent) action(ai hasAi, world *worldmap.Map) Action {
 	return tryOpeningDoor(ai, world)
 }
 
@@ -552,10 +580,16 @@ func (c *doorComponent) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type rangedComponent struct{}
+type rangedComponent struct {
+	targets []worldmap.Creature
+}
 
-func (c rangedComponent) rangedAttack(ai hasAi, world *worldmap.Map, targets []worldmap.Creature) Action {
-	return rangedAttack(ai, world, targets)
+func (c rangedComponent) action(ai hasAi, world *worldmap.Map) Action {
+	return rangedAttack(ai, world, c.targets)
+}
+
+func (c *rangedComponent) addTargets(targets []worldmap.Creature) {
+	c.targets = targets
 }
 
 func (c rangedComponent) MarshalJSON() ([]byte, error) {
