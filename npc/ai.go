@@ -477,6 +477,7 @@ type sheriffAi struct {
 	cover   coverComponent
 	items   itemsComponent
 	door    doorComponent
+	rc      rangedComponent
 	state   *string
 }
 
@@ -505,9 +506,10 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) 
 	cover := coverComponent{}
 	items := itemsComponent{}
 	door := doorComponent{}
+	rc := rangedComponent{}
 	state := "normal"
 	sensory := []senses{hm, isWeak, b}
-	ai := &sheriffAi{sensory, wc, mc, fc, hc, cc, cover, items, door, &state}
+	ai := &sheriffAi{sensory, wc, mc, fc, hc, cc, cover, items, door, rc, &state}
 	return ai
 }
 
@@ -559,7 +561,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 				return action
 			}
 
-			if action := rangedAttack(c, world, targets); action != nil {
+			if action := ai.rc.rangedAttack(c, world, targets); action != nil {
 				return action
 			}
 
@@ -573,7 +575,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 				return action
 			}
 
-			if action := rangedAttack(c, world, threats); action != nil {
+			if action := ai.rc.rangedAttack(c, world, threats); action != nil {
 				return action
 			}
 
@@ -676,6 +678,12 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 	}
 	buffer.WriteString(fmt.Sprintf("\"Door\":%s,", doorValue))
 
+	rcValue, err := json.Marshal(ai.rc)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Ranged\":%s,", rcValue))
+
 	stateValue, err := json.Marshal(ai.state)
 	if err != nil {
 		return nil, err
@@ -698,6 +706,7 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 		Cover     coverComponent
 		Items     itemsComponent
 		Door      doorComponent
+		Ranged    rangedComponent
 		State     *string
 	}
 
@@ -714,6 +723,7 @@ func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
 	ai.cover = v.Cover
 	ai.items = v.Items
 	ai.door = v.Door
+	ai.rc = v.Ranged
 	ai.sensory = unmarshalComponents(v.Senses)
 	ai.state = v.State
 

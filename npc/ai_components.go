@@ -552,6 +552,21 @@ func (c *doorComponent) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type rangedComponent struct{}
+
+func (c rangedComponent) rangedAttack(ai hasAi, world *worldmap.Map, targets []worldmap.Creature) Action {
+	return rangedAttack(ai, world, targets)
+}
+
+func (c rangedComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{}")
+	return buffer.Bytes(), nil
+}
+
+func (c *rangedComponent) UnmarshalJSON(data []byte) error {
+	return nil
+}
+
 func unmarshalComponents(cs []map[string]interface{}) []senses {
 	components := make([]senses, 0)
 	for _, c := range cs {
