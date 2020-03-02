@@ -39,7 +39,7 @@ type hasThreats interface {
 func newSensesComponent(attributes map[string]interface{}, otherData map[string]interface{}) senses {
 	switch attributes["Type"] {
 	case "bounties":
-		b := bountiesComponent{otherData["town"].(worldmap.Town), &Bounties{}}
+		b := bountiesComponent{*(otherData["town"].(*worldmap.Town)), &Bounties{}}
 		event.Subscribe(b)
 		return b
 	case "threats":

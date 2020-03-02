@@ -72,7 +72,8 @@ type ai interface {
 func newAi(aiType string, id string, world *worldmap.Map, location worldmap.Coordinates, town *worldmap.Town, building *worldmap.Building, dialogue dialogue, protectee *string) ai {
 	switch aiType {
 	case "animal":
-		return animalAi{worldmap.NewRandomWaypoint(world, location)}
+		waypoint := worldmap.NewRandomWaypoint(world, location)
+		return newGenericAi(aiType, id, waypoint, town, world)
 	case "aggressive animal":
 		v := ""
 		return aggAnimalAi{worldmap.NewRandomWaypoint(world, location), &v}
@@ -98,7 +99,18 @@ func newAi(aiType string, id string, world *worldmap.Map, location worldmap.Coor
 	case "bar patron":
 		return barPatronAi{worldmap.NewWithinArea(world, building.Area, location), new(int)}
 	case "sheriff":
-		return newSheriffAi(id, location, *town, world)
+		// Patrol between ends of the town and sheriff's office
+		points := make([]worldmap.Coordinates, 3)
+		points[0] = location
+		if town.Horizontal {
+			points[1] = worldmap.Coordinates{town.StreetArea.X1(), (town.StreetArea.Y1() + town.StreetArea.Y2()) / 2}
+			points[2] = worldmap.Coordinates{town.StreetArea.X2(), (town.StreetArea.Y1() + town.StreetArea.Y2()) / 2}
+		} else {
+			points[1] = worldmap.Coordinates{(town.StreetArea.X1() + town.StreetArea.X2()) / 2, town.StreetArea.Y1()}
+			points[2] = worldmap.Coordinates{(town.StreetArea.X1() + town.StreetArea.X2()) / 2, town.StreetArea.Y2()}
+		}
+		waypoint := worldmap.NewPatrol(points)
+		return newGenericAi(aiType, id, waypoint, town, world)
 	case "enemy":
 		return enemyAi{dialogue.(*enemyDialogue)}
 	}
@@ -485,45 +497,50 @@ func (ai *npcAi) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type sheriffAi struct {
+type genericAi struct {
 	sensory []senses
 	actions []hasAction
 	state   *string
 }
 
-func newSheriffAi(id string, l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) *sheriffAi {
-	// Patrol between ends of the town and sheriff's office
-	points := make([]worldmap.Coordinates, 3)
-	points[0] = l
-	if t.Horizontal {
-		points[1] = worldmap.Coordinates{t.StreetArea.X1(), (t.StreetArea.Y1() + t.StreetArea.Y2()) / 2}
-		points[2] = worldmap.Coordinates{t.StreetArea.X2(), (t.StreetArea.Y1() + t.StreetArea.Y2()) / 2}
-	} else {
-		points[1] = worldmap.Coordinates{(t.StreetArea.X1() + t.StreetArea.X2()) / 2, t.StreetArea.Y1()}
-		points[2] = worldmap.Coordinates{(t.StreetArea.X1() + t.StreetArea.X2()) / 2, t.StreetArea.Y2()}
-	}
+func newGenericAi(aiType string, id string, waypoint worldmap.WaypointSystem, t *worldmap.Town, world *worldmap.Map) *genericAi {
 	state := "normal"
 
 	otherData := make(map[string]interface{})
 	otherData["creatureID"] = id
 	otherData["town"] = t
-	otherData["waypoint"] = worldmap.NewPatrol(points)
+	otherData["waypoint"] = waypoint
 
 	sensory := make([]senses, 0)
-	for _, s := range aiData["sheriff"].Senses {
+	for _, s := range aiData[aiType].Senses {
 		sensory = append(sensory, newSensesComponent(s, otherData))
 	}
 
 	actions := make([]hasAction, 0)
-	for _, a := range aiData["sheriff"].Actions {
+	for _, a := range aiData[aiType].Actions {
 		actions = append(actions, newActionComponent(a, otherData))
 	}
 
-	ai := &sheriffAi{sensory, actions, &state}
+	ai := &genericAi{sensory, actions, &state}
 	return ai
 }
 
-func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
+func (ai genericAi) setMap(world *worldmap.Map) {
+	for _, a := range ai.actions {
+		if waypoint, ok := a.(waypointComponent); ok {
+			fmt.Println("sup")
+			switch w := waypoint.waypoint.(type) {
+			case *worldmap.RandomWaypoint:
+				w.SetMap(world)
+			case *worldmap.Patrol:
+			case *worldmap.WithinArea:
+				w.SetMap(world)
+			}
+		}
+	}
+}
+
+func (ai genericAi) update(c hasAi, world *worldmap.Map) Action {
 	threats := make([]worldmap.Creature, 0)
 	for _, s := range ai.sensory {
 		if sThreats, ok := s.(sensesThreats); ok {
@@ -553,7 +570,7 @@ func (ai sheriffAi) update(c hasAi, world *worldmap.Map) Action {
 	return ai.nextAction(c, world)
 }
 
-func (ai sheriffAi) nextState(c hasAi, world *worldmap.Map) {
+func (ai genericAi) nextState(c hasAi, world *worldmap.Map) {
 	stateCounts := make(map[string]int)
 
 	for _, sensory := range ai.sensory {
@@ -574,11 +591,14 @@ func (ai sheriffAi) nextState(c hasAi, world *worldmap.Map) {
 			states = append(states, state)
 		}
 	}
-	// Pick random state if there is a tie
-	*ai.state = states[rand.Intn(len(states))]
+
+	if len(states) > 0 {
+		// Pick random state if there is a tie
+		*ai.state = states[rand.Intn(len(states))]
+	}
 }
 
-func (ai sheriffAi) nextAction(c hasAi, world *worldmap.Map) Action {
+func (ai genericAi) nextAction(c hasAi, world *worldmap.Map) Action {
 	actions := ai.actions
 
 	sort.Slice(actions, func(i, j int) bool {
@@ -597,10 +617,10 @@ func (ai sheriffAi) nextAction(c hasAi, world *worldmap.Map) Action {
 	return NoAction{}
 }
 
-func (ai sheriffAi) MarshalJSON() ([]byte, error) {
+func (ai genericAi) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	buffer.WriteString("\"Type\":\"sheriff\",")
+	buffer.WriteString("\"Type\":\"generic\",")
 
 	sensoryValue, err := json.Marshal(ai.sensory)
 	if err != nil {
@@ -625,14 +645,14 @@ func (ai sheriffAi) MarshalJSON() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func (ai *sheriffAi) UnmarshalJSON(data []byte) error {
-	type sheriffAiJson struct {
+func (ai *genericAi) UnmarshalJSON(data []byte) error {
+	type genericAiJson struct {
 		Senses  []map[string]interface{}
 		Actions []map[string]interface{}
 		State   *string
 	}
 
-	var v sheriffAiJson
+	var v genericAiJson
 	if err := json.Unmarshal(data, &v); err != nil {
 		return err
 	}
@@ -863,8 +883,8 @@ func unmarshalAi(ai map[string]interface{}) ai {
 		err = json.Unmarshal(aiJson, &nAi)
 		check(err)
 		return nAi
-	case "sheriff":
-		var sAi sheriffAi
+	case "generic":
+		var sAi genericAi
 		err = json.Unmarshal(aiJson, &sAi)
 		check(err)
 		return sAi

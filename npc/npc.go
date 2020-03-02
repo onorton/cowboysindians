@@ -673,7 +673,6 @@ func (npc *Npc) Crouch() {
 
 func (npc *Npc) SetMap(world *worldmap.Map) {
 	npc.world = world
-
 	switch ai := npc.ai.(type) {
 	case animalAi:
 		ai.setMap(world)
@@ -682,6 +681,8 @@ func (npc *Npc) SetMap(world *worldmap.Map) {
 	case npcAi:
 		ai.setMap(world)
 	case barPatronAi:
+		ai.setMap(world)
+	case *genericAi:
 		ai.setMap(world)
 	}
 
@@ -754,7 +755,7 @@ func (npc *Npc) GetID() string {
 }
 
 func (npc *Npc) GetBounties() *Bounties {
-	if ai, ok := npc.ai.(*sheriffAi); ok {
+	if ai, ok := npc.ai.(*genericAi); ok {
 		for _, s := range ai.sensory {
 			if b, ok := s.(bountiesComponent); ok {
 				return b.bounties

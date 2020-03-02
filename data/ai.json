@@ -19,5 +19,9 @@
             {"Type": "wield"},
             {"Type": "wear"}
         ]
+    },
+    "animal": {
+        "Senses": [],
+        "Actions": [{"Type": "waypoint"}]
     }
 }
