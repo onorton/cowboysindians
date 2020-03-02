@@ -35,6 +35,25 @@ type hasTargets interface {
 type hasThreats interface {
 	addThreats([]worldmap.Creature)
 }
+
+func newSensesComponent(attributes map[string]interface{}, otherData map[string]interface{}) senses {
+	switch attributes["Type"] {
+	case "bounties":
+		b := bountiesComponent{otherData["town"].(worldmap.Town), &Bounties{}}
+		event.Subscribe(b)
+		return b
+	case "threats":
+		t := threatsComponent{structs.Initialise(), otherData["creatureID"].(string)}
+		event.Subscribe(t)
+		return t
+	case "isWeak":
+		return isWeakComponent{attributes["Threshold"].(float64)}
+	case "hasMount":
+		return hasMountComponent{}
+	}
+	return nil
+}
+
 type bountiesComponent struct {
 	t        worldmap.Town
 	bounties *Bounties
@@ -69,7 +88,6 @@ func (c bountiesComponent) targets(ai hasAi, world *worldmap.Map) []worldmap.Cre
 			}
 		}
 	}
-
 	return targets
 }
 

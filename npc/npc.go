@@ -11,7 +11,6 @@ import (
 	"github.com/onorton/cowboysindians/icon"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/message"
-	"github.com/onorton/cowboysindians/structs"
 	"github.com/onorton/cowboysindians/ui"
 	"github.com/onorton/cowboysindians/worldmap"
 	"github.com/rs/xid"
@@ -116,7 +115,7 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map, protectee *string) *N
 	id := xid.New().String()
 	dialogue := newDialogue(n.DialogueType, world, nil, nil)
 	location := worldmap.Coordinates{x, y}
-	ai := newAi(n.AiType, world, location, nil, nil, dialogue, protectee)
+	ai := newAi(n.AiType, id, world, location, nil, nil, dialogue, protectee)
 
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(n.Hp, n.Hp),
@@ -170,13 +169,7 @@ func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Tow
 	id := xid.New().String()
 	dialogue := newDialogue(n.DialogueType, world, &t, &b)
 	location := worldmap.Coordinates{x, y}
-	ai := newAi(n.AiType, world, location, &t, &b, dialogue, nil)
-	if n.AiType == "sheriff" {
-		sensory := ai.(*sheriffAi).sensory
-		t := threatsComponent{structs.Initialise(), id}
-		event.Subscribe(t)
-		ai.(*sheriffAi).sensory = append(sensory, t)
-	}
+	ai := newAi(n.AiType, id, world, location, &t, &b, dialogue, nil)
 
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(n.Hp, n.Hp),

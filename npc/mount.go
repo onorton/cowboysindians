@@ -43,7 +43,7 @@ func NewMount(name string, x, y int, world *worldmap.Map) *Mount {
 	mount := mountData[name]
 	id := xid.New().String()
 	location := worldmap.Coordinates{x, y}
-	ai := newAi(mount.AiType, world, location, nil, nil, nil, nil)
+	ai := newAi(mount.AiType, id, world, location, nil, nil, nil, nil)
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(mount.Hp, mount.Hp),
 		"ac":          worldmap.NewAttribute(mount.Ac, mount.Ac),

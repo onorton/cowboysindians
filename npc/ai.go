@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"math/rand"
 	"sort"
@@ -13,6 +14,21 @@ import (
 	"github.com/onorton/cowboysindians/structs"
 	"github.com/onorton/cowboysindians/worldmap"
 )
+
+type aiAttributes struct {
+	Senses []map[string]interface{}
+}
+
+var aiData map[string]aiAttributes = fetchAiData()
+
+func fetchAiData() map[string]aiAttributes {
+	data, err := ioutil.ReadFile("data/ai.json")
+	check(err)
+	var aiD map[string]aiAttributes
+	err = json.Unmarshal(data, &aiD)
+	check(err)
+	return aiD
+}
 
 type hasAi interface {
 	consume(*item.Item)
@@ -52,7 +68,7 @@ type ai interface {
 	update(hasAi, *worldmap.Map) Action
 }
 
-func newAi(aiType string, world *worldmap.Map, location worldmap.Coordinates, town *worldmap.Town, building *worldmap.Building, dialogue dialogue, protectee *string) ai {
+func newAi(aiType string, id string, world *worldmap.Map, location worldmap.Coordinates, town *worldmap.Town, building *worldmap.Building, dialogue dialogue, protectee *string) ai {
 	switch aiType {
 	case "animal":
 		return animalAi{worldmap.NewRandomWaypoint(world, location)}
@@ -81,7 +97,7 @@ func newAi(aiType string, world *worldmap.Map, location worldmap.Coordinates, to
 	case "bar patron":
 		return barPatronAi{worldmap.NewWithinArea(world, building.Area, location), new(int)}
 	case "sheriff":
-		return newSheriffAi(location, *town, world)
+		return newSheriffAi(id, location, *town, world)
 	case "enemy":
 		return enemyAi{dialogue.(*enemyDialogue)}
 	}
@@ -474,7 +490,7 @@ type sheriffAi struct {
 	state   *string
 }
 
-func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) *sheriffAi {
+func newSheriffAi(id string, l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) *sheriffAi {
 	// Patrol between ends of the town and sheriff's office
 	points := make([]worldmap.Coordinates, 3)
 	points[0] = l
@@ -485,15 +501,11 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) 
 		points[1] = worldmap.Coordinates{(t.StreetArea.X1() + t.StreetArea.X2()) / 2, t.StreetArea.Y1()}
 		points[2] = worldmap.Coordinates{(t.StreetArea.X1() + t.StreetArea.X2()) / 2, t.StreetArea.Y2()}
 	}
-	b := bountiesComponent{t, &Bounties{}}
-	event.Subscribe(b)
 
 	waypoint := worldmap.NewPatrol(points)
 	wc := waypointComponent{waypoint}
-	hm := hasMountComponent{}
 	mc := findMountComponent{}
 	fc := fleeComponent{[]worldmap.Creature{}}
-	isWeak := isWeakComponent{0.5}
 	hc := consumeComponent{"hp"}
 	cc := chaseComponent{0.3, 0.7, []worldmap.Creature{}}
 	cover := coverComponent{[]worldmap.Creature{}}
@@ -503,7 +515,15 @@ func newSheriffAi(l worldmap.Coordinates, t worldmap.Town, world *worldmap.Map) 
 	wield := wieldComponent{}
 	wear := wearComponent{}
 	state := "normal"
-	sensory := []senses{hm, isWeak, b}
+
+	otherData := make(map[string]interface{})
+	otherData["creatureID"] = id
+	otherData["town"] = t
+	sensory := make([]senses, 0)
+	for _, s := range aiData["sheriff"].Senses {
+		sensory = append(sensory, newSensesComponent(s, otherData))
+	}
+
 	actions := []hasAction{wc, mc, fc, hc, cc, cover, items, door, rc, wield, wear}
 	ai := &sheriffAi{sensory, actions, &state}
 	return ai

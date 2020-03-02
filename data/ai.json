@@ -1,0 +1,13 @@
+{
+    "sheriff": {
+        "Senses": [
+            {"Type": "isWeak", "Threshold": 0.5},
+            {"Type": "bounties"},
+            {"Type": "threats"},
+            {"Type": "hasMount"}
+        ],
+        "Actions": [
+
+        ]
+    }
+}
