@@ -7,7 +7,17 @@
             {"Type": "hasMount"}
         ],
         "Actions": [
-
+            {"Type": "waypoint"},
+            {"Type": "chase", "Chase": 0.7, "Cover": 0.3},
+            {"Type": "findMount"},
+            {"Type": "flee"},
+            {"Type": "consume", "Attribute": "hp"},
+            {"Type": "cover"},
+            {"Type": "items"},
+            {"Type": "ranged"},
+            {"Type": "door"},
+            {"Type": "wield"},
+            {"Type": "wear"}
         ]
     }
 }

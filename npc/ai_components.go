@@ -54,6 +54,34 @@ func newSensesComponent(attributes map[string]interface{}, otherData map[string]
 	return nil
 }
 
+func newActionComponent(attributes map[string]interface{}, otherData map[string]interface{}) hasAction {
+	switch attributes["Type"] {
+	case "findMount":
+		return findMountComponent{}
+	case "flee":
+		return fleeComponent{[]worldmap.Creature{}}
+	case "consume":
+		return consumeComponent{attributes["Attribute"].(string)}
+	case "waypoint":
+		return waypointComponent{otherData["waypoint"].(worldmap.WaypointSystem)}
+	case "chase":
+		return chaseComponent{attributes["Cover"].(float64), attributes["Chase"].(float64), []worldmap.Creature{}}
+	case "cover":
+		return coverComponent{[]worldmap.Creature{}}
+	case "items":
+		return itemsComponent{}
+	case "door":
+		return doorComponent{}
+	case "ranged":
+		return rangedComponent{[]worldmap.Creature{}}
+	case "wield":
+		return wieldComponent{}
+	case "wear":
+		return wearComponent{}
+	}
+	return nil
+}
+
 type bountiesComponent struct {
 	t        worldmap.Town
 	bounties *Bounties

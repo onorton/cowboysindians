@@ -16,10 +16,11 @@ import (
 )
 
 type aiAttributes struct {
-	Senses []map[string]interface{}
+	Senses  []map[string]interface{}
+	Actions []map[string]interface{}
 }
 
-var aiData map[string]aiAttributes = fetchAiData()
+var aiData = fetchAiData()
 
 func fetchAiData() map[string]aiAttributes {
 	data, err := ioutil.ReadFile("data/ai.json")
@@ -501,30 +502,23 @@ func newSheriffAi(id string, l worldmap.Coordinates, t worldmap.Town, world *wor
 		points[1] = worldmap.Coordinates{(t.StreetArea.X1() + t.StreetArea.X2()) / 2, t.StreetArea.Y1()}
 		points[2] = worldmap.Coordinates{(t.StreetArea.X1() + t.StreetArea.X2()) / 2, t.StreetArea.Y2()}
 	}
-
-	waypoint := worldmap.NewPatrol(points)
-	wc := waypointComponent{waypoint}
-	mc := findMountComponent{}
-	fc := fleeComponent{[]worldmap.Creature{}}
-	hc := consumeComponent{"hp"}
-	cc := chaseComponent{0.3, 0.7, []worldmap.Creature{}}
-	cover := coverComponent{[]worldmap.Creature{}}
-	items := itemsComponent{}
-	door := doorComponent{}
-	rc := rangedComponent{[]worldmap.Creature{}}
-	wield := wieldComponent{}
-	wear := wearComponent{}
 	state := "normal"
 
 	otherData := make(map[string]interface{})
 	otherData["creatureID"] = id
 	otherData["town"] = t
+	otherData["waypoint"] = worldmap.NewPatrol(points)
+
 	sensory := make([]senses, 0)
 	for _, s := range aiData["sheriff"].Senses {
 		sensory = append(sensory, newSensesComponent(s, otherData))
 	}
 
-	actions := []hasAction{wc, mc, fc, hc, cc, cover, items, door, rc, wield, wear}
+	actions := make([]hasAction, 0)
+	for _, a := range aiData["sheriff"].Actions {
+		actions = append(actions, newActionComponent(a, otherData))
+	}
+
 	ai := &sheriffAi{sensory, actions, &state}
 	return ai
 }
