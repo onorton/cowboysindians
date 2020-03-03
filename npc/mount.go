@@ -276,15 +276,11 @@ func (m *Mount) SetMap(world *worldmap.Map) {
 	m.world = world
 
 	switch ai := m.ai.(type) {
-	case animalAi:
-		ai.setMap(world)
-	case aggAnimalAi:
-		ai.setMap(world)
 	case npcAi:
 		ai.setMap(world)
 	case barPatronAi:
 		ai.setMap(world)
-	case *genericAi:
+	case genericAi:
 		ai.setMap(world)
 	}
 }

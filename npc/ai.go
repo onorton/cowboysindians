@@ -70,13 +70,11 @@ type ai interface {
 }
 
 func newAi(aiType string, id string, world *worldmap.Map, location worldmap.Coordinates, town *worldmap.Town, building *worldmap.Building, dialogue dialogue, protectee *string) ai {
+
 	switch aiType {
-	case "animal":
+	case "animal", "aggressive animal":
 		waypoint := worldmap.NewRandomWaypoint(world, location)
 		return newGenericAi(aiType, id, waypoint, town, world)
-	case "aggressive animal":
-		v := ""
-		return aggAnimalAi{worldmap.NewRandomWaypoint(world, location), &v}
 	case "protector":
 		if protectee != nil {
 			v := ""
@@ -114,166 +112,6 @@ func newAi(aiType string, id string, world *worldmap.Map, location worldmap.Coor
 	case "enemy":
 		return enemyAi{dialogue.(*enemyDialogue)}
 	}
-	return nil
-}
-
-type animalAi struct {
-	waypoint worldmap.WaypointSystem
-}
-
-func (ai animalAi) update(c hasAi, world *worldmap.Map) Action {
-	x, y := c.GetCoordinates()
-	location := worldmap.Coordinates{x, y}
-	waypoint := ai.waypoint.NextWaypoint(location)
-	aiMap := getWaypointMap(c, waypoint, world)
-
-	tileUnoccupied := func(x, y int) bool {
-		return !world.IsOccupied(x, y)
-	}
-	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupied)
-
-	if action := move(c, world, possibleLocations); action != nil {
-		return action
-	}
-
-	return NoAction{}
-}
-
-func (ai animalAi) setMap(world *worldmap.Map) {
-	switch w := ai.waypoint.(type) {
-	case *worldmap.RandomWaypoint:
-		w.SetMap(world)
-	case *worldmap.Patrol:
-	case *worldmap.WithinArea:
-		w.SetMap(world)
-	}
-}
-
-func (ai animalAi) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{")
-
-	buffer.WriteString("\"Type\":\"animal\",")
-
-	waypointValue, err := json.Marshal(ai.waypoint)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Waypoint\":%s", waypointValue))
-	buffer.WriteString("}")
-
-	return buffer.Bytes(), nil
-}
-
-func (ai *animalAi) UnmarshalJSON(data []byte) error {
-	type animalAiJson struct {
-		Waypoint map[string]interface{}
-	}
-
-	var v animalAiJson
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-	ai.waypoint = worldmap.UnmarshalWaypointSystem(v.Waypoint)
-	return nil
-}
-
-type aggAnimalAi struct {
-	waypoint      worldmap.WaypointSystem
-	currentTarget *string
-}
-
-func (ai aggAnimalAi) update(c hasAi, world *worldmap.Map) Action {
-	x, y := c.GetCoordinates()
-	location := worldmap.Coordinates{x, y}
-	waypoint := ai.waypoint.NextWaypoint(location)
-
-	creatures := visibleCreatures(c, world)
-	// if current target is not visible, select a new close target
-	targets := []worldmap.Creature{}
-
-	for _, t := range creatures {
-		if t.GetID() == *ai.currentTarget {
-			targets = []worldmap.Creature{t}
-		}
-	}
-
-	if len(targets) == 0 {
-		closeCreatures := make([]worldmap.Creature, 0)
-		for _, t := range creatures {
-			tX, tY := t.GetCoordinates()
-			if worldmap.Distance(x, y, tX, tY) <= float64(c.GetVisionDistance()) {
-				closeCreatures = append(closeCreatures, t)
-			}
-		}
-		if len(closeCreatures) > 0 {
-			target := closeCreatures[rand.Intn(len(closeCreatures))]
-			targets = []worldmap.Creature{target}
-			*ai.currentTarget = target.GetID()
-		} else {
-			*ai.currentTarget = ""
-		}
-	}
-
-	coefficients := []float64{0.0, 1.0}
-	if len(targets) > 0 {
-		coefficients = []float64{1.0, 0.0}
-	}
-	aiMap := addMaps([][][]float64{getChaseMap(c, world, targets), getWaypointMap(c, waypoint, world)}, coefficients)
-	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, func(int, int) bool { return true })
-
-	if action := move(c, world, possibleLocations); action != nil {
-		return action
-	}
-
-	return NoAction{}
-}
-
-func (ai aggAnimalAi) setMap(world *worldmap.Map) {
-	switch w := ai.waypoint.(type) {
-	case *worldmap.RandomWaypoint:
-		w.SetMap(world)
-	case *worldmap.Patrol:
-	case *worldmap.WithinArea:
-		w.SetMap(world)
-	}
-}
-
-func (ai aggAnimalAi) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{")
-
-	buffer.WriteString("\"Type\":\"aggressive animal\",")
-
-	waypointValue, err := json.Marshal(ai.waypoint)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Waypoint\":%s,", waypointValue))
-
-	targetValue, err := json.Marshal(ai.currentTarget)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Target\":%s", targetValue))
-	buffer.WriteString("}")
-
-	return buffer.Bytes(), nil
-}
-
-func (ai *aggAnimalAi) UnmarshalJSON(data []byte) error {
-	type aggAnimalAiJson struct {
-		Waypoint map[string]interface{}
-		Target   string
-	}
-
-	var v aggAnimalAiJson
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-	ai.waypoint = worldmap.UnmarshalWaypointSystem(v.Waypoint)
-	ai.currentTarget = &v.Target
 	return nil
 }
 
@@ -503,7 +341,7 @@ type genericAi struct {
 	state   *string
 }
 
-func newGenericAi(aiType string, id string, waypoint worldmap.WaypointSystem, t *worldmap.Town, world *worldmap.Map) *genericAi {
+func newGenericAi(aiType string, id string, waypoint worldmap.WaypointSystem, t *worldmap.Town, world *worldmap.Map) genericAi {
 	state := "normal"
 
 	otherData := make(map[string]interface{})
@@ -521,14 +359,12 @@ func newGenericAi(aiType string, id string, waypoint worldmap.WaypointSystem, t 
 		actions = append(actions, newActionComponent(a, otherData))
 	}
 
-	ai := &genericAi{sensory, actions, &state}
-	return ai
+	return genericAi{sensory, actions, &state}
 }
 
 func (ai genericAi) setMap(world *worldmap.Map) {
 	for _, a := range ai.actions {
 		if waypoint, ok := a.(waypointComponent); ok {
-			fmt.Println("sup")
 			switch w := waypoint.waypoint.(type) {
 			case *worldmap.RandomWaypoint:
 				w.SetMap(world)
@@ -863,16 +699,6 @@ func unmarshalAi(ai map[string]interface{}) ai {
 	check(err)
 
 	switch ai["Type"] {
-	case "animal":
-		var aAi animalAi
-		err = json.Unmarshal(aiJson, &aAi)
-		check(err)
-		return aAi
-	case "aggressive animal":
-		var aAi aggAnimalAi
-		err = json.Unmarshal(aiJson, &aAi)
-		check(err)
-		return aAi
 	case "protector":
 		var pAi protectorAi
 		err := json.Unmarshal(aiJson, &pAi)

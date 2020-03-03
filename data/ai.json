@@ -23,5 +23,12 @@
     "animal": {
         "Senses": [],
         "Actions": [{"Type": "waypoint"}]
+    },
+    "aggressive animal": {
+        "Senses": [{"Type": "randomTarget"}],
+        "Actions": [
+            {"Type": "waypoint"},
+            {"Type": "chase", "Chase": 1, "Cover": 0}
+        ]
     }
 }

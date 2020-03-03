@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 
 	"github.com/onorton/cowboysindians/event"
 	"github.com/onorton/cowboysindians/item"
@@ -50,6 +51,9 @@ func newSensesComponent(attributes map[string]interface{}, otherData map[string]
 		return isWeakComponent{attributes["Threshold"].(float64)}
 	case "hasMount":
 		return hasMountComponent{}
+	case "randomTarget":
+		id := ""
+		return randomTargetComponent{&id}
 	}
 	return nil
 }
@@ -124,7 +128,7 @@ func (c bountiesComponent) nextState(currState string, ai hasAi, world *worldmap
 		return "fighting"
 	}
 
-	if currState == "fighting" && len(c.targets(ai, world)) > 0 {
+	if currState == "fighting" && len(c.targets(ai, world)) == 0 {
 		return "normal"
 	}
 
@@ -166,6 +170,83 @@ func (c *bountiesComponent) UnmarshalJSON(data []byte) error {
 	}
 	c.t = v.Town
 	c.bounties = v.Bounties
+
+	return nil
+}
+
+type randomTargetComponent struct {
+	currentTarget *string
+}
+
+func (c randomTargetComponent) targets(ai hasAi, world *worldmap.Map) []worldmap.Creature {
+	d := ai.GetVisionDistance()
+	aiX, aiY := ai.GetCoordinates()
+
+	creatures := visibleCreatures(ai, world)
+	// if current target is not visible, select a new close target
+
+	for _, t := range creatures {
+		if t.GetID() == *c.currentTarget {
+			return []worldmap.Creature{t}
+		}
+	}
+
+	targets := []worldmap.Creature{}
+	closeCreatures := make([]worldmap.Creature, 0)
+	for _, t := range creatures {
+		tX, tY := t.GetCoordinates()
+		if worldmap.Distance(aiX, aiY, tX, tY) <= float64(d) {
+			closeCreatures = append(closeCreatures, t)
+		}
+	}
+	if len(closeCreatures) > 0 {
+		target := closeCreatures[rand.Intn(len(closeCreatures))]
+		targets = []worldmap.Creature{target}
+		*c.currentTarget = target.GetID()
+	} else {
+		*c.currentTarget = ""
+	}
+	return targets
+}
+
+func (c randomTargetComponent) nextState(currState string, ai hasAi, world *worldmap.Map) string {
+	if currState == "normal" && len(c.targets(ai, world)) > 0 {
+		return "fighting"
+	}
+
+	if currState == "fighting" && len(c.targets(ai, world)) > 0 {
+		return "normal"
+	}
+
+	return currState
+}
+
+func (c randomTargetComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString("\"Type\": \"randomTarget\",")
+
+	currTargetValue, err := json.Marshal(c.currentTarget)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Target\":%s", currTargetValue))
+
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (c *randomTargetComponent) UnmarshalJSON(data []byte) error {
+	type randomTargetJSON struct {
+		Target string
+	}
+
+	var v randomTargetJSON
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	c.currentTarget = &v.Target
 
 	return nil
 }
@@ -794,7 +875,13 @@ func unmarshalSenses(cs []map[string]interface{}) []senses {
 			err := json.Unmarshal(componentJSON, &hasMount)
 			check(err)
 			component = hasMount
+		case "randomTarget":
+			var randomTarget randomTargetComponent
+			err := json.Unmarshal(componentJSON, &randomTarget)
+			check(err)
+			component = randomTarget
 		}
+
 		components = append(components, component)
 	}
 	return components
