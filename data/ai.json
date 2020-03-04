@@ -30,5 +30,20 @@
             {"Type": "waypoint"},
             {"Type": "chase", "Chase": 1, "Cover": 0}
         ]
+    },
+    "npc": {
+        "Senses": [
+            {"Type": "isWeak", "Threshold": 0.5},
+            {"Type": "threats"}
+        ],
+        "Actions": [            
+            {"Type": "flee"},
+            {"Type": "mount"},
+            {"Type": "waypoint"},
+            {"Type": "consume", "Attribute": "hp"},
+            {"Type": "door"},
+            {"Type": "items"},
+            {"Type": "moveRandomly"}
+        ]
     }
 }

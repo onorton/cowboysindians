@@ -62,12 +62,16 @@ func newActionComponent(attributes map[string]interface{}, otherData map[string]
 	switch attributes["Type"] {
 	case "findMount":
 		return findMountComponent{}
+	case "mount":
+		return mountComponent{}
 	case "flee":
 		return fleeComponent{[]worldmap.Creature{}}
 	case "consume":
 		return consumeComponent{attributes["Attribute"].(string)}
 	case "waypoint":
 		return waypointComponent{otherData["waypoint"].(worldmap.WaypointSystem)}
+	case "moveRandomly":
+		return moveRandomlyComponent{}
 	case "chase":
 		return chaseComponent{attributes["Cover"].(float64), attributes["Chase"].(float64), []worldmap.Creature{}}
 	case "cover":
@@ -464,6 +468,32 @@ func (c *findMountComponent) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type mountComponent struct{}
+
+func (c mountComponent) action(ai hasAi, world *worldmap.Map) Action {
+	mountMap := getMountMap(ai, world)
+	if action := mount(ai, world, mountMap); action != nil {
+		return action
+	}
+	return nil
+}
+
+func (c mountComponent) shouldHappen(state string) float64 {
+	if state == "normal" {
+		return 0.5
+	}
+	return 0
+}
+
+func (c mountComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{\"Type\": \"mount\"}")
+	return buffer.Bytes(), nil
+}
+
+func (c *mountComponent) UnmarshalJSON(data []byte) error {
+	return nil
+}
+
 type fleeComponent struct {
 	threats []worldmap.Creature
 }
@@ -617,6 +647,47 @@ func (c *waypointComponent) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	c.waypoint = worldmap.UnmarshalWaypointSystem(v.Waypoint)
+	return nil
+}
+
+type moveRandomlyComponent struct {
+	moveRandomly worldmap.WaypointSystem
+}
+
+func (c moveRandomlyComponent) action(ai hasAi, world *worldmap.Map) Action {
+	possibleLocations := make([]worldmap.Coordinates, 0)
+	aiX, aiY := ai.GetCoordinates()
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			x, y := aiX+j, aiY+i
+			if world.IsValid(x, y) && world.IsPassable(x, y) && !world.IsOccupied(x, y) {
+				possibleLocations = append(possibleLocations, worldmap.Coordinates{x, y})
+			}
+		}
+	}
+
+	if action := moveIfMounted(ai, world, possibleLocations); action != nil {
+		return action
+	}
+
+	if action := move(ai, world, possibleLocations); action != nil {
+		return action
+	}
+
+	return nil
+}
+
+func (c moveRandomlyComponent) shouldHappen(state string) float64 {
+	// Should be last thing an ai tries
+	return 0
+}
+
+func (c moveRandomlyComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{\"Type\": \"moveRandomly\"}")
+	return buffer.Bytes(), nil
+}
+
+func (c *moveRandomlyComponent) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
@@ -899,6 +970,11 @@ func unmarshalActions(cs []map[string]interface{}) []hasAction {
 			err := json.Unmarshal(componentJSON, &findMount)
 			check(err)
 			component = findMount
+		case "mount":
+			var mount mountComponent
+			err := json.Unmarshal(componentJSON, &mount)
+			check(err)
+			component = mount
 		case "flee":
 			var flee fleeComponent
 			err := json.Unmarshal(componentJSON, &flee)
@@ -914,6 +990,11 @@ func unmarshalActions(cs []map[string]interface{}) []hasAction {
 			err := json.Unmarshal(componentJSON, &waypoint)
 			check(err)
 			component = waypoint
+		case "moveRandomly":
+			var moveRandomly moveRandomlyComponent
+			err := json.Unmarshal(componentJSON, &moveRandomly)
+			check(err)
+			component = moveRandomly
 		case "chase":
 			var chase chaseComponent
 			err := json.Unmarshal(componentJSON, &chase)

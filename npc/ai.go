@@ -81,19 +81,25 @@ func newAi(aiType string, id string, world *worldmap.Map, location worldmap.Coor
 			ai := protectorAi{*protectee, &[]string{}, &v}
 			event.Subscribe(&ai)
 			return ai
-		} else if building != nil {
-			return npcAi{worldmap.NewWithinArea(world, building.Area, location)}
 		} else {
-			return npcAi{worldmap.NewRandomWaypoint(world, location)}
+			var waypoint worldmap.WaypointSystem
+			if building != nil {
+				waypoint = worldmap.NewWithinArea(world, building.Area, location)
+			} else {
+				waypoint = worldmap.NewRandomWaypoint(world, location)
+			}
+			return newGenericAi("npc", id, waypoint, town, world)
 		}
 	case "npc":
+		var waypoint worldmap.WaypointSystem
 		if building != nil {
-			return npcAi{worldmap.NewWithinArea(world, building.Area, location)}
+			waypoint = worldmap.NewWithinArea(world, building.Area, location)
 		} else {
-			return npcAi{worldmap.NewRandomWaypoint(world, location)}
+			waypoint = worldmap.NewRandomWaypoint(world, location)
 		}
+		return newGenericAi(aiType, id, waypoint, town, world)
 	case "farmer":
-		return npcAi{worldmap.NewWithinArea(world, town.TownArea, location)}
+		return newGenericAi(aiType, id, worldmap.NewWithinArea(world, town.TownArea, location), town, world)
 	case "bar patron":
 		return barPatronAi{worldmap.NewWithinArea(world, building.Area, location), new(int)}
 	case "sheriff":
@@ -246,92 +252,6 @@ func (ai *protectorAi) UnmarshalJSON(data []byte) error {
 	ai.targets = &v.Targets
 	ai.currentTarget = &v.Target
 	event.Subscribe(ai)
-	return nil
-}
-
-type npcAi struct {
-	waypoint worldmap.WaypointSystem
-}
-
-func (ai npcAi) update(c hasAi, world *worldmap.Map) Action {
-	cX, cY := c.GetCoordinates()
-	location := worldmap.Coordinates{cX, cY}
-	waypoint := ai.waypoint.NextWaypoint(location)
-	aiMap := getWaypointMap(c, waypoint, world)
-	mountMap := getMountMap(c, world)
-
-	tileUnoccupied := func(x, y int) bool {
-		return !world.IsOccupied(x, y)
-	}
-	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupied)
-
-	if action := moveIfMounted(c, world, possibleLocations); action != nil {
-		return action
-	}
-
-	if action := healIfWeak(c); action != nil {
-		return action
-	}
-
-	if action := mount(c, world, mountMap); action != nil {
-		return action
-	}
-
-	if action := tryOpeningDoor(c, world); action != nil {
-		return action
-	}
-
-	if action := move(c, world, possibleLocations); action != nil {
-		return action
-	}
-
-	if action := pickupItems(c, world); action != nil {
-		return action
-	}
-
-	if action := moveRandomly(c, world); action != nil {
-		return action
-	}
-
-	return NoAction{}
-}
-
-func (ai npcAi) setMap(world *worldmap.Map) {
-	switch w := ai.waypoint.(type) {
-	case *worldmap.RandomWaypoint:
-		w.SetMap(world)
-	case *worldmap.Patrol:
-	case *worldmap.WithinArea:
-		w.SetMap(world)
-	}
-}
-
-func (ai npcAi) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{")
-
-	buffer.WriteString("\"Type\":\"npc\",")
-
-	waypointValue, err := json.Marshal(ai.waypoint)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Waypoint\":%s", waypointValue))
-	buffer.WriteString("}")
-
-	return buffer.Bytes(), nil
-}
-
-func (ai *npcAi) UnmarshalJSON(data []byte) error {
-	type npcAiJson struct {
-		Waypoint map[string]interface{}
-	}
-
-	var v npcAiJson
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-	ai.waypoint = worldmap.UnmarshalWaypointSystem(v.Waypoint)
 	return nil
 }
 
@@ -704,11 +624,6 @@ func unmarshalAi(ai map[string]interface{}) ai {
 		err := json.Unmarshal(aiJson, &pAi)
 		check(err)
 		return pAi
-	case "npc":
-		var nAi npcAi
-		err = json.Unmarshal(aiJson, &nAi)
-		check(err)
-		return nAi
 	case "generic":
 		var sAi genericAi
 		err = json.Unmarshal(aiJson, &sAi)
