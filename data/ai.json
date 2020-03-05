@@ -7,7 +7,7 @@
             {"Type": "hasMount"}
         ],
         "Actions": [
-            {"Type": "waypoint"},
+            {"Type": "waypoint", "waypointType": "sheriff patrol"},
             {"Type": "chase", "Chase": 0.7, "Cover": 0.3},
             {"Type": "findMount"},
             {"Type": "flee"},
@@ -22,12 +22,12 @@
     },
     "animal": {
         "Senses": [],
-        "Actions": [{"Type": "waypoint"}]
+        "Actions": [{"Type": "waypoint", "waypointType": "random"}]
     },
     "aggressive animal": {
         "Senses": [{"Type": "randomTarget"}],
         "Actions": [
-            {"Type": "waypoint"},
+            {"Type": "waypoint", "waypointType": "random"},
             {"Type": "chase", "Chase": 1, "Cover": 0}
         ]
     },
@@ -39,7 +39,7 @@
         "Actions": [            
             {"Type": "flee"},
             {"Type": "mount"},
-            {"Type": "waypoint"},
+            {"Type": "waypoint" , "waypointType": "random"},
             {"Type": "consume", "Attribute": "hp"},
             {"Type": "door"},
             {"Type": "items"},

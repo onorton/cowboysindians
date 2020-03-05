@@ -72,9 +72,8 @@ type ai interface {
 func newAi(aiType string, id string, world *worldmap.Map, location worldmap.Coordinates, town *worldmap.Town, building *worldmap.Building, dialogue dialogue, protectee *string) ai {
 
 	switch aiType {
-	case "animal", "aggressive animal":
-		waypoint := worldmap.NewRandomWaypoint(world, location)
-		return newGenericAi(aiType, id, waypoint, town, world)
+	case "animal", "aggressive animal", "npc", "farmer", "sheriff":
+		return newGenericAi(aiType, id, location, town, building, world)
 	case "protector":
 		if protectee != nil {
 			v := ""
@@ -82,39 +81,10 @@ func newAi(aiType string, id string, world *worldmap.Map, location worldmap.Coor
 			event.Subscribe(&ai)
 			return ai
 		} else {
-			var waypoint worldmap.WaypointSystem
-			if building != nil {
-				waypoint = worldmap.NewWithinArea(world, building.Area, location)
-			} else {
-				waypoint = worldmap.NewRandomWaypoint(world, location)
-			}
-			return newGenericAi("npc", id, waypoint, town, world)
+			return newGenericAi("npc", id, location, town, building, world)
 		}
-	case "npc":
-		var waypoint worldmap.WaypointSystem
-		if building != nil {
-			waypoint = worldmap.NewWithinArea(world, building.Area, location)
-		} else {
-			waypoint = worldmap.NewRandomWaypoint(world, location)
-		}
-		return newGenericAi(aiType, id, waypoint, town, world)
-	case "farmer":
-		return newGenericAi(aiType, id, worldmap.NewWithinArea(world, town.TownArea, location), town, world)
 	case "bar patron":
 		return barPatronAi{worldmap.NewWithinArea(world, building.Area, location), new(int)}
-	case "sheriff":
-		// Patrol between ends of the town and sheriff's office
-		points := make([]worldmap.Coordinates, 3)
-		points[0] = location
-		if town.Horizontal {
-			points[1] = worldmap.Coordinates{town.StreetArea.X1(), (town.StreetArea.Y1() + town.StreetArea.Y2()) / 2}
-			points[2] = worldmap.Coordinates{town.StreetArea.X2(), (town.StreetArea.Y1() + town.StreetArea.Y2()) / 2}
-		} else {
-			points[1] = worldmap.Coordinates{(town.StreetArea.X1() + town.StreetArea.X2()) / 2, town.StreetArea.Y1()}
-			points[2] = worldmap.Coordinates{(town.StreetArea.X1() + town.StreetArea.X2()) / 2, town.StreetArea.Y2()}
-		}
-		waypoint := worldmap.NewPatrol(points)
-		return newGenericAi(aiType, id, waypoint, town, world)
 	case "enemy":
 		return enemyAi{dialogue.(*enemyDialogue)}
 	}
@@ -261,13 +231,15 @@ type genericAi struct {
 	state   *string
 }
 
-func newGenericAi(aiType string, id string, waypoint worldmap.WaypointSystem, t *worldmap.Town, world *worldmap.Map) genericAi {
+func newGenericAi(aiType string, id string, l worldmap.Coordinates, t *worldmap.Town, b *worldmap.Building, world *worldmap.Map) genericAi {
 	state := "normal"
 
 	otherData := make(map[string]interface{})
+	otherData["location"] = l
 	otherData["creatureID"] = id
 	otherData["town"] = t
-	otherData["waypoint"] = waypoint
+	otherData["building"] = b
+	otherData["world"] = world
 
 	sensory := make([]senses, 0)
 	for _, s := range aiData[aiType].Senses {

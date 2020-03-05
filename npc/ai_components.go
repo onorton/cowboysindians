@@ -69,7 +69,30 @@ func newActionComponent(attributes map[string]interface{}, otherData map[string]
 	case "consume":
 		return consumeComponent{attributes["Attribute"].(string)}
 	case "waypoint":
-		return waypointComponent{otherData["waypoint"].(worldmap.WaypointSystem)}
+		l := otherData["location"].(worldmap.Coordinates)
+		switch attributes["waypointType"] {
+		case "random":
+			b := otherData["building"].(*worldmap.Building)
+			w := otherData["world"].(*worldmap.Map)
+			if b != nil {
+				return waypointComponent{worldmap.NewWithinArea(w, b.Area, l)}
+			}
+			return waypointComponent{worldmap.NewRandomWaypoint(w, l)}
+
+		case "sheriff patrol":
+			town := otherData["town"].(*worldmap.Town)
+			// Patrol between ends of the town and sheriff's office
+			points := make([]worldmap.Coordinates, 3)
+			points[0] = l
+			if town.Horizontal {
+				points[1] = worldmap.Coordinates{town.StreetArea.X1(), (town.StreetArea.Y1() + town.StreetArea.Y2()) / 2}
+				points[2] = worldmap.Coordinates{town.StreetArea.X2(), (town.StreetArea.Y1() + town.StreetArea.Y2()) / 2}
+			} else {
+				points[1] = worldmap.Coordinates{(town.StreetArea.X1() + town.StreetArea.X2()) / 2, town.StreetArea.Y1()}
+				points[2] = worldmap.Coordinates{(town.StreetArea.X1() + town.StreetArea.X2()) / 2, town.StreetArea.Y2()}
+			}
+			return waypointComponent{worldmap.NewPatrol(points)}
+		}
 	case "moveRandomly":
 		return moveRandomlyComponent{}
 	case "chase":
