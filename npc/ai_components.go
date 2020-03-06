@@ -47,6 +47,10 @@ func newSensesComponent(attributes map[string]interface{}, otherData map[string]
 		t := threatsComponent{structs.Initialise(), otherData["creatureID"].(string)}
 		event.Subscribe(t)
 		return t
+	case "protector":
+		t := protectorComponent{structs.Initialise(), *(otherData["protecteeID"].(*string))}
+		event.Subscribe(t)
+		return t
 	case "isWeak":
 		return isWeakComponent{attributes["Threshold"].(float64)}
 	case "hasMount":
@@ -97,6 +101,8 @@ func newActionComponent(attributes map[string]interface{}, otherData map[string]
 		return moveRandomlyComponent{}
 	case "chase":
 		return chaseComponent{attributes["Cover"].(float64), attributes["Chase"].(float64), []worldmap.Creature{}}
+	case "follow":
+		return followComponent{*(otherData["protecteeID"].(*string))}
 	case "cover":
 		return coverComponent{[]worldmap.Creature{}}
 	case "items":
@@ -375,6 +381,102 @@ func (c *threatsComponent) UnmarshalJSON(data []byte) error {
 	}
 
 	c.creatureID = v.CreatureId
+	return nil
+}
+
+type protectorComponent struct {
+	possibleTargets *structs.Set
+	protecteeID     string
+}
+
+func (c protectorComponent) ProcessEvent(e event.Event) {
+	switch ev := e.(type) {
+	case event.AttackEvent:
+		{
+			if ev.Victim().GetID() == c.protecteeID {
+				c.possibleTargets.Add(ev.Perpetrator().GetID())
+			}
+		}
+	}
+
+}
+
+func (c protectorComponent) targets(ai hasAi, world *worldmap.Map) []worldmap.Creature {
+	d := ai.GetVisionDistance()
+	aiX, aiY := ai.GetCoordinates()
+
+	visibleTargets := make([]worldmap.Creature, 0)
+
+	for i := -d; i < d+1; i++ {
+		for j := -d; j < d+1; j++ {
+			// Translate location into world coordinates
+			wX, wY := aiX+j, aiY+i
+			if world.IsValid(wX, wY) && world.IsVisible(ai, wX, wY) && world.GetCreature(wX, wY) != nil && c.possibleTargets.Exists(world.GetCreature(wX, wY).GetID()) {
+				visibleTargets = append(visibleTargets, world.GetCreature(wX, wY))
+			}
+		}
+	}
+
+	// Only consider visible targets
+	c.possibleTargets = structs.Initialise()
+	for _, t := range visibleTargets {
+		c.possibleTargets.Add(t.GetID())
+	}
+
+	return visibleTargets
+}
+
+func (c protectorComponent) nextState(currState string, ai hasAi, world *worldmap.Map) string {
+	if (currState == "fleeing" || currState == "fighting") && len(c.targets(ai, world)) == 0 {
+		return "normal"
+	}
+
+	if (currState == "normal" || currState == "fighting") && len(c.targets(ai, world)) > 0 {
+		return "fighting"
+	}
+
+	return currState
+}
+
+func (c protectorComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString("\"Type\": \"protector\",")
+
+	possibleTargetsValue, err := json.Marshal(c.possibleTargets.Items())
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"PossibleTargets\":%s,", possibleTargetsValue))
+
+	protecteeIDValue, err := json.Marshal(c.protecteeID)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"ProtecteeId\":%s", protecteeIDValue))
+
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (c *protectorComponent) UnmarshalJSON(data []byte) error {
+	type followJSON struct {
+		PossibleTargets []string
+		ProtecteeId     string
+	}
+
+	var v followJSON
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	c.possibleTargets = structs.Initialise()
+	for _, t := range v.PossibleTargets {
+		c.possibleTargets.Add(t)
+	}
+
+	c.protecteeID = v.ProtecteeId
 	return nil
 }
 
@@ -792,6 +894,78 @@ func (c *chaseComponent) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type followComponent struct {
+	protecteeID string
+}
+
+func (c followComponent) action(ai hasAi, world *worldmap.Map) Action {
+	aiX, aiY := ai.GetCoordinates()
+	d := ai.GetVisionDistance()
+
+	protectees := make([]worldmap.Creature, 0)
+
+	for i := -d; i < d+1; i++ {
+		for j := -d; j < d+1; j++ {
+			// Translate location into world coordinates
+			wX, wY := aiX+j, aiY+i
+			if world.IsValid(wX, wY) && world.IsVisible(ai, wX, wY) && world.GetCreature(wX, wY) != nil && world.GetCreature(wX, wY).GetID() != c.protecteeID {
+				protectees = append(protectees, world.GetCreature(wX, wY))
+			}
+		}
+	}
+	chaseMap := getChaseMap(ai, world, protectees)
+
+	protecteeNotThere := func(x int, y int) bool {
+		return !world.IsOccupied(x, y) || world.GetCreature(x, y).GetID() != c.protecteeID
+	}
+
+	locations := possibleLocationsFromAiMap(ai, world, chaseMap, protecteeNotThere)
+
+	if action := moveIfMounted(ai, world, locations); action != nil {
+		return action
+	}
+
+	if action := move(ai, world, locations); action != nil {
+		return action
+	}
+	return nil
+}
+
+func (c followComponent) shouldHappen(state string) float64 {
+	return 0.5
+}
+
+func (c followComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString("\"Type\": \"follow\",")
+
+	protecteeIdValue, err := json.Marshal(c.protecteeID)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"ProtecteeId\":%s", protecteeIdValue))
+
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (c *followComponent) UnmarshalJSON(data []byte) error {
+	type followJSON struct {
+		ProtecteeId string
+	}
+
+	var v followJSON
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	c.protecteeID = v.ProtecteeId
+
+	return nil
+}
+
 type coverComponent struct {
 	targets []worldmap.Creature
 }
@@ -959,6 +1133,12 @@ func unmarshalSenses(cs []map[string]interface{}) []senses {
 			check(err)
 			component = threats
 			event.Subscribe(threats)
+		case "protector":
+			var protector protectorComponent
+			err := json.Unmarshal(componentJSON, &protector)
+			check(err)
+			component = protector
+			event.Subscribe(protector)
 		case "isWeak":
 			var isWeak isWeakComponent
 			err := json.Unmarshal(componentJSON, &isWeak)
@@ -1023,6 +1203,11 @@ func unmarshalActions(cs []map[string]interface{}) []hasAction {
 			err := json.Unmarshal(componentJSON, &chase)
 			check(err)
 			component = chase
+		case "follow":
+			var follow followComponent
+			err := json.Unmarshal(componentJSON, &follow)
+			check(err)
+			component = follow
 		case "cover":
 			var cover coverComponent
 			err := json.Unmarshal(componentJSON, &cover)

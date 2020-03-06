@@ -9,7 +9,6 @@ import (
 	"math/rand"
 	"sort"
 
-	"github.com/onorton/cowboysindians/event"
 	"github.com/onorton/cowboysindians/item"
 	"github.com/onorton/cowboysindians/structs"
 	"github.com/onorton/cowboysindians/worldmap"
@@ -73,15 +72,12 @@ func newAi(aiType string, id string, world *worldmap.Map, location worldmap.Coor
 
 	switch aiType {
 	case "animal", "aggressive animal", "npc", "farmer", "sheriff":
-		return newGenericAi(aiType, id, location, town, building, world)
+		return newGenericAi(aiType, id, location, town, building, world, protectee)
 	case "protector":
 		if protectee != nil {
-			v := ""
-			ai := protectorAi{*protectee, &[]string{}, &v}
-			event.Subscribe(&ai)
-			return ai
+			return newGenericAi(aiType, id, location, town, building, world, protectee)
 		} else {
-			return newGenericAi("npc", id, location, town, building, world)
+			return newGenericAi("npc", id, location, town, building, world, protectee)
 		}
 	case "bar patron":
 		return barPatronAi{worldmap.NewWithinArea(world, building.Area, location), new(int)}
@@ -91,152 +87,19 @@ func newAi(aiType string, id string, world *worldmap.Map, location worldmap.Coor
 	return nil
 }
 
-type protectorAi struct {
-	protectee     string
-	targets       *[]string
-	currentTarget *string
-}
-
-func (ai protectorAi) ProcessEvent(e event.Event) {
-	switch ev := e.(type) {
-	case event.AttackEvent:
-		{
-			if ev.Perpetrator().GetID() == ai.protectee {
-				*ai.targets = append(*ai.targets, ev.Victim().GetID())
-			} else if ev.Victim().GetID() == ai.protectee {
-				*ai.targets = append(*ai.targets, ev.Perpetrator().GetID())
-			}
-		}
-	}
-}
-
-func (ai protectorAi) update(c hasAi, world *worldmap.Map) Action {
-	cX, cY := c.GetCoordinates()
-	targets := []worldmap.Creature{}
-	updatedTargets := make([]string, 0)
-
-	for _, tId := range *ai.targets {
-		t := world.CreatureById(tId)
-		if t == nil {
-			continue
-		}
-		x, y := t.GetCoordinates()
-		if world.IsVisible(c, x, y) {
-			updatedTargets = append(updatedTargets, tId)
-			if tId == *ai.currentTarget {
-				targets = []worldmap.Creature{t}
-			}
-		}
-	}
-	*ai.targets = updatedTargets
-
-	if len(targets) == 0 {
-		closeCreatures := make([]worldmap.Creature, 0)
-		for _, tId := range *ai.targets {
-			t := world.CreatureById(tId)
-			tX, tY := t.GetCoordinates()
-			if worldmap.Distance(cX, cY, tX, tY) <= float64(c.GetVisionDistance()) {
-				closeCreatures = append(closeCreatures, t)
-			}
-		}
-		if len(closeCreatures) > 0 {
-			target := closeCreatures[rand.Intn(len(closeCreatures))]
-			targets = []worldmap.Creature{target}
-			*ai.currentTarget = target.GetID()
-		} else {
-			*ai.currentTarget = ""
-		}
-	}
-
-	coefficients := []float64{0.0, 1.0}
-	if len(targets) > 0 {
-		coefficients = []float64{1.0, 0.0}
-	}
-
-	protectees := []worldmap.Creature{}
-	protectee := world.CreatureById(ai.protectee)
-	if protectee != nil {
-		protectees = []worldmap.Creature{protectee}
-	}
-
-	aiMap := addMaps([][][]float64{getChaseMap(c, world, targets), getChaseMap(c, world, protectees)}, coefficients)
-
-	protecteeNotThere := func(x int, y int) bool {
-		return !world.IsOccupied(x, y) || world.GetCreature(x, y).GetID() != ai.protectee
-	}
-	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, protecteeNotThere)
-
-	if action := move(c, world, possibleLocations); action != nil {
-		return action
-	}
-
-	if action := moveRandomly(c, world); action != nil {
-		return action
-	}
-
-	return NoAction{}
-}
-
-func (ai protectorAi) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{")
-
-	buffer.WriteString("\"Type\":\"protector\",")
-
-	protecteeValue, err := json.Marshal(ai.protectee)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Protectee\":%s,", protecteeValue))
-
-	targetsValue, err := json.Marshal(ai.targets)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Targets\":%s,", targetsValue))
-
-	targetValue, err := json.Marshal(ai.currentTarget)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Target\":%s", targetValue))
-	buffer.WriteString("}")
-
-	return buffer.Bytes(), nil
-}
-
-func (ai *protectorAi) UnmarshalJSON(data []byte) error {
-	type protectorAiJson struct {
-		Protectee string
-		Targets   []string
-		Target    string
-	}
-
-	var v protectorAiJson
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-	ai.protectee = v.Protectee
-	ai.targets = &v.Targets
-	ai.currentTarget = &v.Target
-	event.Subscribe(ai)
-	return nil
-}
-
 type genericAi struct {
 	sensory []senses
 	actions []hasAction
 	state   *string
 }
 
-func newGenericAi(aiType string, id string, l worldmap.Coordinates, t *worldmap.Town, b *worldmap.Building, world *worldmap.Map) genericAi {
+func newGenericAi(aiType string, id string, l worldmap.Coordinates, t *worldmap.Town, b *worldmap.Building, world *worldmap.Map, protectee *string) genericAi {
 	state := "normal"
 
 	otherData := make(map[string]interface{})
 	otherData["location"] = l
 	otherData["creatureID"] = id
+	otherData["protecteeID"] = protectee
 	otherData["town"] = t
 	otherData["building"] = b
 	otherData["world"] = world
@@ -591,11 +454,6 @@ func unmarshalAi(ai map[string]interface{}) ai {
 	check(err)
 
 	switch ai["Type"] {
-	case "protector":
-		var pAi protectorAi
-		err := json.Unmarshal(aiJson, &pAi)
-		check(err)
-		return pAi
 	case "generic":
 		var sAi genericAi
 		err = json.Unmarshal(aiJson, &sAi)

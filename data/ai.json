@@ -45,5 +45,20 @@
             {"Type": "items"},
             {"Type": "moveRandomly"}
         ]
+    },
+    "protector": {
+        "Senses": [
+            {"Type": "protector"},
+            {"Type": "isWeak", "Threshold": 0.2}
+        ],
+        "Actions": [
+            {"Type": "chase", "Chase": 0.7, "Cover": 0.3},
+            {"Type": "follow"},
+            {"Type": "consume", "Attribute": "hp"},
+            {"Type": "ranged"},
+            {"Type": "wield"},
+            {"Type": "wear"},
+            {"Type": "moveRandomly"}
+        ]
     }
 }
