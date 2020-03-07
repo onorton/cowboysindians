@@ -67,5 +67,24 @@
             {"Type": "waypoint", "waypointType": "random"},
             {"Type": "noAction"}
         ]
+    },
+    "enemy": {
+        "Senses": [
+            {"Type": "isWeak", "Threshold": 0.5},
+            {"Type": "threats"},
+            {"Type": "hasMount"}
+        ],
+        "Actions": [
+            {"Type": "threateningAction", "action": {"Type": "chase", "Chase": 0.7, "Cover": 0.3}},
+            {"Type": "findMount"},
+            {"Type": "flee"},
+            {"Type": "consume", "Attribute": "hp"},
+            {"Type": "cover"},
+            {"Type": "items"},
+            {"Type": "threateningAction", "action": {"Type": "ranged"}},
+            {"Type": "door"},
+            {"Type": "wield"},
+            {"Type": "wear"}
+        ]
     }
 }

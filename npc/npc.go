@@ -494,15 +494,14 @@ func (npc *Npc) Update() {
 		return
 	}
 
-	if npc.alignment != worldmap.Enemy {
-		p := npc.world.GetPlayer()
-		pX, pY := p.GetCoordinates()
-		if npc.world.InConversationRange(npc, p) && npc.dialogue != nil {
-			npc.dialogue.initialGreeting()
-		} else if npc.world.IsVisible(npc, pX, pY) && npc.dialogue != nil {
-			npc.dialogue.resetSeen()
-		}
+	p := npc.world.GetPlayer()
+	pX, pY := p.GetCoordinates()
+	if npc.world.InConversationRange(npc, p) && npc.dialogue != nil {
+		npc.dialogue.initialGreeting()
+	} else if npc.world.IsVisible(npc, pX, pY) && npc.dialogue != nil {
+		npc.dialogue.resetSeen()
 	}
+
 	action := npc.ai.update(npc, npc.world)
 	action.execute()
 

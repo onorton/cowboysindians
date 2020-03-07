@@ -120,6 +120,9 @@ func newActionComponent(attributes map[string]interface{}, otherData map[string]
 		return wearComponent{}
 	case "noAction":
 		return noActionComponent{}
+	case "threateningAction":
+		action := unmarshalActions([]map[string]interface{}{attributes["action"].(map[string]interface{})})[0]
+		return threateningActionComponent{action, otherData["dialogue"].(*enemyDialogue)}
 	}
 	return nil
 }
@@ -162,7 +165,7 @@ func (c bountiesComponent) targets(ai hasAi, world *worldmap.Map) []worldmap.Cre
 }
 
 func (c bountiesComponent) nextState(currState string, ai hasAi, world *worldmap.Map) string {
-	if currState == "normal" && len(c.targets(ai, world)) > 0 {
+	if (currState == "normal" || currState == "fighting") && len(c.targets(ai, world)) > 0 {
 		return "fighting"
 	}
 
@@ -170,7 +173,7 @@ func (c bountiesComponent) nextState(currState string, ai hasAi, world *worldmap
 		return "normal"
 	}
 
-	return currState
+	return ""
 }
 
 func (c bountiesComponent) MarshalJSON() ([]byte, error) {
@@ -248,7 +251,7 @@ func (c randomTargetComponent) targets(ai hasAi, world *worldmap.Map) []worldmap
 }
 
 func (c randomTargetComponent) nextState(currState string, ai hasAi, world *worldmap.Map) string {
-	if currState == "normal" && len(c.targets(ai, world)) > 0 {
+	if (currState == "normal" || currState == "fighting") && len(c.targets(ai, world)) > 0 {
 		return "fighting"
 	}
 
@@ -256,7 +259,7 @@ func (c randomTargetComponent) nextState(currState string, ai hasAi, world *worl
 		return "normal"
 	}
 
-	return currState
+	return ""
 }
 
 func (c randomTargetComponent) MarshalJSON() ([]byte, error) {
@@ -344,7 +347,7 @@ func (c threatsComponent) nextState(currState string, ai hasAi, world *worldmap.
 		return "fighting"
 	}
 
-	return currState
+	return ""
 }
 
 func (c threatsComponent) MarshalJSON() ([]byte, error) {
@@ -440,7 +443,7 @@ func (c protectorComponent) nextState(currState string, ai hasAi, world *worldma
 		return "fighting"
 	}
 
-	return currState
+	return ""
 }
 
 func (c protectorComponent) MarshalJSON() ([]byte, error) {
@@ -503,7 +506,7 @@ func (c isWeakComponent) nextState(currState string, ai hasAi, world *worldmap.M
 	if currState == "fleeing" && !c.weak(ai) {
 		return "normal"
 	}
-	return currState
+	return ""
 }
 
 func (c isWeakComponent) MarshalJSON() ([]byte, error) {
@@ -551,7 +554,7 @@ func (c hasMountComponent) nextState(currState string, ai hasAi, world *worldmap
 	if currState == "finding mount" && c.hasMount(ai) {
 		return "normal"
 	}
-	return currState
+	return ""
 }
 
 func (c hasMountComponent) MarshalJSON() ([]byte, error) {
@@ -596,7 +599,6 @@ func (c waitComponent) nextState(currState string, ai hasAi, world *worldmap.Map
 
 	if currState == "wait" {
 		if *c.currentWait == 0 {
-			fmt.Println("We get here")
 			return "normal"
 		} else {
 			*c.currentWait--
@@ -604,7 +606,7 @@ func (c waitComponent) nextState(currState string, ai hasAi, world *worldmap.Map
 		}
 	}
 
-	return currState
+	return ""
 }
 
 func (c waitComponent) MarshalJSON() ([]byte, error) {
@@ -1232,6 +1234,72 @@ func (c *noActionComponent) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type threateningActionComponent struct {
+	a        hasAction
+	dialogue *enemyDialogue
+}
+
+func (c threateningActionComponent) action(ai hasAi, world *worldmap.Map) Action {
+	action := c.a.action(ai, world)
+	targetingPlayer := false
+	switch a := action.(type) {
+	case RangedAttackAction:
+		targetingPlayer = a.t.GetAlignment() == worldmap.Player
+	case MoveAction:
+		targetingPlayer = world.GetCreature(a.x, a.y) != nil && world.GetCreature(a.x, a.y).GetAlignment() == worldmap.Player
+	case MountedMoveAction:
+		targetingPlayer = world.GetCreature(a.x, a.y) != nil && world.GetCreature(a.x, a.y).GetAlignment() == worldmap.Player
+	}
+
+	if targetingPlayer {
+		c.dialogue.potentiallyThreaten()
+	}
+
+	return action
+}
+
+func (c threateningActionComponent) shouldHappen(state string) float64 {
+	return c.a.shouldHappen(state)
+}
+
+func (c threateningActionComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString("\"Type\": \"threateningAction\",")
+
+	actionValue, err := json.Marshal(c.a)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Action\":%s,", actionValue))
+
+	dialogueValue, err := json.Marshal(c.dialogue)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Dialogue\":%s", dialogueValue))
+
+	buffer.WriteString("}")
+	return buffer.Bytes(), nil
+}
+
+func (c *threateningActionComponent) UnmarshalJSON(data []byte) error {
+	type threateningActionJSON struct {
+		Action   map[string]interface{}
+		Dialogue *enemyDialogue
+	}
+
+	var v threateningActionJSON
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	c.a = unmarshalActions([]map[string]interface{}{v.Action})[0]
+	c.dialogue = v.Dialogue
+
+	return nil
+}
+
 func unmarshalSenses(cs []map[string]interface{}) []senses {
 	components := make([]senses, 0)
 	for _, c := range cs {
@@ -1366,6 +1434,11 @@ func unmarshalActions(cs []map[string]interface{}) []hasAction {
 			err := json.Unmarshal(componentJSON, &noAction)
 			check(err)
 			component = noAction
+		case "threateningAction":
+			var threateningAction threateningActionComponent
+			err := json.Unmarshal(componentJSON, &threateningAction)
+			check(err)
+			component = threateningAction
 		}
 		components = append(components, component)
 	}

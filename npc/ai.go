@@ -71,16 +71,14 @@ type ai interface {
 func newAi(aiType string, id string, world *worldmap.Map, location worldmap.Coordinates, town *worldmap.Town, building *worldmap.Building, dialogue dialogue, protectee *string) ai {
 
 	switch aiType {
-	case "animal", "aggressive animal", "npc", "farmer", "sheriff", "bar patron":
-		return newGenericAi(aiType, id, location, town, building, world, protectee)
+	case "animal", "aggressive animal", "npc", "farmer", "sheriff", "bar patron", "enemy":
+		return newGenericAi(aiType, id, dialogue, location, town, building, world, protectee)
 	case "protector":
 		if protectee != nil {
-			return newGenericAi(aiType, id, location, town, building, world, protectee)
+			return newGenericAi(aiType, id, dialogue, location, town, building, world, protectee)
 		} else {
-			return newGenericAi("npc", id, location, town, building, world, protectee)
+			return newGenericAi("npc", id, dialogue, location, town, building, world, protectee)
 		}
-	case "enemy":
-		return enemyAi{dialogue.(*enemyDialogue)}
 	}
 	return nil
 }
@@ -91,7 +89,7 @@ type genericAi struct {
 	state   *string
 }
 
-func newGenericAi(aiType string, id string, l worldmap.Coordinates, t *worldmap.Town, b *worldmap.Building, world *worldmap.Map, protectee *string) genericAi {
+func newGenericAi(aiType string, id string, dialogue dialogue, l worldmap.Coordinates, t *worldmap.Town, b *worldmap.Building, world *worldmap.Map, protectee *string) genericAi {
 	state := "normal"
 
 	otherData := make(map[string]interface{})
@@ -101,6 +99,7 @@ func newGenericAi(aiType string, id string, l worldmap.Coordinates, t *worldmap.
 	otherData["town"] = t
 	otherData["building"] = b
 	otherData["world"] = world
+	otherData["dialogue"] = dialogue
 
 	sensory := make([]senses, 0)
 	for _, s := range aiData[aiType].Senses {
@@ -164,7 +163,9 @@ func (ai genericAi) nextState(c hasAi, world *worldmap.Map) {
 
 	for _, sensory := range ai.sensory {
 		state := sensory.nextState(*ai.state, c, world)
-		stateCounts[state]++
+		if state != "" {
+			stateCounts[state]++
+		}
 	}
 
 	max := 0
@@ -253,118 +254,6 @@ func (ai *genericAi) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type enemyAi struct {
-	dialogue *enemyDialogue
-}
-
-func (ai enemyAi) update(c hasAi, world *worldmap.Map) Action {
-	targets := []worldmap.Creature{world.GetPlayer()}
-
-	if world.InConversationRange(c.(worldmap.Creature), world.GetPlayer()) {
-		ai.dialogue.initialGreeting()
-	}
-
-	coefficients := []float64{0.5, 0.2, 0.3, 0.0}
-
-	// Focus on getting a mount if possible
-	if r, ok := c.(Rider); ok && r.Mount() == nil {
-		coefficients = []float64{0.3, 0.2, 0.1, 0.4}
-	}
-	coverMap := getCoverMap(c, world, targets)
-	mountMap := getMountMap(c, world)
-	aiMap := addMaps([][][]float64{getChaseMap(c, world, []worldmap.Creature{world.GetPlayer()}), getItemMap(c, world), coverMap, mountMap}, coefficients)
-
-	tileUnoccupiedOrHasPlayer := func(x, y int) bool {
-		return world.HasPlayer(x, y) || !world.IsOccupied(x, y)
-	}
-	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupiedOrHasPlayer)
-
-	if action := moveIfMounted(c, world, possibleLocations); action != nil {
-		if a, ok := action.(MountedMoveAction); ok {
-			if t := world.GetCreature(a.x, a.y); t != nil && t.GetAlignment() == worldmap.Player {
-				ai.dialogue.potentiallyThreaten()
-			}
-		}
-		return action
-	}
-
-	if action := healIfWeak(c); action != nil {
-		return action
-	}
-
-	if action := moveThroughCover(c, coverMap); action != nil {
-		return action
-	}
-
-	// Try and wield best weapon
-	if itemUser, ok := c.(usesItems); ok && itemUser.wieldItem() {
-		return NoAction{}
-	}
-	// Try and wear best armour
-	if itemUser, ok := c.(usesItems); ok && itemUser.wearArmour() {
-		return NoAction{}
-	}
-
-	if action := rangedAttack(c, world, targets); action != nil {
-		if a, ok := action.(RangedAttackAction); ok && a.t.GetAlignment() == worldmap.Player {
-			ai.dialogue.potentiallyThreaten()
-		}
-		return action
-	}
-
-	if action := mount(c, world, mountMap); action != nil {
-		return action
-	}
-
-	if action := tryOpeningDoor(c, world); action != nil {
-		return action
-	}
-
-	if action := move(c, world, possibleLocations); action != nil {
-		if a, ok := action.(MoveAction); ok {
-			if t := world.GetCreature(a.x, a.y); t != nil && t.GetAlignment() == worldmap.Player {
-				ai.dialogue.potentiallyThreaten()
-			}
-		}
-		return action
-	}
-
-	if action := pickupItems(c, world); action != nil {
-		return action
-	}
-
-	return NoAction{}
-}
-
-func (ai enemyAi) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{")
-
-	buffer.WriteString("\"Type\":\"enemy\",")
-
-	dialogueValue, err := json.Marshal(ai.dialogue)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Dialogue\":%s", dialogueValue))
-	buffer.WriteString("}")
-
-	return buffer.Bytes(), nil
-}
-
-func (ai *enemyAi) UnmarshalJSON(data []byte) error {
-	type enemyAiJson struct {
-		Dialogue map[string]interface{}
-	}
-
-	var v enemyAiJson
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-	ai.dialogue = unmarshalDialogue(v.Dialogue).(*enemyDialogue)
-	return nil
-}
-
 func unmarshalAi(ai map[string]interface{}) ai {
 	aiJson, err := json.Marshal(ai)
 	check(err)
@@ -375,11 +264,6 @@ func unmarshalAi(ai map[string]interface{}) ai {
 		err = json.Unmarshal(aiJson, &sAi)
 		check(err)
 		return sAi
-	case "enemy":
-		var eAi enemyAi
-		err = json.Unmarshal(aiJson, &eAi)
-		check(err)
-		return eAi
 	}
 	return nil
 }

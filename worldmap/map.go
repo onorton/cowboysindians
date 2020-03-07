@@ -15,7 +15,6 @@ import (
 )
 
 const chunkSize = 64
-const padding = 5
 
 type Alignment int
 
@@ -592,6 +591,7 @@ func (m Map) verticalChunks() int {
 // Adjust the viewer according to the new position of the player
 func (m Map) AdjustViewer() {
 	x, y := m.GetPlayer().GetCoordinates()
+	padding := m.GetPlayer().GetVisionDistance()
 	// Difference in coordinates from the window location
 	rX := x - m.v.x
 	rY := y - m.v.y
