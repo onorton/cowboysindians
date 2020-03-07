@@ -330,7 +330,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 		Armour     *item.Item
 		Inventory  []*item.Item
 		MountID    string
-		Ai         map[string]interface{}
+		Ai         ai
 		Dialogue   map[string]interface{}
 		Human      bool
 	}
@@ -352,7 +352,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 	npc.armour = v.Armour
 	npc.inventory = v.Inventory
 	npc.mountID = v.MountID
-	npc.ai = unmarshalAi(v.Ai)
+	npc.ai = v.Ai
 	npc.dialogue = unmarshalDialogue(v.Dialogue)
 	npc.human = v.Human
 
@@ -672,10 +672,7 @@ func (npc *Npc) Crouch() {
 
 func (npc *Npc) SetMap(world *worldmap.Map) {
 	npc.world = world
-	switch ai := npc.ai.(type) {
-	case genericAi:
-		ai.setMap(world)
-	}
+	npc.ai.setMap(world)
 
 	switch d := npc.dialogue.(type) {
 	case *shopkeeperDialogue:
@@ -746,11 +743,10 @@ func (npc *Npc) GetID() string {
 }
 
 func (npc *Npc) GetBounties() *Bounties {
-	if ai, ok := npc.ai.(*genericAi); ok {
-		for _, s := range ai.sensory {
-			if b, ok := s.(bountiesComponent); ok {
-				return b.bounties
-			}
+
+	for _, s := range npc.ai.sensory {
+		if b, ok := s.(bountiesComponent); ok {
+			return b.bounties
 		}
 	}
 	return &Bounties{}

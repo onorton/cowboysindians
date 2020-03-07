@@ -116,7 +116,7 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 		Initiative int
 		Attributes map[string]*worldmap.Attribute
 		Unarmed    item.WeaponComponent
-		Ai         map[string]interface{}
+		Ai         ai
 	}
 	var v mountJson
 
@@ -129,7 +129,7 @@ func (m *Mount) UnmarshalJSON(data []byte) error {
 	m.initiative = v.Initiative
 	m.attributes = v.Attributes
 	m.unarmed = v.Unarmed
-	m.ai = unmarshalAi(v.Ai)
+	m.ai = v.Ai
 	return nil
 }
 
@@ -275,10 +275,7 @@ func (m *Mount) IsMounted() bool {
 func (m *Mount) SetMap(world *worldmap.Map) {
 	m.world = world
 
-	switch ai := m.ai.(type) {
-	case genericAi:
-		ai.setMap(world)
-	}
+	m.ai.setMap(world)
 }
 
 func (m *Mount) Map() *worldmap.Map {

@@ -64,32 +64,18 @@ type damageable interface {
 	AttackHits(int) bool
 }
 
-type ai interface {
-	update(hasAi, *worldmap.Map) Action
-}
-
-func newAi(aiType string, id string, world *worldmap.Map, location worldmap.Coordinates, town *worldmap.Town, building *worldmap.Building, dialogue dialogue, protectee *string) ai {
-
-	switch aiType {
-	case "animal", "aggressive animal", "npc", "farmer", "sheriff", "bar patron", "enemy":
-		return newGenericAi(aiType, id, dialogue, location, town, building, world, protectee)
-	case "protector":
-		if protectee != nil {
-			return newGenericAi(aiType, id, dialogue, location, town, building, world, protectee)
-		} else {
-			return newGenericAi("npc", id, dialogue, location, town, building, world, protectee)
-		}
-	}
-	return nil
-}
-
-type genericAi struct {
+type ai struct {
 	sensory []senses
 	actions []hasAction
 	state   *string
 }
 
-func newGenericAi(aiType string, id string, dialogue dialogue, l worldmap.Coordinates, t *worldmap.Town, b *worldmap.Building, world *worldmap.Map, protectee *string) genericAi {
+func newAi(aiType string, id string, world *worldmap.Map, l worldmap.Coordinates, t *worldmap.Town, b *worldmap.Building, dialogue dialogue, protectee *string) ai {
+
+	if aiType == "protector" && protectee == nil {
+		aiType = "npc"
+	}
+
 	state := "normal"
 
 	otherData := make(map[string]interface{})
@@ -111,10 +97,10 @@ func newGenericAi(aiType string, id string, dialogue dialogue, l worldmap.Coordi
 		actions = append(actions, newActionComponent(a, otherData))
 	}
 
-	return genericAi{sensory, actions, &state}
+	return ai{sensory, actions, &state}
 }
 
-func (ai genericAi) setMap(world *worldmap.Map) {
+func (ai ai) setMap(world *worldmap.Map) {
 	for _, a := range ai.actions {
 		if waypoint, ok := a.(waypointComponent); ok {
 			switch w := waypoint.waypoint.(type) {
@@ -128,7 +114,7 @@ func (ai genericAi) setMap(world *worldmap.Map) {
 	}
 }
 
-func (ai genericAi) update(c hasAi, world *worldmap.Map) Action {
+func (ai ai) update(c hasAi, world *worldmap.Map) Action {
 	threats := make([]worldmap.Creature, 0)
 	for _, s := range ai.sensory {
 		if sThreats, ok := s.(sensesThreats); ok {
@@ -158,7 +144,7 @@ func (ai genericAi) update(c hasAi, world *worldmap.Map) Action {
 	return ai.nextAction(c, world)
 }
 
-func (ai genericAi) nextState(c hasAi, world *worldmap.Map) {
+func (ai ai) nextState(c hasAi, world *worldmap.Map) {
 	stateCounts := make(map[string]int)
 
 	for _, sensory := range ai.sensory {
@@ -188,7 +174,7 @@ func (ai genericAi) nextState(c hasAi, world *worldmap.Map) {
 	}
 }
 
-func (ai genericAi) nextAction(c hasAi, world *worldmap.Map) Action {
+func (ai ai) nextAction(c hasAi, world *worldmap.Map) Action {
 	actions := ai.actions
 
 	sort.Slice(actions, func(i, j int) bool {
@@ -207,7 +193,7 @@ func (ai genericAi) nextAction(c hasAi, world *worldmap.Map) Action {
 	return NoAction{}
 }
 
-func (ai genericAi) MarshalJSON() ([]byte, error) {
+func (ai ai) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
 	buffer.WriteString("\"Type\":\"generic\",")
@@ -235,14 +221,14 @@ func (ai genericAi) MarshalJSON() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func (ai *genericAi) UnmarshalJSON(data []byte) error {
-	type genericAiJson struct {
+func (ai *ai) UnmarshalJSON(data []byte) error {
+	type aiJSON struct {
 		Senses  []map[string]interface{}
 		Actions []map[string]interface{}
 		State   *string
 	}
 
-	var v genericAiJson
+	var v aiJSON
 	if err := json.Unmarshal(data, &v); err != nil {
 		return err
 	}
@@ -253,21 +239,6 @@ func (ai *genericAi) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
-
-func unmarshalAi(ai map[string]interface{}) ai {
-	aiJson, err := json.Marshal(ai)
-	check(err)
-
-	switch ai["Type"] {
-	case "generic":
-		var sAi genericAi
-		err = json.Unmarshal(aiJson, &sAi)
-		check(err)
-		return sAi
-	}
-	return nil
-}
-
 func possibleLocationsFromAiMap(c hasAi, world *worldmap.Map, aiMap [][]float64, tileValid func(int, int) bool) []worldmap.Coordinates {
 	d := c.GetVisionDistance()
 	cX, cY := c.GetCoordinates()
