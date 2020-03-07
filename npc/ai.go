@@ -71,7 +71,7 @@ type ai interface {
 func newAi(aiType string, id string, world *worldmap.Map, location worldmap.Coordinates, town *worldmap.Town, building *worldmap.Building, dialogue dialogue, protectee *string) ai {
 
 	switch aiType {
-	case "animal", "aggressive animal", "npc", "farmer", "sheriff":
+	case "animal", "aggressive animal", "npc", "farmer", "sheriff", "bar patron":
 		return newGenericAi(aiType, id, location, town, building, world, protectee)
 	case "protector":
 		if protectee != nil {
@@ -79,8 +79,6 @@ func newAi(aiType string, id string, world *worldmap.Map, location worldmap.Coor
 		} else {
 			return newGenericAi("npc", id, location, town, building, world, protectee)
 		}
-	case "bar patron":
-		return barPatronAi{worldmap.NewWithinArea(world, building.Area, location), new(int)}
 	case "enemy":
 		return enemyAi{dialogue.(*enemyDialogue)}
 	}
@@ -367,88 +365,6 @@ func (ai *enemyAi) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type barPatronAi struct {
-	waypoint *worldmap.WithinArea
-	timeLeft *int
-}
-
-func (ai barPatronAi) update(c hasAi, world *worldmap.Map) Action {
-	*(ai.timeLeft) = *(ai.timeLeft) - 1
-	if *(ai.timeLeft) > 0 {
-		return NoAction{}
-	}
-
-	x, y := c.GetCoordinates()
-	location := worldmap.Coordinates{x, y}
-
-	waypoint := ai.waypoint.NextWaypoint(location)
-	aiMap := getWaypointMap(c, waypoint, world)
-
-	tileUnoccupied := func(x, y int) bool {
-		return !world.IsOccupied(x, y)
-	}
-	possibleLocations := possibleLocationsFromAiMap(c, world, aiMap, tileUnoccupied)
-
-	if action := move(c, world, possibleLocations); action != nil {
-		if a, ok := action.(MoveAction); ok {
-			// if tile character is moving to has chair, wait for a bit
-			items := world.GetItems(a.x, a.y)
-			for i := len(items) - 1; i >= 0; i-- {
-				// Wait around
-				if items[i].GetName() == "chair" {
-					*(ai.timeLeft) = rand.Intn(10)
-				}
-				world.PlaceItem(a.x, a.y, items[i])
-			}
-		}
-		return action
-	}
-
-	return NoAction{}
-}
-
-func (ai barPatronAi) setMap(world *worldmap.Map) {
-	ai.waypoint.SetMap(world)
-}
-
-func (ai barPatronAi) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{")
-
-	buffer.WriteString("\"Type\":\"bar patron\",")
-
-	waypointValue, err := json.Marshal(ai.waypoint)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"Waypoint\":%s,", waypointValue))
-
-	timeLeftValue, err := json.Marshal(ai.timeLeft)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.WriteString(fmt.Sprintf("\"TimeLeft\":%s", timeLeftValue))
-	buffer.WriteString("}")
-
-	return buffer.Bytes(), nil
-}
-
-func (ai *barPatronAi) UnmarshalJSON(data []byte) error {
-	type barPatronAiJson struct {
-		Waypoint *worldmap.WithinArea
-		TimeLeft *int
-	}
-
-	var v barPatronAiJson
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-	ai.waypoint = v.Waypoint
-	ai.timeLeft = v.TimeLeft
-	return nil
-}
-
 func unmarshalAi(ai map[string]interface{}) ai {
 	aiJson, err := json.Marshal(ai)
 	check(err)
@@ -464,11 +380,6 @@ func unmarshalAi(ai map[string]interface{}) ai {
 		err = json.Unmarshal(aiJson, &eAi)
 		check(err)
 		return eAi
-	case "bar patron":
-		var bAi barPatronAi
-		err = json.Unmarshal(aiJson, &bAi)
-		check(err)
-		return bAi
 	}
 	return nil
 }

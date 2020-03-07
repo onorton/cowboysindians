@@ -55,6 +55,9 @@ func newSensesComponent(attributes map[string]interface{}, otherData map[string]
 		return isWeakComponent{attributes["Threshold"].(float64)}
 	case "hasMount":
 		return hasMountComponent{}
+	case "wait":
+		currentWait := 0
+		return waitComponent{&currentWait, int(attributes["time"].(float64)), attributes["conditions"].(map[string]interface{})}
 	case "randomTarget":
 		id := ""
 		return randomTargetComponent{&id}
@@ -115,6 +118,8 @@ func newActionComponent(attributes map[string]interface{}, otherData map[string]
 		return wieldComponent{}
 	case "wear":
 		return wearComponent{}
+	case "noAction":
+		return noActionComponent{}
 	}
 	return nil
 }
@@ -462,12 +467,12 @@ func (c protectorComponent) MarshalJSON() ([]byte, error) {
 }
 
 func (c *protectorComponent) UnmarshalJSON(data []byte) error {
-	type followJSON struct {
+	type protectorJSON struct {
 		PossibleTargets []string
 		ProtecteeId     string
 	}
 
-	var v followJSON
+	var v protectorJSON
 	if err := json.Unmarshal(data, &v); err != nil {
 		return err
 	}
@@ -555,6 +560,97 @@ func (c hasMountComponent) MarshalJSON() ([]byte, error) {
 }
 
 func (c *hasMountComponent) UnmarshalJSON(data []byte) error {
+	return nil
+}
+
+type waitComponent struct {
+	currentWait *int
+	waitTime    int
+	conditions  map[string]interface{}
+}
+
+func (c waitComponent) shouldWait(ai hasAi, world *worldmap.Map) bool {
+	aiX, aiY := ai.GetCoordinates()
+
+	for _, item := range c.conditions["itemsPresent"].([]interface{}) {
+		itemFound := false
+		items := world.GetItems(aiX, aiY)
+		for i := len(items) - 1; i >= 0; i-- {
+			if items[i].GetName() == item.(string) {
+				itemFound = true
+			}
+			world.PlaceItem(aiX, aiY, items[i])
+		}
+		if !itemFound {
+			return false
+		}
+	}
+	return true
+}
+
+func (c waitComponent) nextState(currState string, ai hasAi, world *worldmap.Map) string {
+	if currState == "normal" && c.shouldWait(ai, world) {
+		*c.currentWait = rand.Intn(c.waitTime)
+		return "wait"
+	}
+
+	if currState == "wait" {
+		if *c.currentWait == 0 {
+			fmt.Println("We get here")
+			return "normal"
+		} else {
+			*c.currentWait--
+			return "wait"
+		}
+	}
+
+	return currState
+}
+
+func (c waitComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+
+	buffer.WriteString("\"Type\": \"wait\",")
+
+	currentWaitValue, err := json.Marshal(c.currentWait)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer.WriteString(fmt.Sprintf("\"CurrentWait\":%s,", currentWaitValue))
+
+	waitTimeValue, err := json.Marshal(c.waitTime)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"WaitTime\":%s,", waitTimeValue))
+
+	conditionsValue, err := json.Marshal(c.conditions)
+	if err != nil {
+		return nil, err
+	}
+	buffer.WriteString(fmt.Sprintf("\"Conditions\":%s", conditionsValue))
+
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
+}
+
+func (c *waitComponent) UnmarshalJSON(data []byte) error {
+	type waitJSON struct {
+		CurrentWait *int
+		WaitTime    int
+		Conditions  map[string]interface{}
+	}
+
+	var v waitJSON
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	c.currentWait = v.CurrentWait
+	c.waitTime = v.WaitTime
+	c.conditions = v.Conditions
+
 	return nil
 }
 
@@ -1114,6 +1210,28 @@ func (c *wearComponent) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type noActionComponent struct{}
+
+func (c noActionComponent) action(ai hasAi, world *worldmap.Map) Action {
+	return NoAction{}
+}
+
+func (c noActionComponent) shouldHappen(state string) float64 {
+	if state == "wait" {
+		return 1
+	}
+	return 0
+}
+
+func (c noActionComponent) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{\"Type\": \"noAction\"}")
+	return buffer.Bytes(), nil
+}
+
+func (c *noActionComponent) UnmarshalJSON(data []byte) error {
+	return nil
+}
+
 func unmarshalSenses(cs []map[string]interface{}) []senses {
 	components := make([]senses, 0)
 	for _, c := range cs {
@@ -1149,6 +1267,11 @@ func unmarshalSenses(cs []map[string]interface{}) []senses {
 			err := json.Unmarshal(componentJSON, &hasMount)
 			check(err)
 			component = hasMount
+		case "wait":
+			var wait waitComponent
+			err := json.Unmarshal(componentJSON, &wait)
+			check(err)
+			component = wait
 		case "randomTarget":
 			var randomTarget randomTargetComponent
 			err := json.Unmarshal(componentJSON, &randomTarget)
@@ -1238,6 +1361,11 @@ func unmarshalActions(cs []map[string]interface{}) []hasAction {
 			err := json.Unmarshal(componentJSON, &wear)
 			check(err)
 			component = wear
+		case "noAction":
+			var noAction noActionComponent
+			err := json.Unmarshal(componentJSON, &noAction)
+			check(err)
+			component = noAction
 		}
 		components = append(components, component)
 	}

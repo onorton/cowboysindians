@@ -60,5 +60,12 @@
             {"Type": "wear"},
             {"Type": "moveRandomly"}
         ]
+    },
+    "bar patron": {
+        "Senses": [{"Type": "wait", "time": 10, "conditions": {"itemsPresent": ["chair"]}}],
+        "Actions": [
+            {"Type": "waypoint", "waypointType": "random"},
+            {"Type": "noAction"}
+        ]
     }
 }

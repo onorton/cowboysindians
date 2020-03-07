@@ -674,8 +674,6 @@ func (npc *Npc) Crouch() {
 func (npc *Npc) SetMap(world *worldmap.Map) {
 	npc.world = world
 	switch ai := npc.ai.(type) {
-	case barPatronAi:
-		ai.setMap(world)
 	case genericAi:
 		ai.setMap(world)
 	}
