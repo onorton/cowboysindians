@@ -945,7 +945,7 @@ func generateNpcs(m worldmap.World, towns []worldmap.Town, buildings []worldmap.
 					continue
 				}
 				animalType := npc.RandomNpcTypeFromSelection([]string{"cow", "pig", "chicken"})
-				c := npc.NewNpc(animalType, x, y, nil, nil)
+				c := npc.NewNpc(animalType, x, y, nil, nil, nil, nil)
 				m.Place(c)
 				npcs = append(npcs, c)
 			}
@@ -981,7 +981,7 @@ func generateNpcs(m worldmap.World, towns []worldmap.Town, buildings []worldmap.
 				continue
 			}
 			npcType := npc.RandomNpcType()
-			c := npc.NewNpc(npcType, x, y, nil, nil)
+			c := npc.NewNpc(npcType, x, y, nil, nil, nil, nil)
 			m.Place(c)
 			npcs = append(npcs, c)
 			protector := generateProtector(m, npcType, c)
@@ -1016,9 +1016,9 @@ func placeNpcInBuilding(m worldmap.World, npcs *[]*npc.Npc, t worldmap.Town, b w
 		}
 
 		if npcType == "townsman" {
-			n = npc.NewNpc(npcType, x, y, nil, nil)
+			n = npc.NewNpc(npcType, x, y, nil, nil, nil, nil)
 		} else {
-			n = npc.NewShopkeeper(npcType, x, y, nil, t, b)
+			n = npc.NewNpc(npcType, x, y, nil, &t, &b, nil)
 		}
 		*npcs = append(*npcs, n)
 		m.Place(n)

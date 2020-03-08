@@ -110,27 +110,6 @@ func chooseType(probabilities map[string]float64) string {
 	return possibleTypes[n]
 }
 
-func NewNpc(npcType string, x, y int, world *worldmap.Map, protectee *string) *Npc {
-	n := npcData[npcType]
-	id := xid.New().String()
-	dialogue := newDialogue(n.DialogueType, world, nil, nil)
-	location := worldmap.Coordinates{x, y}
-	ai := newAi(n.AiType, id, world, location, nil, nil, dialogue, protectee)
-
-	attributes := map[string]*worldmap.Attribute{
-		"hp":          worldmap.NewAttribute(n.Hp, n.Hp),
-		"ac":          worldmap.NewAttribute(n.Ac, n.Ac),
-		"str":         worldmap.NewAttribute(n.Str, n.Str),
-		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
-		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
-	npc := &Npc{generateName(npcType, n.Human), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, worldmap.Neutral, false, n.Money, n.Unarmed, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue, n.Human}
-	for _, itm := range generateInventory(n.Inventory) {
-		npc.PickupItem(itm)
-	}
-	event.Subscribe(npc)
-	return npc
-}
-
 func AddProtector(npcType string, x, y int, protectee string) *Npc {
 	probabilities := npcData[npcType].Protector
 	if probabilities == nil {
@@ -159,17 +138,17 @@ func AddProtector(npcType string, x, y int, protectee string) *Npc {
 
 	protectorType = protectors[rand.Intn(len(protectors))]
 	if protectorType != "None" {
-		return NewNpc(protectorType, x, y, nil, &protectee)
+		return NewNpc(protectorType, x, y, nil, nil, nil, &protectee)
 	}
 	return nil
 }
 
-func NewShopkeeper(npcType string, x, y int, world *worldmap.Map, t worldmap.Town, b worldmap.Building) *Npc {
+func NewNpc(npcType string, x, y int, world *worldmap.Map, t *worldmap.Town, b *worldmap.Building, protectee *string) *Npc {
 	n := npcData[npcType]
 	id := xid.New().String()
-	dialogue := newDialogue(n.DialogueType, world, &t, &b)
+	dialogue := newDialogue(n.DialogueType, world, t, b)
 	location := worldmap.Coordinates{x, y}
-	ai := newAi(n.AiType, id, world, location, &t, &b, dialogue, nil)
+	ai := newAi(n.AiType, id, world, location, t, b, dialogue, nil)
 
 	attributes := map[string]*worldmap.Attribute{
 		"hp":          worldmap.NewAttribute(n.Hp, n.Hp),
