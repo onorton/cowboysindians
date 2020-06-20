@@ -51,7 +51,7 @@ func NewMount(name string, x, y int, world *worldmap.Map) *Mount {
 		"dex":         worldmap.NewAttribute(mount.Dex, mount.Dex),
 		"encumbrance": worldmap.NewAttribute(mount.Encumbrance, mount.Encumbrance),
 	}
-	m := &Mount{&ui.PlainName{name}, id, location, mount.Icon, mount.Initiative, attributes, mount.Unarmed, nil, world, false, ai}
+	m := &Mount{&ui.PlainName{name}, id, location, mount.Icon, mount.Initiative, attributes, mount.Unarmed, &mountableComponent{}, world, false, ai}
 	return m
 }
 
@@ -174,9 +174,9 @@ func (m *Mount) TakeDamage(damage item.Damage, effects item.Effects, bonus int) 
 	m.attributes["hp"].AddEffect(item.NewInstantEffect(-total_damage))
 	m.applyEffects(effects)
 
-	if m.rider != nil && m.IsDead() {
-		m.rider.TakeDamage(item.NewDamage(4, 1, 0), item.Effects{}, 0)
-		if m.rider.GetAlignment() == worldmap.Player {
+	if m.mc.rider != nil && m.IsDead() {
+		m.mc.rider.TakeDamage(item.NewDamage(4, 1, 0), item.Effects{}, 0)
+		if m.mc.rider.GetAlignment() == worldmap.Player {
 			message.Enqueue(fmt.Sprintf("Your %s died and you fell.", m.name))
 		}
 		m.RemoveRider()
@@ -195,11 +195,11 @@ func (m *Mount) Update() {
 		return
 	}
 
-	if m.rider != nil {
-		if m.rider.IsDead() {
+	if m.mc.rider != nil {
+		if m.mc.rider.IsDead() {
 			m.RemoveRider()
 		} else {
-			rX, rY := m.rider.GetCoordinates()
+			rX, rY := m.mc.rider.GetCoordinates()
 			m.location = worldmap.Coordinates{rX, rY}
 			return
 		}
@@ -261,15 +261,15 @@ func (m *Mount) Standup() {
 }
 
 func (m *Mount) AddRider(r Rider) {
-	m.rider = r
+	m.mc.rider = r
 }
 
 func (m *Mount) RemoveRider() {
-	m.rider = nil
+	m.mc.rider = nil
 }
 
 func (m *Mount) IsMounted() bool {
-	return m.rider != nil
+	return m.mc.rider != nil
 }
 
 func (m *Mount) SetMap(world *worldmap.Map) {
@@ -311,10 +311,14 @@ type Mount struct {
 	initiative int
 	attributes map[string]*worldmap.Attribute
 	unarmed    item.WeaponComponent
-	rider      Rider
+	mc         *mountableComponent
 	world      *worldmap.Map
 	moved      bool
 	ai         ai
+}
+
+type mountableComponent struct {
+	rider Rider
 }
 
 type Rider interface {
