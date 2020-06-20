@@ -18,7 +18,7 @@ type Effect struct {
 type Effects map[string][]Effect
 
 func NewEffect(effect, duration int, onMax bool) *Effect {
-	return &Effect{effect, onMax, duration, false, true, false}
+	return &Effect{effect, onMax, duration, false, false, false}
 }
 
 func NewInstantEffect(effect int) *Effect {
