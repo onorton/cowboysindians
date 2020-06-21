@@ -296,7 +296,7 @@ func tryOpeningDoor(c hasAi, world *worldmap.Map) Action {
 				if itemHolder, ok := c.(holdsItems); ok && world.Door(x, y).Locked() {
 					// If there is a key that fits, unlock door
 					for _, itm := range itemHolder.Inventory() {
-						if itm.HasComponent("key") && world.Door(x, y).KeyFits(itm) {
+						if itm.HasComponent("key") && world.Door(x, y).KeyFits(itm.Component("key").(item.KeyComponent)) {
 							return LockAction{itm, world, x, y}
 						}
 					}

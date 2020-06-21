@@ -29,3 +29,35 @@ func TestDoorLock(t *testing.T) {
 		}
 	}
 }
+
+type testKey struct {
+	keyType int32
+}
+
+func (k testKey) KeyType() int32 {
+	return k.keyType
+}
+
+func TestKeyFitsTrueKeyValueOfNegativeOne(t *testing.T) {
+	key := testKey{-1}
+	door := doorComponent{key: 10}
+	if !door.KeyFits(key) {
+		t.Error("Key should have fit the lock but does not")
+	}
+}
+
+func TestKeyFitsTrueTypesMatch(t *testing.T) {
+	key := testKey{10}
+	door := doorComponent{key: 10}
+	if !door.KeyFits(key) {
+		t.Error("Key should have fit the lock but does not")
+	}
+}
+
+func TestKeyFitsFalseTypesDoNotMatch(t *testing.T) {
+	key := testKey{5}
+	door := doorComponent{key: 10}
+	if door.KeyFits(key) {
+		t.Error("Key should not have fit the lock but does")
+	}
+}

@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-
-	"github.com/onorton/cowboysindians/item"
 )
+
+type locks interface {
+	KeyType() int32
+}
 
 type doorComponent struct {
 	locked        bool
@@ -35,16 +37,11 @@ func (door *doorComponent) Locked() bool {
 	return door.locked
 }
 
-func (door *doorComponent) KeyFits(itm *item.Item) bool {
-	if itm.Component("key") == nil {
-		return false
-	}
-
-	keyComponent := itm.Component("key").(item.KeyComponent)
-	if keyComponent.Key == -1 {
+func (door *doorComponent) KeyFits(l locks) bool {
+	if l.KeyType() == -1 {
 		return true
 	}
-	return keyComponent.Key == door.Key()
+	return l.KeyType() == door.Key()
 }
 
 func (door *doorComponent) MarshalJSON() ([]byte, error) {

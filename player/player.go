@@ -1408,7 +1408,7 @@ func (p *Player) Use() bool {
 							allKeys := p.inventory[c]
 							anyFit := false
 							for _, key := range allKeys {
-								anyFit = anyFit || door.KeyFits(key)
+								anyFit = anyFit || door.KeyFits(key.Component("key").(item.KeyComponent))
 							}
 
 							if anyFit {

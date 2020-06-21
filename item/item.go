@@ -215,6 +215,10 @@ func (kc KeyComponent) Works(bonus float64) bool {
 	return rand.Float64() < kc.Chance+bonus
 }
 
+func (kc KeyComponent) KeyType() int32 {
+	return kc.Key
+}
+
 func NewKey(keyValue int32) *Item {
 	key := NewNormalItem("key")
 	key.components["key"] = KeyComponent{keyValue, 1}
