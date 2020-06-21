@@ -13,3 +13,6 @@
 # Game data file
 game.json
 game_world.json
+
+# Log directory
+logs/*
