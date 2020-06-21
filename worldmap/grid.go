@@ -24,7 +24,7 @@ type TileAttributes struct {
 	Door         bool
 }
 
-var terrainData map[string]TileAttributes = fetchTerrainData()
+var terrainData map[string]TileAttributes
 
 func fetchTerrainData() map[string]TileAttributes {
 	data, err := ioutil.ReadFile("data/terrain.json")
@@ -45,6 +45,7 @@ type Grid struct {
 }
 
 func NewGrid(width int, height int) *Grid {
+	terrainData = fetchTerrainData()
 	terrain := make([][]icon.Icon, height)
 	passable := make([][]bool, height)
 	door := make([][]*doorComponent, height)
