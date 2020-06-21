@@ -60,7 +60,7 @@ func NewEnemy(enemyType string, x, y int, world *worldmap.Map) *Npc {
 		"dex":         worldmap.NewAttribute(enemy.Dex, enemy.Dex),
 		"encumbrance": worldmap.NewAttribute(enemy.Encumbrance, enemy.Encumbrance)}
 	name := generateName(enemyType, enemy.Human)
-	e := &Npc{name, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, worldmap.Enemy, false, enemy.Money, enemy.Unarmed, nil, nil, make([]*item.Item, 0), "", generateMount(enemy.Mount, x, y), world, ai, dialogue, enemy.Human}
+	e := &Npc{name, id, worldmap.Coordinates{x, y}, enemy.Icon, enemy.Initiative, attributes, worldmap.Enemy, false, enemy.Money, enemy.Unarmed, nil, nil, make([]*item.Item, 0), nil, "", generateMount(enemy.Mount, x, y), world, ai, dialogue, enemy.Human}
 	for _, itm := range generateInventory(enemy.Inventory) {
 		e.PickupItem(itm)
 	}

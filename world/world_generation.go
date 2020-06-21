@@ -20,7 +20,7 @@ func check(err error) {
 	}
 }
 
-func GenerateWorld(filename string) (*player.Player, []*npc.Mount, []*npc.Npc) {
+func GenerateWorld(filename string) (*player.Player, []*npc.Npc) {
 	world := worldmap.NewWorld(worldConf.Width, worldConf.Height)
 
 	towns := make([]worldmap.Town, 0)
@@ -59,6 +59,7 @@ func GenerateWorld(filename string) (*player.Player, []*npc.Mount, []*npc.Npc) {
 			mounts = append(mounts, mount)
 		}
 	}
+	npcs = append(npcs, mounts...)
 
 	worldJson, err := world.MarshalJSON()
 	check(err)
@@ -68,7 +69,7 @@ func GenerateWorld(filename string) (*player.Player, []*npc.Mount, []*npc.Npc) {
 
 	err = ioutil.WriteFile(filename, buffer.Bytes(), 0644)
 	check(err)
-	return p, mounts, npcs
+	return p, npcs
 }
 
 func addItemsToBuildings(world worldmap.World, buildings []worldmap.Building) {
@@ -859,10 +860,10 @@ func generatePlayerLocation(world worldmap.World, towns []worldmap.Town) worldma
 	return location
 }
 
-func generateMounts(m worldmap.World, buildings []worldmap.Building, n int) []*npc.Mount {
+func generateMounts(m worldmap.World, buildings []worldmap.Building, n int) []*npc.Npc {
 	width := m.Width()
 	height := m.Height()
-	mounts := make([]*npc.Mount, n)
+	mounts := make([]*npc.Npc, n)
 	for i := 0; i < n; i++ {
 		x := rand.Intn(width)
 		y := rand.Intn(height)

@@ -489,8 +489,8 @@ func getWaypointMap(c hasAi, waypoint worldmap.Coordinates, world *worldmap.Map)
 func getMountMap(c hasAi, world *worldmap.Map) [][]float64 {
 	tileHasMount := func(x, y int) bool {
 		if world.IsValid(x, y) && world.IsVisible(c, x, y) {
-			m, ok := world.GetCreature(x, y).(*Mount)
-			return ok && m != nil
+			m, ok := world.GetCreature(x, y).(*Npc)
+			return ok && m != nil && m.IsMount()
 		}
 		return false
 	}

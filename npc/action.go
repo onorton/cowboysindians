@@ -43,7 +43,7 @@ type MountAction struct {
 }
 
 func (a MountAction) execute() {
-	m := a.world.GetCreature(a.x, a.y).(*Mount)
+	m := a.world.GetCreature(a.x, a.y).(*Npc)
 	a.world.DeleteCreature(m)
 	m.AddRider(a.r)
 	a.r.AddMount(m)

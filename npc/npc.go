@@ -157,7 +157,7 @@ func NewNpc(npcType string, x, y int, world *worldmap.Map, t *worldmap.Town, b *
 		"dex":         worldmap.NewAttribute(n.Dex, n.Dex),
 		"encumbrance": worldmap.NewAttribute(n.Encumbrance, n.Encumbrance)}
 
-	npc := &Npc{generateName(npcType, n.Human), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, worldmap.Neutral, false, n.Money, n.Unarmed, nil, nil, make([]*item.Item, 0), "", generateMount(n.Mount, x, y), world, ai, dialogue, n.Human}
+	npc := &Npc{generateName(npcType, n.Human), id, worldmap.Coordinates{x, y}, n.Icon, n.Initiative, attributes, worldmap.Neutral, false, n.Money, n.Unarmed, nil, nil, make([]*item.Item, 0), nil, "", generateMount(n.Mount, x, y), world, ai, dialogue, n.Human}
 	for c, count := range n.ShopInventory {
 
 		for i := 0; i < count; i++ {
@@ -236,7 +236,7 @@ func (npc *Npc) Render() ui.Element {
 func (npc *Npc) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString("{")
 
-	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Alignment", "Crouching", "Money", "Unarmed", "Weapon", "Armour", "Inventory", "MountID", "Ai", "Dialogue", "Human"}
+	keys := []string{"Name", "Id", "Location", "Icon", "Initiative", "Attributes", "Alignment", "Crouching", "Money", "Unarmed", "Weapon", "Armour", "Inventory", "MountID", "MountableComponent", "Ai", "Dialogue", "Human"}
 
 	mountID := ""
 	if npc.mount != nil {
@@ -244,23 +244,24 @@ func (npc *Npc) MarshalJSON() ([]byte, error) {
 	}
 
 	npcValues := map[string]interface{}{
-		"Name":       npc.name,
-		"Id":         npc.id,
-		"Location":   npc.location,
-		"Icon":       npc.icon,
-		"Initiative": npc.initiative,
-		"Attributes": npc.attributes,
-		"Alignment":  npc.alignment,
-		"Crouching":  npc.crouching,
-		"Money":      npc.money,
-		"Unarmed":    npc.unarmed,
-		"Weapon":     npc.weapon,
-		"Armour":     npc.armour,
-		"Inventory":  npc.inventory,
-		"MountID":    mountID,
-		"Ai":         npc.ai,
-		"Dialogue":   npc.dialogue,
-		"Human":      npc.human,
+		"Name":               npc.name,
+		"Id":                 npc.id,
+		"Location":           npc.location,
+		"Icon":               npc.icon,
+		"Initiative":         npc.initiative,
+		"Attributes":         npc.attributes,
+		"Alignment":          npc.alignment,
+		"Crouching":          npc.crouching,
+		"Money":              npc.money,
+		"Unarmed":            npc.unarmed,
+		"Weapon":             npc.weapon,
+		"Armour":             npc.armour,
+		"Inventory":          npc.inventory,
+		"MountID":            mountID,
+		"MountableComponent": npc.mc,
+		"Ai":                 npc.ai,
+		"Dialogue":           npc.dialogue,
+		"Human":              npc.human,
 	}
 
 	length := len(npcValues)
@@ -295,23 +296,24 @@ func (npc *Npc) Talk() interaction {
 func (npc *Npc) UnmarshalJSON(data []byte) error {
 
 	type npcJson struct {
-		Name       map[string]interface{}
-		Id         string
-		Location   worldmap.Coordinates
-		Icon       icon.Icon
-		Initiative int
-		Attributes map[string]*worldmap.Attribute
-		Crouching  bool
-		Alignment  worldmap.Alignment
-		Money      int
-		Unarmed    item.WeaponComponent
-		Weapon     *item.Item
-		Armour     *item.Item
-		Inventory  []*item.Item
-		MountID    string
-		Ai         ai
-		Dialogue   map[string]interface{}
-		Human      bool
+		Name               map[string]interface{}
+		Id                 string
+		Location           worldmap.Coordinates
+		Icon               icon.Icon
+		Initiative         int
+		Attributes         map[string]*worldmap.Attribute
+		Crouching          bool
+		Alignment          worldmap.Alignment
+		Money              int
+		Unarmed            item.WeaponComponent
+		Weapon             *item.Item
+		Armour             *item.Item
+		Inventory          []*item.Item
+		MountID            string
+		MountableComponent *mountableComponent
+		Ai                 ai
+		Dialogue           map[string]interface{}
+		Human              bool
 	}
 	var v npcJson
 
@@ -331,6 +333,7 @@ func (npc *Npc) UnmarshalJSON(data []byte) error {
 	npc.armour = v.Armour
 	npc.inventory = v.Inventory
 	npc.mountID = v.MountID
+	npc.mc = v.MountableComponent
 	npc.ai = v.Ai
 	npc.dialogue = unmarshalDialogue(v.Dialogue)
 	npc.human = v.Human
@@ -389,6 +392,14 @@ func (npc *Npc) TakeDamage(damage item.Damage, effects item.Effects, bonus int) 
 	total_damage := damage.Damage() + bonus
 	npc.attributes["hp"].AddEffect(item.NewInstantEffect(-total_damage))
 	npc.applyEffects(effects)
+
+	if npc.mc != nil && npc.mc.rider != nil && npc.IsDead() {
+		npc.mc.rider.TakeDamage(item.NewDamage(4, 1, 0), item.Effects{}, 0)
+		if npc.mc.rider.GetAlignment() == worldmap.Player {
+			message.Enqueue(fmt.Sprintf("Your %s died and you fell.", npc.name))
+		}
+		npc.RemoveRider()
+	}
 }
 
 func (npc *Npc) IsDead() bool {
@@ -471,6 +482,16 @@ func (npc *Npc) Update() {
 
 	if npc.IsDead() {
 		return
+	}
+
+	if npc.mc != nil && npc.mc.rider != nil {
+		if npc.mc.rider.IsDead() {
+			npc.RemoveRider()
+		} else {
+			rX, rY := npc.mc.rider.GetCoordinates()
+			npc.location = worldmap.Coordinates{rX, rY}
+			return
+		}
 	}
 
 	p := npc.world.GetPlayer()
@@ -641,6 +662,38 @@ func (npc *Npc) IsCrouching() bool {
 	return npc.crouching
 }
 
+func (npc *Npc) AddRider(r Rider) {
+	npc.mc.rider = r
+}
+
+func (npc *Npc) RemoveRider() {
+	npc.mc.rider = nil
+}
+
+func (npc *Npc) GetIcon() icon.Icon {
+	return npc.icon
+}
+
+func (npc *Npc) IsMount() bool {
+	return npc.mc != nil
+}
+
+func (npc *Npc) IsMounted() bool {
+	return npc.mc.rider != nil
+}
+
+func (npc *Npc) ResetMoved() {
+	npc.mc.Moved = false
+}
+
+func (npc *Npc) Move() {
+	npc.mc.Moved = true
+}
+
+func (npc *Npc) Moved() bool {
+	return npc.mc.Moved
+}
+
 func (npc *Npc) Standup() {
 	npc.crouching = false
 }
@@ -662,13 +715,17 @@ func (npc *Npc) SetMap(world *worldmap.Map) {
 
 }
 
-func (npc *Npc) Mount() *Mount {
+func (npc *Npc) Mount() *Npc {
 	return npc.mount
 }
 
-func (npc *Npc) AddMount(m *Mount) {
+func (npc *Npc) AddMount(m *Npc) {
 	npc.mount = m
 	npc.Standup()
+}
+
+func (npc *Npc) Encumbrance() int {
+	return npc.attributes["encumbrance"].Value()
 }
 
 func (npc *Npc) GetVisionDistance() int {
@@ -693,7 +750,7 @@ func (npc *Npc) GetItems(addMoney bool) map[rune]([]*item.Item) {
 	return items
 }
 
-func (npc *Npc) LoadMount(mounts []*Mount) {
+func (npc *Npc) LoadMount(mounts []*Npc) {
 	for _, m := range mounts {
 		if npc.mountID == m.GetID() {
 			m.AddRider(npc)
@@ -751,8 +808,9 @@ type Npc struct {
 	weapon     *item.Item
 	armour     *item.Item
 	inventory  []*item.Item
+	mc         *mountableComponent
 	mountID    string
-	mount      *Mount
+	mount      *Npc
 	world      *worldmap.Map
 	ai         ai
 	dialogue   dialogue

@@ -844,7 +844,7 @@ func (p *Player) Move(action ui.PlayerAction) (bool, ui.PlayerAction) {
 	c := p.world.GetCreature(newX, newY)
 	// If occupied by another creature, melee attack
 	if c != nil && c != p {
-		var m *npc.Mount
+		var m *npc.Npc
 		if r, ok := c.(npc.Rider); ok {
 			m = r.Mount()
 		}
@@ -903,7 +903,7 @@ func (p *Player) OverEncumbered() bool {
 	}
 	total_encumbrance := p.attributes["encumbrance"].Value()
 	if p.mount != nil {
-		total_encumbrance += p.mount.GetEncumbrance()
+		total_encumbrance += p.mount.Encumbrance()
 	}
 
 	return total > float64(total_encumbrance)
@@ -966,7 +966,7 @@ func (p *Player) findTarget() worldmap.Creature {
 				// If a creature is there, return it.
 				c := p.world.GetCreature(x, y)
 
-				var m *npc.Mount
+				var m *npc.Npc
 				if r, ok := c.(npc.Rider); ok {
 					m = r.Mount()
 				}
@@ -1200,7 +1200,7 @@ func (p *Player) ToggleMount() bool {
 		}
 	} else {
 		c := p.world.GetCreature(x, y)
-		if m, ok := c.(*npc.Mount); c != nil && ok {
+		if m, ok := c.(*npc.Npc); c != nil && ok {
 			m.AddRider(p)
 			p.world.DeleteCreature(m)
 			p.Move(action)
@@ -1262,31 +1262,23 @@ func (p *Player) Talk() {
 			x := p.location.X + i
 			y := p.location.Y + j
 			if p.world.IsValid(x, y) {
-				creature := p.world.GetCreature(x, y)
-				switch c := creature.(type) {
-				case *npc.Npc:
-					{
-						interaction := c.Talk()
-						switch interaction {
-						case npc.Trade:
-							ui.GetInput()
-							trade(p, c)
-						case npc.Bounty:
-							ui.GetInput()
-							claimBounties(p, c)
-						case npc.DoesNotSpeak:
-							message.PrintMessage(fmt.Sprintf("You try to talk to %s. It doesn't seem to respond.", c.GetName().WithDefinite()))
-						}
-						return
-					}
-				case *npc.Mount:
-					message.PrintMessage(fmt.Sprintf("You try to talk to %s. It doesn't seem to respond.", c.GetName().WithDefinite()))
-					return
+				creature := p.world.GetCreature(x, y).(*npc.Npc)
+				interaction := creature.Talk()
+				switch interaction {
+				case npc.Trade:
+					ui.GetInput()
+					trade(p, creature)
+				case npc.Bounty:
+					ui.GetInput()
+					claimBounties(p, creature)
+				case npc.DoesNotSpeak:
+					message.PrintMessage(fmt.Sprintf("You try to talk to %s. It doesn't seem to respond.", creature.GetName().WithDefinite()))
 				}
+				return
 			}
 		}
+		message.PrintMessage("You talk to yourself.")
 	}
-	message.PrintMessage("You talk to yourself.")
 }
 
 func (p *Player) Pickpocket() bool {
@@ -1494,11 +1486,11 @@ func (p *Player) SetMap(world *worldmap.Map) {
 	p.world = world
 }
 
-func (p *Player) Mount() *npc.Mount {
+func (p *Player) Mount() *npc.Npc {
 	return p.mount
 }
 
-func (p *Player) AddMount(m *npc.Mount) {
+func (p *Player) AddMount(m *npc.Npc) {
 	p.mount = m
 }
 
@@ -1527,7 +1519,7 @@ func (p *Player) Update() {
 	}
 }
 
-func (p *Player) LoadMount(mounts []*npc.Mount) {
+func (p *Player) LoadMount(mounts []*npc.Npc) {
 	for _, m := range mounts {
 		if p.mountID == m.GetID() {
 			m.AddRider(p)
@@ -1551,6 +1543,6 @@ type Player struct {
 	armour     *item.Item
 	inventory  map[rune]([]*item.Item)
 	mountID    string
-	mount      *npc.Mount
+	mount      *npc.Npc
 	world      *worldmap.Map
 }

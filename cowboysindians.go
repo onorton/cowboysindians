@@ -35,7 +35,6 @@ type GameState struct {
 	PlayerIndex int
 	Time        int
 	Viewer      *worldmap.Viewer
-	Mounts      []*npc.Mount
 	Npcs        []*npc.Npc
 	Player      *player.Player
 	Target      string
@@ -52,10 +51,6 @@ func save(state GameState, m *worldmap.Map) {
 	viewerValue, err := json.Marshal(state.Viewer)
 	check(err)
 	buffer.WriteString(fmt.Sprintf("\"Viewer\":%s,\n", viewerValue))
-
-	mountsValue, err := json.Marshal(state.Mounts)
-	check(err)
-	buffer.WriteString(fmt.Sprintf("\"Mounts\":%s,\n", mountsValue))
 
 	npcsValue, err := json.Marshal(state.Npcs)
 	check(err)
@@ -84,10 +79,10 @@ func load() GameState {
 	err = json.Unmarshal(data, &state)
 	check(err)
 
-	state.Player.LoadMount(state.Mounts)
+	state.Player.LoadMount(state.Npcs)
 
 	for _, npc := range state.Npcs {
-		npc.LoadMount(state.Mounts)
+		npc.LoadMount(state.Npcs)
 	}
 
 	return state
@@ -95,14 +90,9 @@ func load() GameState {
 }
 
 // Combine enemies and player into same slice
-func allCreatures(mounts []*npc.Mount, npcs []*npc.Npc, p *player.Player) []worldmap.Creature {
-	all := make([]worldmap.Creature, len(mounts)+len(npcs)+1)
+func allCreatures(npcs []*npc.Npc, p *player.Player) []worldmap.Creature {
+	all := make([]worldmap.Creature, len(npcs)+1)
 	i := 0
-
-	for _, m := range mounts {
-		all[i] = m
-		i++
-	}
 
 	for _, npc := range npcs {
 		all[i] = npc
@@ -157,11 +147,10 @@ func main() {
 	}
 
 	if !loaded {
-		p, mounts, npcs := world.GenerateWorld(worldSaveFilename)
+		p, npcs := world.GenerateWorld(worldSaveFilename)
 		state.Player = p
 		x, y := state.Player.GetCoordinates()
 		state.Viewer = worldmap.NewViewer(x, y, windowWidth, windowHeight)
-		state.Mounts = mounts
 		state.Npcs = npcs
 		state.Time = 1
 		state.PlayerIndex = 0
@@ -178,10 +167,9 @@ func main() {
 	}
 
 	player := state.Player
-	mounts := state.Mounts
 	npcs := state.Npcs
 
-	all := allCreatures(mounts, npcs, player)
+	all := allCreatures(npcs, player)
 	worldMap := worldmap.NewMap(worldSaveFilename, state.Viewer, state.Player, all)
 	worldMap.LoadActiveChunks()
 
@@ -310,11 +298,6 @@ func main() {
 
 		// Remove dead enemies, npcs and mounts
 		for i, c := range all {
-			if m, ok := c.(*npc.Mount); ok && m.IsDead() {
-				m.DropCorpse()
-				worldMap.DeleteCreature(m)
-				all = append(all[:i], all[i+1:]...)
-			}
 			if npc, ok := c.(*npc.Npc); ok && npc.IsDead() {
 				npc.EmptyInventory()
 				worldMap.DeleteCreature(npc)
