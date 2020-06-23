@@ -7,17 +7,22 @@ import (
 	"math/rand"
 )
 
+type hasTiles interface {
+	IsValid(int, int) bool
+	IsPassable(int, int) bool
+}
+
 // Random waypoint selects a random waypoint up to 5 tiles apart
 type RandomWaypoint struct {
-	world           *Map
+	world           hasTiles
 	currentWaypoint Coordinates
 }
 
-func NewRandomWaypoint(world *Map, location Coordinates) *RandomWaypoint {
+func NewRandomWaypoint(world hasTiles, location Coordinates) *RandomWaypoint {
 	return &RandomWaypoint{world, location}
 }
 
-func (r *RandomWaypoint) SetMap(world *Map) {
+func (r *RandomWaypoint) SetMap(world hasTiles) {
 	r.world = world
 }
 
@@ -115,16 +120,16 @@ func (p *Patrol) UnmarshalJSON(data []byte) error {
 
 // WithinArea means that creatures move randomly within a given area
 type WithinArea struct {
-	world           *Map
+	world           hasTiles
 	area            Area
 	currentWaypoint Coordinates
 }
 
-func NewWithinArea(world *Map, area Area, location Coordinates) *WithinArea {
+func NewWithinArea(world hasTiles, area Area, location Coordinates) *WithinArea {
 	return &WithinArea{world, area, location}
 }
 
-func (wb *WithinArea) SetMap(world *Map) {
+func (wb *WithinArea) SetMap(world hasTiles) {
 	wb.world = world
 }
 
