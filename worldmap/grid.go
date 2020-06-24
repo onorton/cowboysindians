@@ -24,10 +24,11 @@ type TileAttributes struct {
 	Door         bool
 }
 
+var terrainDataPath string = "data/terrain.json"
 var terrainData map[string]TileAttributes
 
 func fetchTerrainData() map[string]TileAttributes {
-	data, err := ioutil.ReadFile("data/terrain.json")
+	data, err := ioutil.ReadFile(terrainDataPath)
 	check(err)
 	var tD map[string]TileAttributes
 	err = json.Unmarshal(data, &tD)
@@ -50,7 +51,6 @@ func NewGrid(width int, height int) *Grid {
 	passable := make([][]bool, height)
 	door := make([][]*doorComponent, height)
 	blocksVision := make([][]bool, height)
-	blocksVClosed := make([][]bool, height)
 	c := make([][]Creature, height)
 	items := make([][][]*item.Item, height)
 
@@ -61,7 +61,6 @@ func NewGrid(width int, height int) *Grid {
 		passable[y] = make([]bool, width)
 		door[y] = make([]*doorComponent, width)
 		blocksVision[y] = make([]bool, width)
-		blocksVClosed[y] = make([]bool, width)
 		c[y] = make([]Creature, width)
 		items[y] = make([][]*item.Item, width)
 	}
@@ -97,6 +96,8 @@ func (grid *Grid) newTile(tileType string, x, y int) {
 	grid.passable[y][x] = terrain.Passable
 	if terrain.Door {
 		grid.door[y][x] = &doorComponent{false, int32(rand.Int() + 1), terrain.BlocksVision, false}
+	} else {
+		grid.door[y][x] = nil
 	}
 	grid.blocksVision[y][x] = terrain.BlocksVision
 }
@@ -135,12 +136,11 @@ func (grid *Grid) MarshalJSON() ([]byte, error) {
 func (grid *Grid) UnmarshalJSON(data []byte) error {
 
 	type gridJson struct {
-		Terrain            [][]icon.Icon
-		Passable           [][]bool
-		Door               [][]*doorComponent
-		BlocksVision       [][]bool
-		BlocksVisionClosed [][]bool
-		Items              [][][]*item.Item
+		Terrain      [][]icon.Icon
+		Passable     [][]bool
+		Door         [][]*doorComponent
+		BlocksVision [][]bool
+		Items        [][][]*item.Item
 	}
 	v := gridJson{}
 
