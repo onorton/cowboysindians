@@ -128,7 +128,7 @@ const (
 	DualWielding
 )
 
-// Interface shared by Player, Npc and Enemy
+// Interface shared by Player and Npc
 type Creature interface {
 	CanSee
 	Render() ui.Element

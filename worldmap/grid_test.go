@@ -3,7 +3,7 @@ package worldmap
 import "testing"
 
 func init() {
-	terrainDataPath = "../" + terrainDataPath
+	terrainDataPath = "../data/terrain.json"
 }
 
 func TestNewGridStartsWithAllGroundTilesAndCorrectSize(t *testing.T) {
